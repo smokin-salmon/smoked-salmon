@@ -1,2 +1,235 @@
 <?xml version='1.0' encoding='utf-8'?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="59c466a7-d981-4078-bffb-10bab7b023e6"><title>A Night at the Opera</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><release-group><title>A Night at the Opera</title><first-release-date>1975-11-21</first-release-date><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit></release-group><date>2011</date><release-event-list><release-event><date>2011</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>EMI</name></label></label-info><label-info><label><name>Virgin EMI Records</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Death on Two Legs (Dedicated to…)</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Lazing on a Sunday Afternoon</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>I’m in Love With My Car</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>You’re My Best Friend</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>’39</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Sweet Lady</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Seaside Rendezvous</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>The Prophet’s Song</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Love of My Life</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Good Company</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>Bohemian Rhapsody</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>God Save the Queen</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="59c466a7-d981-4078-bffb-10bab7b023e6">
+<title>A Night at the Opera</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="6b47c9a0-b9e1-3df9-a5e8-50a6ce0dbdbd" type="Album">
+<title>A Night at the Opera</title>
+<first-release-date>1975-11-21</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2011</date>
+<release-event-list>
+<release-event>
+<date>2011</date>
+</release-event>
+</release-event-list>
+<barcode>602527644264</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>EMI</name>
+</label>
+</label-info>
+<label-info>
+<label>
+<name>Virgin EMI Records</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="25ac01ef-b478-43fd-a75a-b9244c4688ba">
+<position>1</position>
+<number>1</number>
+<recording id="a46d027a-39e0-4b47-b19b-bb7682839ac5">
+<title>Death on Two Legs (Dedicated to…)</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="74e249d8-4780-49f7-8e99-3eaf00693e97">
+<position>2</position>
+<number>2</number>
+<recording id="a69ca3a1-65ff-491a-b25e-fa2010963e26">
+<title>Lazing on a Sunday Afternoon</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="ceff237f-6c1f-4100-8ca8-503157e51a62">
+<position>3</position>
+<number>3</number>
+<recording id="8c8cc498-39e7-440f-b937-21d1481cc3a0">
+<title>I’m in Love With My Car</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="42f5e292-c043-4c22-9833-f22a40df4d31">
+<position>4</position>
+<number>4</number>
+<recording id="471dc436-80be-4f06-bc8f-7e2685876cfc">
+<title>You’re My Best Friend</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="6ad0376a-60f8-4bf2-ae4b-ae864ea84cc8">
+<position>5</position>
+<number>5</number>
+<recording id="16d2c90d-d688-4465-bb76-4a9e94b80729">
+<title>’39</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="6fa91968-9585-49b2-9331-6eb9a2248540">
+<position>6</position>
+<number>6</number>
+<recording id="e787ac41-3aba-41b6-ad05-63ddb02b50b8">
+<title>Sweet Lady</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="12028731-4bc4-4acc-a175-3ae50098c444">
+<position>7</position>
+<number>7</number>
+<recording id="e26a4230-72bf-4fbe-b86b-2f045ebb2cb7">
+<title>Seaside Rendezvous</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="f5363557-60fc-4341-a735-dee166231217">
+<position>8</position>
+<number>8</number>
+<recording id="1709306b-e1a4-471f-ab6d-6c78ab0a55be">
+<title>The Prophet’s Song</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="ab6bcd00-188e-4b44-8ced-a16b15111862">
+<position>9</position>
+<number>9</number>
+<recording id="aae7c914-d58d-4e25-b3a3-21bd0f565a54">
+<title>Love of My Life</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="71e912c2-5a29-4062-8324-d08cede716ee">
+<position>10</position>
+<number>10</number>
+<recording id="d002ad96-7eac-4ca5-9b45-d89b8c7f15ee">
+<title>Good Company</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="12941eee-4b76-43d2-a9f9-9536aa4bfb8c">
+<position>11</position>
+<number>11</number>
+<recording id="b1a9c0e9-d987-4042-ae91-78d6a3267d69">
+<title>Bohemian Rhapsody</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+<track id="cca75bef-4caf-4b86-b43c-b3408a76f2c5">
+<position>12</position>
+<number>12</number>
+<recording id="4112acb8-7ac0-4047-9c02-6e02226003e7">
+<title>God Save the Queen</title>
+<artist-credit>
+<name-credit>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-11-21</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

@@ -1,2 +1,345 @@
 <?xml version='1.0' encoding='utf-8'?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="405a40e0-8a55-41fd-8486-a9a3b37c3800"><title>Trio</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><release-group><title>Trio</title><first-release-date>1987-03-02</first-release-date><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit></release-group><date>2016-09-09</date><release-event-list><release-event><date>2016-09-09</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Rhino</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>The Pain of Loving You</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Making Plans</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>To Know Him Is to Love Him</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-01</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Hobo’s Meditation</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Wildflowers</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Telling Me Lies</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>My Dear Companion</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Those Memories of You</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>I’ve Had Enough</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Rosewood Casket</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>Farther Along</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-01</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="405a40e0-8a55-41fd-8486-a9a3b37c3800">
+<title>Trio</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="7703474b-4953-385d-89de-66c1e0f0b156" type="Album">
+<title>Trio</title>
+<first-release-date>1987-03-02</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2016-09-09</date>
+<release-event-list>
+<release-event>
+<date>2016-09-09</date>
+</release-event>
+</release-event-list>
+<barcode>603497886876</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>Rhino</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="4b0ad346-3066-4679-a1da-77e686263c70">
+<position>1</position>
+<number>1</number>
+<recording id="154cd19d-8677-437b-a81b-7d0261a39997">
+<title>The Pain of Loving You</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="dbe68ac5-81fc-4626-9104-86f9cddd1ca8">
+<position>2</position>
+<number>2</number>
+<recording id="93f2d1bc-6b2c-4a67-b5da-18306773ace9">
+<title>Making Plans</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="dc83e66f-4075-406c-b2ba-e0462906ffde">
+<position>3</position>
+<number>3</number>
+<recording id="63b55d8b-f4b3-4354-905a-149f9800b5c5">
+<title>To Know Him Is to Love Him</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-01</first-release-date>
+</recording>
+</track>
+<track id="fb4ac436-fdb8-439c-a737-ec8e74308fe4">
+<position>4</position>
+<number>4</number>
+<recording id="3e58f0f7-5465-495e-a76f-3b1fde923a20">
+<title>Hobo’s Meditation</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="d71c9f74-79af-4510-b1e5-013d1151a906">
+<position>5</position>
+<number>5</number>
+<recording id="cf3f2e44-e928-4069-899f-cc802b59db31">
+<title>Wildflowers</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="2246d3d3-b33b-43a1-a61a-3e9500602c0c">
+<position>6</position>
+<number>6</number>
+<recording id="5bd7e570-4f58-4cf2-8235-ddec83f23157">
+<title>Telling Me Lies</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="41bba6cc-3a19-4705-bc98-8afaa3b8c6a1">
+<position>7</position>
+<number>7</number>
+<recording id="cd58d1d3-62aa-4ec7-bff4-b91b010420b1">
+<title>My Dear Companion</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="17d530b1-4373-46c2-8d5f-91c310fd5528">
+<position>8</position>
+<number>8</number>
+<recording id="e192afeb-dd68-4035-a7c8-641c9b42b0a9">
+<title>Those Memories of You</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="4f7d366a-3f35-4430-a67d-1f8bac9d9df5">
+<position>9</position>
+<number>9</number>
+<recording id="9da7e3cb-8ac6-416e-81ac-ad4523721492">
+<title>I’ve Had Enough</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="22d88488-4528-452f-a9d6-743a55ab63d9">
+<position>10</position>
+<number>10</number>
+<recording id="2f9736ac-ddeb-432b-9e6d-0ad75d2ab48c">
+<title>Rosewood Casket</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-03-02</first-release-date>
+</recording>
+</track>
+<track id="3b98226d-57b8-4536-a860-368ea91c2013">
+<position>11</position>
+<number>11</number>
+<recording id="0a3544f2-b1f6-4cda-8244-bf44c50b2c08">
+<title>Farther Along</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="1d543e07-d0d2-4834-a8db-d65c50c2a856">
+<name>Dolly Parton</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="498f2581-be21-4eef-8756-fbb89d79b1c0">
+<name>Linda Ronstadt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="35ef61ca-43db-4772-ba27-0489e9ebcb69">
+<name>Emmylou Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987-01</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

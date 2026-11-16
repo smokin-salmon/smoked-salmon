@@ -1,2 +1,155 @@
 <?xml version='1.0' encoding='utf-8'?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="715c7e25-4e52-428c-8b66-f12dd3f3c914"><title>Moving Pictures</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><release-group type="Album"><title>Moving Pictures</title><first-release-date>1981-02-06</first-release-date><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit></release-group><date>2011-04-05</date><release-event-list><release-event><date>2011-04-05</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Mercury Records</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Tom Sawyer</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Red Barchetta</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>YYZ</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Limelight</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>The Camera Eye</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Witch Hunt</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Vital Signs</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="715c7e25-4e52-428c-8b66-f12dd3f3c914">
+<title>Moving Pictures</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="40e30dc1-55ac-33e1-85d3-1f1508140bfc" type="Album">
+<title>Moving Pictures</title>
+<first-release-date>1981-02-06</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2011-04-05</date>
+<release-event-list>
+<release-event>
+<date>2011-04-05</date>
+</release-event>
+</release-event-list>
+<barcode>00602527636993</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>Mercury Records</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="703b9f1d-0cf5-455a-a59e-168379665b45">
+<position>1</position>
+<number>1</number>
+<recording id="cb837d0c-5115-479d-ac0e-ab1650fe9078">
+<title>Tom Sawyer</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1981-02-06</first-release-date>
+</recording>
+</track>
+<track id="6661431e-243c-483d-b6ce-9a3e0b1fcc26">
+<position>2</position>
+<number>2</number>
+<recording id="0266c4c2-5e64-402e-8e26-5cd46b64e8c9">
+<title>Red Barchetta</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1981-02-06</first-release-date>
+</recording>
+</track>
+<track id="64dc7db3-54a6-448d-a068-12e83dc59bff">
+<position>3</position>
+<number>3</number>
+<recording id="336acc6e-0f4a-4dae-8427-fe48aaa8984c">
+<title>YYZ</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1981-02-06</first-release-date>
+</recording>
+</track>
+<track id="1e857d92-5dce-40b4-a069-79d9162e313d">
+<position>4</position>
+<number>4</number>
+<recording id="3ed46a79-c541-496b-9508-c04ecf9fb206">
+<title>Limelight</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1981-02-06</first-release-date>
+</recording>
+</track>
+<track id="eb31c05d-8551-4619-95a9-2c1c53e2083b">
+<position>5</position>
+<number>5</number>
+<recording id="7d9354b2-f8d8-4b7c-be95-1acb97771d2b">
+<title>The Camera Eye</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1981-02-06</first-release-date>
+</recording>
+</track>
+<track id="aa27e424-f993-43f3-af5d-ba6fd321d378">
+<position>6</position>
+<number>6</number>
+<recording id="9057d88d-f03a-4c0f-b55f-e0d5b901e288">
+<title>Witch Hunt</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1981-02-06</first-release-date>
+</recording>
+</track>
+<track id="446ba962-dac2-4f73-a365-273a72243bf4">
+<position>7</position>
+<number>7</number>
+<recording id="71fcdceb-aa1f-49bb-9d5d-86319bb182d1">
+<title>Vital Signs</title>
+<artist-credit>
+<name-credit>
+<artist id="534ee493-bfac-4575-a44a-0ae41e2c3fe4">
+<name>Rush</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1981-02-06</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

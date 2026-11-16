@@ -1,2 +1,182 @@
 <?xml version='1.0' encoding='utf-8'?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="0d1fc06f-4dcb-45b0-8fae-33deb44f46ed"><title>Led Zeppelin II</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><release-group><title>Led Zeppelin II</title><first-release-date>1969-10-22</first-release-date><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit></release-group><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Atlantic</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Whole Lotta Love</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>What Is and What Should Never Be</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>The Lemon Song</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Thank You</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Heartbreaker</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Living Loving Maid (She’s Just a Woman)</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Ramble On</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Moby Dick</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Bring It On Home</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="0d1fc06f-4dcb-45b0-8fae-33deb44f46ed">
+<title>Led Zeppelin II</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="33b4653d-006e-3cc1-8afb-386b15a6cd6e" type="Album">
+<title>Led Zeppelin II</title>
+<first-release-date>1969-10-22</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<release-event-list>
+<release-event />
+</release-event-list>
+<barcode>603497900831</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>Atlantic</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="806229f1-d21b-4f22-99e1-690812468b4f">
+<position>1</position>
+<number>1</number>
+<recording id="9d9c8206-8b4c-45fc-8f12-ffc1940b2b7f">
+<title>Whole Lotta Love</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="33d6874a-0b41-44c9-a69b-b933d7fc6341">
+<position>2</position>
+<number>2</number>
+<recording id="edf5afb6-7c9b-403d-aad9-6e5323711cc9">
+<title>What Is and What Should Never Be</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="fcfaf885-4903-4c69-8784-15910bb487c7">
+<position>3</position>
+<number>3</number>
+<recording id="d79553cf-a4f5-494f-adb5-be841567e6d2">
+<title>The Lemon Song</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="9b53166b-4728-4ef3-8228-602aa40cd7d9">
+<position>4</position>
+<number>4</number>
+<recording id="e21defb3-82b7-481a-a457-63ce2329feaa">
+<title>Thank You</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="e02e15ef-8f35-4f7d-9952-dc15ff94b1bc">
+<position>5</position>
+<number>5</number>
+<recording id="a642c527-692e-4466-a734-bf30d0170ece">
+<title>Heartbreaker</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="a54dc91c-51ab-4ed4-81a8-dd776c18c336">
+<position>6</position>
+<number>6</number>
+<recording id="7895202a-b37a-4d54-8bcb-1678a6e3ec23">
+<title>Living Loving Maid (She’s Just a Woman)</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="b3441271-dba1-4673-901d-7cb8e58559db">
+<position>7</position>
+<number>7</number>
+<recording id="01c2ce15-bc8b-4629-825d-03d0f24d90bb">
+<title>Ramble On</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="d32b428d-9e6d-4b46-9e06-c3de368b5b7b">
+<position>8</position>
+<number>8</number>
+<recording id="dce2ef42-e12c-4c0f-ab27-b69495c3a41e">
+<title>Moby Dick</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+<track id="8d4a5a38-d244-4394-a495-0fb08678c17c">
+<position>9</position>
+<number>9</number>
+<recording id="71c2acbb-c5ff-4677-ab7b-525ee2f70c66">
+<title>Bring It On Home</title>
+<artist-credit>
+<name-credit>
+<artist id="678d88b2-87b0-403b-b63d-5da7465aecc3">
+<name>Led Zeppelin</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969-10-22</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

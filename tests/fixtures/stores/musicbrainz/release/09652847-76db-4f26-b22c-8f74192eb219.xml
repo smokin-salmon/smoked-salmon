@@ -1,2 +1,176 @@
 <?xml version='1.0' encoding='utf-8'?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="09652847-76db-4f26-b22c-8f74192eb219"><title>That's the Way of the World</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><release-group type="Soundtrack"><title>That’s the Way of the World</title><first-release-date>1975-03</first-release-date><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit></release-group><date>2013</date><release-event-list><release-event><date>2013</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Columbia</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Shining Star</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-01-21</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>That’s the Way of the World</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-03</first-release-date></recording></track><track><position>3</position><number>3</number><title>Happy Feelin'</title><recording><title>Happy Feelin’</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1991-09-01</first-release-date></recording></track><track><position>4</position><number>4</number><title>All About Love (First Impression)</title><recording><title>All About Love</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1986</first-release-date></recording></track><track><position>5</position><number>5</number><title>Yearnin' Learnin'</title><recording><title>Yearnin’ Learnin’</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-01-21</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Reasons</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-03</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Africano</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-03</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>See the Light</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1986</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="09652847-76db-4f26-b22c-8f74192eb219">
+<title>That's the Way of the World</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="e9845207-8ae3-36db-b0e1-2efcdb46687d" type="Soundtrack">
+<title>That’s the Way of the World</title>
+<first-release-date>1975-03</first-release-date>
+<primary-type>Album</primary-type>
+<secondary-type-list>
+<secondary-type>Soundtrack</secondary-type>
+</secondary-type-list>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2013</date>
+<release-event-list>
+<release-event>
+<date>2013</date>
+</release-event>
+</release-event-list>
+<barcode>074643328029</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>Columbia</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="4be1defe-e780-416f-b4ef-6a6cc59a8c8a">
+<position>1</position>
+<number>1</number>
+<recording id="7d418f2a-d819-479b-8ab1-656a9efaa3e1">
+<title>Shining Star</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-01-21</first-release-date>
+</recording>
+</track>
+<track id="c4e9f03f-a470-45e9-aaf8-89416161eae0">
+<position>2</position>
+<number>2</number>
+<recording id="7862547b-93bc-4696-96b3-db3595a65726">
+<title>That’s the Way of the World</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-03</first-release-date>
+</recording>
+</track>
+<track id="bf642b7e-bcbd-420a-a8bd-abc303215724">
+<position>3</position>
+<number>3</number>
+<title>Happy Feelin'</title>
+<recording id="25a7e508-ae75-4465-af8d-341c267b3d2d">
+<title>Happy Feelin’</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1991-09-01</first-release-date>
+</recording>
+</track>
+<track id="4d3ffee6-ba9d-4fff-accf-638b3a6ab88c">
+<position>4</position>
+<number>4</number>
+<title>All About Love (First Impression)</title>
+<recording id="419c58a3-768f-4b57-b002-97d213b0a318">
+<title>All About Love</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1986</first-release-date>
+</recording>
+</track>
+<track id="43f0a9ad-57e3-49b4-8d18-2a313a26da69">
+<position>5</position>
+<number>5</number>
+<title>Yearnin' Learnin'</title>
+<recording id="125525c4-7fce-4bde-96a4-aee4dd2df0fb">
+<title>Yearnin’ Learnin’</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-01-21</first-release-date>
+</recording>
+</track>
+<track id="8cb5bb84-a1e8-4062-8eaf-1c836171ed5d">
+<position>6</position>
+<number>6</number>
+<recording id="eaf013dd-0000-4ee6-a7fb-0ae40288e9c2">
+<title>Reasons</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-03</first-release-date>
+</recording>
+</track>
+<track id="57f3149e-15f1-452d-9a22-d3b30ae60c90">
+<position>7</position>
+<number>7</number>
+<recording id="9c597830-d577-4fe9-aec9-d643e3636fbf">
+<title>Africano</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1975-03</first-release-date>
+</recording>
+</track>
+<track id="884b5310-7011-4a5b-8564-adb7102866a8">
+<position>8</position>
+<number>8</number>
+<recording id="c129e3f4-3653-467a-a67f-c33bc912e6cb">
+<title>See the Light</title>
+<artist-credit>
+<name-credit>
+<artist id="535afeda-2538-435d-9dd1-5e10be586774">
+<name>Earth, Wind &amp; Fire</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1986</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>
