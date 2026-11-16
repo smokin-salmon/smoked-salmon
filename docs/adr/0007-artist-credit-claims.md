@@ -73,8 +73,8 @@ Options considered:
 `salmon/common/credits.py` holds the types and `resolve_credits`. Nothing that exists today changes at
 runtime.
 
-- `Role` is a Literal of the eight roles. A source's role that maps to none of them is `None`, and never
-  becomes main.
+- `Role` is a Literal of the eight roles. A source's role that maps to none of them is `None`, and
+  `resolve_credits` leaves that claim out: it gives no credit and disputes none.
 - `Credit = tuple[str, Role]`, the pair the code already uses.
 - `ReleaseMetadata` and `TrackMetadata` are TypedDicts of the keys salmon builds today, with
   `NotRequired` for keys only some sources set. A test checks them against `generate_track` and the
@@ -113,6 +113,11 @@ rule that decided, the sources it came from, and the sources that disagreed.
 
 - **The limit:** main and guest are one performing credit per name per track (#852). Other roles are
   added together.
+- **Across roles:** a stated role other than main or guest drops an assumed main or guest of the same
+  name on that track. On *The Remix*, the files' plain ARTIST lists LoveGame's remixer Chew Fu beside
+  the singers, and Qobuz states him as remixer. Stated beside stated, both stay, as an artist can remix
+  their own track. This lands in step 4, when the files' plain ARTIST becomes assumed and the case
+  moves; until then both stay, as today.
 - **The tie-breaks, in order:** a stated role beats an assumed one; then the base, then the stores in
   the merge's order.
 - **Order:** a track's main artists keep the order the release gives them, from a store's album
@@ -126,9 +131,9 @@ track. For example, *Getz/Gilberto* after step 2:
 
 ```
 Kept the files' main where stores say guest:
+  João Gilberto, João Gilberto Quintet (guest at Qobuz)
   Antonio Carlos Jobim (guest at Deezer, MusicBrainz, Qobuz)
   Astrud Gilberto (guest at Deezer, Qobuz)
-  João Gilberto, João Gilberto Quintet (guest at Qobuz)
 ```
 
 With `-yyy` it prints and asks nothing. Like #922's warnings, it says what salmon kept and goes on. The
@@ -144,7 +149,9 @@ same place, from the guests `resolve_credits` gives.
 
 - **Step 2:** as the merge pairs each store's tracks with the base's, it records which source gave each
   credit. Matching stays as it is. After the last store, each name first takes the spelling salmon
-  already picks from all its spellings on the release, so choosing a role never changes a spelling.
+  already picks from all its spellings on the release, so choosing a role never changes a spelling:
+  `artist_spellings`, the helper `generate_artists` already uses, which keeps per accent-folded name the
+  spelling with fewer capitals.
   Then `resolve_credits` runs, in place of the first-wins choice. `generate_artists` still runs where
   it does today, after the merge's cleanup and after review edits; on credits already decided it has
   nothing left to choose.
