@@ -380,3 +380,24 @@ def test_a_tracks_artists_come_from_its_credit_and_its_recordings_without_the_co
     )
 
     assert tracks["1"]["1"]["artists"] == [("Wiener Philharmoniker", "main"), ("Simon Rattle", "main")]
+
+
+def test_the_track_lists_order_of_artists_wins_but_the_recordings_roles_do() -> None:
+    # "Under Pressure" on a Best of Bowie (https://musicbrainz.org/release/c14e1cb5-61a3-4ffd-85d6-002f9023f812): the
+    # release credits the track "David Bowie feat. Queen", its recording "Queen & David Bowie". The CD's cover says
+    # "&", so both are main, with Bowie first as the release has it.
+    bowie, queen = "5441c29d-3602-4898-b1a1-b77fa23b8e50", "0383dadf-2a4e-4d10-a46a-e9e041da8eb3"
+    track = [*_credit("David Bowie", bowie, " feat. "), *_credit("Queen", queen)]
+    recording = [*_credit("Queen", queen, " & "), *_credit("David Bowie", bowie)]
+
+    assert musicbrainz_tagger.parse_artists(recording, track) == [("David Bowie", "main"), ("Queen", "main")]
+
+
+def test_an_artist_only_the_recording_credits_follows_the_track_lists_artists() -> None:
+    # "Hallo Spaceboy (PSB remix)" on the same release: the track list credits Bowie alone, the recording adds the
+    # Pet Shop Boys.
+    bowie, psb = "5441c29d-3602-4898-b1a1-b77fa23b8e50", "be540c1d-0000-0000-0000-000000000000"
+    track = _credit("David Bowie", bowie)
+    recording = [*_credit("David Bowie", bowie, " with "), *_credit("Pet Shop Boys", psb)]
+
+    assert musicbrainz_tagger.parse_artists(recording, track) == [("David Bowie", "main"), ("Pet Shop Boys", "main")]

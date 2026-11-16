@@ -178,15 +178,18 @@ def _credited(artist_credits) -> list[tuple[str, str, str]]:
 
 def parse_artists(recording_credits, track_credits=(), composers: Collection[str] = ()):
     """
-    The artists of a track: those the recording is credited to, then those the release adds on the track.
-    An artist in both is one artist, with the track's name and the recording's role. One only on the track
-    is left out if they composed the work (the track credit of classical releases is the composer, where
-    the recording's is the performers), or is a special purpose artist such as "[dialogue]".
+    The artists of a track: those the release's track list credits, in its order, then those only the recording
+    is credited to. An artist in both is one artist, with the track's name and the recording's role. One only on
+    the track is left out if they composed the work (the track credit of classical releases is the composer,
+    where the recording's is the performers), or is a special purpose artist such as "[dialogue]".
     """
-    artists = {mbid: (name, role) for mbid, name, role in _credited(recording_credits)}
+    recording = {mbid: (name, role) for mbid, name, role in _credited(recording_credits)}
+    artists = {}
     for mbid, name, role in _credited(track_credits):
-        if mbid in artists:
-            artists[mbid] = (name, artists[mbid][1])
+        if mbid in recording:
+            artists[mbid] = (name, recording[mbid][1])
         elif mbid not in composers and mbid not in SPECIAL_PURPOSE_ARTISTS:
             artists[mbid] = (name, role)
+    for mbid, artist in recording.items():
+        artists.setdefault(mbid, artist)
     return list(artists.values())
