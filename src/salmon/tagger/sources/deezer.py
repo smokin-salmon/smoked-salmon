@@ -79,10 +79,10 @@ class Scraper(DeezerBase, MetadataMixin):
         result = []
         # Each contributor and album artist is one Deezer artist, so its name stays whole ("Earth, Wind & Fire").
         if artists:
-            mains = artists.get("mainartist", []) + artists.get("main_artist", [])
-            featured = artists.get("featuredartist", []) + artists.get("featuring", [])
+            mains = [name.strip() for name in artists.get("mainartist", []) + artists.get("main_artist", [])]
+            featured = [name.strip() for name in artists.get("featuredartist", []) + artists.get("featuring", [])]
         else:
-            mains, featured = [artist["ART_NAME"] for artist in default_artists], []
+            mains, featured = [artist["ART_NAME"].strip() for artist in default_artists], []
 
         # The title's featured credit lists several names in one string, so it is split. When it names every part
         # of a name a contributor gives whole ("feat. Earth, Wind & Fire"), those parts are that name, not guests.

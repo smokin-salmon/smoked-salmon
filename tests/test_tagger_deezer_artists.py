@@ -63,6 +63,14 @@ def test_as_before_an_empty_album_artist_is_no_artist() -> None:
     assert _artists({}, [{"ART_NAME": "Bob"}, {"ART_NAME": ""}]) == [("Bob", "main")]
 
 
+def test_as_before_a_contributor_s_stray_spaces_are_trimmed() -> None:
+    assert _artists({"main_artist": [" Bob ", "  "], "featuring": ["Carol "]}) == [("Bob", "main"), ("Carol", "guest")]
+
+
+def test_as_before_an_album_artist_s_stray_spaces_are_trimmed() -> None:
+    assert _artists({}, [{"ART_NAME": " Bob "}, {"ART_NAME": " "}]) == [("Bob", "main")]
+
+
 def test_as_before_a_guest_without_a_separator_named_in_the_title_and_as_a_contributor_comes_first() -> None:
     assert _artists({"main_artist": ["Bob"], "featuring": ["Carol"]}, title="Song (feat. Carol)") == [
         ("Carol", "guest"),
