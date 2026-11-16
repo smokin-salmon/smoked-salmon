@@ -3,8 +3,10 @@
 from typing import Any
 
 import anyio
+import msgspec
 import pytest
 
+from salmon import cfg
 from salmon.tagger.sources.qobuz import Scraper
 
 
@@ -301,6 +303,42 @@ def test_as_before_an_album_featured_artist_is_a_guest_on_every_track() -> None:
     got = credits(data)
 
     assert got == [[("Alice", "main"), ("Bob", "guest")], [("Alice", "main"), ("Bob", "guest")]]
+
+
+# Composers (ruling 1)
+
+
+@pytest.mark.parametrize("genres", [["Classique"], ["Classique→Opéra"], ["Classical"], ["Klassische Musik"]])
+def test_a_classical_release_credits_each_track_s_composer(genres: list[str]) -> None:
+    data = album(
+        track("Alice, MainArtist - Bela Bartok, Composer", composer={"name": "Béla Bartók"}),
+        track("Alice, MainArtist - Bela Bartok, ComposerLyricist"),
+        genres=genres,
+    )
+
+    got = credits(data)
+
+    assert got == [[("Alice", "main"), ("Béla Bartók", "composer")], [("Alice", "main"), ("Bela Bartok", "composer")]]
+
+
+def test_a_classical_release_credits_its_composers_whatever_no_genres_from_qobuz_says(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(cfg.metadata, "qobuz", msgspec.structs.replace(cfg.metadata.qobuz, no_genres_from_qobuz=True))
+    data = album(track("Alice, MainArtist", composer={"name": "Béla Bartók"}), genres=["Classique"])
+
+    got = credits(data)
+
+    assert got == [[("Alice", "main"), ("Béla Bartók", "composer")]]
+
+
+@pytest.mark.parametrize("genres", [["Pop/Rock"], ["Jazz"], ["Électronique→Dance"]])
+def test_as_before_a_release_that_is_not_classical_credits_no_composer(genres: list[str]) -> None:
+    data = album(track("Alice, MainArtist - Bob, Composer, ComposerLyricist", composer={"name": "Bob"}), genres=genres)
+
+    got = credits(data)
+
+    assert got == [[("Alice", "main")]]
 
 
 # Guards

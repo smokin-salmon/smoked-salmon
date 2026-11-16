@@ -32,13 +32,13 @@ release = []
 tracks = 0
 
 [today.qobuz]
-release = ["Sir Simon Rattle (main)", "Wiener Philharmonic Orchestra (main)", "Wiener Philharmoniker (guest)", "Simon Rattle (conductor)", "Kyung Wha Chung (main)", "Sir Simon Rattle (conductor)"]
+release = ["Sir Simon Rattle (main)", "Wiener Philharmonic Orchestra (main)", "Wiener Philharmoniker (guest)", "Simon Rattle (conductor)", "Ludwig van Beethoven (composer)", "Kyung Wha Chung (main)", "Sir Simon Rattle (conductor)", "Johannes Brahms (composer)"]
 tracks = 7
 
 [today.merge]
-release = ["Wiener Philharmoniker (main)", "Sir Simon Rattle (main)", "Wiener Philharmonic Orchestra (main)", "Kyung-Wha Chung (main)", "Sir Simon Rattle (conductor)", "정경화 (main)"]
+release = ["Wiener Philharmoniker (main)", "Sir Simon Rattle (main)", "Wiener Philharmonic Orchestra (main)", "Ludwig van Beethoven (composer)", "Kyung-Wha Chung (main)", "Sir Simon Rattle (conductor)", "Johannes Brahms (composer)", "정경화 (main)"]
 tracks = 7
-credits = ["1.1: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main)", "1.2: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main)", "1.3: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main)", "1.4: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main)", "1.5: Kyung-Wha Chung (main), Sir Simon Rattle (conductor), 정경화 (main), Wiener Philharmoniker (main)", "1.6: Kyung-Wha Chung (main), Sir Simon Rattle (conductor), 정경화 (main), Wiener Philharmoniker (main)", "1.7: Kyung-Wha Chung (main), Sir Simon Rattle (conductor), 정경화 (main), Wiener Philharmoniker (main)"]
+credits = ["1.1: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main), Ludwig van Beethoven (composer)", "1.2: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main), Ludwig van Beethoven (composer)", "1.3: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main), Ludwig van Beethoven (composer)", "1.4: Wiener Philharmoniker (main), Sir Simon Rattle (main), Wiener Philharmonic Orchestra (main), Ludwig van Beethoven (composer)", "1.5: Kyung-Wha Chung (main), Sir Simon Rattle (conductor), Johannes Brahms (composer), 정경화 (main), Wiener Philharmoniker (main)", "1.6: Kyung-Wha Chung (main), Sir Simon Rattle (conductor), Johannes Brahms (composer), 정경화 (main), Wiener Philharmoniker (main)", "1.7: Kyung-Wha Chung (main), Sir Simon Rattle (conductor), Johannes Brahms (composer), 정경화 (main), Wiener Philharmoniker (main)"]
 
 
 # The files' tags.

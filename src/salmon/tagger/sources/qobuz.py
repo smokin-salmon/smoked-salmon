@@ -12,7 +12,8 @@ from salmon.common.credits import Credit, Role, RoleWords
 from salmon.common.strings import comparable, guests_from_title
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, strip_ep_suffix
+from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, standardize_genres, strip_ep_suffix
+from salmon.tagger.tags import is_classical_genre
 
 # ------------------------------------------------------------------------------
 # Constants and Regular Expressions
@@ -31,7 +32,7 @@ QOBUZ_ROLE_WORDS: dict[str, Role | None] = {
     "Arranger": "arranger",
 }
 ROLE_WORDS = RoleWords(QOBUZ_ROLE_WORDS)
-# The roles salmon reads from Qobuz (#869). Producer and arranger wait for a case.
+# The roles salmon reads from Qobuz, and composers on a classical release (#869). Producer and arranger wait for a case.
 READ_ROLES: frozenset[Role] = frozenset({"main", "guest", "remixer", "conductor"})
 # The parts after a comma that are still a name's, by comparable: "Sammy Davis, Jr.", "Johann Strauss, II".
 NAME_SUFFIXES = frozenset({"jr", "sr", "ii", "iii", "iv"})
@@ -379,6 +380,7 @@ class Scraper(QobuzBase, MetadataMixin):
         album_mains = _album_mains(soup)
         featured = _album_featured(soup, album_mains)
         album_names = {_key(name) for name in [*album_mains, *_album_listed(soup)]}
+        classical = _is_classical(soup)
 
         track_items = safe_get(soup, ["tracks", "items"], [])
         if not isinstance(track_items, list):
@@ -387,7 +389,7 @@ class Scraper(QobuzBase, MetadataMixin):
         for track in track_items:
             disc_number = str(track.get("media_number", 1))
             track_number = str(track.get("track_number", 1))
-            artists, guessed = _track_credits(track, album_mains, featured, album_names)
+            artists, guessed = _track_credits(track, album_mains, featured, album_names, classical)
 
             # Parse track title with version
             title = track.get("title", "")
@@ -565,6 +567,13 @@ def _album_artists(album: dict[str, Any]) -> list[dict[str, Any]]:
     return [entry for entry in artists if isinstance(entry, dict)] if isinstance(artists, list) else []
 
 
+def _is_classical(album: dict[str, Any]) -> bool:
+    """Whether Qobuz files the release under a classical genre: its own genres_list, read whatever
+    no_genres_from_qobuz says, through salmon's genre table ("Classique→Opéra" is Classical and Opera)."""
+    genres = [str(genre) for genre in album.get("genres_list") or [] if genre]
+    return any(is_classical_genre(genre) for genre in standardize_genres(genres))
+
+
 def _performers(line: str, known: set[str]) -> list[tuple[str, list[Role | None]]]:
     """Each name in a performers line, "A, Role, Role - B, Role", with the roles of its words; an entry with no mapped
     role credits no one.
@@ -593,13 +602,13 @@ def _performers(line: str, known: set[str]) -> list[tuple[str, list[Role | None]
 
 
 def _track_credits(
-    track: dict[str, Any], album_mains: list[str], featured: list[str], album_names: set[str]
+    track: dict[str, Any], album_mains: list[str], featured: list[str], album_names: set[str], classical: bool
 ) -> tuple[list[Credit], list[Credit]]:
     """A track's credits as Qobuz states them, and those of them that are salmon's guesses (ADR 0007).
 
     Stated: the album's main artists the track names, as its performer or a MainArtist in its performers line, or
-    every one of them when it names none; the line's guests, remixers and conductors; and the album's featured
-    artists. Guessed: a MainArtist the album doesn't list as main, and a guest
+    every one of them when it names none; the line's guests, remixers and conductors; the album's featured artists;
+    and on a classical release the track's composer. Guessed: a MainArtist the album doesn't list as main, and a guest
     read from "feat." in a performer's name or in the title, both guests by salmon's reading. Nothing is decided here:
     one name may hold two roles, for the merge to weigh.
     """
@@ -620,18 +629,25 @@ def _track_credits(
     known = album_names | ({_key(performer)} if performer else set())
     if performer:
         as_main(performer)
+    line_composers: list[str] = []
     for name, roles in _performers(track.get("performers") or "", known):
         for role in dict.fromkeys(roles):
             if role == "main":
                 as_main(name)
             elif role in READ_ROLES:
                 read.append((name, role, False))
+            elif role == "composer":
+                line_composers.append(name)
 
     mains = [name for key, name in album.items() if key in named] or album_mains
     claims: list[tuple[str, Role, bool]] = [(name, "main", False) for name in mains]
     claims.extend(read)
     claims.extend((guest, "guest", False) for guest in featured)
     claims.extend((guest, "guest", True) for guest in guests_from_title(track.get("title") or ""))
+    if classical:
+        # The composer field's spelling ("Béla Bartók") over the line's ("Bela Bartok"); the line's when it has none.
+        composer = str(safe_get(track, ["composer", "name"]) or "").strip()
+        claims.extend((name, "composer", False) for name in ([composer] if composer else line_composers))
     return _credits_and_guesses(claims)
 
 
