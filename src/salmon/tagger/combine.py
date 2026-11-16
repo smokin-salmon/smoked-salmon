@@ -14,7 +14,7 @@ from salmon.common.numbers import natural_key, number_or_text
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
-from salmon.tagger.sources import MERGE_ONLY_KEYS, METASOURCES
+from salmon.tagger.sources import METASOURCES, without_merge_only_keys
 from salmon.tagger.sources.base import (
     artist_spellings,
     determine_label_type,
@@ -162,10 +162,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
 
     decisions = _decide_credits(base["tracks"], claims, base_source)
     # After the decision: a base track no store paired is decided from its own marks.
-    for disc in base["tracks"].values():
-        for track in disc.values():
-            for key in MERGE_ONLY_KEYS:
-                track.pop(key, None)
+    without_merge_only_keys(base)
     _print_disputes(decisions)
     _correct_artists(base["tracks"])
     base["artists"], base["tracks"] = generate_artists(base["tracks"])

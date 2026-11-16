@@ -57,7 +57,7 @@ def without_tracking(url: str) -> str:
 MERGE_ONLY_KEYS = ("artist_variations", "assumed_artists")
 
 
-def _without_merge_only_keys(metadata: dict[str, Any]) -> dict[str, Any]:
+def without_merge_only_keys(metadata: dict[str, Any]) -> dict[str, Any]:
     """Drop what a scraper keeps beside each track for the merge alone (MERGE_ONLY_KEYS).
 
     Whoever shows or uses a scrape on its own has no other source to weigh it against, so it should not see it."""
@@ -100,6 +100,6 @@ async def run_metadata(
                 from salmon.tagger.combine import decide_alone  # combine imports this module
 
                 decide_alone(metadata, name)
-                _without_merge_only_keys(metadata)
+                without_merge_only_keys(metadata)
             return (metadata, name) if return_source_name else metadata
     raise ScrapeError("URL did not match a scraper.")
