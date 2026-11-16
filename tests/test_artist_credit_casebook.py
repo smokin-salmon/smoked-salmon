@@ -46,6 +46,8 @@ from salmon.tagger.sources import METASOURCES
 from salmon.tagger.tagfile import TagFile
 
 CASES = Path(__file__).parent / "fixtures" / "artist_credits"
+MUSICBRAINZ = Path(__file__).parent / "fixtures" / "stores" / "musicbrainz"
+MBID = re.compile(r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}")
 # Each store's name in METASOURCES, what the merge keys on.
 STORES = {
     "deezer": "Deezer",
@@ -88,7 +90,7 @@ def parse(record: dict[str, Any], store: str, monkeypatch: pytest.MonkeyPatch) -
     sent = record["stores"][store]
     scraper: Any = METASOURCES[STORES[store]].Scraper()
     if store == "musicbrainz":
-        data = mbxml.parse_message(sent.encode("utf-8"))["release"]
+        data = mbxml.parse_message((MUSICBRAINZ / "release" / f"{sent}.xml").read_bytes())["release"]
         url = f"https://musicbrainz.org/release/{data['id']}"
         monkeypatch.setattr(musicbrainzngs, "get_image_list", lambda *a, **k: {"images": []})
     elif store == "bandcamp":
@@ -265,6 +267,16 @@ def test_each_case_records_exactly_the_stages_it_runs() -> None:
     for case in _cases():
         record = _record(case)
         assert set(record["today"]) == set(_stages(record)), case.name
+
+
+def test_each_musicbrainz_case_names_a_recorded_release() -> None:
+    """A case holds its MusicBrainz release by MBID; the answer itself is in the shared recordings."""
+    for case in _cases():
+        mbid = _record(case).get("stores", {}).get("musicbrainz")
+        if mbid is None:
+            continue
+        assert MBID.fullmatch(mbid), case.name
+        assert (MUSICBRAINZ / "release" / f"{mbid}.xml").is_file(), case.name
 
 
 def test_a_name_holding_a_separator_is_judged_whole() -> None:
