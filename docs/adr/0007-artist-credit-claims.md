@@ -152,8 +152,8 @@ same place, from the guests `resolve_credits` gives.
 - **Step 2:** as the merge pairs each store's tracks with the base's, it records which source gave each
   credit. Matching stays as it is. After the last store, each name first takes the spelling salmon
   already picks from all its spellings on the release, so choosing a role never changes a spelling:
-  `artist_spellings`, the helper `generate_artists` already uses, which keeps per accent-folded name the
-  spelling with fewer capitals.
+  the helper `generate_artists` already uses (`_generate_artist_pool_lower_case`, which #1088 renames
+  `artist_spellings`), keeping per accent-folded name the spelling with fewer capitals.
   Then `resolve_credits` runs, in place of the first-wins choice. `generate_artists` still runs where
   it does today, after the merge's cleanup and after review edits; on credits already decided it has
   nothing left to choose.
@@ -171,8 +171,10 @@ same place, from the guests `resolve_credits` gives.
 - **Before step 2's code, the casebook records each track's credits,** not only the release's.
 - **Step 2 moves no album.**
 - **Each later PR** moves its own cases, updates their `today` and `known_wrong`, and says why. While the
-  files are stated, a store's fix shows in the merge only where the files say nothing. The files wait
-  until the stores are fixed, because stating today's stores first would let their known errors win.
+  files are stated, a store's fix to a main or guest shows in the merge only where the files say
+  nothing. Across roles it can show sooner: a store's stated remixer drops the files' main through
+  `clean_metadata` (decision 3, LoveGame). The files wait until the stores are fixed, because stating
+  today's stores first would let their known errors win.
 
 ### 6. The rules follow the cases, and are expected to change
 
