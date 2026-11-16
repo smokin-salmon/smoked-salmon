@@ -1,5 +1,5 @@
 {
- "count": 536739,
+ "count": 536743,
  "offset": 0,
  "releases": [
   {
@@ -40,34 +40,6 @@
    "media": [
     {
      "format": "Digital Media",
-     "track-count": 8
-    }
-   ]
-  },
-  {
-   "id": "512b5b5b-5e8b-40a5-bec2-d6859008fd93",
-   "title": "Kind of Blue Revisited - The Miles Davis Songbook",
-   "track-count": 8,
-   "artist-credit": [
-    {
-     "name": "Various Artists",
-     "artist": {
-      "id": "89ad4ac3-39f7-470e-963a-56509c546377",
-      "name": "Various Artists"
-     }
-    }
-   ],
-   "label-info": [
-    {
-     "catalog-number": "HCD 6022",
-     "label": {
-      "name": "HighNote Records, Inc."
-     }
-    }
-   ],
-   "media": [
-    {
-     "format": "CD",
      "track-count": 8
     }
    ]
@@ -265,6 +237,34 @@
     {
      "format": "CD",
      "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "e8b506b2-0a31-4141-a0b0-4bb8e24e2e0f",
+   "title": "Miles Davis",
+   "track-count": 9,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "0630-15645 2",
+     "label": {
+      "name": "wea music"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 9
     }
    ]
   }
