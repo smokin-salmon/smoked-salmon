@@ -109,7 +109,7 @@ def test_the_types_name_the_keys_salmon_builds(monkeypatch: pytest.MonkeyPatch) 
     tracks = [track for release in releases for disc in release["tracks"].values() for track in disc.values()]
 
     track_keys = TrackMetadata.__required_keys__ | TrackMetadata.__optional_keys__
-    # What only the merge reads: Discogs' credited names, and a stating store's guesses, which no store marks yet.
+    # What only the merge reads: Discogs' credited names, and a stating store's guesses.
     assert track_keys == {key for track in tracks for key in track} | set(MERGE_ONLY_KEYS)
     assert TrackMetadata.__required_keys__ == set.intersection(*(set(track) for track in tracks))
 

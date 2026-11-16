@@ -568,9 +568,9 @@ def _is_classical(album: dict[str, Any]) -> bool:
 def _performers(line: str, known: set[str]) -> list[Credit]:
     """Each credit a performers line ("A, Role, Role - B, Role") gives in a role salmon maps, in order.
 
-    A name is the entry's first part, as master read it: Qobuz's other words are an open list ("Harpsichord",
-    "Guitar (acoustic)"). It runs on over commas only to a name Qobuz gives elsewhere as a name (`known`: the album's
-    artists and the track's performer), as "Earth, Wind & Fire", or over suffixes, as "Sammy Davis, Jr.".
+    A name is the entry's first part: Qobuz's other words are an open list ("Harpsichord", "Guitar (acoustic)"). It
+    runs on over commas only to a name Qobuz gives elsewhere as a name (`known`: the album's artists and the track's
+    performer), as "Earth, Wind & Fire", or over suffixes, as "Sammy Davis, Jr.".
     """
     credits: list[Credit] = []
     for entry in line.split(" - "):
@@ -601,7 +601,8 @@ def _track_credits(
     performer's name or in the title, both guests by salmon's reading, the album's featured artists on a track whose
     line doesn't name them, and the album's main artists on a track that names only others (unless it states one of
     them as its guest: then its own MainArtists are its mains). Nothing is decided here: one name may hold two roles,
-    for the merge to weigh.
+    for the merge to weigh. The claims run mains first, then the line's, and a name keeps the first spelling it is
+    claimed under: the album's over the line's.
     """
     album = {_key(name): name for name in album_mains}
     named: set[str] = set()

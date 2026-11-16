@@ -517,11 +517,8 @@ def _decide_credits(tracks, claims, base_source):
 
 
 def decide_alone(metadata, source):
-    """Decide the credits of a scrape used alone, as the merge decides a merge of that one source, in place: each
-    track's from its claims, then the release's from the tracks (generate_artists).
-
-    Prints nothing: a source that gives one name two roles disputes nothing (resolve_credits leaves a source out of
-    its own disputes)."""
+    """Decide a scrape used alone as a merge of that one source, in place (no disputes to print): each track's
+    credits from its claims, then the release's from the tracks."""
     _decide_credits(metadata["tracks"], {}, source)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 

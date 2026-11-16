@@ -71,16 +71,14 @@ async def run_metadata(
     return_source_name: bool = False,
     for_merge: bool = False,
 ) -> dict[str, Any] | tuple[dict[str, Any], str]:
-    """Run a scrape for the metadata of a URL.
-
-    A scrape used on its own has its credits decided as a merge of one source decides them, then loses what only
-    the merge reads. A scrape for a merge keeps both for the merge to weigh.
+    """Run a scrape for the metadata of a URL: used on its own, its credits decided as a merge of one source decides
+    them and MERGE_ONLY_KEYS dropped.
 
     Args:
         url: The URL to scrape metadata from.
         sources: Optional dict of sources to use, defaults to all.
         return_source_name: If True, return tuple of (metadata, source_name).
-        for_merge: If True, the scrape is undecided and keeps MERGE_ONLY_KEYS, for combine_metadatas.
+        for_merge: If True, the scrape is left undecided and keeps MERGE_ONLY_KEYS, for combine_metadatas.
 
     Returns:
         Metadata dict, or tuple of (metadata, source_name) if return_source_name is True.

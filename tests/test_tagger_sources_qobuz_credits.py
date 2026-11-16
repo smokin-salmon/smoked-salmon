@@ -177,7 +177,7 @@ def test_as_before_a_producer_an_arranger_and_an_unmapped_word_credit_no_one() -
     assert got == [[("Alice", "main")]]
 
 
-# A track's MainArtist (ruling 2)
+# A track's MainArtist
 
 
 def test_a_track_s_main_artist_the_album_lists_as_main_is_a_stated_main() -> None:
@@ -377,7 +377,7 @@ def test_an_album_featured_artist_is_stated_where_the_track_s_line_names_them_an
     assert [t["assumed_artists"] for t in got] == [[], [], [("Bob", "guest")], [("Bob", "guest")]]
 
 
-# Composers (ruling 1)
+# Composers, on a classical release
 
 
 @pytest.mark.parametrize("genres", [["Classique"], ["Classique→Opéra"], ["Classical"], ["Klassische Musik"]])
