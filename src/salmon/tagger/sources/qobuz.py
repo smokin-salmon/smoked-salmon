@@ -610,23 +610,22 @@ def _track_credits(
     every one of them when it names no one; the line's guests, remixers and conductors; the album's featured artists;
     and on a classical release the track's composer. Guessed: a MainArtist the album doesn't list as main, a guest
     read from "feat." in a performer's name or in the title, both guests by salmon's reading, and the album's main
-    artists on a track that names only others. Nothing is decided here: one name may hold two roles, for the merge to
-    weigh.
+    artists on a track that names only others (unless it states one of them as its guest: then its own MainArtists
+    are its mains). Nothing is decided here: one name may hold two roles, for the merge to weigh.
     """
     album = {_key(name): name for name in album_mains}
     named: set[str] = set()
-    others = False  # whether the track names a main artist the album doesn't list as one
+    leads: list[str] = []  # the track's main artists the album doesn't list as main
     read: list[tuple[str, Role, bool]] = []  # (name, role, assumed), in the order Qobuz gives them
 
     def as_main(name: str) -> None:
-        nonlocal others
         lead = RE_FEAT.sub("", name).strip()
         if _key(lead) in album:
             named.add(_key(lead))
         elif not any(_key(part) in album for part in re_split(lead)):
             # A joint name holding an album main ("Nas & Damian Marley") is the album's credit: it names no one else.
             read.append((lead, "guest", True))
-            others = True
+            leads.append(lead)
         read.extend((guest, "guest", True) for guest in guests_from_title(name))
 
     performer = str(safe_get(track, ["performer", "name"]) or "").strip()
@@ -644,10 +643,15 @@ def _track_credits(
                 line_composers.append(name)
 
     mains = [name for key, name in album.items() if key in named]
-    # A track naming none of the album's mains gets them all: as Qobuz's word if it names no one, else as a guess.
-    claims: list[tuple[str, Role, bool]] = [(name, "main", False) for name in mains] or [
-        (name, "main", others) for name in album_mains
-    ]
+    features_album = any(role == "guest" and not assumed and _key(name) in album for name, role, assumed in read)
+    claims: list[tuple[str, Role, bool]] = []
+    if not mains and leads and features_album:
+        # Another artist's track stating an album main as its guest (a bonus track): its leads are its mains, as a
+        # guess, and the album's mains are not.
+        read = [(name, "main" if assumed and name in leads else role, assumed) for name, role, assumed in read]
+    else:
+        # A track naming none of the album's mains gets them all: as Qobuz's word if it names no one, else as a guess.
+        claims = [(name, "main", False) for name in mains] or [(name, "main", bool(leads)) for name in album_mains]
     claims.extend(read)
     claims.extend((guest, "guest", False) for guest in featured)
     claims.extend((guest, "guest", True) for guest in guests_from_title(track.get("title") or ""))

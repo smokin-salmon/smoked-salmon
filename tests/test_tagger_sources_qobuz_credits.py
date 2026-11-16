@@ -241,6 +241,32 @@ def test_the_album_s_artists_on_a_track_that_names_only_others_are_assumed() -> 
     assert first["assumed_artists"] == [("Various Artists", "main"), ("Bob", "guest")]
 
 
+def test_another_artist_s_track_featuring_the_album_s_artist_is_led_by_its_own_main_artist() -> None:
+    """A bonus track: Bob's song featuring Alice, on Alice's album. Qobuz states Alice as its guest, so Bob leads it,
+    by salmon's guess, and the album's artist is not its main."""
+    data = album(track("Bob, MainArtist - Alice, FeaturedArtist", performer={"name": "Bob feat. Carol"}))
+
+    first = parsed(data)[0]
+
+    assert first["artists"] == [("Bob", "main"), ("Carol", "guest"), ("Alice", "guest")]
+    assert first["assumed_artists"] == [("Bob", "main"), ("Carol", "guest")]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        pytest.param("Alice, FeaturedArtist", id="no other artist's track"),
+        pytest.param("Alice, MainArtist - Bob, MainArtist - Carol, FeaturedArtist", id="naming an album main"),
+    ],
+)
+def test_as_before_the_album_s_artist_leads_a_track_that_is_not_another_artist_s_featuring_it(line: str) -> None:
+    data = album(track(line), track("Bob feat. Alice, MainArtist"), artists=mains("Alice", "Carol"))
+
+    got = credits(data)
+
+    assert [artists[0] for artists in got] == [("Alice", "main"), ("Alice", "main")]
+
+
 def test_an_album_main_is_credited_under_the_album_s_spelling() -> None:
     """Getz/Gilberto: the album's "João Gilberto" is "Joao Gilberto" in the performers; Sigur Rós has a trailing
     space and no accent there."""
