@@ -149,7 +149,7 @@ def test_names_with_no_letters_or_digits_stay_apart() -> None:
 
 
 def test_a_remixer_and_a_conductor_are_stated() -> None:
-    data = album(track("Alice, MainArtist - Bob, Remixer - Carol, Conductor"))
+    data = album(track("Alice, MainArtist - Bob, Remixer - Carol, Conductor"), genres=["Classique"])
 
     first = parsed(data)[0]
 
@@ -375,9 +375,13 @@ def test_a_classical_release_credits_its_composers_whatever_no_genres_from_qobuz
     assert got == [[("Alice", "main"), ("Béla Bartók", "composer")]]
 
 
-@pytest.mark.parametrize("genres", [["Pop/Rock"], ["Jazz"], ["Électronique→Dance"]])
-def test_as_before_a_release_that_is_not_classical_credits_no_composer(genres: list[str]) -> None:
-    data = album(track("Alice, MainArtist - Bob, Composer, ComposerLyricist", composer={"name": "Bob"}), genres=genres)
+@pytest.mark.parametrize("genres", [["Pop/Rock"], ["Jazz"], ["Électronique→Dance"], ["Bandes originales de films"]])
+def test_as_before_a_release_that_is_not_classical_credits_no_composer_or_conductor(genres: list[str]) -> None:
+    """Composers and conductors are read on a classical release alone (EXTRA_ROLES), as RED credits them."""
+    data = album(
+        track("Alice, MainArtist - Bob, Composer, ComposerLyricist - Carol, Conductor", composer={"name": "Bob"}),
+        genres=genres,
+    )
 
     got = credits(data)
 

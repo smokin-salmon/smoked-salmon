@@ -28,13 +28,13 @@ release = ["Queen (producer)", "Mack (producer)", "Roy Thomas Baker (producer)"]
 tracks = 17
 
 [today.qobuz]
-release = ["Queen (main)", "Howard Blake (conductor)"]
+release = ["Queen (main)"]
 tracks = 17
 
 [today.merge]
-release = ["Queen (main)", "Queen (producer)", "Mack (producer)", "Roy Thomas Baker (producer)", "Howard Blake (conductor)"]
+release = ["Queen (main)", "Queen (producer)", "Mack (producer)", "Roy Thomas Baker (producer)"]
 tracks = 17
-credits = ["1.1: Queen (main), Mack (producer), Queen (producer)", "1.2: Queen (main), Mack (producer), Queen (producer)", "1.3: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.4: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.5: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.6: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.7: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.8: Queen (main), Mack (producer), Queen (producer)", "1.9: Queen (main), Mack (producer), Queen (producer)", "1.10: Queen (main), Queen (producer)", "1.11: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.12: Queen (main), Queen (producer)", "1.13: Queen (main), Mack (producer), Queen (producer)", "1.14: Queen (main), Howard Blake (conductor), Mack (producer), Queen (producer)", "1.15: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.16: Queen (main), Queen (producer)", "1.17: Queen (main), Queen (producer)"]
+credits = ["1.1: Queen (main), Mack (producer), Queen (producer)", "1.2: Queen (main), Mack (producer), Queen (producer)", "1.3: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.4: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.5: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.6: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.7: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.8: Queen (main), Mack (producer), Queen (producer)", "1.9: Queen (main), Mack (producer), Queen (producer)", "1.10: Queen (main), Queen (producer)", "1.11: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.12: Queen (main), Queen (producer)", "1.13: Queen (main), Mack (producer), Queen (producer)", "1.14: Queen (main), Mack (producer), Queen (producer)", "1.15: Queen (main), Queen (producer), Roy Thomas Baker (producer)", "1.16: Queen (main), Queen (producer)", "1.17: Queen (main), Queen (producer)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

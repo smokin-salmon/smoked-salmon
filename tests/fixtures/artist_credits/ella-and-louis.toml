@@ -28,13 +28,13 @@ release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)"]
 tracks = 11
 
 [today.qobuz]
-release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)", "Buddy Bregman (conductor)"]
+release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)"]
 tracks = 11
 
 [today.merge]
-release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)", "Buddy Bregman (conductor)"]
+release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)"]
 tracks = 11
-credits = ["1.1: Ella Fitzgerald (main), Louis Armstrong (main)", "1.2: Ella Fitzgerald (main), Louis Armstrong (main)", "1.3: Ella Fitzgerald (main), Louis Armstrong (main)", "1.4: Ella Fitzgerald (main), Louis Armstrong (main)", "1.5: Ella Fitzgerald (main), Louis Armstrong (main)", "1.6: Ella Fitzgerald (main), Louis Armstrong (main)", "1.7: Ella Fitzgerald (main), Louis Armstrong (main)", "1.8: Ella Fitzgerald (main), Louis Armstrong (main), Buddy Bregman (conductor)", "1.9: Ella Fitzgerald (main), Louis Armstrong (main)", "1.10: Ella Fitzgerald (main), Louis Armstrong (main)", "1.11: Ella Fitzgerald (main), Louis Armstrong (main)"]
+credits = ["1.1: Ella Fitzgerald (main), Louis Armstrong (main)", "1.2: Ella Fitzgerald (main), Louis Armstrong (main)", "1.3: Ella Fitzgerald (main), Louis Armstrong (main)", "1.4: Ella Fitzgerald (main), Louis Armstrong (main)", "1.5: Ella Fitzgerald (main), Louis Armstrong (main)", "1.6: Ella Fitzgerald (main), Louis Armstrong (main)", "1.7: Ella Fitzgerald (main), Louis Armstrong (main)", "1.8: Ella Fitzgerald (main), Louis Armstrong (main)", "1.9: Ella Fitzgerald (main), Louis Armstrong (main)", "1.10: Ella Fitzgerald (main), Louis Armstrong (main)", "1.11: Ella Fitzgerald (main), Louis Armstrong (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

@@ -18,6 +18,10 @@ Role = Literal["main", "guest", "remixer", "composer", "conductor", "djcompiler"
 # A credit as the metadata holds it: a name and a role.
 Credit = tuple[str, Role]
 
+# The roles a store's parser reads only on a release of the genre, beside its main, guest and remixer credits: RED's
+# convention today.
+EXTRA_ROLES: dict[str, frozenset[Role]] = {"classical": frozenset({"composer", "conductor"})}
+
 # Who said it: a METASOURCES name, or the files' own tags.
 Source = Literal["files", "MusicBrainz", "Apple Music", "Deezer", "Discogs", "Beatport", "Qobuz", "Tidal", "Bandcamp"]
 
