@@ -77,25 +77,27 @@ class Scraper(DeezerBase, MetadataMixin):
         artist tuples.
         """
         result = []
+        # Each contributor and album artist is one Deezer artist, so its name stays whole ("Earth, Wind & Fire").
+        if artists:
+            mains = artists.get("mainartist", []) + artists.get("main_artist", [])
+            featured = artists.get("featuredartist", []) + artists.get("featuring", [])
+        else:
+            mains, featured = [artist["ART_NAME"] for artist in default_artists], []
 
+        # The title's featured credit lists several names in one string, so it is split; the parts of a name a
+        # contributor already gives whole ("feat. Earth, Wind & Fire") are that name, not guests of their own.
+        covered = {unescape(p) for name in mains + featured if len(parts := re_split(name)) > 1 for p in parts}
         feat = RE_FEAT.search(title)
         if feat:
             for artist in re_split(feat[1]):
-                result.append((unescape(artist), "guest"))
+                if unescape(artist) not in covered:
+                    result.append((unescape(artist), "guest"))
 
-        if artists:
-            for a in artists.get("mainartist", []) + artists.get("main_artist", []):
-                for b in re_split(a):
-                    if (b, "main") not in result:
-                        result.append((b, "main"))
-            for a in artists.get("featuredartist", []) + artists.get("featuring", []):
-                for b in re_split(a):
-                    if (b, "guest") not in result:
-                        result.append((b, "guest"))
-        else:
-            for artist in default_artists:
-                for b in re_split(artist["ART_NAME"]):
-                    if (b, "main") not in result:
-                        result.append((b, "main"))
+        for a in mains:
+            if a and (a, "main") not in result:
+                result.append((a, "main"))
+        for a in featured:
+            if a and (a, "guest") not in result:
+                result.append((a, "guest"))
 
         return result
