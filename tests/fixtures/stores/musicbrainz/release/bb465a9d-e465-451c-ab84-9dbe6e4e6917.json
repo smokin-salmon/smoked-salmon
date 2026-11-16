@@ -1,0 +1,418 @@
+{
+ "id": "bb465a9d-e465-451c-ab84-9dbe6e4e6917",
+ "title": "Brahms: Violinkonzert / Beethoven: Symphonie 5",
+ "date": "2001-09-03",
+ "barcode": "724355716521",
+ "artist-credit": [
+  {
+   "name": "Brahms",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+    "name": "Johannes Brahms"
+   }
+  },
+  {
+   "name": "Beethoven",
+   "joinphrase": "; ",
+   "artist": {
+    "id": "1f9df192-a621-4f54-8850-2c5373b7eac9",
+    "name": "Ludwig van Beethoven"
+   }
+  },
+  {
+   "name": "Kyung-Wha Chung",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "a83500d7-4b80-4a5c-ada8-60676bbb2848",
+    "name": "정경화"
+   }
+  },
+  {
+   "name": "Wiener Philharmoniker",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+    "name": "Wiener Philharmoniker"
+   }
+  },
+  {
+   "name": "Simon Rattle",
+   "joinphrase": "",
+   "artist": {
+    "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+    "name": "Simon Rattle"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "bad11f73-6a3b-3fc0-85ba-8e5eb2b5886e",
+  "title": "Brahms: Violinkonzert / Beethoven: Symphonie 5",
+  "first-release-date": "2001-09-03",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Brahms",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+     "name": "Johannes Brahms"
+    }
+   },
+   {
+    "name": "Beethoven",
+    "joinphrase": "; ",
+    "artist": {
+     "id": "1f9df192-a621-4f54-8850-2c5373b7eac9",
+     "name": "Ludwig van Beethoven"
+    }
+   },
+   {
+    "name": "Kyung-Wha Chung",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "a83500d7-4b80-4a5c-ada8-60676bbb2848",
+     "name": "정경화"
+    }
+   },
+   {
+    "name": "Wiener Philharmoniker",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+     "name": "Wiener Philharmoniker"
+    }
+   },
+   {
+    "name": "Simon Rattle",
+    "joinphrase": "",
+    "artist": {
+     "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+     "name": "Simon Rattle"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2001-09-03"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "7243 5 57165 2 1",
+   "label": {
+    "name": "EMI Classics"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "77dc030e-98fd-3d54-8b8b-d068de593ae1",
+     "position": 1,
+     "number": "1",
+     "title": "Symphony no. 5 in C minor, op. 67: I. Allegro con brio",
+     "artist-credit": [
+      {
+       "name": "Ludwig van Beethoven",
+       "joinphrase": "",
+       "artist": {
+        "id": "1f9df192-a621-4f54-8850-2c5373b7eac9",
+        "name": "Ludwig van Beethoven"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b4923b10-b740-4197-804a-0210bdc34157",
+      "title": "Symphony no. 5 in C minor, op. 67: I. Allegro con brio",
+      "first-release-date": "2001-09-03",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Simon Rattle",
+        "joinphrase": "",
+        "artist": {
+         "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+         "name": "Simon Rattle"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9ffeb9c4-56bb-3d29-a9ea-6e2a240981f0",
+     "position": 2,
+     "number": "2",
+     "title": "Symphony no. 5 in C minor, op. 67: II. Andante con moto",
+     "artist-credit": [
+      {
+       "name": "Ludwig van Beethoven",
+       "joinphrase": "",
+       "artist": {
+        "id": "1f9df192-a621-4f54-8850-2c5373b7eac9",
+        "name": "Ludwig van Beethoven"
+       }
+      }
+     ],
+     "recording": {
+      "id": "04a51bbd-dfde-44f3-808e-2b54895cf55a",
+      "title": "Symphony no. 5 in C minor, op. 67: II. Andante con moto",
+      "first-release-date": "2001-09-03",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Simon Rattle",
+        "joinphrase": "",
+        "artist": {
+         "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+         "name": "Simon Rattle"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c2d7db33-6cc6-30a1-8e5d-f5067908b203",
+     "position": 3,
+     "number": "3",
+     "title": "Symphony no. 5 in C minor, op. 67: III. Allegro -",
+     "artist-credit": [
+      {
+       "name": "Ludwig van Beethoven",
+       "joinphrase": "",
+       "artist": {
+        "id": "1f9df192-a621-4f54-8850-2c5373b7eac9",
+        "name": "Ludwig van Beethoven"
+       }
+      }
+     ],
+     "recording": {
+      "id": "69d01695-a874-4493-9039-c3d9412796e5",
+      "title": "Symphony no. 5 in C minor, op. 67: III. Allegro -",
+      "first-release-date": "2001-09-03",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Simon Rattle",
+        "joinphrase": "",
+        "artist": {
+         "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+         "name": "Simon Rattle"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "fceb6fb7-10e9-35f8-9b20-5e6ce8f1288c",
+     "position": 4,
+     "number": "4",
+     "title": "Symphony No. 5 in C minor, op. 67: IV. Allegro",
+     "artist-credit": [
+      {
+       "name": "Ludwig van Beethoven",
+       "joinphrase": "",
+       "artist": {
+        "id": "1f9df192-a621-4f54-8850-2c5373b7eac9",
+        "name": "Ludwig van Beethoven"
+       }
+      }
+     ],
+     "recording": {
+      "id": "614203e9-905a-4c5f-8807-7df31efa8d01",
+      "title": "Symphony No. 5 in C minor, op. 67: IV. Allegro",
+      "first-release-date": "2001-09-03",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Simon Rattle",
+        "joinphrase": "",
+        "artist": {
+         "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+         "name": "Simon Rattle"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8fea01b1-8be9-3224-9df7-d338755559c1",
+     "position": 5,
+     "number": "5",
+     "title": "Concerto for Violin and Orchestra in D major, op. 77: I. Allegro non troppo",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "beebafb0-a374-4407-bc8a-48d7c591a3f7",
+      "title": "Concerto for Violin and Orchestra in D major, op. 77: I. Allegro non troppo",
+      "first-release-date": "2001-09-03",
+      "artist-credit": [
+       {
+        "name": "Kyung-Wha Chung",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "a83500d7-4b80-4a5c-ada8-60676bbb2848",
+         "name": "정경화"
+        }
+       },
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Simon Rattle",
+        "joinphrase": "",
+        "artist": {
+         "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+         "name": "Simon Rattle"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ec9027eb-638a-3539-a7a8-2b2f5c79aa3b",
+     "position": 6,
+     "number": "6",
+     "title": "Concerto for Violin and Orchestra in D major, op. 77: II. Adagio",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c8c24f9b-3453-48bc-bfbf-3d2af0f4b657",
+      "title": "Concerto for Violin and Orchestra in D major, op. 77: II. Adagio",
+      "first-release-date": "2001-09-03",
+      "artist-credit": [
+       {
+        "name": "Kyung-Wha Chung",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "a83500d7-4b80-4a5c-ada8-60676bbb2848",
+         "name": "정경화"
+        }
+       },
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Simon Rattle",
+        "joinphrase": "",
+        "artist": {
+         "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+         "name": "Simon Rattle"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "546cdadc-2216-34a5-9fe1-491759084583",
+     "position": 7,
+     "number": "7",
+     "title": "Concerto for Violin and Orchestra in D major, op. 77: III. Allegro giocoso, ma non troppo vivace - Poco più presto",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ca93f9e1-33b9-41c1-b443-725db961d733",
+      "title": "Concerto for Violin and Orchestra in D major, op. 77: III. Allegro giocoso, ma non troppo vivace - Poco più presto",
+      "first-release-date": "2001-09-03",
+      "artist-credit": [
+       {
+        "name": "Kyung-Wha Chung",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "a83500d7-4b80-4a5c-ada8-60676bbb2848",
+         "name": "정경화"
+        }
+       },
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Simon Rattle",
+        "joinphrase": "",
+        "artist": {
+         "id": "80c3bce9-0b54-409c-aa10-3b0c7dbbc597",
+         "name": "Simon Rattle"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

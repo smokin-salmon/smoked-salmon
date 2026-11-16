@@ -1,0 +1,657 @@
+{
+ "id": "b43f421d-cc80-4729-81d9-a2c267abacc3",
+ "title": "Supernatural",
+ "date": "2010-02-16",
+ "barcode": "884977514940",
+ "artist-credit": [
+  {
+   "name": "Santana",
+   "joinphrase": "",
+   "artist": {
+    "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+    "name": "Santana"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "70e23797-9da2-33bb-be6f-a85e7b581b69",
+  "title": "Supernatural",
+  "first-release-date": "1999-06-15",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Santana",
+    "joinphrase": "",
+    "artist": {
+     "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+     "name": "Santana"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2010-02-16"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Columbia"
+   }
+  },
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Legacy"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "d57f5b51-467a-427e-9a83-0667b7f29481",
+     "position": 1,
+     "number": "1",
+     "title": "(Da Le) Yaleo",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": "",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0dc7ee06-f8a3-457d-94eb-040ee3f87c8e",
+      "title": "(Da Le) Yaleo",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": "",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c679dbc8-173d-45d3-b1e0-fdeeb482fe74",
+     "position": 2,
+     "number": "2",
+     "title": "Love of My Life",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "Dave Matthews",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "2fa95b32-3c11-42d7-b495-12fc6be0a024",
+        "name": "Dave Matthews"
+       }
+      },
+      {
+       "name": "Carter Beauford",
+       "joinphrase": "",
+       "artist": {
+        "id": "b065c2c6-92ef-40b2-a5b0-79f76b4953ec",
+        "name": "Carter Beauford"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8fb52b94-09cb-4107-860a-e65bd0580e2c",
+      "title": "Love of My Life",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "Dave Matthews",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "2fa95b32-3c11-42d7-b495-12fc6be0a024",
+         "name": "Dave Matthews"
+        }
+       },
+       {
+        "name": "Carter Beauford",
+        "joinphrase": "",
+        "artist": {
+         "id": "b065c2c6-92ef-40b2-a5b0-79f76b4953ec",
+         "name": "Carter Beauford"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2fc00b8e-48d7-40ac-8799-db0d2f7638dc",
+     "position": 3,
+     "number": "3",
+     "title": "Put Your Lights On",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "Everlast",
+       "joinphrase": "",
+       "artist": {
+        "id": "ca39d50f-9885-420e-88d6-9c3f64038773",
+        "name": "Everlast"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0eb6f9ae-1985-436b-ac4f-4c5202f83e5f",
+      "title": "Put Your Lights On",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "Everlast",
+        "joinphrase": "",
+        "artist": {
+         "id": "ca39d50f-9885-420e-88d6-9c3f64038773",
+         "name": "Everlast"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8458253d-b8bd-4764-a6be-b33847baea6b",
+     "position": 4,
+     "number": "4",
+     "title": "Africa Bamba",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": "",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      }
+     ],
+     "recording": {
+      "id": "04bf80a4-0218-4bc3-8c69-dfd2901c71cc",
+      "title": "Africa Bamba",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": "",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a3ac628e-7235-4104-8eb7-551e942fa756",
+     "position": 5,
+     "number": "5",
+     "title": "Smooth",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "Rob Thomas",
+       "joinphrase": "",
+       "artist": {
+        "id": "e42680f7-e439-4666-9c2c-536c2b3c6db3",
+        "name": "Rob Thomas"
+       }
+      }
+     ],
+     "recording": {
+      "id": "fd635cea-3510-4d4b-930d-9ed69f754685",
+      "title": "Smooth",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "Rob Thomas",
+        "joinphrase": "",
+        "artist": {
+         "id": "e42680f7-e439-4666-9c2c-536c2b3c6db3",
+         "name": "Rob Thomas"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "7311dd07-f0f2-49ae-b036-3e062674578c",
+     "position": 6,
+     "number": "6",
+     "title": "Do You Like the Way",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "Lauryn Hill",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "e8414012-4a1c-4ad4-be5e-fc55294e28cc",
+        "name": "Ms. Lauryn Hill"
+       }
+      },
+      {
+       "name": "Cee‐Lo",
+       "joinphrase": "",
+       "artist": {
+        "id": "2c69465c-0f76-45ce-90a2-1ed0fdacc997",
+        "name": "CeeLo Green"
+       }
+      }
+     ],
+     "recording": {
+      "id": "49bf8824-424d-4991-b607-d45c346d08b2",
+      "title": "Do You Like the Way",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "Lauryn Hill",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "e8414012-4a1c-4ad4-be5e-fc55294e28cc",
+         "name": "Ms. Lauryn Hill"
+        }
+       },
+       {
+        "name": "Cee‐Lo",
+        "joinphrase": "",
+        "artist": {
+         "id": "2c69465c-0f76-45ce-90a2-1ed0fdacc997",
+         "name": "CeeLo Green"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "be8ceb9f-481e-41b9-b300-1297ddf31a02",
+     "position": 7,
+     "number": "7",
+     "title": "Maria Maria (radio mix)",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "The Product G&B",
+       "joinphrase": "",
+       "artist": {
+        "id": "69f6711d-bc7e-4e3b-ab49-20e055e136b4",
+        "name": "The Product G&B"
+       }
+      }
+     ],
+     "recording": {
+      "id": "221be129-ea4c-47c9-aebd-9e8e478d5dc7",
+      "title": "Maria Maria",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "The Product G&B",
+        "joinphrase": "",
+        "artist": {
+         "id": "69f6711d-bc7e-4e3b-ab49-20e055e136b4",
+         "name": "The Product G&B"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d9d89a26-7299-4fda-aa11-12aae8d46ab0",
+     "position": 8,
+     "number": "8",
+     "title": "Migra",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": "",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      }
+     ],
+     "recording": {
+      "id": "75dfef8a-d2e2-4083-97db-96824dc533fc",
+      "title": "Migra",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": "",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "407d61d5-3e5f-413e-b836-1c0fd4669885",
+     "position": 9,
+     "number": "9",
+     "title": "Corazón espinado",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "Maná",
+       "joinphrase": "",
+       "artist": {
+        "id": "55441123-89a2-49ab-ae3f-df7a3e86835a",
+        "name": "Maná"
+       }
+      }
+     ],
+     "recording": {
+      "id": "63b25f95-86c2-42bd-bb79-f223e173d1d7",
+      "title": "Corazón espinado",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "Maná",
+        "joinphrase": "",
+        "artist": {
+         "id": "55441123-89a2-49ab-ae3f-df7a3e86835a",
+         "name": "Maná"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3e176469-5958-43db-999d-dd8371dfd7a0",
+     "position": 10,
+     "number": "10",
+     "title": "Wishing It Was",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "Eagle‐Eye Cherry",
+       "joinphrase": "",
+       "artist": {
+        "id": "4a5777b3-f55b-437c-8b23-d9ee7791c7fc",
+        "name": "Eagle‐Eye Cherry"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3f1750ef-6a9e-4703-92a5-643592aa22e3",
+      "title": "Wishing It Was",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "Eagle‐Eye Cherry",
+        "joinphrase": "",
+        "artist": {
+         "id": "4a5777b3-f55b-437c-8b23-d9ee7791c7fc",
+         "name": "Eagle‐Eye Cherry"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "41620815-bfd6-4f8d-8461-22c02f2887f0",
+     "position": 11,
+     "number": "11",
+     "title": "El farol",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": "",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1cb7ffb8-40a7-4200-afe6-23053be393c3",
+      "title": "El farol",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": "",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3c03c56e-927b-412f-8660-756abdd4646c",
+     "position": 12,
+     "number": "12",
+     "title": "Primavera",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": "",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f2d2b26b-d6d5-43d9-8c7c-6b16b92b9f65",
+      "title": "Primavera",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": "",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5a3d9aa3-3630-4d20-ad90-3385e53b10c3",
+     "position": 13,
+     "number": "13",
+     "title": "The Calling",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      },
+      {
+       "name": "Eric Clapton",
+       "joinphrase": "",
+       "artist": {
+        "id": "618b6900-0618-4f1e-b835-bccb17f84294",
+        "name": "Eric Clapton"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7b9d22af-4bef-4f8d-b9bc-21880989a19f",
+      "title": "The Calling",
+      "first-release-date": "1999-06-15",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       },
+       {
+        "name": "Eric Clapton",
+        "joinphrase": "",
+        "artist": {
+         "id": "618b6900-0618-4f1e-b835-bccb17f84294",
+         "name": "Eric Clapton"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2e70f5a6-5a3f-4e59-8817-80b88921167f",
+     "position": 14,
+     "number": "14",
+     "title": "Day of Celebration",
+     "artist-credit": [
+      {
+       "name": "Santana",
+       "joinphrase": "",
+       "artist": {
+        "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+        "name": "Santana"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f7b07d6c-7aa2-4e04-b200-5a2f0ae816b9",
+      "title": "Day of Celebration",
+      "first-release-date": "2003",
+      "artist-credit": [
+       {
+        "name": "Santana",
+        "joinphrase": "",
+        "artist": {
+         "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
+         "name": "Santana"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

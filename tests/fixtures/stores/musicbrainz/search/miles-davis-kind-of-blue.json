@@ -1,0 +1,272 @@
+{
+ "count": 536739,
+ "offset": 0,
+ "releases": [
+  {
+   "id": "9e003d73-c007-4fb2-a5f2-4f0b0f9a2649",
+   "title": "Blue Kind of Miles",
+   "track-count": 6,
+   "artist-credit": [
+    {
+     "name": "Peter Sprague",
+     "artist": {
+      "id": "ab24b220-e21c-4817-bad4-64387f810463",
+      "name": "Peter Sprague"
+     }
+    }
+   ],
+   "label-info": [],
+   "media": [
+    {
+     "format": "Digital Media",
+     "track-count": 6
+    }
+   ]
+  },
+  {
+   "id": "48819492-44a9-4a90-839c-5f179ee561b5",
+   "title": "Lullaby Versions of Kind of Blue & Miles Davis",
+   "track-count": 8,
+   "artist-credit": [
+    {
+     "name": "Twinkle Twinkle Little Rock Star",
+     "artist": {
+      "id": "5cc9cce8-5d13-44de-8492-87ec0e5f8749",
+      "name": "Twinkle Twinkle Little Rock Star"
+     }
+    }
+   ],
+   "label-info": [],
+   "media": [
+    {
+     "format": "Digital Media",
+     "track-count": 8
+    }
+   ]
+  },
+  {
+   "id": "512b5b5b-5e8b-40a5-bec2-d6859008fd93",
+   "title": "Kind of Blue Revisited - The Miles Davis Songbook",
+   "track-count": 8,
+   "artist-credit": [
+    {
+     "name": "Various Artists",
+     "artist": {
+      "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+      "name": "Various Artists"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "HCD 6022",
+     "label": {
+      "name": "HighNote Records, Inc."
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 8
+    }
+   ]
+  },
+  {
+   "id": "b485a424-9fbd-4603-8ae3-d00096b294ac",
+   "title": "Miles Davis",
+   "track-count": 24,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "DDP2 52456",
+     "label": {
+      "name": "Madacy Entertainment"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 11
+    },
+    {
+     "format": "CD",
+     "track-count": 13
+    }
+   ]
+  },
+  {
+   "id": "d1e17f64-fd7d-423e-93fe-dea5c16e18c6",
+   "title": "Miles Davis",
+   "track-count": 15,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "UAE 30472",
+     "label": {
+      "name": "United Audio Entertainment"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 15
+    }
+   ]
+  },
+  {
+   "id": "34016314-dc7c-40f2-a47c-fd96e7e78d9f",
+   "title": "Miles Davis",
+   "track-count": 24,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "DSP 904765",
+     "label": {
+      "name": "Disky"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 12
+    },
+    {
+     "format": "CD",
+     "track-count": 12
+    }
+   ]
+  },
+  {
+   "id": "f091bee5-001f-4334-a6c3-0ee676a6f397",
+   "title": "Miles Davis",
+   "track-count": 16,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "200 570",
+     "label": {
+      "name": "Haba’na"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 16
+    }
+   ]
+  },
+  {
+   "id": "151d7a0d-4422-48e9-98e9-68f981687a92",
+   "title": "Miles Davis",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [],
+   "media": [
+    {
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "233e8db8-447c-460c-88ae-ee349f5b81fc",
+   "title": "Miles Davis",
+   "track-count": 19,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "APWCD1191",
+     "label": {
+      "name": "Musicbank"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 19
+    }
+   ]
+  },
+  {
+   "id": "8706d1e6-65f1-43b9-bd58-815789d18db1",
+   "title": "Miles Davis",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "JL 003",
+     "label": {
+      "name": "Jazz Line"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 10
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,307 @@
+{
+ "id": "c66c7ee9-6ab4-4c06-aac9-64e734926593",
+ "title": "Ahmad Jamal at the Pershing: But Not for Me",
+ "date": "",
+ "barcode": "00602577194573",
+ "artist-credit": [
+  {
+   "name": "Ahmad Jamal Trio",
+   "joinphrase": "",
+   "artist": {
+    "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+    "name": "The Ahmad Jamal Trio"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "0a8e97fd-457c-30bc-938a-2fba79cb04e7",
+  "title": "Ahmad Jamal at the Pershing: But Not for Me",
+  "first-release-date": "1958",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Live"
+  ],
+  "artist-credit": [
+   {
+    "name": "Ahmad Jamal Trio",
+    "joinphrase": "",
+    "artist": {
+     "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+     "name": "The Ahmad Jamal Trio"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": ""
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Verve Reissues"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "7c719de3-195d-4e6b-bd53-c319fd261895",
+     "position": 1,
+     "number": "1",
+     "title": "But Not for Me",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9d444787-3f25-4c16-9261-597b9ab021cc",
+      "title": "But Not for Me",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal",
+        "joinphrase": "",
+        "artist": {
+         "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
+         "name": "Ahmad Jamal"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "00b62048-97ad-423c-a468-2a5bdfd22d2c",
+     "position": 2,
+     "number": "2",
+     "title": "Surrey With the Fringe on the Top",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "cffe456e-b125-472d-936a-d129596aeaa2",
+      "title": "Surrey With the Fringe on Top",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal",
+        "joinphrase": "",
+        "artist": {
+         "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
+         "name": "Ahmad Jamal"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3508a7a2-2009-4a91-b931-998e817bbdf7",
+     "position": 3,
+     "number": "3",
+     "title": "Moonlight in Vermont",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "008e04c2-217f-4426-aff9-90f8e380357a",
+      "title": "Moonlight in Vermont",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal",
+        "joinphrase": "",
+        "artist": {
+         "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
+         "name": "Ahmad Jamal"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "533a741c-f6b4-4221-bbdd-a42582ab7ad7",
+     "position": 4,
+     "number": "4",
+     "title": "Music, Music, Music",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "49500d8e-99e0-4418-915e-9256efa8904c",
+      "title": "(Put Another Nickel in) Music! Music! Music!",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+         "name": "The Ahmad Jamal Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9a1f4b56-48c9-437c-a6a5-213852cd8457",
+     "position": 5,
+     "number": "5",
+     "title": "No Greater Love",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "dc1e8275-93e8-40d0-83dd-9bd6433a7346",
+      "title": "No Greater Love",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal",
+        "joinphrase": "",
+        "artist": {
+         "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
+         "name": "Ahmad Jamal"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "7711410b-f2c4-4696-a1b2-d190f0b049c8",
+     "position": 6,
+     "number": "6",
+     "title": "Poinciana",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "69ab99ec-635d-4921-92b1-05c30eae8264",
+      "title": "Poinciana",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal",
+        "joinphrase": "",
+        "artist": {
+         "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
+         "name": "Ahmad Jamal"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "994d3c64-2a91-48ac-a637-fcded15548ab",
+     "position": 7,
+     "number": "7",
+     "title": "Woody’n You",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2fb44ca7-1833-4f7e-be93-2370276a8c9a",
+      "title": "Woody’n You",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal",
+        "joinphrase": "",
+        "artist": {
+         "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
+         "name": "Ahmad Jamal"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "27f252ad-4781-429a-882b-3451226456a6",
+     "position": 8,
+     "number": "8",
+     "title": "What’s New",
+     "artist-credit": [
+      {
+       "name": "Ahmad Jamal Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
+        "name": "The Ahmad Jamal Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "56bc5508-60cf-4ea3-ad88-b99d570d4011",
+      "title": "What’s New",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Ahmad Jamal",
+        "joinphrase": "",
+        "artist": {
+         "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
+         "name": "Ahmad Jamal"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

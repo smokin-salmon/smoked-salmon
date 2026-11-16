@@ -1,0 +1,243 @@
+{
+ "id": "3fb119cb-5595-33cf-b192-743c17c7f584",
+ "title": "Relaxin' With the Miles Davis Quintet",
+ "date": "2006-03-21",
+ "barcode": "025218810425",
+ "artist-credit": [
+  {
+   "name": "Miles Davis Quintet",
+   "joinphrase": "",
+   "artist": {
+    "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+    "name": "Miles Davis Quintet"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "afb1433e-c8b6-3924-8798-c494a3040346",
+  "title": "Relaxin’ With the Miles Davis Quintet",
+  "first-release-date": "1958",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Miles Davis Quintet",
+    "joinphrase": "",
+    "artist": {
+     "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+     "name": "Miles Davis Quintet"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2006-03-21"
+  }
+ ],
+ "cover-art-archive": {
+  "front": false
+ },
+ "label-info": [
+  {
+   "catalog-number": "PRCD-8104-2",
+   "label": {
+    "name": "Prestige"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "a922ed7b-a0ac-3985-94df-2a26d5c7f572",
+     "position": 1,
+     "number": "1",
+     "title": "If I Were a Bell",
+     "artist-credit": [
+      {
+       "name": "Miles Davis Quintet",
+       "joinphrase": "",
+       "artist": {
+        "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+        "name": "Miles Davis Quintet"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a413b7f8-b772-4375-a249-10baa00178eb",
+      "title": "If I Were a Bell",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Miles Davis Quintet",
+        "joinphrase": "",
+        "artist": {
+         "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+         "name": "Miles Davis Quintet"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "dcf1a21a-9156-34ee-95c9-c6d2d5666c7a",
+     "position": 2,
+     "number": "2",
+     "title": "You're My Everything",
+     "artist-credit": [
+      {
+       "name": "Miles Davis Quintet",
+       "joinphrase": "",
+       "artist": {
+        "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+        "name": "Miles Davis Quintet"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c9ad7402-3413-4cd7-a051-f602e9f10ef8",
+      "title": "You’re My Everything",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Miles Davis Quintet",
+        "joinphrase": "",
+        "artist": {
+         "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+         "name": "Miles Davis Quintet"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bfb700a9-68c7-358a-aab2-8f98fd71d83c",
+     "position": 3,
+     "number": "3",
+     "title": "I Could Write a Book",
+     "artist-credit": [
+      {
+       "name": "Miles Davis Quintet",
+       "joinphrase": "",
+       "artist": {
+        "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+        "name": "Miles Davis Quintet"
+       }
+      }
+     ],
+     "recording": {
+      "id": "09b56b9a-49a5-4736-ae8a-e7f5b45c6beb",
+      "title": "I Could Write a Book",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Miles Davis Quintet",
+        "joinphrase": "",
+        "artist": {
+         "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+         "name": "Miles Davis Quintet"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "52224f27-eb3e-3661-a3ba-0f80fd7751aa",
+     "position": 4,
+     "number": "4",
+     "title": "Oleo",
+     "artist-credit": [
+      {
+       "name": "Miles Davis Quintet",
+       "joinphrase": "",
+       "artist": {
+        "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+        "name": "Miles Davis Quintet"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f211c338-467e-4ed1-8f9b-4c746cafa061",
+      "title": "Oleo",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Miles Davis Quintet",
+        "joinphrase": "",
+        "artist": {
+         "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+         "name": "Miles Davis Quintet"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0eddbb1b-5e8e-3763-90c2-bb0dc1d46eea",
+     "position": 5,
+     "number": "5",
+     "title": "It Could Happen to You",
+     "artist-credit": [
+      {
+       "name": "Miles Davis Quintet",
+       "joinphrase": "",
+       "artist": {
+        "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+        "name": "Miles Davis Quintet"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5352e5d2-3ec5-4d6d-a454-b257ec40711d",
+      "title": "It Could Happen to You",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Miles Davis Quintet",
+        "joinphrase": "",
+        "artist": {
+         "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+         "name": "Miles Davis Quintet"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b0cdaf1a-70c7-3dea-b5f8-629ab0ba265b",
+     "position": 6,
+     "number": "6",
+     "title": "Woody'n You",
+     "artist-credit": [
+      {
+       "name": "Miles Davis Quintet",
+       "joinphrase": "",
+       "artist": {
+        "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+        "name": "Miles Davis Quintet"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9a5c6a53-01cd-417c-989a-1e216705ce7c",
+      "title": "Woody’n You",
+      "first-release-date": "1958",
+      "artist-credit": [
+       {
+        "name": "Miles Davis Quintet",
+        "joinphrase": "",
+        "artist": {
+         "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
+         "name": "Miles Davis Quintet"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

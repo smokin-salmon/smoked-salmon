@@ -1,0 +1,17 @@
+{
+ "images": [
+  {
+   "approved": true,
+   "front": true,
+   "id": 23058063062,
+   "image": "https://coverartarchive.org/release/4c8af71f-5746-4981-92d7-0d6c64db1155/23058063062.png"
+  },
+  {
+   "approved": true,
+   "front": false,
+   "id": 41055043755,
+   "image": "https://coverartarchive.org/release/4c8af71f-5746-4981-92d7-0d6c64db1155/41055043755.pdf"
+  }
+ ],
+ "release": "https://musicbrainz.org/release/4c8af71f-5746-4981-92d7-0d6c64db1155"
+}

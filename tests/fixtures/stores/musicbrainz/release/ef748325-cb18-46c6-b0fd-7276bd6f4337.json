@@ -1,0 +1,700 @@
+{
+ "id": "ef748325-cb18-46c6-b0fd-7276bd6f4337",
+ "title": "My Beautiful Dark Twisted Fantasy",
+ "date": "2010-11-22",
+ "barcode": "602527474465",
+ "artist-credit": [
+  {
+   "name": "Kanye West",
+   "joinphrase": "",
+   "artist": {
+    "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+    "name": "Ye"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "5d6e21e1-deb5-428e-bb42-c2a567f3619b",
+  "title": "My Beautiful Dark Twisted Fantasy",
+  "first-release-date": "2010-11-19",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Kanye West",
+    "joinphrase": "",
+    "artist": {
+     "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+     "name": "Ye"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2010-11-22"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "B001469502",
+   "label": {
+    "name": "Roc‐A‐Fella Records"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "d3eaf3ef-75ad-4bbe-b3f5-cf4e9f757908",
+     "position": 1,
+     "number": "1",
+     "title": "Dark Fantasy",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": "",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      }
+     ],
+     "recording": {
+      "id": "885ccb38-4057-4d1a-8fb0-52804f79d653",
+      "title": "Dark Fantasy",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": "",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e9f20eac-7fbd-4eb2-bcca-69ee65792f27",
+     "position": 2,
+     "number": "2",
+     "title": "Gorgeous",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      },
+      {
+       "name": "Kid Cudi",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "e0e1db18-f7ba-4dee-95ff-7ae8cf545460",
+        "name": "Kid Cudi"
+       }
+      },
+      {
+       "name": "Raekwon",
+       "joinphrase": "",
+       "artist": {
+        "id": "4e954b02-fae2-4bd7-9547-e055a6ac0527",
+        "name": "Raekwon"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b3c6aa0a-6960-4db6-bf27-ed50de88309c",
+      "title": "Gorgeous",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       },
+       {
+        "name": "Kid Cudi",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "e0e1db18-f7ba-4dee-95ff-7ae8cf545460",
+         "name": "Kid Cudi"
+        }
+       },
+       {
+        "name": "Raekwon",
+        "joinphrase": "",
+        "artist": {
+         "id": "4e954b02-fae2-4bd7-9547-e055a6ac0527",
+         "name": "Raekwon"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8de51b14-eda2-4e1f-b9ee-f6676b3667a1",
+     "position": 3,
+     "number": "3",
+     "title": "Power",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": "",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f42e84ef-f23e-4b8c-b3a1-8f407be68ea5",
+      "title": "Power",
+      "first-release-date": "2010-07-01",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": "",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "898ea8ac-f112-46e7-bbf5-0ea8c2558c52",
+     "position": 4,
+     "number": "4",
+     "title": "All of the Lights (interlude)",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": "",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      }
+     ],
+     "recording": {
+      "id": "48299852-b44c-46a3-b635-1a34f2fe61e5",
+      "title": "All of the Lights (interlude)",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": "",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5e64c0ee-eda3-4db4-9915-6e2a2d76ca95",
+     "position": 5,
+     "number": "5",
+     "title": "All of the Lights",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": "",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a4c4457b-577e-4fac-b820-713bb91dbb6c",
+      "title": "All of the Lights",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": "",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "446e0338-30a7-4bf3-bd25-7deb60ed0f43",
+     "position": 6,
+     "number": "6",
+     "title": "Monster",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      },
+      {
+       "name": "Jay‐Z",
+       "joinphrase": ", ",
+       "artist": {
+        "id": "f82bcf78-5b69-4622-a5ef-73800768d9ac",
+        "name": "JAŸ-Z"
+       }
+      },
+      {
+       "name": "Rick Ross",
+       "joinphrase": ", ",
+       "artist": {
+        "id": "13bcb2bb-db37-4397-baf5-e0f085be2d64",
+        "name": "Rick Ross"
+       }
+      },
+      {
+       "name": "Nicki Minaj",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "1036b808-f58c-4a3e-b461-a2c4492ecf1b",
+        "name": "Nicki Minaj"
+       }
+      },
+      {
+       "name": "Bon Iver",
+       "joinphrase": "",
+       "artist": {
+        "id": "437a0e49-c6ae-42f6-a6c1-84f25ed366bc",
+        "name": "Bon Iver"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2beff74d-69fe-4e53-9a47-26f29b64c6d4",
+      "title": "Monster",
+      "first-release-date": "2010-08-27",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       },
+       {
+        "name": "Jay‐Z",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "f82bcf78-5b69-4622-a5ef-73800768d9ac",
+         "name": "JAŸ-Z"
+        }
+       },
+       {
+        "name": "Rick Ross",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "13bcb2bb-db37-4397-baf5-e0f085be2d64",
+         "name": "Rick Ross"
+        }
+       },
+       {
+        "name": "Nicki Minaj",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "1036b808-f58c-4a3e-b461-a2c4492ecf1b",
+         "name": "Nicki Minaj"
+        }
+       },
+       {
+        "name": "Bon Iver",
+        "joinphrase": "",
+        "artist": {
+         "id": "437a0e49-c6ae-42f6-a6c1-84f25ed366bc",
+         "name": "Bon Iver"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8b67b91e-e00e-4a0f-87f7-081d014d2768",
+     "position": 7,
+     "number": "7",
+     "title": "So Appalled",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      },
+      {
+       "name": "Jay‐Z",
+       "joinphrase": ", ",
+       "artist": {
+        "id": "f82bcf78-5b69-4622-a5ef-73800768d9ac",
+        "name": "JAŸ-Z"
+       }
+      },
+      {
+       "name": "Pusha T",
+       "joinphrase": ", ",
+       "artist": {
+        "id": "14ecd19f-7121-4192-8549-e5056241a42f",
+        "name": "Pusha T"
+       }
+      },
+      {
+       "name": "CyHi da Prynce",
+       "joinphrase": ", ",
+       "artist": {
+        "id": "6a9e461c-e3c5-4794-a203-98a15daea2df",
+        "name": "Cyhi"
+       }
+      },
+      {
+       "name": "Swizz Beatz",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "698ff525-ff51-4206-8f08-60a7458aab24",
+        "name": "Swizz Beatz"
+       }
+      },
+      {
+       "name": "The RZA",
+       "joinphrase": "",
+       "artist": {
+        "id": "29c28ac3-27c5-4822-8eb6-0af89a3a7240",
+        "name": "RZA"
+       }
+      }
+     ],
+     "recording": {
+      "id": "36e2b944-e497-4b83-9bbb-0723fcb197f8",
+      "title": "So Appalled",
+      "first-release-date": "2010-09-24",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       },
+       {
+        "name": "Jay‐Z",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "f82bcf78-5b69-4622-a5ef-73800768d9ac",
+         "name": "JAŸ-Z"
+        }
+       },
+       {
+        "name": "Pusha T",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "14ecd19f-7121-4192-8549-e5056241a42f",
+         "name": "Pusha T"
+        }
+       },
+       {
+        "name": "CyHi da Prynce",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "6a9e461c-e3c5-4794-a203-98a15daea2df",
+         "name": "Cyhi"
+        }
+       },
+       {
+        "name": "Swizz Beatz",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "698ff525-ff51-4206-8f08-60a7458aab24",
+         "name": "Swizz Beatz"
+        }
+       },
+       {
+        "name": "The RZA",
+        "joinphrase": "",
+        "artist": {
+         "id": "29c28ac3-27c5-4822-8eb6-0af89a3a7240",
+         "name": "RZA"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6dfa6c73-e623-4643-b962-c04dd62db628",
+     "position": 8,
+     "number": "8",
+     "title": "Devil in a New Dress",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      },
+      {
+       "name": "Rick Ross",
+       "joinphrase": "",
+       "artist": {
+        "id": "13bcb2bb-db37-4397-baf5-e0f085be2d64",
+        "name": "Rick Ross"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c8da6e46-d517-4930-87d8-5be5ab9ca3c9",
+      "title": "Devil in a New Dress",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       },
+       {
+        "name": "Rick Ross",
+        "joinphrase": "",
+        "artist": {
+         "id": "13bcb2bb-db37-4397-baf5-e0f085be2d64",
+         "name": "Rick Ross"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e5ce11ed-6d54-4ba5-b56c-20df7c66d622",
+     "position": 9,
+     "number": "9",
+     "title": "Runaway",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      },
+      {
+       "name": "Pusha T",
+       "joinphrase": "",
+       "artist": {
+        "id": "14ecd19f-7121-4192-8549-e5056241a42f",
+        "name": "Pusha T"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a24f67ff-a81e-4a95-817d-c0b4e5af3e6b",
+      "title": "Runaway",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       },
+       {
+        "name": "Pusha T",
+        "joinphrase": "",
+        "artist": {
+         "id": "14ecd19f-7121-4192-8549-e5056241a42f",
+         "name": "Pusha T"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f7e22353-d783-4701-9784-de8f1d728766",
+     "position": 10,
+     "number": "10",
+     "title": "Hell of a Life",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": "",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e848d5fd-4590-468a-89af-45e88262c8e3",
+      "title": "Hell of a Life",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": "",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "4b7706b0-1e22-4ffc-a5b7-89c3c1864dfe",
+     "position": 11,
+     "number": "11",
+     "title": "Blame Game",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      },
+      {
+       "name": "John Legend",
+       "joinphrase": "",
+       "artist": {
+        "id": "75a72702-a5ef-4513-bca5-c5b944903546",
+        "name": "John Legend"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8089efd2-b32a-4b43-963f-7743e888793a",
+      "title": "Blame Game",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       },
+       {
+        "name": "John Legend",
+        "joinphrase": "",
+        "artist": {
+         "id": "75a72702-a5ef-4513-bca5-c5b944903546",
+         "name": "John Legend"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8ec448d0-ea1d-4d4d-8025-7bf0b58fed58",
+     "position": 12,
+     "number": "12",
+     "title": "Lost in the World",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      },
+      {
+       "name": "Bon Iver",
+       "joinphrase": "",
+       "artist": {
+        "id": "437a0e49-c6ae-42f6-a6c1-84f25ed366bc",
+        "name": "Bon Iver"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a7bade00-f8be-47ae-a0ab-3ce42931213a",
+      "title": "Lost in the World",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       },
+       {
+        "name": "Bon Iver",
+        "joinphrase": "",
+        "artist": {
+         "id": "437a0e49-c6ae-42f6-a6c1-84f25ed366bc",
+         "name": "Bon Iver"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9ae0a34f-d844-4175-9fa1-f5384e8bc87d",
+     "position": 13,
+     "number": "13",
+     "title": "Who Will Survive in America",
+     "artist-credit": [
+      {
+       "name": "Kanye West",
+       "joinphrase": "",
+       "artist": {
+        "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+        "name": "Ye"
+       }
+      }
+     ],
+     "recording": {
+      "id": "db232387-83c8-4578-8a1d-b7759520ed5a",
+      "title": "Who Will Survive in America",
+      "first-release-date": "2010-11-19",
+      "artist-credit": [
+       {
+        "name": "Kanye West",
+        "joinphrase": "",
+        "artist": {
+         "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
+         "name": "Ye"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

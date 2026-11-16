@@ -1,0 +1,265 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release-list count="53674" offset="0">
+<release id="75c4bd73-aa6c-4a67-b26e-796313861fbf">
+<title>Disco Queen: Greatest Hits</title>
+<artist-credit>
+<name-credit>
+<name>Carol Douglas</name>
+<artist id="caf891ac-9f48-4e95-bb34-51c71bae0da8">
+<name>Carol Douglas</name>
+</artist>
+</name-credit>
+</artist-credit>
+<medium-list>
+<track-count>10</track-count>
+<medium />
+</medium-list>
+</release>
+<release id="92655853-3fcc-3491-b166-0c932420f594">
+<title>Greatest Hits II</title>
+<artist-credit>
+<name-credit>
+<name>Queen</name>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<catalog-number>CDPMTV 2</catalog-number>
+<label>
+<name>Parlophone</name>
+</label>
+</label-info>
+<label-info>
+<catalog-number>598 CDP 79 7971 2</catalog-number>
+<label>
+<name>Parlophone</name>
+</label>
+</label-info>
+<label-info>
+<catalog-number>CDP 79 7971 2</catalog-number>
+<label>
+<name>Parlophone</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>17</track-count>
+<medium>
+<format>CD</format>
+</medium>
+</medium-list>
+</release>
+<release id="d2aaa62b-0a22-4731-a45e-0554a4fffbb0">
+<title>Greatest Hits I &amp; II</title>
+<artist-credit>
+<name-credit>
+<name>Queen</name>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<catalog-number>HR-62042-2</catalog-number>
+<label>
+<name>Hollywood Records</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>34</track-count>
+<medium>
+<format>CD</format>
+</medium>
+<medium>
+<format>CD</format>
+</medium>
+</medium-list>
+</release>
+<release id="a8e5772e-757f-4ba8-8452-56b785d13d0a">
+<title>Queen: Greatest Video Hits</title>
+<artist-credit>
+<name-credit>
+<name>Queen</name>
+<artist id="0383dadf-2a4e-4d10-a46a-e9e041da8eb3">
+<name>Queen</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<label>
+<name>Eagle Rock Entertainment</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>33</track-count>
+<medium>
+<format>DVD-Video</format>
+</medium>
+<medium>
+<format>DVD-Video</format>
+</medium>
+</medium-list>
+</release>
+<release id="eace2379-7b55-44e6-b258-240d6e796562">
+<title>Symphonic Queen: The Greatest Hits</title>
+<artist-credit>
+<name-credit>
+<name>The Royal Philharmonic Orchestra</name>
+<artist id="299597ae-3a20-4bf1-973e-03704af69f6b">
+<name>Royal Philharmonic Orchestra</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<catalog-number>479 6268</catalog-number>
+<label>
+<name>Panorama</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>19</track-count>
+<medium>
+<format>CD</format>
+</medium>
+</medium-list>
+</release>
+<release id="82609ad0-8286-4c22-91dd-e435289a22d5">
+<title>Symphonic Queen: The Greatest Hits</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<name>The Royal Philharmonic Orchestra</name>
+<artist id="299597ae-3a20-4bf1-973e-03704af69f6b">
+<name>Royal Philharmonic Orchestra</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Matthew Freeman</name>
+<artist id="9441d439-bbf4-4acc-9729-5bfb813e3eb7">
+<name>Matthew Freeman</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<catalog-number>479 6268</catalog-number>
+<label>
+<name>Panorama</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>19</track-count>
+<medium>
+<format>CD</format>
+</medium>
+</medium-list>
+</release>
+<release id="52e2fcb5-860d-4d30-a86b-d7fdae255429">
+<title>Danse Pop</title>
+<artist-credit>
+<name-credit>
+<name>Greatest Hits</name>
+<artist id="4620b1cd-8102-4b83-8506-33223cc958e3">
+<name>Greatest Hits</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<catalog-number>OESB-702</catalog-number>
+<label>
+<name>Olde English Spelling Bee</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>4</track-count>
+<medium>
+<format>7" Vinyl</format>
+</medium>
+</medium-list>
+</release>
+<release id="85472d01-d29f-4206-af30-6287e1426253">
+<title>Spicy</title>
+<artist-credit>
+<name-credit>
+<name>Greatest Hits</name>
+<artist id="08f722a6-e911-45af-9934-8314ce9cd389">
+<name>Double Talk</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<label>
+<name>[no label]</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>1</track-count>
+<medium>
+<format>Digital Media</format>
+</medium>
+</medium-list>
+</release>
+<release id="2b0854fe-8f66-4c4d-a775-abfe6b76cdcc">
+<title>Banana Moon</title>
+<artist-credit>
+<name-credit>
+<name>Greatest Hits</name>
+<artist id="08f722a6-e911-45af-9934-8314ce9cd389">
+<name>Double Talk</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<label>
+<name>[no label]</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>1</track-count>
+<medium>
+<format>Digital Media</format>
+</medium>
+</medium-list>
+</release>
+<release id="961df75e-5b4c-491c-97d1-42210af61f76">
+<title>Palm Springs</title>
+<artist-credit>
+<name-credit>
+<name>Greatest Hits</name>
+<artist id="08f722a6-e911-45af-9934-8314ce9cd389">
+<name>Double Talk</name>
+</artist>
+</name-credit>
+</artist-credit>
+<label-info-list>
+<label-info>
+<label>
+<name>[no label]</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<track-count>1</track-count>
+<medium>
+<format>Digital Media</format>
+</medium>
+</medium-list>
+</release>
+</release-list>
+</metadata>

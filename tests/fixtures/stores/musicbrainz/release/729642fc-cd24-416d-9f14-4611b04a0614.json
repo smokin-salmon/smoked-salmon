@@ -1,0 +1,727 @@
+{
+ "id": "729642fc-cd24-416d-9f14-4611b04a0614",
+ "title": "Pulp Fiction: Music From the Motion Picture",
+ "date": "2019-03-15",
+ "barcode": "00602577174391",
+ "artist-credit": [
+  {
+   "name": "Various Artists",
+   "joinphrase": "",
+   "artist": {
+    "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+    "name": "Various Artists"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "1703cd63-9401-33c0-87c6-50c4ba2e0ba8",
+  "title": "Pulp Fiction: Music From the Motion Picture",
+  "first-release-date": "1994-09-26",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Soundtrack"
+  ],
+  "artist-credit": [
+   {
+    "name": "Various Artists",
+    "joinphrase": "",
+    "artist": {
+     "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+     "name": "Various Artists"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2019-03-15"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Geffen"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "7037fcd2-66d9-46ed-a9c4-953e8b553d13",
+     "position": 1,
+     "number": "1",
+     "title": "Pumpkin and Honey Bunny",
+     "artist-credit": [
+      {
+       "name": "[dialogue]",
+       "joinphrase": "",
+       "artist": {
+        "id": "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",
+        "name": "[dialogue]"
+       }
+      }
+     ],
+     "recording": {
+      "id": "135c03a4-a54b-463d-bc39-72e19ca7f353",
+      "title": "Pumpkin and Honey Bunny",
+      "first-release-date": "2005-12-01",
+      "artist-credit": [
+       {
+        "name": "Tim Roth",
+        "joinphrase": " and ",
+        "artist": {
+         "id": "669982b2-97e5-46b1-a8e1-7415c6c44dd0",
+         "name": "Tim Roth"
+        }
+       },
+       {
+        "name": "Amanda Plummer",
+        "joinphrase": "",
+        "artist": {
+         "id": "61742cdb-b5ab-47f0-a724-38a454be4ef8",
+         "name": "Amanda Plummer"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5bbab797-c97a-4f2f-bd9d-14a4738c0003",
+     "position": 2,
+     "number": "2",
+     "title": "Misirlou (single version)",
+     "artist-credit": [
+      {
+       "name": "Dick Dale and His Del‐Tones",
+       "joinphrase": "",
+       "artist": {
+        "id": "820263ae-ab51-426d-85e9-bed5a74f00e1",
+        "name": "Dick Dale and His Del‐Tones"
+       }
+      }
+     ],
+     "recording": {
+      "id": "cd3d8f7c-b5f7-4274-9395-e22997877f1e",
+      "title": "Misirlou (single version)",
+      "first-release-date": "2019-03-15",
+      "artist-credit": [
+       {
+        "name": "Dick Dale and His Del‐Tones",
+        "joinphrase": "",
+        "artist": {
+         "id": "820263ae-ab51-426d-85e9-bed5a74f00e1",
+         "name": "Dick Dale and His Del‐Tones"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ba4663fa-8f94-4dba-92d7-a9cf5e1e2a7a",
+     "position": 3,
+     "number": "3",
+     "title": "Royale With Cheese",
+     "artist-credit": [
+      {
+       "name": "Samuel L. Jackson",
+       "joinphrase": " and ",
+       "artist": {
+        "id": "a1c82f09-cc3a-4c94-a518-cba50d9bfab1",
+        "name": "Samuel L. Jackson"
+       }
+      },
+      {
+       "name": "John Travolta",
+       "joinphrase": "",
+       "artist": {
+        "id": "94f4c61e-5cf3-4cba-ab3e-9bd5be99f6ab",
+        "name": "John Travolta"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e5a77768-ff64-46f2-a13e-9d368b413cff",
+      "title": "Royale With Cheese",
+      "first-release-date": "1994-09-26",
+      "artist-credit": [
+       {
+        "name": "Samuel L. Jackson",
+        "joinphrase": " and ",
+        "artist": {
+         "id": "a1c82f09-cc3a-4c94-a518-cba50d9bfab1",
+         "name": "Samuel L. Jackson"
+        }
+       },
+       {
+        "name": "John Travolta",
+        "joinphrase": "",
+        "artist": {
+         "id": "94f4c61e-5cf3-4cba-ab3e-9bd5be99f6ab",
+         "name": "John Travolta"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6f34ebb3-58c3-4b57-9848-4d80aa43be55",
+     "position": 4,
+     "number": "4",
+     "title": "Jungle Boogie",
+     "artist-credit": [
+      {
+       "name": "Kool & the Gang",
+       "joinphrase": "",
+       "artist": {
+        "id": "2469950a-f0ca-425a-bfbc-baf55ea3afde",
+        "name": "Kool & the Gang"
+       }
+      }
+     ],
+     "recording": {
+      "id": "afd7680d-0df0-41d8-8d80-318090702f90",
+      "title": "Jungle Boogie",
+      "first-release-date": "1973-09-09",
+      "artist-credit": [
+       {
+        "name": "Kool & the Gang",
+        "joinphrase": "",
+        "artist": {
+         "id": "2469950a-f0ca-425a-bfbc-baf55ea3afde",
+         "name": "Kool & the Gang"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9167bdda-7571-44be-8518-9c7d9c129cdf",
+     "position": 5,
+     "number": "5",
+     "title": "Let’s Stay Together",
+     "artist-credit": [
+      {
+       "name": "Al Green",
+       "joinphrase": "",
+       "artist": {
+        "id": "fb7272ba-f130-4f0a-934d-6eeea4c18c9a",
+        "name": "Al Green"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b3384c19-483c-49ae-94d8-ec00ab56a25b",
+      "title": "Let’s Stay Together",
+      "first-release-date": "1971-11",
+      "artist-credit": [
+       {
+        "name": "Al Green",
+        "joinphrase": "",
+        "artist": {
+         "id": "fb7272ba-f130-4f0a-934d-6eeea4c18c9a",
+         "name": "Al Green"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6f0a91c4-eac8-4315-b125-da0da6954f91",
+     "position": 6,
+     "number": "6",
+     "title": "Bustin’ Surfboards (single version)",
+     "artist-credit": [
+      {
+       "name": "The Tornadoes",
+       "joinphrase": "",
+       "artist": {
+        "id": "d557c4bb-253c-4f3b-967f-b6fef3e6db37",
+        "name": "The Tornadoes"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7a400a5e-7f40-4fd5-9d6f-d168293c4368",
+      "title": "Bustin’ Surfboards",
+      "first-release-date": "1963",
+      "artist-credit": [
+       {
+        "name": "The Tornadoes",
+        "joinphrase": "",
+        "artist": {
+         "id": "d557c4bb-253c-4f3b-967f-b6fef3e6db37",
+         "name": "The Tornadoes"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3de40ae4-a00c-4c3c-a2db-519ab6582eee",
+     "position": 7,
+     "number": "7",
+     "title": "Lonesome Town",
+     "artist-credit": [
+      {
+       "name": "Ricky Nelson",
+       "joinphrase": "",
+       "artist": {
+        "id": "0b511854-c21c-4af1-9c31-e3fc178ded61",
+        "name": "Rick Nelson"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6690a4d2-4dc3-4262-8546-bb666c388418",
+      "title": "Lonesome Town",
+      "first-release-date": "1958-09-29",
+      "artist-credit": [
+       {
+        "name": "Ricky Nelson",
+        "joinphrase": "",
+        "artist": {
+         "id": "0b511854-c21c-4af1-9c31-e3fc178ded61",
+         "name": "Rick Nelson"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "32c795fe-f3bb-4fe0-8a0a-774749d4c9dc",
+     "position": 8,
+     "number": "8",
+     "title": "Son of a Preacher Man",
+     "artist-credit": [
+      {
+       "name": "Dusty Springfield",
+       "joinphrase": "",
+       "artist": {
+        "id": "b896aa8c-2761-40ce-b485-0e1fffd26167",
+        "name": "Dusty Springfield"
+       }
+      }
+     ],
+     "recording": {
+      "id": "47da814e-c620-41b9-9ed3-098d6261b74b",
+      "title": "Son of a Preacher Man",
+      "first-release-date": "1968-11-08",
+      "artist-credit": [
+       {
+        "name": "Dusty Springfield",
+        "joinphrase": "",
+        "artist": {
+         "id": "b896aa8c-2761-40ce-b485-0e1fffd26167",
+         "name": "Dusty Springfield"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "58b7059e-d857-4e26-9a02-835ce2af09cb",
+     "position": 9,
+     "number": "9",
+     "title": "Zed’s Dead Baby",
+     "artist-credit": [
+      {
+       "name": "[dialogue]",
+       "joinphrase": "",
+       "artist": {
+        "id": "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",
+        "name": "[dialogue]"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9db7bd67-ac5f-481d-8c9c-3f94e69f9cba",
+      "title": "Zed’s Dead Baby",
+      "first-release-date": "2005-12-01",
+      "artist-credit": [
+       {
+        "name": "Maria de Medeiros",
+        "joinphrase": " and ",
+        "artist": {
+         "id": "8b7382a9-2c21-47a1-bd84-0495bc4dad0e",
+         "name": "Maria de Medeiros"
+        }
+       },
+       {
+        "name": "Bruce Willis",
+        "joinphrase": "",
+        "artist": {
+         "id": "a60fa7b7-ec5c-4c0a-bec2-f1e2ae8eb4f3",
+         "name": "Bruce Willis"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "00fe3e0e-41c9-44cd-ae78-30c1fb236cca",
+     "position": 10,
+     "number": "10",
+     "title": "Bullwinkle, Part 2",
+     "artist-credit": [
+      {
+       "name": "The Centurions",
+       "joinphrase": "",
+       "artist": {
+        "id": "441b8d20-8f8e-4d02-985e-b0e69936b7b7",
+        "name": "The Centurions"
+       }
+      }
+     ],
+     "recording": {
+      "id": "57b8d22d-9a1f-4867-8171-4c1826927324",
+      "title": "Bullwinkle Part II",
+      "first-release-date": "1963",
+      "artist-credit": [
+       {
+        "name": "The Centurions",
+        "joinphrase": "",
+        "artist": {
+         "id": "441b8d20-8f8e-4d02-985e-b0e69936b7b7",
+         "name": "The Centurions"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2712b267-9915-448e-92e8-2935cf0a1ded",
+     "position": 11,
+     "number": "11",
+     "title": "Jack Rabbit Slims Twist Contest",
+     "artist-credit": [
+      {
+       "name": "[dialogue]",
+       "joinphrase": "",
+       "artist": {
+        "id": "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",
+        "name": "[dialogue]"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5280e0bd-1116-41a3-8f03-21ef972672d3",
+      "title": "Jack Rabbit Slims Twist Contest",
+      "first-release-date": "2005-12-01",
+      "artist-credit": [
+       {
+        "name": "Jerome Patrick Hoban",
+        "joinphrase": "",
+        "artist": {
+         "id": "621a2e58-1aec-4790-ac5e-40741eb77948",
+         "name": "Jerome Patrick Hoban"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6a6d5719-311c-477d-a3af-73bf2be8567b",
+     "position": 12,
+     "number": "12",
+     "title": "You Never Can Tell (1964 single version) [mono]",
+     "artist-credit": [
+      {
+       "name": "Chuck Berry",
+       "joinphrase": "",
+       "artist": {
+        "id": "592a3b6d-c42b-4567-99c9-ecf63bd66499",
+        "name": "Chuck Berry"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7a7777fa-3a82-4294-a761-49ae43e497b8",
+      "title": "You Never Can Tell",
+      "first-release-date": "1964-07",
+      "artist-credit": [
+       {
+        "name": "Chuck Berry",
+        "joinphrase": "",
+        "artist": {
+         "id": "592a3b6d-c42b-4567-99c9-ecf63bd66499",
+         "name": "Chuck Berry"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "26beeb4f-b7a3-4ac7-a863-aa86f971c70d",
+     "position": 13,
+     "number": "13",
+     "title": "Girl, You’ll Be a Woman Soon",
+     "artist-credit": [
+      {
+       "name": "Urge Overkill",
+       "joinphrase": "",
+       "artist": {
+        "id": "120e728a-4078-47b7-a31c-d581ade28bde",
+        "name": "Urge Overkill"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6b48ce08-c98b-40a0-8b1b-030c6c9ba49a",
+      "title": "Girl, You’ll Be a Woman Soon",
+      "first-release-date": "1992",
+      "artist-credit": [
+       {
+        "name": "Urge Overkill",
+        "joinphrase": "",
+        "artist": {
+         "id": "120e728a-4078-47b7-a31c-d581ade28bde",
+         "name": "Urge Overkill"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3262bc5a-18a3-4420-940e-a754c33c4abf",
+     "position": 14,
+     "number": "14",
+     "title": "If Love Is a Red Dress (Hang Me in Rags)",
+     "artist-credit": [
+      {
+       "name": "Maria McKee",
+       "joinphrase": "",
+       "artist": {
+        "id": "f8276a46-0c87-4d2f-a0d3-f22900f9cbfe",
+        "name": "Maria McKee"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7944d365-6320-4c56-900c-35068f021718",
+      "title": "If Love Is a Red Dress (Hang Me in Rags)",
+      "first-release-date": "1993",
+      "artist-credit": [
+       {
+        "name": "Maria McKee",
+        "joinphrase": "",
+        "artist": {
+         "id": "f8276a46-0c87-4d2f-a0d3-f22900f9cbfe",
+         "name": "Maria McKee"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ff4a97b5-8ea0-43dc-8e11-c8be836e05cc",
+     "position": 15,
+     "number": "15",
+     "title": "Bring Out the Gimp",
+     "artist-credit": [
+      {
+       "name": "[dialogue]",
+       "joinphrase": "",
+       "artist": {
+        "id": "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",
+        "name": "[dialogue]"
+       }
+      }
+     ],
+     "recording": {
+      "id": "53505acf-718a-4538-8190-b66b8189c3b5",
+      "title": "Bring Out the Gimp",
+      "first-release-date": "2005-12-01",
+      "artist-credit": [
+       {
+        "name": "Peter Greene",
+        "joinphrase": " and ",
+        "artist": {
+         "id": "3acb7f3e-c5fa-425f-9a53-2ead0c8ae9e5",
+         "name": "Peter Greene"
+        }
+       },
+       {
+        "name": "Duane Whitaker",
+        "joinphrase": "",
+        "artist": {
+         "id": "9e866c32-6cb6-465a-95ca-634cbd3e9b2a",
+         "name": "Duane Whitaker"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "209033ef-19c2-42d1-9940-6943de44aa97",
+     "position": 16,
+     "number": "16",
+     "title": "Comanche (single version)",
+     "artist-credit": [
+      {
+       "name": "The Revels",
+       "joinphrase": "",
+       "artist": {
+        "id": "91d44319-f666-4605-9926-8d26bac3416f",
+        "name": "The Revels"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b458f9de-b7ba-4ccd-84be-d2af80dd105b",
+      "title": "Comanche",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "The Revels",
+        "joinphrase": "",
+        "artist": {
+         "id": "91d44319-f666-4605-9926-8d26bac3416f",
+         "name": "The Revels"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f57cbed8-ec38-4789-b69d-e74645f85f75",
+     "position": 17,
+     "number": "17",
+     "title": "Flowers on the Wall",
+     "artist-credit": [
+      {
+       "name": "The Statler Brothers",
+       "joinphrase": "",
+       "artist": {
+        "id": "8f0c7db9-6d1c-446b-913c-b5c6811ca6fc",
+        "name": "The Statler Brothers"
+       }
+      }
+     ],
+     "recording": {
+      "id": "39b16495-6e17-4710-a92e-cae93cc46dfd",
+      "title": "Flowers on the Wall",
+      "first-release-date": "1966-04",
+      "artist-credit": [
+       {
+        "name": "The Statler Brothers",
+        "joinphrase": "",
+        "artist": {
+         "id": "8f0c7db9-6d1c-446b-913c-b5c6811ca6fc",
+         "name": "The Statler Brothers"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "23160c7c-344c-4878-891c-87e238b939d6",
+     "position": 18,
+     "number": "18",
+     "title": "Personality Goes a Long Way",
+     "artist-credit": [
+      {
+       "name": "[dialogue]",
+       "joinphrase": "",
+       "artist": {
+        "id": "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",
+        "name": "[dialogue]"
+       }
+      }
+     ],
+     "recording": {
+      "id": "df0af428-5b32-4c4c-9233-20b15561d8d4",
+      "title": "Personality Goes a Long Way",
+      "first-release-date": "1994-09-26",
+      "artist-credit": [
+       {
+        "name": "John Travolta",
+        "joinphrase": " and ",
+        "artist": {
+         "id": "94f4c61e-5cf3-4cba-ab3e-9bd5be99f6ab",
+         "name": "John Travolta"
+        }
+       },
+       {
+        "name": "Samuel L. Jackson",
+        "joinphrase": "",
+        "artist": {
+         "id": "a1c82f09-cc3a-4c94-a518-cba50d9bfab1",
+         "name": "Samuel L. Jackson"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "df7d54bc-2504-436b-b8ff-d6f1b8caed2a",
+     "position": 19,
+     "number": "19",
+     "title": "Surf Rider",
+     "artist-credit": [
+      {
+       "name": "The Lively Ones",
+       "joinphrase": "",
+       "artist": {
+        "id": "519ffb10-8132-4403-a4fd-7b5d00c4e52f",
+        "name": "The Lively Ones"
+       }
+      }
+     ],
+     "recording": {
+      "id": "cf630eff-b387-48b4-8281-81cc2e10cb6a",
+      "title": "Surf Rider",
+      "first-release-date": "1963",
+      "artist-credit": [
+       {
+        "name": "The Lively Ones",
+        "joinphrase": "",
+        "artist": {
+         "id": "519ffb10-8132-4403-a4fd-7b5d00c4e52f",
+         "name": "The Lively Ones"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d53fe7e3-d3cf-4472-aa67-fa19cc147b8f",
+     "position": 20,
+     "number": "20",
+     "title": "Ezekiel 25:17",
+     "artist-credit": [
+      {
+       "name": "[dialogue]",
+       "joinphrase": "",
+       "artist": {
+        "id": "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",
+        "name": "[dialogue]"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6fd25f63-e244-47c0-a8d6-324c6cc7fcba",
+      "title": "Ezekiel 25:17",
+      "first-release-date": "1994-09-26",
+      "artist-credit": [
+       {
+        "name": "Samuel L. Jackson",
+        "joinphrase": "",
+        "artist": {
+         "id": "a1c82f09-cc3a-4c94-a518-cba50d9bfab1",
+         "name": "Samuel L. Jackson"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
