@@ -360,6 +360,22 @@ def test_as_before_an_album_featured_artist_is_a_guest_on_every_track() -> None:
     assert got == [[("Alice", "main"), ("Bob", "guest")], [("Alice", "main"), ("Bob", "guest")]]
 
 
+def test_an_album_featured_artist_is_stated_where_the_track_s_line_names_them_and_guessed_elsewhere() -> None:
+    """Qobuz says the album features Bob, not that every track does: on a track whose line doesn't name Bob, in any
+    role it maps, Bob is salmon's guess."""
+    data = album(
+        track("Alice, MainArtist - Bob, FeaturedArtist"),
+        track("Alice, MainArtist - Bob, Vocals, Composer"),
+        track("Alice, MainArtist"),
+        artists=[*mains("Alice"), {"name": "Bob", "roles": ["featured-artist"]}],
+    )
+
+    got = parsed(data)
+
+    assert [t["artists"] for t in got] == [[("Alice", "main"), ("Bob", "guest")]] * 3
+    assert [t["assumed_artists"] for t in got] == [[], [], [("Bob", "guest")]]
+
+
 # Composers (ruling 1)
 
 
