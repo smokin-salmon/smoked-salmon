@@ -20,7 +20,7 @@ release = ["Bill Evans Trio (main)"]
 tracks = 10
 
 [today.musicbrainz]
-release = ["Bill Evans Trio (main)", "Scott LaFaro (guest)"]
+release = ["Bill Evans Trio (main)"]
 tracks = 10
 
 [today.discogs]

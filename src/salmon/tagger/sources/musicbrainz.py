@@ -110,7 +110,9 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         for disc in soup["medium-list"]:
             for track in disc["track-list"]:
                 try:
-                    artists = parse_artists(track["recording"]["artist-credit"])
+                    artists = parse_artists(
+                        track["artist-credit"] if "artist-credit" in track else track["recording"]["artist-credit"]
+                    )
                     credited_remixers = []
                     if "artist-relation-list" in track["recording"]:
                         for relation in track["recording"]["artist-relation-list"]:

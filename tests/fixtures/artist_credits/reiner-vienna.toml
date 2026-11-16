@@ -20,7 +20,7 @@ release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (main)"]
 tracks = 10
 
 [today.musicbrainz]
-release = ["Chicago Symphony Orchestra (main)", "Fritz Reiner (main)"]
+release = ["Johann Strauss (main)", "Carl Maria von Weber (main)", "Josef Strauss (main)", "Richard Strauss (main)"]
 tracks = 30
 
 [today.discogs]

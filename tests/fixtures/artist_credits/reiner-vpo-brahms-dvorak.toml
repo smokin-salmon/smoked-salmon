@@ -23,7 +23,7 @@ release = ["Fritz Reiner (main)", "Vienna Philharmonic (main)"]
 tracks = 13
 
 [today.musicbrainz]
-release = ["Wiener Philharmoniker (main)", "Fritz Reiner (main)"]
+release = ["Johannes Brahms (main)", "Antonín Dvořák (main)"]
 tracks = 13
 
 [today.discogs]
@@ -35,9 +35,9 @@ release = ["Fritz Reiner (main)", "Vienna Philharmonic (guest)"]
 tracks = 13
 
 [today.merge]
-release = ["Fritz Reiner (main)", "Vienna Philharmonic (main)", "Wiener Philharmoniker (main)"]
+release = ["Fritz Reiner (main)", "Vienna Philharmonic (main)", "Johannes Brahms (main)", "Antonín Dvořák (main)"]
 tracks = 13
-credits = ["1.1: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.2: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.3: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.4: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.5: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.6: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.7: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.8: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.9: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.10: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.11: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.12: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.13: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)"]
+credits = ["1.1: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.2: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.3: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.4: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.5: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.6: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.7: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.8: Fritz Reiner (main), Vienna Philharmonic (main), Johannes Brahms (main)", "1.9: Fritz Reiner (main), Vienna Philharmonic (main), Antonín Dvořák (main)", "1.10: Fritz Reiner (main), Vienna Philharmonic (main), Antonín Dvořák (main)", "1.11: Fritz Reiner (main), Vienna Philharmonic (main), Antonín Dvořák (main)", "1.12: Fritz Reiner (main), Vienna Philharmonic (main), Antonín Dvořák (main)", "1.13: Fritz Reiner (main), Vienna Philharmonic (main), Antonín Dvořák (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

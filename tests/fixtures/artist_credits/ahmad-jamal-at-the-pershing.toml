@@ -21,7 +21,7 @@ release = ["Ahmad Jamal Trio (main)"]
 tracks = 8
 
 [today.musicbrainz]
-release = ["Ahmad Jamal (main)", "The Ahmad Jamal Trio (main)"]
+release = ["The Ahmad Jamal Trio (main)"]
 tracks = 8
 
 [today.discogs]
@@ -33,9 +33,9 @@ release = ["Ahmad Jamal (main)", "Ahmad Jamal Trio (guest)"]
 tracks = 8
 
 [today.merge]
-release = ["Ahmad Jamal Trio (main)", "The Ahmad Jamal Trio (main)"]
+release = ["The Ahmad Jamal Trio (main)"]
 tracks = 8
-credits = ["1.1: Ahmad Jamal Trio (main)", "1.2: Ahmad Jamal Trio (main)", "1.3: Ahmad Jamal Trio (main)", "1.4: The Ahmad Jamal Trio (main)", "1.5: Ahmad Jamal Trio (main)", "1.6: Ahmad Jamal Trio (main)", "1.7: Ahmad Jamal Trio (main)", "1.8: Ahmad Jamal Trio (main)"]
+credits = ["1.1: The Ahmad Jamal Trio (main)", "1.2: The Ahmad Jamal Trio (main)", "1.3: The Ahmad Jamal Trio (main)", "1.4: The Ahmad Jamal Trio (main)", "1.5: The Ahmad Jamal Trio (main)", "1.6: The Ahmad Jamal Trio (main)", "1.7: The Ahmad Jamal Trio (main)", "1.8: The Ahmad Jamal Trio (main)"]
 
 
 # The files' tags.

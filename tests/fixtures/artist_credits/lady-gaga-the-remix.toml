@@ -23,7 +23,7 @@ release = ["Lady Gaga (main)", "Colby O'Donis (guest)", "Marilyn Manson (guest)"
 tracks = 10
 
 [today.musicbrainz]
-release = ["Lady Gaga (main)", "Richard “Humpty” Vission (remixer)", "Marilyn Manson (guest)", "Chew Fu (remixer)", "Frankmusik (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (guest)", "Passion Pit (remixer)", "The Sound of Arrows (remixer)", "Monarchy (remixer)"]
+release = ["Lady Gaga (main)", "Colby O’Donis (guest)", "Richard “Humpty” Vission (remixer)", "Marilyn Manson (guest)", "Chew Fu (remixer)", "Frankmusik (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (guest)", "Passion Pit (remixer)", "The Sound of Arrows (remixer)", "Monarchy (remixer)"]
 tracks = 10
 [today.discogs]
 release = ["Lady Gaga (main)", "Richard \"Humpty\" Vission (remixer)", "Guena LG (remixer)", "Marilyn Manson (guest)", "Chew-Fu Phat (remixer)", "Frankmusik (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (guest)", "Passion Pit (remixer)", "The Sound Of Arrows (remixer)", "Monarchy (remixer)"]
