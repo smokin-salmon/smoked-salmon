@@ -7,7 +7,8 @@ from typing import Any
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from salmon import cfg
-from salmon.common import RE_FEAT, parse_copyright, re_split
+from salmon.common import RE_FEAT, parse_copyright
+from salmon.common.strings import guests_from_title
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
 from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, strip_ep_suffix
@@ -572,12 +573,9 @@ class Scraper(QobuzBase, MetadataMixin):
                 seen_artists.add(guest)
 
         # 5. Check for "feat." in title and add those artists as guests
-        title = track.get("title", "")
-        if feat := RE_FEAT.search(title):
-            for artist in re_split(feat[1]):
-                guest_name = unescape(artist)
-                if guest_name not in seen_artists:
-                    artists.append((guest_name, "guest"))
-                    seen_artists.add(guest_name)
+        for guest in guests_from_title(track.get("title", "")):
+            if guest not in seen_artists:
+                artists.append((guest, "guest"))
+                seen_artists.add(guest)
 
         return artists

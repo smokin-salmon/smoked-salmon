@@ -1,8 +1,12 @@
-"""RE_FEAT, the featured credit five store parsers read from a title (#910)."""
+"""RE_FEAT, the featured credit five store parsers read from a title (#910), and guests_from_title, which reads it for
+Qobuz."""
 
+import anyio
 import pytest
 
 from salmon.common import RE_FEAT
+from salmon.common.strings import guests_from_title
+from salmon.tagger.sources.qobuz import Scraper as QobuzScraper
 
 
 @pytest.mark.parametrize(
@@ -58,3 +62,32 @@ def test_a_featured_credit_is_read_as_before(title, guests, plain) -> None:
 
 def test_a_title_without_a_featured_credit_has_none() -> None:
     assert RE_FEAT.search("Song (Live) [Remastered]") is None
+
+
+def _qobuz_artists(title: str, performers: str = "") -> list[tuple[str, str]]:
+    soup = {"artist": {"name": "Bob"}, "tracks": {"items": [{"title": title, "performers": performers}]}}
+    return anyio.run(QobuzScraper().parse_tracks, soup)["1"]["1"]["artists"]
+
+
+def test_a_title_s_guests_are_split() -> None:
+    guests = guests_from_title("Song (feat. A & B)")
+
+    assert guests == ["A", "B"]
+
+
+def test_a_title_s_guest_is_unescaped() -> None:
+    guests = guests_from_title("Song (feat. Beyonc&eacute;)")
+
+    assert guests == ["Beyoncé"]
+
+
+def test_a_title_without_a_featured_credit_names_no_guests() -> None:
+    guests = guests_from_title("Song (Live)")
+
+    assert guests == []
+
+
+def test_as_before_qobuz_puts_a_title_s_guests_last_and_once() -> None:
+    artists = _qobuz_artists("Song (feat. A & B)", "A, FeaturedArtist - C, FeaturedArtist")
+
+    assert artists == [("Bob", "main"), ("A", "guest"), ("C", "guest"), ("B", "guest")]
