@@ -30,10 +30,11 @@ Three root causes show up in the casebook:
 - **Identity by spelling.** On *Ágætis byrjun*, Qobuz writes "Sigur Rós" on the album and "Sigur Ros" in
   each track's performers, so the band becomes its own guest.
 
-Four rules choose a role today, each in its own place: the first-wins choice at the end of the merge;
+Five rules choose a role today, each in its own place: the first-wins choice at the end of the merge;
 the merge's title reading for remixers; Discogs' `parse_credits`, where an artist with another role on
-a track loses main unless they also arranged it; and the files' classical rule, where a name in
-COMPOSER or CONDUCTOR loses its ARTIST credit.
+a track loses main unless they also arranged it; the files' classical rule, where a name in
+COMPOSER or CONDUCTOR loses its ARTIST credit; and `clean_metadata`'s, where a track's main who is
+also its guest or remixer loses main.
 
 What constrains the design:
 
@@ -47,8 +48,8 @@ What constrains the design:
 
 Changes from #869's plan, each for a reason given below:
 
-- Step 2 replaces one of the rules, the merge's first-wins choice. The others leave with the step that
-  makes them unnecessary (decision 4).
+- Step 2 replaces one of the rules, the merge's first-wins choice. Three others leave with the step
+  that makes them unnecessary (decision 4); `clean_metadata`'s stays (decision 3).
 - The stores' order is Qobuz, Deezer, Discogs, MusicBrainz, Apple Music. Deezer is added because it is
   second in `PREFERENCES`, ahead of Qobuz, and like Qobuz it folds a track's version into the title
   (#1077). MusicBrainz is moved up
@@ -113,11 +114,12 @@ rule that decided, the sources it came from, and the sources that disagreed.
 
 - **The limit:** main and guest are one performing credit per name per track (#852). Other roles are
   added together.
-- **Across roles:** a stated role other than main or guest drops an assumed main or guest of the same
-  name on that track. On *The Remix*, the files' plain ARTIST lists LoveGame's remixer Chew Fu beside
-  the singers, and Qobuz states him as remixer. Stated beside stated, both stay, as an artist can remix
-  their own track. This lands in step 4, when the files' plain ARTIST becomes assumed and the case
-  moves; until then both stay, as today.
+- **Across roles:** a track's main who is also its guest or remixer loses main, unless they are the
+  track's only main (an artist remixing their own track). Salmon does this today in `clean_metadata`,
+  after the merge, whichever source gave each credit, and it stays there until a case needs the
+  sources weighed. On *The Remix*, the files' plain ARTIST lists LoveGame's remixer Chew Fu beside
+  the singers; Discogs credits him as "Chew-Fu Phat", so the rule doesn't see one name. Once Qobuz
+  states him as remixer under the files' spelling, his main goes: the case moves in step 3.
 - **The tie-breaks, in order:** a stated role beats an assumed one; then the base, then the stores in
   the merge's order.
 - **Order:** a track's main artists keep the order the release gives them, from a store's album
