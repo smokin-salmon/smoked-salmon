@@ -86,6 +86,14 @@ def test_a_name_of_punctuation_only_beside_another_in_one_role_is_kept() -> None
     assert _repaired(credits) == [credits]
 
 
+def test_a_release_whose_mains_include_a_name_of_punctuation_only_keeps_every_credit() -> None:
+    credits = [("$$", "main"), ("Alice", "main"), ("Bob", "main")]
+
+    artists, tracks = generate_artists(_tracks(credits))
+
+    assert (artists, tracks["1"]["1"]["artists"]) == (credits, credits)
+
+
 def test_a_part_two_names_share_joins_each_name_only_where_its_own_parts_are() -> None:
     assert _repaired(
         [("DJ", "main"), ("Shadow", "main")],
