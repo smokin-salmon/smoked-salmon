@@ -34,7 +34,7 @@ Five rules choose a role today, each in its own place: the first-wins choice at 
 the merge's title reading for remixers; Discogs' `parse_credits`, where an artist with another role on
 a track loses main unless they also arranged it; the files' classical rule, where a name in
 COMPOSER or CONDUCTOR loses its ARTIST credit; and `clean_metadata`'s, where a track's main who is
-also its guest or remixer loses main.
+also its guest or remixer loses main, unless they are its only main.
 
 What constrains the design:
 
