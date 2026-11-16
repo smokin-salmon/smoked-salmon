@@ -35,6 +35,7 @@ tracks = 8
 [today.merge]
 release = ["Earth, Wind & Fire (main)", "Larry Dunn (composer)", "Maurice White (composer)", "Philip Bailey (composer)", "Charles Stepney (composer)", "Verdine White (composer)", "Maurice White (guest)", "Al McKay (composer)", "Louise Anglin (composer)"]
 tracks = 8
+credits = ["1.1: Earth, Wind & Fire (main), Larry Dunn (composer), Maurice White (composer), Philip Bailey (composer)", "1.2: Earth, Wind & Fire (main), Charles Stepney (composer), Maurice White (composer), Verdine White (composer)", "1.3: Earth, Wind & Fire (main), Maurice White (guest), Al McKay (composer), Larry Dunn (composer), Maurice White (composer), Philip Bailey (composer), Verdine White (composer)", "1.4: Earth, Wind & Fire (main), Maurice White (guest), Larry Dunn (composer), Maurice White (composer)", "1.5: Earth, Wind & Fire (main), Charles Stepney (composer), Maurice White (composer), Philip Bailey (composer)", "1.6: Earth, Wind & Fire (main), Maurice White (guest), Charles Stepney (composer), Maurice White (composer), Philip Bailey (composer)", "1.7: Earth, Wind & Fire (main), Larry Dunn (composer), Maurice White (composer)", "1.8: Earth, Wind & Fire (main), Larry Dunn (composer), Louise Anglin (composer), Philip Bailey (composer)"]
 
 [today.output]
 albumartist = "Earth, Wind & Fire"

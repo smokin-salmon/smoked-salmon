@@ -34,6 +34,7 @@ tracks = 5
 [today.merge]
 release = ["Miles Davis (main)", "Bill Evans (main)", "John Coltrane (main)", "Cannonball Adderley (main)", "Wynton Kelly (main)", "Paul Chambers (main)"]
 tracks = 5
+credits = ["1.1: Miles Davis (main), Bill Evans (main), John Coltrane (main), Cannonball Adderley (main)", "1.2: Miles Davis (main), John Coltrane (main), Cannonball Adderley (main), Wynton Kelly (main), Paul Chambers (main)", "1.3: Miles Davis (main), Bill Evans (main), John Coltrane (main)", "1.4: Miles Davis (main), Bill Evans (main), John Coltrane (main), Cannonball Adderley (main)", "1.5: Miles Davis (main), Bill Evans (main), John Coltrane (main), Cannonball Adderley (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

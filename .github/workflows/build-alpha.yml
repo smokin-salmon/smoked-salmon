@@ -26,15 +26,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-
-      # network=host lets the builder container reach the job's registry on localhost:5000.
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-        with:
-          driver-opts: network=host
-
       # CI installs the uv the image is built with: one pin, in the Dockerfile, which Dependabot bumps.
       - name: Read the pinned uv version from the Dockerfile
         id: uv
@@ -64,47 +55,16 @@ jobs:
             type=raw,value=alpha
             type=sha,prefix=alpha-
 
-      - name: Build the alpha image into the job's registry
+      # A fixable CRITICAL stops the run here, before anything is pushed.
+      - name: Build and scan the alpha image
         id: build
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        uses: ./.github/actions/build-scan
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: localhost:5000/smoked-salmon:scan
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-      - name: Scan the linux/amd64 image
-        uses: ./.github/actions/scan-image
-        with:
-          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
-          platform: linux/amd64
-
-      - name: Scan the linux/arm64 image
-        uses: ./.github/actions/scan-image
-        with:
-          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
-          platform: linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # skopeo reads the login above from ~/.docker/config.json. --preserve-digests makes the copy
-      # fail rather than push anything but the scanned manifests and layers.
       - name: Push the scanned alpha image
-        env:
-          SOURCE: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          set -euo pipefail
-          while IFS= read -r tag; do
-            [ -n "$tag" ] || continue
-            skopeo copy --all --preserve-digests --src-tls-verify=false "docker://$SOURCE" "docker://$tag"
-            echo "pushed $tag (${SOURCE#*@})"
-          done <<< "$TAGS"
+        uses: ./.github/actions/push-scanned
+        with:
+          source: ${{ steps.build.outputs.image-ref }}
+          tags: ${{ steps.meta.outputs.tags }}
+          registry-token: ${{ github.token }}

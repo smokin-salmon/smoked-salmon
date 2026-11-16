@@ -34,6 +34,7 @@ tracks = 17
 [today.merge]
 release = ["Led Zeppelin (main)"]
 tracks = 9
+credits = ["1.1: Led Zeppelin (main)", "1.2: Led Zeppelin (main)", "1.3: Led Zeppelin (main)", "1.4: Led Zeppelin (main)", "1.5: Led Zeppelin (main)", "1.6: Led Zeppelin (main)", "1.7: Led Zeppelin (main)", "1.8: Led Zeppelin (main)", "1.9: Led Zeppelin (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

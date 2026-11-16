@@ -29,10 +29,11 @@ title, a body, a commit message, a PR's branch name): it goes through `env:` and
 
 Every workflow that builds the image scans it with `.github/actions/scan-image` (Trivy): fixable
 HIGH and CRITICAL vulnerabilities are listed in the job summary, and a fixable CRITICAL fails the
-job. `build-alpha.yml` and `docker-image.yml` build both arches into a registry local to the job,
-scan that image, then copy the scanned digest to ghcr.io, so the published image is the one scanned,
-never a rebuild. An allowlist entry goes in `.trivyignore` with a `# reason` line above it and an
-`exp:YYYY-MM-DD` end date on it; the scan action refuses entries without both.
+job. `build-alpha.yml` and `docker-image.yml` build both arches into a registry local to the job and
+scan that image (`.github/actions/build-scan`), then copy the scanned digest to ghcr.io
+(`.github/actions/push-scanned`), so the published image is the one scanned, never a rebuild. An
+allowlist entry goes in `.trivyignore` with a `# reason` line above it and an `exp:YYYY-MM-DD` end
+date on it; the scan action refuses entries without both.
 
 ## Releases
 
@@ -56,11 +57,18 @@ release. If the run fails after step 3, `master` already announces a version tha
 re-run it as soon as possible: step 1 sees `current` already at `X.Y.Z` and skips the bump, and the
 run builds, scans and pushes again.
 
-The workflow checks out and pushes with the `BUMP_VERSION_TOKEN_ACTION` secret, a token whose
-owner can bypass the `master` ruleset. If that token expires or is regenerated (which changes its
-value), store the new value with `gh secret set BUMP_VERSION_TOKEN_ACTION`; otherwise the whole
-workflow fails at checkout: no version bump, no Docker image. A failed run can be re-run once the
-secret is fixed.
+The workflow checks out with the job's own token, which only reads the repository. Step 3 pushes
+with a token of the `smokin-salmon` organization's release GitHub App (Contents: read and write,
+installed on this repository only, a bypass actor of the `master` ruleset), minted in the run, after
+the scan, from the repository variable `RELEASE_APP_CLIENT_ID` (the App's Client ID) and the
+repository secret `RELEASE_APP_PRIVATE_KEY`. To rotate its key, generate a new private key in the
+App's settings (organization settings, Developer settings, GitHub Apps), store it with
+`gh secret set RELEASE_APP_PRIVATE_KEY < key.pem`, then delete the old key there. Step 3 pushes
+`master` and the moved tag in one atomic push, so without a valid key, or if the push is refused,
+`master`, the tag and ghcr.io are unchanged, and the failed run can be re-run once that is fixed.
+The App cannot change workflows: a re-run whose tag move would carry changes to `.github/workflows/`
+(a fix merged after the release was published) may be refused. Then delete the release and its tag
+and publish it again from `master`.
 
 `release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
 new version exists, so that bump commit is the release announcement, and the release description
