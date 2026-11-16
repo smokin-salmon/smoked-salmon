@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from collections.abc import Collection
 
 import asyncclick as click
 import musicbrainzngs
@@ -25,6 +26,23 @@ RELEASE_TYPES = {
 
 
 musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")
+
+# The official special purpose artists, and the subsets of [unknown] that have one, as MusicBrainz lists them:
+# https://musicbrainz.org/doc/Style/Unknown_and_untitled/Special_purpose_artist
+SPECIAL_PURPOSE_ARTISTS = frozenset(
+    {
+        "f731ccc4-e22a-43af-a747-64213329e088",  # [anonymous]
+        "33cf029c-63b0-41a0-9855-be2a3665fb3b",  # [data]
+        "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",  # [dialogue]
+        "eec63d3c-3b81-4ad4-b1e4-7c147d4d2b61",  # [no artist]
+        "9be7f096-97ec-4615-8957-8d40b5dcbc41",  # [traditional]
+        "125ec42a-7229-4250-afc5-e057484327fe",  # [unknown]
+        "89ad4ac3-39f7-470e-963a-56509c546377",  # Various Artists
+        "7e84f845-ac16-41fe-9ff8-df12eb32af55",  # MusicBrainz Test Artist
+        "66ea0139-149f-4a0c-8fbf-5ea9ec4a6e49",  # [Disney]
+        "a0ef7e1d-44ff-4039-9435-7d5fefdeecc9",  # [theatre]
+    }
+)
 
 
 class Scraper(MusicBrainzBase, MetadataMixin):
@@ -110,8 +128,9 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         for disc in soup["medium-list"]:
             for track in disc["track-list"]:
                 try:
+                    recording = track["recording"]
                     artists = parse_artists(
-                        track["artist-credit"] if "artist-credit" in track else track["recording"]["artist-credit"]
+                        recording["artist-credit"], track.get("artist-credit", []), composer_ids(recording)
                     )
                     credited_remixers = []
                     if "artist-relation-list" in track["recording"]:
@@ -132,17 +151,42 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         return dict(tracks)
 
 
-def parse_artists(artist_credits):
+def composer_ids(recording) -> set[str]:
+    """The ids of the composers of the works a recording is a performance of."""
+    return {
+        relation["artist"]["id"]
+        for performance in recording.get("work-relation-list", [])
+        if performance["type"] == "performance"
+        for relation in performance["work"].get("artist-relation-list", [])
+        if relation["type"] == "composer"
+    }
+
+
+def _credited(artist_credits) -> list[tuple[str, str, str]]:
+    """(id, name, role) of each artist in a credit. MusicBrainz separates the list with join phrases;
+    after a feat. one (" feat. ", " ft. ", " featuring "), all of the artists are guests, as for a Discogs join.
     """
-    Create the artists list from the given list of artists. MusicBrainz separates the
-    list with join phrases; after a feat. one (" feat. ", " ft. ", " featuring "), all of
-    the artists are guests, as for a Discogs join.
-    """
-    artists = []
+    credited = []
     is_guest = False
     for artist in artist_credits:
         if isinstance(artist, str) and RE_FEAT_JOIN.fullmatch(artist.strip()):
             is_guest = True
         elif isinstance(artist, dict):
-            artists.append((artist["artist"]["name"], "guest" if is_guest else "main"))
-    return artists
+            credited.append((artist["artist"]["id"], artist["artist"]["name"], "guest" if is_guest else "main"))
+    return credited
+
+
+def parse_artists(recording_credits, track_credits=(), composers: Collection[str] = ()):
+    """
+    The artists of a track: those the recording is credited to, then those the release adds on the track.
+    An artist in both is one artist, with the track's name and the recording's role. One only on the track
+    is left out if they composed the work (the track credit of classical releases is the composer, where
+    the recording's is the performers), or is a special purpose artist such as "[dialogue]".
+    """
+    artists = {mbid: (name, role) for mbid, name, role in _credited(recording_credits)}
+    for mbid, name, role in _credited(track_credits):
+        if mbid in artists:
+            artists[mbid] = (name, artists[mbid][1])
+        elif mbid not in composers and mbid not in SPECIAL_PURPOSE_ARTISTS:
+            artists[mbid] = (name, role)
+    return list(artists.values())

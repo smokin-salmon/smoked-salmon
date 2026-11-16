@@ -187,14 +187,14 @@ def test_a_cover_art_archive_answer_that_is_not_json_is_no_cover_and_says_so(ser
 @pytest.mark.parametrize("join", [" feat. ", " ft. ", " featuring ", " Feat. ", " ft "])
 def test_a_featured_join_makes_the_artists_after_it_guests(join) -> None:
     # Only " feat. " did: B after " ft. " or " featuring " was a main artist (#910).
-    credits = [{"artist": {"name": "A"}}, join, {"artist": {"name": "B"}}]
+    credits = [{"artist": {"id": "a", "name": "A"}}, join, {"artist": {"id": "b", "name": "B"}}]
 
     assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "guest")]
 
 
 @pytest.mark.parametrize("join", [" & ", ", ", " x ", " with "])
 def test_another_join_keeps_the_artists_after_it_main(join) -> None:
-    credits = [{"artist": {"name": "A"}}, join, {"artist": {"name": "B"}}]
+    credits = [{"artist": {"id": "a", "name": "A"}}, join, {"artist": {"id": "b", "name": "B"}}]
 
     assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "main")]
 
@@ -202,7 +202,7 @@ def test_another_join_keeps_the_artists_after_it_main(join) -> None:
 def _track(number: str, recording_title: str, title: str | None = None) -> dict:
     track = {
         "number": number,
-        "recording": {"title": recording_title, "artist-credit": [{"artist": {"name": "Spice Girls"}}]},
+        "recording": {"title": recording_title, "artist-credit": [{"artist": {"id": "spice", "name": "Spice Girls"}}]},
     }
     if title is not None:
         track["title"] = title
@@ -242,7 +242,7 @@ def test_a_track_without_a_title_of_its_own_takes_its_recordings() -> None:
 # Tracks of MusicBrainz release https://musicbrainz.org/release/ec3baf33-2d0f-4eea-a3ec-8bcd582bf939
 # (Lady Gaga, The Remix)
 def _remix_track(number: str, recording_title: str, relations: list[tuple[str, str]]) -> dict:
-    recording: dict = {"title": recording_title, "artist-credit": [{"artist": {"name": "Lady Gaga"}}]}
+    recording: dict = {"title": recording_title, "artist-credit": [{"artist": {"id": "gaga", "name": "Lady Gaga"}}]}
     if relations:
         recording["artist-relation-list"] = [
             {"type": relation_type, "direction": "backward", "artist": {"name": name}}
@@ -285,3 +285,98 @@ def test_a_recordings_remixer_relation_is_a_remixer_credit() -> None:
 )
 def test_a_releases_barcode_is_its_upc(release, upc) -> None:
     assert musicbrainz_tagger.Scraper().parse_upc(release) == upc
+
+
+def _credit(name: str, mbid: str, join: str | None = None) -> list:
+    return [{"artist": {"id": mbid, "name": name}}] + ([join] if join else [])
+
+
+GAGA = "650e7db6-0000-0000-0000-000000000000"
+COLBY = "d71c2b20-0000-0000-0000-000000000000"
+BEETHOVEN = "1f9df192-0000-0000-0000-000000000000"
+RATTLE = "80c3bce9-0000-0000-0000-000000000000"
+
+
+def test_an_artist_only_the_track_credits_is_added_after_the_recordings() -> None:
+    # "Just Dance" on Lady Gaga's The Remix: the release credits the track "Lady Gaga feat. Colby O’Donis", its
+    # recording "Lady Gaga".
+    track = [*_credit("Lady Gaga", GAGA, " feat. "), *_credit("Colby O’Donis", COLBY)]
+    recording = _credit("Lady Gaga", GAGA)
+
+    assert musicbrainz_tagger.parse_artists(recording, track) == [("Lady Gaga", "main"), ("Colby O’Donis", "guest")]
+
+
+def test_an_artist_in_both_credits_is_one_artist_with_the_tracks_name_and_the_recordings_role() -> None:
+    track = [*_credit("Lady Gaga", GAGA, " feat. "), *_credit("The Colby", COLBY)]
+    recording = [*_credit("Lady Gaga", GAGA, " & "), *_credit("Colby O’Donis", COLBY)]
+
+    assert musicbrainz_tagger.parse_artists(recording, track) == [("Lady Gaga", "main"), ("The Colby", "main")]
+
+
+def test_a_composer_only_the_track_credits_is_left_out() -> None:
+    # Brahms / Beethoven, Chung and Rattle (Wiener Philharmoniker): the track credit is the composer, the recording's
+    # the performers.
+    track = _credit("Ludwig van Beethoven", BEETHOVEN)
+    recording = [*_credit("Wiener Philharmoniker", "d770374d", ", "), *_credit("Simon Rattle", RATTLE)]
+
+    assert musicbrainz_tagger.parse_artists(recording, track, {BEETHOVEN}) == [
+        ("Wiener Philharmoniker", "main"),
+        ("Simon Rattle", "main"),
+    ]
+
+
+def test_a_composer_who_is_also_a_recording_artist_stays() -> None:
+    recording = _credit("Ludwig van Beethoven", BEETHOVEN)
+
+    assert musicbrainz_tagger.parse_artists(recording, recording, {BEETHOVEN}) == [("Ludwig van Beethoven", "main")]
+
+
+def test_a_special_purpose_artist_only_the_track_credits_is_left_out() -> None:
+    # Pulp Fiction: the track credit is "[dialogue]", the recording's the actors.
+    track = _credit("[dialogue]", "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc")
+    recording = [*_credit("Tim Roth", "669982b2", " and "), *_credit("Amanda Plummer", "61742cdb")]
+
+    assert musicbrainz_tagger.parse_artists(recording, track) == [("Tim Roth", "main"), ("Amanda Plummer", "main")]
+
+
+def test_the_composers_of_a_recordings_works_are_the_artists_of_their_composer_relations() -> None:
+    recording = {
+        "work-relation-list": [
+            {
+                "type": "performance",
+                "work": {
+                    "artist-relation-list": [
+                        {"type": "composer", "artist": {"id": BEETHOVEN, "name": "Ludwig van Beethoven"}},
+                        {"type": "lyricist", "artist": {"id": "someone", "name": "Someone"}},
+                    ]
+                },
+            },
+            {"type": "arrangement", "work": {"artist-relation-list": [{"type": "composer", "artist": {"id": "x"}}]}},
+        ]
+    }
+
+    assert musicbrainz_tagger.composer_ids(recording) == {BEETHOVEN}
+    assert musicbrainz_tagger.composer_ids({}) == set()
+
+
+def test_a_tracks_artists_come_from_its_credit_and_its_recordings_without_the_composer() -> None:
+    track = {
+        "number": "1",
+        "artist-credit": _credit("Ludwig van Beethoven", BEETHOVEN),
+        "recording": {
+            "title": "Symphony no. 5",
+            "artist-credit": [*_credit("Wiener Philharmoniker", "d770374d", ", "), *_credit("Simon Rattle", RATTLE)],
+            "work-relation-list": [
+                {
+                    "type": "performance",
+                    "work": {"artist-relation-list": [{"type": "composer", "artist": {"id": BEETHOVEN}}]},
+                }
+            ],
+        },
+    }
+
+    tracks = anyio.run(
+        musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [{"position": "1", "track-list": [track]}]}
+    )
+
+    assert tracks["1"]["1"]["artists"] == [("Wiener Philharmoniker", "main"), ("Simon Rattle", "main")]

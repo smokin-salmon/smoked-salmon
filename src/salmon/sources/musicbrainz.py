@@ -100,6 +100,8 @@ class MusicBrainzBase(BaseScraper):
                     "artist-credits",
                     "artist-rels",
                     "recording-level-rels",
+                    "work-rels",
+                    "work-level-rels",
                 ],
             )
         )["release"]
