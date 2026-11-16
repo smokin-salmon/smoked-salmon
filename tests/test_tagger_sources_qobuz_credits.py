@@ -375,8 +375,8 @@ def test_as_before_an_album_featured_artist_is_a_guest_on_every_track() -> None:
 
 
 def test_an_album_featured_artist_is_stated_where_the_track_s_line_names_them_and_guessed_elsewhere() -> None:
-    """Qobuz says the album features Bob, not that every track does: on a track whose line doesn't name Bob, in any
-    role it maps, Bob is salmon's guess."""
+    """Qobuz says the album features Bob, not that every track does: a track whose line names Bob, in any words, says
+    he is on it ("Bob, Vocals"); on a track whose line doesn't name him, Bob is salmon's guess."""
     data = album(
         track("Alice, MainArtist - Bob, FeaturedArtist"),
         track("Alice, MainArtist - Bob, Vocals, Composer"),
@@ -388,7 +388,7 @@ def test_an_album_featured_artist_is_stated_where_the_track_s_line_names_them_an
     got = parsed(data)
 
     assert [t["artists"] for t in got] == [[("Alice", "main"), ("Bob", "guest")]] * 4
-    assert [t["assumed_artists"] for t in got] == [[], [], [("Bob", "guest")], [("Bob", "guest")]]
+    assert [t["assumed_artists"] for t in got] == [[], [], [], [("Bob", "guest")]]
 
 
 # Composers, on a classical release

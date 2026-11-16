@@ -565,14 +565,15 @@ def _is_classical(album: dict[str, Any]) -> bool:
     return any(is_classical_genre(genre) for genre in standardize_genres(genres))
 
 
-def _performers(line: str, known: set[str]) -> list[Credit]:
-    """Each credit a performers line ("A, Role, Role - B, Role") gives in a role salmon maps, in order.
+def _performers(line: str, known: set[str]) -> list[tuple[str, Role | None]]:
+    """Each credit a performers line ("A, Role, Role - B, Role") gives in a role salmon maps, in order, and once with
+    no role a name it gives in no such role ("B, Vocals"): Qobuz's word that they are on the track.
 
     A name is the entry's first part: Qobuz's other words are an open list ("Harpsichord", "Guitar (acoustic)"). It
     runs on over commas only to a name Qobuz gives elsewhere as a name (`known`: the album's artists and the track's
     performer), as "Earth, Wind & Fire", or over suffixes, as "Sammy Davis, Jr.".
     """
-    credits: list[Credit] = []
+    credits: list[tuple[str, Role | None]] = []
     for entry in line.split(" - "):
         parts = entry.split(",")
         first = next((i for i, part in enumerate(parts) if i and ROLE_WORDS.get(comparable(part))), len(parts))
@@ -585,7 +586,8 @@ def _performers(line: str, known: set[str]) -> list[Credit]:
             1,
         )
         if name := ",".join(parts[:size]).strip(" ,"):
-            credits.extend((name, role) for part in parts[size:] if (role := ROLE_WORDS.get(comparable(part))))
+            roles: list[Role | None] = [role for part in parts[size:] if (role := ROLE_WORDS.get(comparable(part)))]
+            credits.extend((name, role) for role in roles or [None])
     return credits
 
 
@@ -624,7 +626,7 @@ def _track_credits(
     if performer:
         as_main(performer)
     line_composers: list[str] = []
-    on_line: set[str] = set()  # the names the performers line credits in a role salmon maps, by _key
+    on_line: set[str] = set()  # the names the performers line gives, in any words, by _key
     for name, role in _performers(track.get("performers") or "", known):
         on_line.add(_key(name))
         if role == "main":
