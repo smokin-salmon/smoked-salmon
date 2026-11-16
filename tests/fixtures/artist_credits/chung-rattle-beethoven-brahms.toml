@@ -317,8 +317,28 @@ qobuz = '''
  "artist": {
   "name": "Kyung Wha Chung"
  },
+ "artists": [
+  {
+   "name": "Kyung Wha Chung",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Sir Simon Rattle",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Wiener Philharmonic Orchestra",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Classical"
+  "Classique"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -328,57 +348,78 @@ qobuz = '''
    {
     "title": "Symphony No. 5 in C Minor, Op. 67: I. Allegro con brio",
     "track_number": 1,
-    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
     "performer": {
      "name": "Wiener Philharmonic Orchestra"
+    },
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "composer": {
+     "name": "Ludwig van Beethoven"
     }
    },
    {
     "title": "Symphony No. 5 in C Minor, Op. 67: II. Andante con moto",
     "track_number": 2,
-    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
     "performer": {
      "name": "Wiener Philharmonic Orchestra"
+    },
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "composer": {
+     "name": "Ludwig van Beethoven"
     }
    },
    {
     "title": "Symphony No. 5 in C Minor, Op. 67: III. Allegro -",
     "track_number": 3,
-    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
     "performer": {
      "name": "Wiener Philharmonic Orchestra"
+    },
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "composer": {
+     "name": "Ludwig van Beethoven"
     }
    },
    {
     "title": "Symphony No. 5 in C Minor, Op. 67: IV. Allegro - Presto",
     "track_number": 4,
-    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
     "performer": {
      "name": "Wiener Philharmonic Orchestra"
+    },
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "composer": {
+     "name": "Ludwig van Beethoven"
     }
    },
    {
     "title": "Violin Concerto in D Major, Op. 77: I. Allegro non troppo (Cadenza by Joachim)",
     "track_number": 5,
-    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
     "performer": {
      "name": "Kyung Wha Chung"
+    },
+    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
+    "composer": {
+     "name": "Johannes Brahms"
     }
    },
    {
     "title": "Violin Concerto in D Major, Op. 77: II. Adagio",
     "track_number": 6,
-    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
     "performer": {
      "name": "Kyung Wha Chung"
+    },
+    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
+    "composer": {
+     "name": "Johannes Brahms"
     }
    },
    {
     "title": "Violin Concerto in D Major, Op. 77: III. Allegro giocoso, ma non troppo vivace (Cadenza by Joachim)",
     "track_number": 7,
-    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
     "performer": {
      "name": "Kyung Wha Chung"
+    },
+    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
+    "composer": {
+     "name": "Johannes Brahms"
     }
    }
   ]

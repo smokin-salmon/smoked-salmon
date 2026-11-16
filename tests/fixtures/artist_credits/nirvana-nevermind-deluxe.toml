@@ -2362,8 +2362,17 @@ qobuz = '''
  "artist": {
   "name": "Nirvana"
  },
+ "artists": [
+  {
+   "name": "Nirvana",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Rock"
+  "Pop/Rock",
+  "Pop/Rock→Rock"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -2373,67 +2382,119 @@ qobuz = '''
    {
     "title": "Smells Like Teen Spirit",
     "version": "Album Version",
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    },
    {
     "title": "In Bloom",
     "version": "Nevermind Version",
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Come As You Are",
     "version": "Album Version",
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Breed",
     "version": "Album Version",
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Lithium",
     "version": "Album Version",
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Polly",
     "version": "Album Version",
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Territorial Pissings",
     "version": "Album Version",
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Chet Powers, ComposerLyricist"
    },
    {
     "title": "Drain You",
     "version": "Album Version",
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Lounge Act",
     "version": "Album Version",
-    "track_number": 9
+    "track_number": 9,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    },
    {
     "title": "Stay Away",
     "version": "Album Version",
-    "track_number": 10
+    "track_number": 10,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    },
    {
     "title": "On A Plain",
     "version": "Album Version",
-    "track_number": 11
+    "track_number": 11,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Something In The Way",
     "version": "Album Version",
-    "track_number": 12
+    "track_number": 12,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, ComposerLyricist - Dave Grohl, ComposerLyricist - Krist Novoselic, ComposerLyricist"
    },
    {
     "title": "Endless, Nameless",
     "version": "Album Version",
-    "track_number": 13
+    "track_number": 13,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    }
   ]
  }

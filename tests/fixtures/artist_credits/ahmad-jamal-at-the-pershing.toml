@@ -387,6 +387,14 @@ qobuz = '''
  "artist": {
   "name": "Ahmad Jamal"
  },
+ "artists": [
+  {
+   "name": "Ahmad Jamal",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
   "Jazz"
  ],
@@ -399,48 +407,72 @@ qobuz = '''
     "title": "But Not For Me",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 1,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - Ira Gershwin, ComposerLyricist - George Gershwin, ComposerLyricist"
    },
    {
     "title": "Surrey With The Fringe On The Top",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 2,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - Richard Rodgers, ComposerLyricist - Oscar Hammerstein II , ComposerLyricist"
    },
    {
     "title": "Moonlight In Vermont",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 3,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - John Blackburn, ComposerLyricist - Karl Suessdorf, ComposerLyricist"
    },
    {
     "title": "Music, Music, Music",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 4,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - Bernie Baum, ComposerLyricist - Stephan Weiss, ComposerLyricist"
    },
    {
     "title": "No Greater Love",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 5,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - Marty Symes, Lyricist - Isham Jones, Composer"
    },
    {
     "title": "Poinciana",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 6,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - Buddy Bernier, ComposerLyricist - Nat Simon, ComposerLyricist"
    },
    {
     "title": "Wood'yn You",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 7,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - Dizzy Gillespie, ComposerLyricist"
    },
    {
     "title": "What's New",
     "version": "Live At The Pershing, Chicago, 1958",
     "track_number": 8,
+    "performer": {
+     "name": "Ahmad Jamal"
+    },
     "performers": "Ahmad Jamal Trio, MainArtist - Dave Usher, Producer - Malcolm Chisholm, RecordingEngineer - Robert Haggart, Composer - Johnny Burke, ComposerLyricist"
    }
   ]

@@ -746,8 +746,16 @@ qobuz = '''
  "artist": {
   "name": "Emerson String Quartet"
  },
+ "artists": [
+  {
+   "name": "Emerson String Quartet",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Classical"
+  "Classique"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -757,117 +765,278 @@ qobuz = '''
    {
     "title": "Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: I. Lento",
     "media_number": 1,
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: II. Allegretto",
     "media_number": 1,
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: III. Introduzione. Allegro - Allegro vivace",
     "media_number": 1,
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 3, BB 93, Sz.85: I. Prima parte (Moderato)",
     "media_number": 1,
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 3, BB 93, Sz.85: II. Seconda parte. Allegro - attacca: Ricapitulazione della prima parte. Moderato",
     "media_number": 1,
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 3, BB 93, Sz.85: III. Coda. Allegro molto",
     "media_number": 1,
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: I. Allegro",
     "media_number": 1,
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: II. Adagio molto",
     "media_number": 1,
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 5, Sz. 102: III. Scherzo. Alla bulgarese – Trio",
     "media_number": 1,
-    "track_number": 9
+    "track_number": 9,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: IV. Andante",
     "media_number": 1,
-    "track_number": 10
+    "track_number": 10,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: V. Finale. Allegro vivace",
     "media_number": 1,
-    "track_number": 11
+    "track_number": 11,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: I. Moderato",
     "media_number": 2,
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 2, Sz. 67: II. Allegro molto capriccioso",
     "media_number": 2,
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: III. Lento",
     "media_number": 2,
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 4, BB 95, Sz.91: I. Allegro",
     "media_number": 2,
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 4, Sz. 91: II. Prestissimo, con sordino",
     "media_number": 2,
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 4, Sz. 91: III. Non troppo lento",
     "media_number": 2,
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 4, Sz. 91: IV. Allegretto pizzicato",
     "media_number": 2,
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 4, BB 95, Sz.91: V. Allegro molto",
     "media_number": 2,
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: I. Mesto - Vivace",
     "media_number": 2,
-    "track_number": 9
+    "track_number": 9,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: II. Mesto - Marcia",
     "media_number": 2,
-    "track_number": 10
+    "track_number": 10,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: III. Mesto - Burletta (Moderato)",
     "media_number": 2,
-    "track_number": 11
+    "track_number": 11,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    },
    {
     "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: IV. Mesto",
     "media_number": 2,
-    "track_number": 12
+    "track_number": 12,
+    "performer": {
+     "name": "Emerson String Quartet"
+    },
+    "performers": "Emerson String Quartet, MainArtist, StringQuartet - Steven Paul, Producer - Wolf Erichson, Producer - Peter Länger, BalanceEngineer - Bela Bartok, Composer",
+    "composer": {
+     "name": "Béla Bartók"
+    }
    }
   ]
  }

@@ -344,8 +344,17 @@ qobuz = '''
  "artist": {
   "name": "Rush"
  },
+ "artists": [
+  {
+   "name": "Rush",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Rock"
+  "Pop/Rock",
+  "Pop/Rock→Rock"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -355,37 +364,65 @@ qobuz = '''
    {
     "title": "Tom Sawyer",
     "version": "Album Version",
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Rush"
+    },
+    "performers": "Rush, MainArtist, Producer, RecordingArranger - Terry Brown, Producer, RecordingArranger - Paul Northfield, Engineer - Robbie Whelan, RecordingSecondEngineer - Geddy Lee, Vocalist, ComposerLyricist - Alex Lifeson, ComposerLyricist - Neil Peart, ComposerLyricist - Pye Dubois, ComposerLyricist"
    },
    {
     "title": "Red Barchetta",
     "version": "Album Version",
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Rush"
+    },
+    "performers": "Rush, MainArtist, Producer, RecordingArranger - Terry Brown, Producer, RecordingArranger - Paul Northfield, Engineer - Robbie Whelan, RecordingSecondEngineer - Geddy Lee, ComposerLyricist - Alex Lifeson, ComposerLyricist - Neil Peart, ComposerLyricist"
    },
    {
     "title": "YYZ",
     "version": "Album Version",
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Rush"
+    },
+    "performers": "Rush, MainArtist, Producer, RecordingArranger - Terry Brown, Producer, RecordingArranger - Paul Northfield, Engineer - Robbie Whelan, RecordingSecondEngineer - Neil Peart, ComposerLyricist - Geddy Lee, ComposerLyricist"
    },
    {
     "title": "Limelight",
     "version": "Album Version",
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Rush"
+    },
+    "performers": "Rush, MainArtist, Producer - Terry Brown, Producer - Paul Northfield, Engineer - Robbie Whelan, RecordingSecondEngineer - Geddy Lee, ComposerLyricist - Alex Lifeson, ComposerLyricist - Neil Peart, ComposerLyricist"
    },
    {
     "title": "The Camera Eye",
     "version": "Album Version",
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Rush"
+    },
+    "performers": "Rush, MainArtist, Producer, RecordingArranger - Terry Brown, Producer, RecordingArranger - Paul Northfield, Engineer - Robbie Whelan, RecordingSecondEngineer - Geddy Lee, ComposerLyricist - Alex Lifeson, ComposerLyricist - Neil Peart, ComposerLyricist"
    },
    {
     "title": "Witch Hunt",
     "version": "Album Version",
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Rush"
+    },
+    "performers": "Rush, MainArtist, Producer, RecordingArranger - Terry Brown, Producer, RecordingArranger - Paul Northfield, Engineer - Robbie Whelan, RecordingSecondEngineer - Geddy Lee, ComposerLyricist - Alex Lifeson, ComposerLyricist - Neil Peart, ComposerLyricist"
    },
    {
     "title": "Vital Signs",
     "version": "Album Version",
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Rush"
+    },
+    "performers": "Rush, MainArtist, Producer, RecordingArranger - Terry Brown, Producer, RecordingArranger - Paul Northfield, Engineer - Robbie Whelan, RecordingSecondEngineer - Geddy Lee, ComposerLyricist - Alex Lifeson, ComposerLyricist - Neil Peart, ComposerLyricist"
    }
   ]
  }

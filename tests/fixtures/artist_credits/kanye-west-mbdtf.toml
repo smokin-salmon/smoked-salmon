@@ -1255,8 +1255,16 @@ qobuz = '''
  "artist": {
   "name": "Kanye West"
  },
+ "artists": [
+  {
+   "name": "Kanye West",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Hip-Hop/Rap"
+  "Rap"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -1267,78 +1275,117 @@ qobuz = '''
     "title": "Dark Fantasy",
     "version": "Album Version (Explicit)",
     "track_number": 1,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, CoProducer, ComposerLyricist - RZA, Producer - No-ID, CoProducer - Jeff Bhasker, CoProducer - Mike Dean, AdditionalProducer, RecordingEngineer, MixingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer, MixingEngineer - Anthony Kilhoffer, RecordingEngineer - Noah Goldstein, RecordingEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Phil Joly, MixingSecondEngineer - Nicki Minaj, BackgroundVocalist - Justin Vernon, BackgroundVocalist, ComposerLyricist - Teyana Taylor, AdditionalVocalist - Amber Rose, AdditionalVocalist - Robert Diggs, ComposerLyricist - Mike Oldfield, ComposerLyricist - JOHN ANDERSON, ComposerLyricist - No I.D., ComposerLyricist - Malik Yusef, ComposerLyricist - Onika Maraj, ComposerLyricist"
    },
    {
     "title": "Gorgeous",
     "version": "Album Version (Explicit)",
     "track_number": 2,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Kid Cudi, FeaturedArtist - Raekwon, FeaturedArtist - No-ID, CoProducer - Mike Dean, CoProducer, RecordingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer - Christian Mochizuki, RecordingEngineer, MixingSecondEngineer - Noah Goldstein, RecordingEngineer - Pete Bischoff, MixingSecondEngineer - Phil Joly, MixingSecondEngineer - Ken Lewis, BassVocalist - Tony Williams, BackgroundVocalist - Corey Woods, ComposerLyricist - Scott Mescudi, ComposerLyricist - Gene Clark, ComposerLyricist - Roger McGuinn, ComposerLyricist - No I.D., ComposerLyricist - Malik Yusef, ComposerLyricist"
    },
    {
     "title": "POWER",
     "version": "Album Version (Explicit)",
     "track_number": 3,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - S1, Producer - Jeff Bhasker, AdditionalProducer, ComposerLyricist - Mike Dean, AdditionalProducer, RecordingEngineer, BassVocalist, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - MANNY MARROQUIN, MixingEngineer - Dwele, AdditionalVocalist - Alvin Fields, Vocalist - Kenneth Lewis, Vocalist, Engineer - Brent Kolatalo, Engineer - FRANCOIS BERNHEIM, ComposerLyricist - Jean Pierre Lang, ComposerLyricist - Robert Fripp, ComposerLyricist - Michael Giles, ComposerLyricist - Greg Lake, ComposerLyricist - Peter Sinfield, ComposerLyricist - Malik Yusef, ComposerLyricist - N. Perez, ComposerLyricist - Larry Griffin Jr., ComposerLyricist - Ian McDonald, ComposerLyricist - B. Bergman, ComposerLyricist"
    },
    {
     "title": "All Of The Lights (Interlude)",
     "version": "Album Version (Explicit)",
     "track_number": 4,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Mike Dean, Producer, MixingEngineer - Phil Joly, RecordingEngineer - Noah Goldstein, RecordingEngineer - Jeff Bhasker, ComposerLyricist - Stacy Ferguson, ComposerLyricist - Malik Yusef, ComposerLyricist - Scott Mescudi, ComposerLyricist - Warren Trotter, ComposerLyricist"
    },
    {
     "title": "All Of The Lights",
     "version": "Album Version (Explicit)",
     "track_number": 5,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jeff Bhasker, CoProducer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer - Mike Dean, RecordingEngineer - Noah Goldstein, RecordingEngineer - Marcos Tovar, RecordingEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Phil Joly, MixingSecondEngineer - Elton John, AdditionalVocalist - Ken Lewis, HornArranger, AdditionalVocalist - Rihanna, AdditionalVocalist - Kid Cudi, AdditionalVocalist - Tony Williams, AdditionalVocalist - The-Dream, AdditionalVocalist - Charlie Wilson, AdditionalVocalist - John Legend, AdditionalVocalist - Elly Jackson, AdditionalVocalist - Alicia Keys, AdditionalVocalist - Fergie, AdditionalVocalist - Ryan Leslie, AdditionalVocalist - Alvin Fields, AdditionalVocalist - Drake, AdditionalVocalist - Stacy Ferguson, ComposerLyricist - Malik Yusef, ComposerLyricist - Scott Mescudi, ComposerLyricist - Warren Trotter, ComposerLyricist"
    },
    {
     "title": "Monster",
     "version": "Album Version (Explicit)",
     "track_number": 6,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jay-Z, FeaturedArtist - Rick Ross, FeaturedArtist - Nicki Minaj, FeaturedArtist - Bon Iver, FeaturedArtist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - Justin Vernon, BackgroundVocalist, ComposerLyricist - Shawn Carter, ComposerLyricist - Onika Maraj, ComposerLyricist - Patrick Reynolds, ComposerLyricist - Mike Dean, ComposerLyricist - W. Roberts, ComposerLyricist - Malik Yusef, ComposerLyricist - Ben Bronfman, ComposerLyricist - Daniel Lynas, ComposerLyricist - Harley Wertheimer, ComposerLyricist"
    },
    {
     "title": "So Appalled",
     "version": "Album Version (Explicit)",
     "track_number": 7,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jay-Z, FeaturedArtist - Pusha T, FeaturedArtist - Prynce Cy Hi, FeaturedArtist - Swizz Beatz, FeaturedArtist - RZA, FeaturedArtist - No-ID, Producer - Mike Dean, CoProducer, RecordingEngineer, MixingEngineer, StringArranger, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - Noah Goldstein, RecordingEngineer - Pete Bischoff, RecordingEngineer, MixingSecondEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Shawn Carter, ComposerLyricist - Terrence Thornton, ComposerLyricist - Cydel Young, ComposerLyricist - Kasseem Dean, ComposerLyricist - Robert Diggs, ComposerLyricist - Manfred Mann, ComposerLyricist - No I.D., ComposerLyricist"
    },
    {
     "title": "Devil In A New Dress",
     "version": "Album Version (Explicit)",
     "track_number": 8,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, ComposerLyricist - Rick Ross, FeaturedArtist - Bink, Producer - Mike Dean, AdditionalProducer, RecordingEngineer, MixingEngineer, BassVocalist, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - Noah Goldstein, RecordingEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Gerry Goffin, ComposerLyricist - Carole King, ComposerLyricist - W. Roberts, ComposerLyricist - R. Harrell, ComposerLyricist - Malik Yusef, ComposerLyricist"
    },
    {
     "title": "Runaway",
     "version": "Album Version (Explicit)",
     "track_number": 9,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Pusha T, FeaturedArtist - Emile Haynie, CoProducer, ComposerLyricist - Jeff Bhasker, CoProducer, ComposerLyricist - Mike Dean, CoProducer, RecordingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer - Christian Mochizuci, RecordingSecondEngineer - Noah Goldstein, RecordingSecondEngineer - Cary Clark, MixingSecondEngineer - Tony Williams, BackgroundVocalist - Terrence Thornton, ComposerLyricist - John Roger Branch, ComposerLyricist - Pete Rock, ComposerLyricist - Malik Yusef, ComposerLyricist"
    },
    {
     "title": "Hell Of A Life",
     "version": "Album Version (Explicit)",
     "track_number": 10,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Mike Caren, CoProducer, ComposerLyricist - No-ID, CoProducer - Mike Dean, CoProducer, RecordingEngineer, MixingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer, MixingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer, DrumProgrammer - Noah Goldstein, RecordingEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Teyana Taylor, AdditionalVocalist - The-Dream, AdditionalVocalist - Ernest Wilson, ComposerLyricist - Sylvester Stewart, ComposerLyricist - Tony Joe White, ComposerLyricist - Terence Butler, ComposerLyricist - Tony Iommi, ComposerLyricist - John Osbourne, ComposerLyricist - William Ward, ComposerLyricist"
    },
    {
     "title": "Blame Game",
     "version": "Album Version (Explicit)",
     "track_number": 11,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - John Legend, FeaturedArtist - DJ Frank E, Producer - Mike Dean, AdditionalProducer, MixingEngineer, BassVocalist, ComposerLyricist - Andrew Dawson, RecordingEngineer, MixingEngineer - Noah Goldstein, RecordingEngineer - Phil Joly, RecordingEngineer - Ryan Gilligan, RecordingEngineer - Anthony Kilhoffer, MixingEngineer - Chris Rock, AdditionalVocalist - Salma Kenas, AdditionalVocalist - John Stephens, ComposerLyricist - Khloe Mitchell, ComposerLyricist - Richard James, ComposerLyricist - J. Franks, ComposerLyricist"
    },
    {
     "title": "Lost In The World (feat. Justin Vernon)",
     "version": "Album Version (Explicit)",
     "track_number": 12,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Bon Iver, FeaturedArtist - Jeff Bhasker, CoProducer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer, DrumProgrammer - Mike Dean, RecordingEngineer - Noah Goldstein, RecordingEngineer - Alex Graupera, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Justin Vernon, AdditionalVocalist, ComposerLyricist - Charlie Wilson, AdditionalVocalist - Kaye Fox, AdditionalVocalist - Tony Williams, AdditionalVocalist - Alicia Keys, AdditionalVocalist - Elly Jackson, AdditionalVocalist - Ken Lewis, DrumProgrammer, Vocalist - Alvin Fields, Vocalist - Manu Dibango, ComposerLyricist - JAMES BROWN, ComposerLyricist - Gil Scott-Heron, ComposerLyricist - Edwin J. Bocage, ComposerLyricist - Alfred Scramuzza, ComposerLyricist"
    },
    {
     "title": "Who Will Survive In America",
     "version": "Album Version (Explicit)",
     "track_number": 13,
+    "performer": {
+     "name": "Kanye West"
+    },
     "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jeff Bhasker, CoProducer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer, DrumProgrammer - Mike Dean, RecordingEngineer - Noah Goldstein, RecordingEngineer - Alex Graupera, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Justin Vernon, AdditionalVocalist - Charlie Wilson, AdditionalVocalist - Kaye Fox, AdditionalVocalist - Tony Williams, AdditionalVocalist - Alicia Keys, AdditionalVocalist - Elly Jackson, AdditionalVocalist - Ken Lewis, DrumProgrammer, Vocalist - Alvin Fields, Vocalist - Gil Scott-Heron, ComposerLyricist - Edwin J. Bocage, ComposerLyricist - Alfred Scramuzza, ComposerLyricist"
    }
   ]

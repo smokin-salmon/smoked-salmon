@@ -966,6 +966,20 @@ qobuz = '''
  "artist": {
   "name": "Stan Getz"
  },
+ "artists": [
+  {
+   "name": "Stan Getz",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "João Gilberto",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
   "Jazz"
  ],
@@ -978,108 +992,162 @@ qobuz = '''
     "title": "The Girl From Ipanema",
     "version": null,
     "track_number": 1,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Creed Taylor, Producer - Astrud Gilberto, Vocalist - António Carlos Jobim, ComposerLyricist - Joao Gilberto, Vocalist - Vinicius De Moraes, ComposerLyricist - Norman Gimbel, ComposerLyricist"
    },
    {
     "title": "Doralice",
     "version": "Stereo Version",
     "track_number": 2,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer"
    },
    {
     "title": "Para Machuchar Meu Coracao",
     "version": null,
     "track_number": 3,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist, Vocalist - António Carlos Jobim, MainArtist - Creed Taylor, Producer - Phil Ramone, Engineer, RecordingEngineer - Ary Barroso, ComposerLyricist"
    },
    {
     "title": "Desafinado",
     "version": null,
     "track_number": 4,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - Creed Taylor, Producer - António Carlos Jobim, ComposerLyricist - Newton Ferreira de Mendonca, ComposerLyricist"
    },
    {
     "title": "Corcovado (Quiet Nights Of Quiet Stars)",
     "version": null,
     "track_number": 5,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - Astrud Gilberto, FeaturedArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer"
    },
    {
     "title": "Só Danço Samba",
     "version": "Stereo Version",
     "track_number": 6,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer - Vinicius De Moraes, ComposerLyricist"
    },
    {
     "title": "O Grande Amor",
     "version": null,
     "track_number": 7,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - João Gilberto Quintet, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer - Vinicius De Moraes, ComposerLyricist"
    },
    {
     "title": "Vivo Sohando",
     "version": "Stereo Version",
     "track_number": 8,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, MainArtist, ComposerLyricist - Creed Taylor, Producer"
    },
    {
     "title": "The Girl From Ipanema",
     "version": "Mono Version",
     "track_number": 9,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Astrud Gilberto, FeaturedArtist, Vocalist - Creed Taylor, Producer - Vinicius De Moraes, ComposerLyricist - Norman Gimbel, ComposerLyricist"
    },
    {
     "title": "Doralice",
     "version": "Mono Version",
     "track_number": 10,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer"
    },
    {
     "title": "Para Machuchar Meu Coracao",
     "version": "Mono Version",
     "track_number": 11,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, MainArtist - Creed Taylor, Producer - Ary Barroso, ComposerLyricist"
    },
    {
     "title": "Desafinado",
     "version": "Mono Version",
     "track_number": 12,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer - Newton Ferreira de Mendonca, ComposerLyricist"
    },
    {
     "title": "Corcovado (Quiet Nights Of Quiet Stars)",
     "version": "Mono Version",
     "track_number": 13,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - Astrud Gilberto, FeaturedArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer"
    },
    {
     "title": "Só Danço Samba",
     "version": "Mono Version",
     "track_number": 14,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer - Vinicius De Moraes, ComposerLyricist"
    },
    {
     "title": "O Grande Amor",
     "version": "Mono Version",
     "track_number": 15,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - João Gilberto Quintet, MainArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer - Vinicius De Moraes, ComposerLyricist"
    },
    {
     "title": "Vivo Sohando",
     "version": "Mono Version",
     "track_number": 16,
+    "performer": {
+     "name": "Antonio Carlos Jobim"
+    },
     "performers": "António Carlos Jobim, MainArtist, ComposerLyricist - Stan Getz, MainArtist - Joao Gilberto, MainArtist - Creed Taylor, Producer"
    },
    {
     "title": "The Girl From Ipanema",
     "version": "Single Version",
     "track_number": 17,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - Astrud Gilberto, FeaturedArtist - António Carlos Jobim, FeaturedArtist, Composer - Creed Taylor, Producer - Vinicius De Moraes, ComposerLyricist"
    },
    {
     "title": "Corcovado (Quiet Nights Of Quiet Stars)",
     "version": "Single Version",
     "track_number": 18,
+    "performer": {
+     "name": "Stan Getz"
+    },
     "performers": "Stan Getz, MainArtist - Joao Gilberto, MainArtist - Astrud Gilberto, FeaturedArtist - António Carlos Jobim, FeaturedArtist, ComposerLyricist - Creed Taylor, Producer"
    }
   ]

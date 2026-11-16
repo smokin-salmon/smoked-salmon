@@ -500,8 +500,23 @@ qobuz = '''
  "artist": {
   "name": "Ella Fitzgerald"
  },
+ "artists": [
+  {
+   "name": "Ella Fitzgerald",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Louis Armstrong",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Vocal Jazz"
+  "Jazz",
+  "Jazz→Jazz vocal"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -511,56 +526,89 @@ qobuz = '''
    {
     "title": "Can't We Be Friends?",
     "track_number": 1,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Paul James, ComposerLyricist - Kay Swift, ComposerLyricist"
    },
    {
     "title": "Isn't This A Lovely Day?",
     "track_number": 2,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Irving Berlin, ComposerLyricist"
    },
    {
     "title": "Moonlight In Vermont",
     "track_number": 3,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - John M. Blackburn, ComposerLyricist - Karl Suessdorf, ComposerLyricist"
    },
    {
     "title": "They Can't Take That Away From Me",
     "track_number": 4,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist - Louis Armstrong, MainArtist - Norman Granz, Producer - RAY BROWN, BassVocalist - George Gershwin, Composer - Ira Gershwin, Lyricist"
    },
    {
     "title": "Under A Blanket Of Blue",
     "track_number": 5,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Al Neiburg, Lyricist - Marty Symes, Lyricist - Jerry Livingston, Composer"
    },
    {
     "title": "Tenderly",
     "track_number": 6,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Jack Lawrence, ComposerLyricist - WALTER GROSS, ComposerLyricist"
    },
    {
     "title": "A Foggy Day",
     "track_number": 7,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Ira Gershwin, Lyricist - George Gershwin, Composer"
    },
    {
     "title": "Stars Fell On Alabama",
     "track_number": 8,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Buddy Bregman, RecordingArranger, Conductor - Mitchell Parish, ComposerLyricist - Frank S. Perkins, ComposerLyricist"
    },
    {
     "title": "Cheek To Cheek",
     "track_number": 9,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Irving Berlin, ComposerLyricist - Hugo Cipolatti, Adapter"
    },
    {
     "title": "The Nearness Of You",
     "track_number": 10,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - HOAGY CARMICHAEL, ComposerLyricist - Ned Washington, ComposerLyricist"
    },
    {
     "title": "April In Paris",
     "track_number": 11,
+    "performer": {
+     "name": "Ella Fitzgerald"
+    },
     "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Yip Harburg, Composer - Vernon Duke, Lyricist"
    }
   ]

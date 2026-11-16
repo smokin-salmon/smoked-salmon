@@ -294,6 +294,14 @@ qobuz = '''
  "artist": {
   "name": "Miles Davis"
  },
+ "artists": [
+  {
+   "name": "Miles Davis",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
   "Jazz"
  ],
@@ -304,23 +312,43 @@ qobuz = '''
   "items": [
    {
     "title": "So What",
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Bill Evans, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "Freddie Freeloader",
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Wynton Kelly, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "Blue in Green",
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Patti Matheny\r - Bill Evans, Piano\r - Darren Salmieri\r - Seth Foster, Mastering Engineer\r - Paul Chambers, Bass\r - Fred Plaut, Recording Engineer\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "All Blues",
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Composer, Lyricist, Main Artist, Trumpet, Associated Performer, Composer, Lyricist, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - Bill Evans, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "Flamenco Sketches",
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Bill Evans, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    }
   ]
  }

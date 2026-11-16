@@ -1007,8 +1007,17 @@ qobuz = '''
  "artist": {
   "name": "Queen"
  },
+ "artists": [
+  {
+   "name": "Queen",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Pop"
+  "Pop/Rock",
+  "Pop/Rock→Rock"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -1017,71 +1026,139 @@ qobuz = '''
   "items": [
    {
     "title": "Bohemian Rhapsody",
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Background Vocal, Electric Guitar - Freddie Mercury, Piano, Vocal, Composer, Lyricist - Roger Taylor, Background Vocal, Drums, Percussion - Kris Fredriksson, Engineer, Mixing Engineer - Justin Shirley-Smith, Engineer - Bob Ludwig, Mastering Engineer - Gary Lyons, Engineer - Mike Stone, Engineer - Roy Thomas Baker, Producer"
    },
    {
     "title": "Another One Bites The Dust",
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar, Guitar, Piano - Brian May, Guitar - Freddie Mercury, Vocal - Roger Taylor, Drums, Percussion - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Mack, AssociatedPerformer - John Richard Deacon, Composer, Lyricist - Joshua J. MacRae, Engineer - Justin Shirley-Smith, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Reinhold Mack, Assistant Producer, Engineer"
    },
    {
     "title": "Killer Queen",
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Guitar, Vocal - Freddie Mercury, Piano, Vocal, Composer, Lyricist - Roger Taylor, Drums, Percussion, Vocal - Mike Stone, AssociatedPerformer, Engineer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Roy Thomas Baker, AssociatedPerformer - Kris Fredriksson, Engineer, Mixing Engineer - Justin Shirley-Smith, Engineer - Roy Baker, Producer"
    },
    {
     "title": "Fat Bottomed Girls",
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Background Vocal, Guitar, Composer, Lyricist - Geoff Workman, AssociatedPerformer, Engineer - Freddie Mercury, Vocal - Roger Taylor, Background Vocal, Drums, Percussion - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Roy Thomas Baker, Producer - Justin Shirley-Smith, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Joshua J. MacRae, Engineer"
    },
    {
     "title": "Bicycle Race",
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Background Vocal, Guitar - Freddie Mercury, Piano, Vocal, Composer, Lyricist - Geoff Workman, AssociatedPerformer, Engineer - Roger Taylor, Background Vocal, Drums, Percussion - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Roy Thomas Baker, Producer - Justin Shirley-Smith, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Joshua J. MacRae, Engineer"
    },
    {
     "title": "You're My Best Friend",
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar, Piano, Composer, Lyricist - Brian May, Background Vocal, Electric Guitar - Freddie Mercury, Vocal - Roger Taylor, Background Vocal, Drums, Percussion - Roy Thomas Baker, AssociatedPerformer, Producer - Gary Lyons, AssociatedPerformer, Engineer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Mike Stone, Engineer - Justin Shirley-Smith, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Joshua J. MacRae, Engineer"
    },
    {
     "title": "Don't Stop Me Now",
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Background Vocal, Guitar, Composer, Lyricist - Freddie Mercury, Piano, Vocal, Composer, Lyricist - Roger Taylor, Background Vocal, Drums, Percussion - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Geoff Workman, AssociatedPerformer, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Joshua J. MacRae, Engineer - Justin Shirley-Smith, Engineer - Roy Thomas Baker, Producer"
    },
    {
     "title": "Save Me",
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Guitar, Piano, Synthesizer, Vocal, Composer, Lyricist - Mack, AssociatedPerformer - Freddie Mercury, Vocal - Roger Taylor, Drums, Percussion, Vocal - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Reinhold Mack, Assistant Producer, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Justin Shirley-Smith, Engineer - Joshua J. MacRae, Engineer"
    },
    {
     "title": "Crazy Little Thing Called Love",
-    "track_number": 9
+    "track_number": 9,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Guitar, Vocal - Freddie Mercury, Acoustic Guitar, Vocal, Composer, Lyricist - Roger Taylor, Drums, Percussion, Vocal - Mack, AssociatedPerformer, Producer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Reinhold Mack, Assistant Producer, Engineer - Justin Shirley-Smith, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Joshua J. MacRae, Engineer"
    },
    {
     "title": "Somebody To Love",
-    "track_number": 10
+    "track_number": 10,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, AssociatedPerformer, Bass Guitar - Brian May, AssociatedPerformer, Background Vocal, Guitar - Freddie Mercury, AssociatedPerformer, Piano, Vocal, Composer, Lyricist - Roger Taylor, AssociatedPerformer, Background Vocal, Drums, Percussion - Mike Stone, AssociatedPerformer, Engineer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Justin Shirley-Smith, AssociatedPerformer, Engineer - Kris Fredriksson, AssociatedPerformer, Engineer, Mixing Engineer"
    },
    {
     "title": "Now I'm Here",
-    "track_number": 11
+    "track_number": 11,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Guitar, Piano, Vocal, Composer, Lyricist - Freddie Mercury, Organ, Vocal - Roy Thomas Baker, AssociatedPerformer - Roger Taylor, Drums, Percussion, Vocal - Mike Stone, AssociatedPerformer, Engineer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Roy Baker, Producer - Justin Shirley-Smith, Engineer - Kris Fredriksson, Engineer, Mixing Engineer"
    },
    {
     "title": "Good Old-Fashioned Lover Boy",
-    "track_number": 12
+    "track_number": 12,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, AssociatedPerformer, Bass Guitar - Brian May, AssociatedPerformer, Background Vocal, Guitar - Freddie Mercury, AssociatedPerformer, Piano, Vocal, Composer, Lyricist - Roger Taylor, AssociatedPerformer, Background Vocal, Drums, Percussion - Mike Stone, AssociatedPerformer, Vocal, Engineer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Justin Shirley-Smith, AssociatedPerformer, Engineer - Kris Fredriksson, AssociatedPerformer, Engineer, Mixing Engineer"
    },
    {
     "title": "Play The Game",
-    "track_number": 13
+    "track_number": 13,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Guitar, Vocal - Freddie Mercury, Piano, Synthesizer, Vocal, Composer, Lyricist - Mack, AssociatedPerformer - Roger Taylor, Drums, Percussion, Vocal - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Reinhold Mack, Assistant Producer, Engineer - Kris Fredriksson, Engineer, Mixing Engineer - Justin Shirley-Smith, Engineer - Joshua J. MacRae, Engineer"
    },
    {
     "title": "Flash",
-    "track_number": 14
+    "track_number": 14,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Executive Producer - John Deacon, Bass Guitar - Brian May, Guitar, Organ, Piano, Synthesizer, Vocal, Composer, Lyricist, Producer - Freddie Mercury, Vocal - Roger Taylor, Drums, Percussion, Vocal - Howard Blake, Conductor, Piano, String Arranger - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Kris Fredriksson, Mixing Engineer - Reinhold Mack, Producer"
    },
    {
     "title": "Seven Seas Of Rhye",
-    "track_number": 15
+    "track_number": 15,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, Bass Guitar - Brian May, Guitar, Vocal - Freddie Mercury, Piano, Vocal, Composer, Lyricist - Roy Thomas Baker, AssociatedPerformer - Roger Taylor, Drums, Percussion, Vocal - Roy Baker, Synthesizer, Producer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Justin Shirley-Smith, Engineer - Kris Fredriksson, Engineer, Mixing Engineer"
    },
    {
     "title": "We Will Rock You",
-    "track_number": 16
+    "track_number": 16,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, AssociatedPerformer, Percussion - Brian May, AssociatedPerformer, Guitar, Percussion, Vocal, Composer, Lyricist - Freddie Mercury, AssociatedPerformer, Percussion, Vocal - Roger Taylor, AssociatedPerformer, Percussion, Vocal - Mike Stone, AssociatedPerformer, Assistant Producer, Engineer, Producer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Justin Shirley-Smith, AssociatedPerformer, Mixing Engineer - Kris Fredriksson, AssociatedPerformer, Mixing Engineer - Joshua J. MacRae, AssociatedPerformer, Engineer"
    },
    {
     "title": "We Are The Champions",
-    "track_number": 17
+    "track_number": 17,
+    "performer": {
+     "name": "Queen"
+    },
+    "performers": "Queen, MainArtist, AssociatedPerformer, Producer - John Deacon, AssociatedPerformer, Bass Guitar - Brian May, AssociatedPerformer, Guitar, Vocal - Freddie Mercury, AssociatedPerformer, Piano, Vocal, Composer, Lyricist - Roger Taylor, AssociatedPerformer, Drums, Percussion, Vocal - Mike Stone, AssociatedPerformer, Assistant Producer, Engineer, Producer - Bob Ludwig, AssociatedPerformer, Mastering Engineer - Justin Shirley-Smith, AssociatedPerformer, Mixing Engineer - Kris Fredriksson, AssociatedPerformer, Mixing Engineer - Joshua J. MacRae, AssociatedPerformer, Engineer"
    }
   ]
  }

@@ -461,8 +461,18 @@ qobuz = '''
  "artist": {
   "name": "Sigur Rós"
  },
+ "artists": [
+  {
+   "name": "Sigur Rós",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Alternative & Indie"
+  "Pop/Rock",
+  "Pop/Rock→Rock",
+  "Pop/Rock→Rock→Alternatif et Indé"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -472,51 +482,81 @@ qobuz = '''
    {
     "title": "Intro",
     "track_number": 1,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "Sigur Ros , MainArtist"
    },
    {
     "title": "Svefn-g-englar",
     "track_number": 2,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "KEN THOMAS, Producer - Sigur Ros , Producer, MainArtist - Holm, Composer"
    },
    {
     "title": "Starálfur",
     "track_number": 3,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "G. Holm, Composer - J T Birgisson, Composer - K. Sveinsson, Composer - Ágúst Ævar Gunnarsson, Composer - Sigur Ros , MainArtist"
    },
    {
     "title": "Flugufrelsarinn",
     "track_number": 4,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "Sigur Ros , MainArtist"
    },
    {
     "title": "Ný batterí",
     "track_number": 5,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "Sigur Ros , MainArtist"
    },
    {
     "title": "Hjartað hamast (bamm bamm bamm)",
     "track_number": 6,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "Sigur Ros , MainArtist"
    },
    {
     "title": "Viðrar vel til loftárása",
     "track_number": 7,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "Arni & Kinski, Director - Sigur Ros , MainArtist"
    },
    {
     "title": "Olsen olsen",
     "track_number": 8,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "G. Holm, Composer - J T Birgisson, Composer - K Sveinsson, Composer - Ágúst Ævar Gunnarsson, Composer - Sigur Ros , MainArtist"
    },
    {
     "title": "Ágætis byrjun",
     "track_number": 9,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "Sigur Ros , MainArtist"
    },
    {
     "title": "Avalon",
     "track_number": 10,
+    "performer": {
+     "name": "Sigur Rós"
+    },
     "performers": "Sigur Ros , MainArtist"
    }
   ]

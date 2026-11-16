@@ -466,6 +466,14 @@ qobuz = '''
  "artist": {
   "name": "Bill Evans Trio"
  },
+ "artists": [
+  {
+   "name": "Bill Evans Trio",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
   "Jazz"
  ],
@@ -477,32 +485,56 @@ qobuz = '''
    {
     "title": "Gloria's Step",
     "version": "Take 2 / Live At The Village Vanguard / 1961",
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Bill Evans Trio"
+    },
+    "performers": "Bill Evans Trio, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Dave Jones, RecordingEngineer - Scott LaFaro, Composer"
    },
    {
     "title": "My Man's Gone Now",
     "version": "Live At The Village Vanguard / 1961",
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Bill Evans Trio"
+    },
+    "performers": "Bill Evans Trio, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Dave Jones, RecordingEngineer - Dorothy Heyward, ComposerLyricist - Ira Gershwin, ComposerLyricist - Dubose Heyward, ComposerLyricist - George Gershwin, ComposerLyricist"
    },
    {
     "title": "Solar",
     "version": "Live At The Village Vanguard / 1961",
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Bill Evans Trio"
+    },
+    "performers": "Bill Evans Trio, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Dave Jones, RecordingEngineer - Miles Davis, ComposerLyricist"
    },
    {
     "title": "Alice In Wonderland",
     "version": "Take 2 / Live At The Village Vanguard / 1961",
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Bill Evans Trio"
+    },
+    "performers": "Bill Evans Trio, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Dave Jones, RecordingEngineer - Sammy Fain, Composer - Bob Hilliard, Lyricist"
    },
    {
     "title": "All Of You",
     "version": "Take 2 / Live At The Village Vanguard / 1961",
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Bill Evans Trio"
+    },
+    "performers": "Bill Evans Trio, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Dave Jones, RecordingEngineer - Cole Porter, ComposerLyricist"
    },
    {
     "title": "Jade Visions",
     "version": "Take 2 / Live At The Village Vanguard / 1961",
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Bill Evans Trio"
+    },
+    "performers": "Bill Evans Trio, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Dave Jones, RecordingEngineer - Scott LaFaro, ComposerLyricist"
    }
   ]
  }

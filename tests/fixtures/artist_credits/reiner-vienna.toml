@@ -615,8 +615,17 @@ qobuz = '''
  "artist": {
   "name": "Fritz Reiner"
  },
+ "artists": [
+  {
+   "name": "Fritz Reiner",
+   "roles": [
+    "main-artist",
+    "conductor"
+   ]
+  }
+ ],
  "genres_list": [
-  "Classical"
+  "Classique"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -626,52 +635,112 @@ qobuz = '''
    {
     "title": "Morning Papers, Op. 279",
     "track_number": 1,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator",
+    "composer": {
+     "name": "Johann Strauss II"
+    }
    },
    {
     "title": "Emperor Waltz, Op. 437",
     "track_number": 2,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer",
+    "composer": {
+     "name": "Johann Strauss II"
+    }
    },
    {
     "title": "On the Beautiful Blue Danube, Op. 314",
     "track_number": 3,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator",
+    "composer": {
+     "name": "Johann Strauss II"
+    }
    },
    {
     "title": "Invitation to the Dance, Op. 65",
     "track_number": 4,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Carl Maria Von Weber, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Carl Maria Von Weber, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator",
+    "composer": {
+     "name": "Carl Maria von Weber"
+    }
    },
    {
     "title": "Village Swallows, Op. 164",
     "track_number": 5,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Josef Strauss, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Josef Strauss, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator",
+    "composer": {
+     "name": "Josef Strauss"
+    }
    },
    {
     "title": "Der Rosenkavalier, Op. 59",
     "track_number": 6,
-    "performers": "Fritz Reiner, MainArtist, Conductor, Arranger - Chicago Symphony Orchestra, AssociatedPerformer - Richard Strauss, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor, Arranger - Chicago Symphony Orchestra, AssociatedPerformer - Richard Strauss, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator",
+    "composer": {
+     "name": "Richard Strauss"
+    }
    },
    {
     "title": "Vienna Blood, Op. 354",
     "track_number": 7,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer",
+    "composer": {
+     "name": "Johann Strauss II"
+    }
    },
    {
     "title": "Roses from the South, Op. 388",
     "track_number": 8,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer",
+    "composer": {
+     "name": "Johann Strauss II"
+    }
    },
    {
     "title": "The Gypsy Baron: Treasure Waltz, Op. 418",
     "track_number": 9,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer",
+    "composer": {
+     "name": "Johann Strauss II"
+    }
    },
    {
     "title": "Thunder and Lightning, Op. 324",
     "track_number": 10,
-    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer",
+    "composer": {
+     "name": "Johann Strauss II"
+    }
    }
   ]
  }

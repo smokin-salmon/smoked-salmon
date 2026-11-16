@@ -1333,8 +1333,28 @@ qobuz = '''
  "artist": {
   "name": "Luciano Pavarotti"
  },
+ "artists": [
+  {
+   "name": "Luciano Pavarotti",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Berliner Philharmoniker",
+   "roles": [
+    "orchestra"
+   ]
+  },
+  {
+   "name": "Herbert von Karajan",
+   "roles": [
+    "conductor"
+   ]
+  }
+ ],
  "genres_list": [
-  "Classical"
+  "Classique"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -1346,217 +1366,403 @@ qobuz = '''
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 1,
-    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Rolando Panerai"
+    },
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Pensier profundo!",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 2,
-    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Nicolaï Ghiaurov"
+    },
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Abasso, abbasso l'autor!",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 3,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Si può – Chi è là?",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 4,
-    "performers": "Michel Sénéchal, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Michel Sénéchal"
+    },
+    "performers": "Michel Sénéchal, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Io resto per terminar l'articolo",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 5,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Chi è là?",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 6,
-    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Mirella Freni"
+    },
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Si sente meglio?",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 7,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Che gelida manina",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 8,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: Sì. Mi chiamano Mimì",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 9,
-    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Mirella Freni"
+    },
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act I: O soave fanciulla (Love Duet)",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 10,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act II: Arranci, datteri!",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 11,
-    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Rolando Panerai"
+    },
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act II: Chi guardi? – Ecco i giocattoli di Parpignol",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 12,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Mirella Freni, MainArtist, SopranoVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Gernot Pietsch, MainArtist, TenorVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Mirella Freni, MainArtist, SopranoVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Gernot Pietsch, MainArtist, TenorVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act II: Viva Parpignol!",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 13,
-    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Rolando Panerai"
+    },
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act II: Oh! ... Essa! ... Musetta!",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 14,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Michel Sénéchal, MainArtist, TenorVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Michel Sénéchal, MainArtist, TenorVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act II: Quando men vo – Fuori il danaro!",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 15,
-    "performers": "Elizabeth Harwood, MainArtist, SopranoVocalist - Michel Sénéchal, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - James Mallinson, Producer - Ray Minshull, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Elizabeth Harwood"
+    },
+    "performers": "Elizabeth Harwood, MainArtist, SopranoVocalist - Michel Sénéchal, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - James Mallinson, Producer - Ray Minshull, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act II: Chi l'ha richiesto? – Caro! – Fuori il danaro!",
     "version": "2024 Remaster",
     "media_number": 1,
     "track_number": 16,
-    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Nicolaï Ghiaurov"
+    },
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Ohè, là, le guardie! Aprite!",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 1,
-    "performers": "Hans-Dietrich Pohl, MainArtist, BaritoneVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Hans-Dietrich Pohl"
+    },
+    "performers": "Hans-Dietrich Pohl, MainArtist, BaritoneVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Sa dirmi, scusi",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 2,
-    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Hans-Dieter Appell, MainArtist, TenorVocalist - Hans-Dietrich Pohl, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Mirella Freni"
+    },
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Hans-Dieter Appell, MainArtist, TenorVocalist - Hans-Dietrich Pohl, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Mimì! – Speravo di trovarvi qui",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 3,
-    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Rolando Panerai"
+    },
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Marcello. Finalmente!",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 4,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Mimì è una civetta",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 5,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Mimì è tanto malata!",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 6,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Donde lieta uscì",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 7,
-    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - James Mallinson, Producer - Ray Minshull, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Mirella Freni"
+    },
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - James Mallinson, Producer - Ray Minshull, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act III: Dunque è propio finita!",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 8,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act IV: In un coupé?",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 9,
-    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Rolando Panerai"
+    },
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act IV: O Mimì, tu più non torni – Che ora sia",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 10,
-    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Luciano Pavarotti"
+    },
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act IV: Gavotta! ... Minuetto!",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 11,
-    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Nicolaï Ghiaurov"
+    },
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act IV: C'è Mimì...",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 12,
-    "performers": "Elizabeth Harwood, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Elizabeth Harwood"
+    },
+    "performers": "Elizabeth Harwood, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act IV: Vecchia zimarra, senti",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 13,
-    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Nicolaï Ghiaurov"
+    },
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act IV: Sono andati?",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 14,
-    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Mirella Freni"
+    },
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    },
    {
     "title": "Puccini: La bohème, Act IV: Oh Dio! Mimi! – Che ha detto il medico?",
     "version": "2024 Remaster",
     "media_number": 2,
     "track_number": 15,
-    "performers": "Gianni Maffeo, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+    "performer": {
+     "name": "Gianni Maffeo"
+    },
+    "performers": "Gianni Maffeo, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist",
+    "composer": {
+     "name": "Giacomo Puccini"
+    }
    }
   ]
  }

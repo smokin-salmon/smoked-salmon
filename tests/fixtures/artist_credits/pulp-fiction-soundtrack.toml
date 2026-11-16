@@ -1467,8 +1467,10 @@ qobuz = '''
  "artist": {
   "name": "Various Artists"
  },
+ "artists": [],
  "genres_list": [
-  "Film Soundtracks"
+  "Film",
+  "Film→Bandes originales de films"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -1479,10 +1481,10 @@ qobuz = '''
     "title": "Pumpkin And Honey Bunny",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 1,
-    "performers": "Tim Roth, MainArtist, SpokenWord - Amanda Plummer, MainArtist, SpokenWord - Jim Monsour, Producer - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Tim Roth"
-    }
+    },
+    "performers": "Tim Roth, MainArtist, SpokenWord - Amanda Plummer, MainArtist, SpokenWord - Jim Monsour, Producer - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Misirlou",
@@ -1496,19 +1498,19 @@ qobuz = '''
     "title": "Royale With Cheese",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 3,
-    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "John Travolta"
-    }
+    },
+    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Jungle Boogie",
     "version": null,
     "track_number": 4,
-    "performers": "Kool & The Gang, MainArtist - Kool & The Gang Enterprises, Inc., Producer, RecordingArranger - Jeff Lesser, Engineer - Harvey Goldberg, Engineer - Donald Boyce, BackgroundVocalist, Vocalist, ComposerLyricist - Jay Landers, Other - Christopher B. Pearman, Other - Elliot Lurie, Other - Dennis Ronald Thomas, Vocalist, ComposerLyricist - Something Sweet, BackgroundVocalist - Ronald Bell, Vocalist - Robert Bell, Vocalist, ComposerLyricist - George Brown, Vocalist, ComposerLyricist - Amir Bayyan, Vocalist - Claydes Smith, Vocalist, ComposerLyricist - Caldwell MacMillan, Vocalist - Kevin W. Lassiter, Vocalist - Clifford Adams, Vocalist - Ricky West, Vocalist - Larry Gittens, Vocalist - Robert Spike Mickens, ComposerLyricist - Richard Westfield, ComposerLyricist - Ronald Nathan Bell, ComposerLyricist",
     "performer": {
      "name": "Kool & The Gang"
-    }
+    },
+    "performers": "Kool & The Gang, MainArtist - Kool & The Gang Enterprises, Inc., Producer, RecordingArranger - Jeff Lesser, Engineer - Harvey Goldberg, Engineer - Donald Boyce, BackgroundVocalist, Vocalist, ComposerLyricist - Jay Landers, Other - Christopher B. Pearman, Other - Elliot Lurie, Other - Dennis Ronald Thomas, Vocalist, ComposerLyricist - Something Sweet, BackgroundVocalist - Ronald Bell, Vocalist - Robert Bell, Vocalist, ComposerLyricist - George Brown, Vocalist, ComposerLyricist - Amir Bayyan, Vocalist - Claydes Smith, Vocalist, ComposerLyricist - Caldwell MacMillan, Vocalist - Kevin W. Lassiter, Vocalist - Clifford Adams, Vocalist - Ricky West, Vocalist - Larry Gittens, Vocalist - Robert Spike Mickens, ComposerLyricist - Richard Westfield, ComposerLyricist - Ronald Nathan Bell, ComposerLyricist"
    },
    {
     "title": "Let's Stay Together",
@@ -1530,10 +1532,10 @@ qobuz = '''
     "title": "Lonesome Town",
     "version": "Single Version",
     "track_number": 7,
-    "performers": "Ricky Nelson, MainArtist, Producer - Ozzie Nelson, Producer - Jimmie Haskell, Producer - BAKER KNIGHT, ComposerLyricist",
     "performer": {
      "name": "Ricky Nelson"
-    }
+    },
+    "performers": "Ricky Nelson, MainArtist, Producer - Ozzie Nelson, Producer - Jimmie Haskell, Producer - BAKER KNIGHT, ComposerLyricist"
    },
    {
     "title": "Son Of A Preacher Man",
@@ -1547,10 +1549,10 @@ qobuz = '''
     "title": "Zed's Dead Baby",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 9,
-    "performers": "Maria de Medeiros, MainArtist, SpokenWord - Bruce Willis, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Maria de Medeiros"
-    }
+    },
+    "performers": "Maria de Medeiros, MainArtist, SpokenWord - Bruce Willis, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Bullwinkle",
@@ -1564,19 +1566,19 @@ qobuz = '''
     "title": "Jack Rabbit Slims Twist Contest",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 11,
-    "performers": "Jerome Patrick Hoban, MainArtist - Quentin Tarantino, Producer, ComposerLyricist",
     "performer": {
      "name": "Jerome Patrick Hoban"
-    }
+    },
+    "performers": "Jerome Patrick Hoban, MainArtist - Quentin Tarantino, Producer, ComposerLyricist"
    },
    {
     "title": "You Never Can Tell",
     "version": "1964 Single Version",
     "track_number": 12,
-    "performers": "Chuck Berry, MainArtist, Vocalist, ComposerLyricist - Phil Chess, Producer - Leonard Chess, Producer",
     "performer": {
      "name": "Chuck Berry"
-    }
+    },
+    "performers": "Chuck Berry, MainArtist, Vocalist, ComposerLyricist - Phil Chess, Producer - Leonard Chess, Producer"
    },
    {
     "title": "Girl, You'll Be A Woman Soon",
@@ -1590,19 +1592,19 @@ qobuz = '''
     "title": "If Love Is A Red Dress (Hang Me In Rags)",
     "version": "Acoustic Demo Version",
     "track_number": 14,
-    "performers": "Maria McKee, MainArtist, Producer, ComposerLyricist - Bruce Bennett Brody, Producer",
     "performer": {
      "name": "Maria McKee"
-    }
+    },
+    "performers": "Maria McKee, MainArtist, Producer, ComposerLyricist - Bruce Bennett Brody, Producer"
    },
    {
     "title": "Bring Out The Gimp",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 15,
-    "performers": "Peter Greene, MainArtist, SpokenWord - Duane Whitaker, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Peter Greene"
-    }
+    },
+    "performers": "Peter Greene, MainArtist, SpokenWord - Duane Whitaker, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Comanche",
@@ -1616,19 +1618,19 @@ qobuz = '''
     "title": "Flowers On The Wall",
     "version": "1975 Version",
     "track_number": 17,
-    "performers": "The Statler Brothers, MainArtist - Jerry Kennedy, Producer - Tom Sparkman, Engineer - Lewis De Witt, ComposerLyricist",
     "performer": {
      "name": "The Statler Brothers"
-    }
+    },
+    "performers": "The Statler Brothers, MainArtist - Jerry Kennedy, Producer - Tom Sparkman, Engineer - Lewis De Witt, ComposerLyricist"
    },
    {
     "title": "Personality Goes A Long Way",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 18,
-    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "John Travolta"
-    }
+    },
+    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Surf Rider",
@@ -1642,10 +1644,10 @@ qobuz = '''
     "title": "Ezekiel 25:17",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 20,
-    "performers": "Samuel L. Jackson, MainArtist - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Samuel L. Jackson"
-    }
+    },
+    "performers": "Samuel L. Jackson, MainArtist - Quentin Tarantino, ComposerLyricist"
    }
   ]
  }

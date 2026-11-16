@@ -324,6 +324,14 @@ qobuz = '''
  "artist": {
   "name": "Miles Davis Quintet"
  },
+ "artists": [
+  {
+   "name": "Miles Davis Quintet",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
   "Jazz"
  ],
@@ -335,31 +343,49 @@ qobuz = '''
    {
     "title": "If I Were A Bell",
     "track_number": 1,
+    "performer": {
+     "name": "Miles Davis Quintet"
+    },
     "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - FRANK LOESSER, ComposerLyricist"
    },
    {
     "title": "You're My Everything",
     "track_number": 2,
+    "performer": {
+     "name": "Miles Davis Quintet"
+    },
     "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Mort Dixon, ComposerLyricist - Harry Warren, ComposerLyricist - Joe Young, ComposerLyricist"
    },
    {
     "title": "I Could Write A Book",
     "track_number": 3,
+    "performer": {
+     "name": "Miles Davis Quintet"
+    },
     "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Richard Rodgers, ComposerLyricist - Lorenz Hart, ComposerLyricist"
    },
    {
     "title": "Oleo",
     "track_number": 4,
+    "performer": {
+     "name": "Miles Davis Quintet"
+    },
     "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Sonny Rollins, ComposerLyricist"
    },
    {
     "title": "It Could Happen To You",
     "track_number": 5,
+    "performer": {
+     "name": "Miles Davis Quintet"
+    },
     "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Jimmy Van Heusen, ComposerLyricist - Johnny Burke, ComposerLyricist"
    },
    {
     "title": "Woody'n You",
     "track_number": 6,
+    "performer": {
+     "name": "Miles Davis Quintet"
+    },
     "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Dizzy Gillespie, ComposerLyricist"
    }
   ]

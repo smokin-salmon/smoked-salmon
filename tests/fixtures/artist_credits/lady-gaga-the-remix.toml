@@ -625,8 +625,17 @@ qobuz = '''
  "artist": {
   "name": "Lady Gaga"
  },
+ "artists": [
+  {
+   "name": "Lady Gaga",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Pop"
+  "Pop/Rock",
+  "Pop/Rock→Pop"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -637,60 +646,90 @@ qobuz = '''
     "title": "Just Dance",
     "version": "Richard Vission Remix",
     "track_number": 1,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Aliaune \"Akon\" Thiam, ComposerLyricist, BackgroundVocalist - Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Dave Russell, RecordingEngineer - Redone, Producer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer - Robert Orton, MixingEngineer - Richard Vission, Remixer, AdditionalProducer - Colby O'Donis, Vocalist, FeaturedArtist"
    },
    {
     "title": "Poker Face",
     "version": "LLG vs GLG Radio Mix",
     "track_number": 2,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Producer, Vocalist, MainArtist, ComposerLyricist - Dave Russell, Engineer - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist - Robert Orton, MixingEngineer - Guéna LG, Remixer"
    },
    {
     "title": "LoveGame",
     "version": "Chew Fu Ghettohouse Fix",
     "track_number": 3,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer - Robert Orton, MixingEngineer - Marilyn Manson, FeaturedArtist - Chew Fu, Remixer"
    },
    {
     "title": "Eh, Eh (Nothing Else I Can Say)",
     "version": "FrankMusik \"Cut Snare Edit\" Remix",
     "track_number": 4,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Martin Kierszenbaum, ComposerLyricist - Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Redone, Producer, Engineer, Programmer, BackgroundVocalist, RecordingEngineer - Robert Orton, MixingEngineer - FrankMusik, Remixer"
    },
    {
     "title": "Paparazzi",
     "version": "Stuart Price Remix",
     "track_number": 5,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Robert Fusari, Producer, ComposerLyricist - Lady Gaga, Piano, Synthesizer, Vocalist, MainArtist, ComposerLyricist, CoProducer, AdditionalProducer - Stuart Price, Remixer - Robert Orton, MixingEngineer"
    },
    {
     "title": "The Fame",
     "version": "Glam As You Remix - Radio Edit Version",
     "track_number": 6,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Martin Kierszenbaum, ComposerLyricist - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Guéna LG, Producer, Remixer"
    },
    {
     "title": "Bad Romance",
     "version": "Starsmith Remix",
     "track_number": 7,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, VocalArranger - Starsmith, Remixer - Mark 'Spike' Stent, MixingEngineer - Johnny Severin, VocalEditingEngineer - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer, CoProducer, VocalEditingEngineer, VocalArranger - Eelco Bakker, Engineer - Dave Russel, Engineer"
    },
    {
     "title": "Telephone",
     "version": "Passion Pit Remix",
     "track_number": 8,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "LaShawn Daniels, ComposerLyricist - Rodney Jerkins, Producer, ComposerLyricist, MixingEngineer - Beyoncé Knowles, Vocalist, ComposerLyricist - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, RecordingEngineer, CoProducer - Paul Foley, RecordingEngineer - Mark 'Spike' Stent, MixingEngineer - Matty Green, MixingSecondEngineer - Passion Pit, Remixer - Redone, RecordingEngineer - Lazonate Franklin, ComposerLyricist - Hisashi Mizoguchi, RecordingEngineer - Mike \"Handz\" Donaldson, RecordingEngineer - Takayuki Matsushima, RecordingEngineer - Beyoncé, FeaturedArtist"
    },
    {
     "title": "Alejandro",
     "version": "The Sound of Arrows Remix",
     "track_number": 9,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, CoProducer, VocalArranger - Johnny Severin, VocalEditingEngineer - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer, VocalEditingEngineer, VocalArranger - Robert Orton, MixingEngineer - The Sound of Arrows, Remixer - Eelco Bakker, Engineer"
    },
    {
     "title": "Dance In The Dark",
     "version": "Monarchy 'Stylites' Remix",
     "track_number": 10,
+    "performer": {
+     "name": "Lady Gaga"
+    },
     "performers": "Fernando Garibay, Producer, Programmer, ComposerLyricist, RecordingArranger - Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, CoProducer, RecordingArranger - Robert Orton, MixingEngineer - Dan Parry, RecordingEngineer - Christian DeLano, RecordingEngineer - Monarchy, Remixer - Jonas Westling, RecordingEngineer"
    }
   ]

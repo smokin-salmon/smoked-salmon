@@ -498,6 +498,20 @@ qobuz = '''
  "artist": {
   "name": "Thelonious Monk"
  },
+ "artists": [
+  {
+   "name": "Thelonious Monk",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "John Coltrane",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
   "Jazz"
  ],
@@ -510,36 +524,54 @@ qobuz = '''
     "title": "Ruby, My Dear",
     "version": null,
     "track_number": 1,
+    "performer": {
+     "name": "Thelonious Monk"
+    },
     "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
    },
    {
     "title": "Trinkle, Tinkle",
     "version": null,
     "track_number": 2,
+    "performer": {
+     "name": "Thelonious Monk"
+    },
     "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
    },
    {
     "title": "Off Minor",
     "version": "Take 4",
     "track_number": 3,
+    "performer": {
+     "name": "Thelonious Monk"
+    },
     "performers": "Thelonious Monk, MainArtist, Composer - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
    },
    {
     "title": "Nutty",
     "version": null,
     "track_number": 4,
+    "performer": {
+     "name": "Thelonious Monk"
+    },
     "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
    },
    {
     "title": "Epistrophy",
     "version": "Alternate Take",
     "track_number": 5,
+    "performer": {
+     "name": "Thelonious Monk"
+    },
     "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer - Kenneth Clarke, ComposerLyricist"
    },
    {
     "title": "Functional",
     "version": "Take 1",
     "track_number": 6,
+    "performer": {
+     "name": "Thelonious Monk"
+    },
     "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
    }
   ]

@@ -1056,8 +1056,29 @@ qobuz = '''
  "artist": {
   "name": "Dolly Parton"
  },
+ "artists": [
+  {
+   "name": "Dolly Parton",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Linda Ronstadt",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Emmylou Harris",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Country"
+  "Blues/Country/Folk",
+  "Blues/Country/Folk→Country"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -1068,66 +1089,99 @@ qobuz = '''
     "title": "The Pain of Loving You",
     "version": "2015 Remaster",
     "track_number": 1,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals, Writer - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Porter Wagoner, Writer"
    },
    {
     "title": "Making Plans",
     "version": "2015 Remaster",
     "track_number": 2,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - John Bright Russell, Composer - V. Morrison, Composer"
    },
    {
     "title": "To Know Him Is to Love Him",
     "version": "2015 Remaster",
     "track_number": 3,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - PHIL SPECTOR, Writer"
    },
    {
     "title": "Hobo's Meditation",
     "version": "2015 Remaster",
     "track_number": 4,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Jimmie Rodgers, Writer"
    },
    {
     "title": "Wildflowers",
     "version": "2015 Remaster",
     "track_number": 5,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals, Writer - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer"
    },
    {
     "title": "Telling Me Lies (with Dolly Parton & Emmy Lou Harris)",
     "version": "2015 Remaster",
     "track_number": 6,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Betsy Cook, Writer - Linda Thompson, Writer"
    },
    {
     "title": "My Dear Companion",
     "version": "2015 Remaster",
     "track_number": 7,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Jean Ritchie, Writer"
    },
    {
     "title": "Those Memories of You",
     "version": "2015 Remaster",
     "track_number": 8,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Alan O'Bryant, Writer"
    },
    {
     "title": "I've Had Enough",
     "version": "2015 Remaster",
     "track_number": 9,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Kate McGarrigle, Writer"
    },
    {
     "title": "Rosewood Casket",
     "version": "2015 Remaster",
     "track_number": 10,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Parton, Adapter - Traditional, Writer"
    },
    {
     "title": "Farther Along",
     "version": "2015 Remaster",
     "track_number": 11,
+    "performer": {
+     "name": "Dolly Parton"
+    },
     "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Traditional, Writer"
    }
   ]
