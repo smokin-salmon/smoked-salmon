@@ -510,7 +510,7 @@ def test_the_tracklist_numbers_the_first_of_two_m4a_discs_on_its_own(tmp_path) -
 
 
 def _descgen(monkeypatch, metadata: dict[str, Any]) -> list[str]:
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return metadata, "Qobuz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
@@ -668,7 +668,7 @@ def test_descgen_compares_with_the_albums_artists_after_the_tracks_are_cleaned(m
     album = _store_album([("A", "main")], remix)
     album["tracks"]["1"]["2"]["title"] = "Song 2 (B Remix)"
 
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return album, "Qobuz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)

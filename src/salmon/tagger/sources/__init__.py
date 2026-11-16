@@ -72,13 +72,18 @@ async def run_metadata(
     url: str,
     sources: dict[str, Any] | None = None,
     return_source_name: bool = False,
+    for_merge: bool = False,
 ) -> dict[str, Any] | tuple[dict[str, Any], str]:
     """Run a scrape for the metadata of a URL.
+
+    A scrape used on its own has its credits decided as a merge of one source decides them, then loses what only
+    the merge reads. A scrape for a merge keeps both for the merge to weigh.
 
     Args:
         url: The URL to scrape metadata from.
         sources: Optional dict of sources to use, defaults to all.
         return_source_name: If True, return tuple of (metadata, source_name).
+        for_merge: If True, the scrape is undecided and keeps MERGE_ONLY_KEYS, for combine_metadatas.
 
     Returns:
         Metadata dict, or tuple of (metadata, source_name) if return_source_name is True.
@@ -90,6 +95,11 @@ async def run_metadata(
     for name, source in sources.items():
         if source.Scraper.regex.match(url):
             click.secho(f"Getting metadata from {name}.", fg="cyan")
-            metadata = _without_merge_only_keys(await source.Scraper().scrape_release(url))
+            metadata = await source.Scraper().scrape_release(url)
+            if not for_merge:
+                from salmon.tagger.combine import decide_alone  # combine imports this module
+
+                decide_alone(metadata, name)
+                _without_merge_only_keys(metadata)
             return (metadata, name) if return_source_name else metadata
     raise ScrapeError("URL did not match a scraper.")

@@ -15,7 +15,12 @@ from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import MERGE_ONLY_KEYS, METASOURCES
-from salmon.tagger.sources.base import artist_spellings, determine_label_type, generate_artists, standardize_genres
+from salmon.tagger.sources.base import (
+    artist_spellings,
+    determine_label_type,
+    generate_artists,
+    standardize_genres,
+)
 
 PREFERENCES = [
     "Tidal",
@@ -525,6 +530,16 @@ def _decide_credits(tracks, claims, base_source):
     for (disc, num), credits in decided.items():
         tracks[disc][num]["artists"] = [credit for credit, _ in credits]
     return [decision for credits in decided.values() for decision in credits]
+
+
+def decide_alone(metadata, source):
+    """Decide the credits of a scrape used alone, as the merge decides a merge of that one source, in place: each
+    track's from its claims, then the release's from the tracks (generate_artists).
+
+    Prints nothing: a source that gives one name two roles disputes nothing (resolve_credits leaves a source out of
+    its own disputes)."""
+    _decide_credits(metadata["tracks"], {}, source)
+    metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 
 
 def _print_disputes(decisions):

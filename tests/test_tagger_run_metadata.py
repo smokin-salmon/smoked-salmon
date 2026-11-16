@@ -1,5 +1,6 @@
-"""What a scrape shown on its own holds: run_metadata, which `salmon meta`, descgen and salmon web's metadata
-lookup go through, leaves out what the scrapers keep only for the merge (Discogs ANVs, a stating store's guesses).
+"""What a scrape shown on its own holds: run_metadata, which `salmon meta` and salmon web's metadata lookup go
+through, decides its credits as a merge of one source does and leaves out what the scrapers keep only for the merge
+(Discogs ANVs, a stating store's guesses). descgen's scrapes keep them, for its merge.
 
 Discogs is a fake on 127.0.0.1: the scraper's API address is pointed at it.
 """
@@ -97,6 +98,32 @@ def test_the_source_name_comes_with_the_same_scrape_without_assumed_artists(monk
     assert "assumed_artists" not in metadata["tracks"]["3"]["3"]
 
 
+def test_a_scrape_shown_on_its_own_is_decided_as_a_merge_of_one_source(monkeypatch: pytest.MonkeyPatch) -> None:
+    """One credit per name: the store's stated main, not the guest it guessed, on the track and the release."""
+    stating_credits(monkeypatch)
+
+    metadata, _ = in_fake_discogs(monkeypatch, lambda: run_metadata(RELEASE_URL))
+
+    assert metadata["tracks"]["3"]["3"]["artists"] == [("K-Ci & JoJo", "main"), ("Club Asylum", "remixer")]
+    assert metadata["artists"] == [("K-Ci & JoJo", "main"), ("Club Asylum", "remixer")]
+
+
+def test_a_scrape_for_the_merge_keeps_what_the_merge_reads(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Undecided too: the merge decides, over every source."""
+    stating_credits(monkeypatch)
+
+    (metadata, source), _ = in_fake_discogs(
+        monkeypatch, lambda: run_metadata(RELEASE_URL, return_source_name=True, for_merge=True)
+    )
+
+    track = metadata["tracks"]["3"]["3"]
+    assert source == "Discogs"
+    assert track["artists"] == STATED
+    assert track["assumed_artists"] == GUESSED
+    assert track["artist_variations"] == [{"name": "K-Ci & JoJo", "role": "main", "anv": "K-Ci And JoJo"}]
+    json.dumps(metadata)
+
+
 def test_as_before_a_scraper_still_keeps_the_assumed_artists_for_the_merge(monkeypatch: pytest.MonkeyPatch) -> None:
     stating_credits(monkeypatch)
 
@@ -169,6 +196,21 @@ def test_salmon_meta_prints_no_assumed_artists(monkeypatch: pytest.MonkeyPatch) 
     assert result.exit_code == 0, result.output
     assert "K-Ci & JoJo" in result.output
     assert "assumed_artists" not in result.output
+
+
+def test_salmon_meta_saves_json_with_no_assumed_artists(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    stating_credits(monkeypatch)
+    output_path = tmp_path / "metadata.json"
+
+    async def run() -> Result:
+        return await CliRunner().invoke(salmon.tagger.meta, [RELEASE_URL, "--output", str(output_path)])
+
+    result, _ = in_fake_discogs(monkeypatch, run)
+
+    assert result.exit_code == 0, result.output
+    track = json.loads(output_path.read_text(encoding="utf-8"))["tracks"]["3"]["3"]
+    assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
+    assert "assumed_artists" not in track
 
 
 def test_salmon_meta_saves_json(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

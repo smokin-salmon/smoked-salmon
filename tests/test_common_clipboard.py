@@ -57,7 +57,7 @@ def test_descgen_still_prints_the_description(monkeypatch: pytest.MonkeyPatch, c
         "urls": [],
     }
 
-    async def run_metadata(url, return_source_name=False):
+    async def run_metadata(url, return_source_name=False, for_merge=False):
         return metadata, "Qobuz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", run_metadata)

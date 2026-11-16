@@ -19,6 +19,7 @@ from helpers.tagger_run_metadata import (
     RELEASE_URL,
     FakeDiscogs,
     pointed_at,
+    stating_credits,
 )
 from helpers.uploader_dry_run import (
     _album,
@@ -222,6 +223,24 @@ def test_a_discogs_lookup_with_a_credited_name_answers_without_artist_variations
         assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
         assert "artist_variations" not in track
         assert store.requests == ["/releases/2520452"]
+
+    _lookup_run(test, store)
+
+
+def test_a_lookup_of_a_store_that_states_its_credits_answers_without_its_guesses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """msgspec.to_builtins would answer with the key, not fail on it: the answer itself has to lack it."""
+    store = FakeDiscogs()
+    stating_credits(monkeypatch)
+
+    async def test(client: TestClient, store: FakeStore) -> None:
+        pointed_at(monkeypatch, store)
+        response = await client.get("/api/metadata", params={"url": RELEASE_URL}, headers=AUTH)
+        assert response.status == 200, await response.text()
+        track = (await response.json())["metadata"]["tracks"]["3"]["3"]
+        assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
+        assert "assumed_artists" not in track
 
     _lookup_run(test, store)
 
