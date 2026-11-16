@@ -38,6 +38,12 @@ from salmon.tagger.retagger import append_guests_to_track_titles, create_artist_
 from salmon.tagger.sources import METASOURCES, run_metadata
 from salmon.tagger.sources.base import generate_artists
 from salmon.trackers.connection import check_trackers
+from salmon.uploader.description import (
+    TracklistLine,
+    album_credit_names,
+    listed_bare,
+    tracklist_description,
+)
 from salmon.uploader.seedbox import config_args, seedbox_secrets
 from salmon.uploader.spectrals import (
     check_spectrals,
@@ -46,12 +52,6 @@ from salmon.uploader.spectrals import (
     post_upload_spectral_check,
 )
 from salmon.uploader.torrent_client import TorrentClientGenerator
-from salmon.uploader.upload import (
-    TracklistLine,
-    album_credit_names,
-    listed_bare,
-    tracklist_description,
-)
 
 _RCLONE_CHECK_SECONDS = 10
 

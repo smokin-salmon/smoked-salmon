@@ -26,8 +26,11 @@ updates:
           - "minor"
           - "patch"
 
+  # "/" covers .github/workflows only; the composite actions under .github/actions/ are listed too.
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: "weekly"
     cooldown:

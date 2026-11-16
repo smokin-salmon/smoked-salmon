@@ -199,6 +199,46 @@ def test_another_join_keeps_the_artists_after_it_main(join) -> None:
     assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "main")]
 
 
+def _track(number: str, recording_title: str, title: str | None = None) -> dict:
+    track = {
+        "number": number,
+        "recording": {"title": recording_title, "artist-credit": [{"artist": {"name": "Spice Girls"}}]},
+    }
+    if title is not None:
+        track["title"] = title
+    return track
+
+
+def test_a_track_takes_its_title_from_the_release_track_list_not_its_recording() -> None:
+    # Disc 14 of MusicBrainz release https://musicbrainz.org/release/9c21406a-2032-4336-b0cd-ecb701cee16b: the track
+    # list says "(demo)" on every track, while its recordings say "(demo version)", or nothing and carry "demo" in
+    # their disambiguation.
+    disc = {
+        "position": "14",
+        "track-list": [
+            _track("2", "Wannabe (demo)", "Wannabe (demo)"),
+            _track("3", "2 Become 1", "2 Become 1 (demo)"),
+            _track("6", "Step to Me (demo version)", "Step to Me (demo)"),
+        ],
+    }
+
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})
+
+    assert {number: track["title"] for number, track in tracks["14"].items()} == {
+        "2": "Wannabe (demo)",
+        "3": "2 Become 1 (demo)",
+        "6": "Step to Me (demo)",
+    }
+
+
+def test_a_track_without_a_title_of_its_own_takes_its_recordings() -> None:
+    disc = {"position": "1", "track-list": [_track("4", "Mama")]}
+
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})
+
+    assert tracks["1"]["4"]["title"] == "Mama"
+
+
 # Tracks of MusicBrainz release https://musicbrainz.org/release/ec3baf33-2d0f-4eea-a3ec-8bcd582bf939
 # (Lady Gaga, The Remix)
 def _remix_track(number: str, recording_title: str, relations: list[tuple[str, str]]) -> dict:

@@ -34,6 +34,7 @@ tracks = 12
 [today.merge]
 release = ["Queen (main)", "Brian May (guest)", "Brian May (arranger)"]
 tracks = 12
+credits = ["1.1: Queen (main)", "1.2: Queen (main)", "1.3: Queen (main)", "1.4: Queen (main)", "1.5: Queen (main)", "1.6: Queen (main)", "1.7: Queen (main)", "1.8: Queen (main)", "1.9: Queen (main)", "1.10: Queen (main), Brian May (guest)", "1.11: Queen (main)", "1.12: Queen (main), Brian May (arranger)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

@@ -13,7 +13,7 @@ from helpers.image_upload_connections import (
 )
 
 import salmon.images as images
-from salmon.uploader.upload import generate_t_description
+from salmon.uploader.description import generate_t_description
 
 
 def _description(spectrals: list[tuple[int, str, tuple[str, str]]], urls: dict[int, list[str]]) -> str:

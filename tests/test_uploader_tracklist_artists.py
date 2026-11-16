@@ -23,7 +23,7 @@ from salmon import cfg
 from salmon.commands import build_description
 from salmon.tagger.retagger import create_artist_str, create_track_changes, retag_files
 from salmon.tagger.tags import gather_tags
-from salmon.uploader.upload import generate_description
+from salmon.uploader.description import generate_description
 
 
 def _tracks(*tags: dict[str, Any]) -> dict[str, dict[str, Any]]:

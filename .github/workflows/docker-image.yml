@@ -13,8 +13,9 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    # The job's own token only reads the repository; the version bump is pushed with the release App's token.
     permissions:
-      contents: write
+      contents: read
       packages: write
 
     # A registry that lives only as long as this job. The image is built into it, scanned there, and
@@ -45,8 +46,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # Ensures we get all history for tag retrieval and pushing
-          token: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+          fetch-depth: 0 # All history and tags, for the version bump commit and the tag move
+          persist-credentials: false
 
       - name: Get release version or branch name
         id: get_version_or_branch
@@ -155,15 +156,6 @@ jobs:
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: uv run --no-dev python .github/scripts/check-release-version.py
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-
-      # network=host lets the builder container reach the job's registry on localhost:5000.
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-        with:
-          driver-opts: network=host
-
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -181,34 +173,29 @@ jobs:
           echo "VERSION=${{ env.VERSION }}"
           echo "UPDATE_VERSION=${{ env.UPDATE_VERSION }}"
 
-      - name: Build the image into the job's registry
-        id: build
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: localhost:5000/smoked-salmon:scan
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       # A fixable CRITICAL stops the run here, before master, the tag or ghcr.io change.
-      - name: Scan the linux/amd64 image
-        uses: ./.github/actions/scan-image
+      - name: Build and scan the image
+        id: build
+        uses: ./.github/actions/build-scan
         with:
-          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
-          platform: linux/amd64
+          labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Scan the linux/arm64 image
-        uses: ./.github/actions/scan-image
+      # The release App may push to master. Its token is minted only here, after the build and the scan,
+      # and scoped to this repository's contents.
+      - name: Get the release App's token (only on release)
+        id: app-token
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
-          platform: linux/arm64
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
 
-      - name: Commit and push version update (only on release)
+      # One atomic push: master and the moved tag both land, or neither does.
+      - name: Commit the version update, move the tag and push both (only on release)
         env:
-          PAT_TOKEN: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: |
           git config --global user.name "github-actions[bot]"
@@ -218,34 +205,15 @@ jobs:
             echo "master already has the $VERSION bump"
           else
             git commit -m "Update version.toml/pyproject.toml to $VERSION with changelog"
-            git push origin master
           fi
-
-      - name: Move tag to version bump commit and push (only on release)
-        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
-        run: |
           git tag -f "$VERSION"
-          git push origin "refs/tags/$VERSION" --force
+          git push --atomic "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" master "+refs/tags/$VERSION"
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # skopeo reads the login above from ~/.docker/config.json. --preserve-digests makes the copy
-      # fail rather than push anything but the scanned manifests and layers.
       - name: Push the scanned image
-        env:
-          SOURCE: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
-          TAGS: |
+        uses: ./.github/actions/push-scanned
+        with:
+          source: ${{ steps.build.outputs.image-ref }}
+          tags: |
             ${{ env.REGISTRY }}/${{ env.LOWER_CASE_REPO_NAME }}:${{ env.VERSION }}
             ${{ steps.meta.outputs.tags }}
-        run: |
-          set -euo pipefail
-          sort -u <<< "$TAGS" | while IFS= read -r tag; do
-            [ -n "$tag" ] || continue
-            skopeo copy --all --preserve-digests --src-tls-verify=false "docker://$SOURCE" "docker://$tag"
-            echo "pushed $tag (${SOURCE#*@})"
-          done
+          registry-token: ${{ github.token }}

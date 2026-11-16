@@ -14,6 +14,7 @@ from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.dsd import DSD_EXTENSIONS
 from salmon.common.files import get_audio_files, is_apple_double, is_torrent_file, process_tracks
 from salmon.converter.conversions import (
+    audio_identity,
     changed_sources,
     changed_tracks,
     conversion_of,
@@ -77,7 +78,14 @@ def _resolve_sample_rate(sample_rate: int) -> int:
     raise InvalidSampleRate
 
 
-def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, output_dir: str | None = None) -> str:
+def _build_output_path(
+    path: str,
+    bit_depth: BitDepth,
+    sample_rate: int | None,
+    output_dir: str | None = None,
+    *,
+    says_bit_depth: bool = False,
+) -> str:
     """Generate the output directory path based on source path and conversion params.
 
     Args:
@@ -85,6 +93,9 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         bit_depth: Target bit depth.
         sample_rate: Target sample rate, or None.
         output_dir: Directory the output goes into; the source's own directory by default.
+        says_bit_depth: Name the conversion with its bit depth, where the name would otherwise leave it out: "16bit
+            FLAC" for a "24bit FLAC" source, not "FLAC", and a "16-44.1" token, not none. For when that name is the
+            album's own.
 
     Returns:
         The output directory path string.
@@ -108,6 +119,9 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
             (source_rate,) = {info["sample rate"] for info in audio_info.values()}
             target_rate = _resolve_sample_rate(source_rate)
         new_token = resolution_token({"_": {"precision": bit_depth, "sample rate": target_rate}})
+        if says_bit_depth and not new_token:
+            # 16/44.1 has no token of its own, which would leave the album's name without its "24-44.1".
+            new_token = f"{bit_depth}-{target_rate / 1000:g}"
         if new_token:
             foldername = swap_resolution_token(foldername, current_token, new_token)
         else:
@@ -127,7 +141,9 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         # Straight to the "24-NN" token: a "16bit FLAC" step first would leave "16bit" in the name.
         foldername = swap_format_matches(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
     elif not appended:
-        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
+        foldername = swap_format_matches(
+            FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) and not says_bit_depth else "16bit FLAC", foldername
+        )
 
     return os.path.join(output_dir or os.path.dirname(path), foldername)
 
@@ -333,6 +349,48 @@ def _records_these_files(
     return converted <= recorded.keys() and all(os.path.isfile(os.path.join(path, source)) for source in recorded)
 
 
+def _audio_of(folder: str) -> list[tuple[int, int, int, int]] | None:
+    """The audio of folder's tracks (audio_identity), sorted: whatever their names and tags. None for a folder without
+    tracks, or with one whose audio cannot be told so."""
+    audio = [audio_identity(os.path.join(folder, name)) for name in get_audio_files(folder)]
+    return None if None in audio else sorted(a for a in audio if a is not None) or None
+
+
+def _holds_album(folder: str, album: list[tuple[int, int, int, int]]) -> bool:
+    """Whether folder holds the album's own audio: the album itself or a copy of it. Never one salmon converted."""
+    return os.path.isdir(folder) and conversion_of(folder) is None and _audio_of(folder) == album
+
+
+def _output_path_of_its_own(path: str, bit_depth: BitDepth, sample_rate: int | None, output_dir: str | None) -> str:
+    """The conversion's output path, which _build_output_path gives unless the album itself, or a copy of it, is there.
+
+    An album named "[WEB FLAC]" and renamed "[WEB 24bit FLAC]" has its old name for its 16-bit one, and the rename
+    copies it: the album (or a dry run's copy of it) is still there, under the name. The conversion then names its
+    bit depth ("16bit FLAC"), and keeps that name for the runs after, once the album has gone from the other.
+
+    Raises:
+        UploadError: The album, or a copy of it, is under that name too.
+    """
+    new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
+    named = _build_output_path(path, bit_depth, sample_rate, output_dir, says_bit_depth=True)
+    if named != new_path and not os.path.isdir(new_path) and _converted_from(named, path):
+        return named  # An earlier run's, made while the album was under the other name.
+    if not os.path.isdir(new_path) or (album := _audio_of(path)) is None or not _holds_album(new_path, album):
+        return new_path
+    if named == new_path or _holds_album(named, album):
+        raise UploadError(
+            f"{named} holds this album, or a copy of it, under the name its {bit_depth}-bit conversion would take: "
+            "move or rename that folder, or give the album another name, and run again."
+        )
+    return named
+
+
+def _converted_from(folder: str, path: str) -> bool:
+    """Whether salmon recorded folder as a conversion of the album path is (or is a run's copy of)."""
+    record = conversion_of(folder)
+    return record is not None and os.path.realpath(record["source"]) == os.path.realpath(source_of(path))
+
+
 async def convert_folder(
     path: str,
     bit_depth: BitDepth = 16,
@@ -354,7 +412,7 @@ async def convert_folder(
         Tuple of (final_sample_rate, new_folder_path).
     """
     _validate_lossless(path)
-    new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
+    new_path = _output_path_of_its_own(path, bit_depth, sample_rate, output_dir)
     # Resolved, so a symlink on the way cannot carry the output into a library.
     if cfg.directory.protects(new_path):
         raise UploadError(f"Not converting into {new_path}: it is in library_dirs, or holds one.")

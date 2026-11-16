@@ -34,6 +34,7 @@ tracks = 7
 [today.merge]
 release = ["Rush (main)"]
 tracks = 7
+credits = ["1.1: Rush (main)", "1.2: Rush (main)", "1.3: Rush (main)", "1.4: Rush (main)", "1.5: Rush (main)", "1.6: Rush (main)", "1.7: Rush (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

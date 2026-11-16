@@ -329,7 +329,9 @@ def determine_label_type(label, artists):
     return label
 
 
-def _generate_artist_pool_lower_case(tracks):
+def artist_spellings(tracks):
+    """Each name's spelling on the release, by its accent-folded lower case: of two spellings, the one with fewer
+    capitals ("Kool & the Gang" over "Kool & The Gang")."""
     artist_pool = {}
     for track in chain.from_iterable([d.values() for d in tracks.values()]):
         for name, _ in track["artists"]:
@@ -347,7 +349,7 @@ def generate_artists(tracks):
     track, then run all the artists through the filter/fixer that
     attempts to remedy bad splitting.
     """
-    artist_pool = _generate_artist_pool_lower_case(tracks)
+    artist_pool = artist_spellings(tracks)
     artists = []
     for track in chain.from_iterable([d.values() for d in tracks.values()]):
         for name, import_ in track["artists"]:
@@ -371,7 +373,7 @@ def filter_artists(artists, tracks=None):
     to_replace = construct_replacement_list(artists)
     artists = fix_artists_list(artists, to_replace)
     if tracks:
-        artist_pool = _generate_artist_pool_lower_case(tracks)
+        artist_pool = artist_spellings(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
                 # Deduplicate the artists before passing them to fix_artists_list. Main and guest, the ARTIST credit,
