@@ -64,12 +64,13 @@ def test_the_files_guest_is_kept_where_a_store_says_main(capsys: pytest.CaptureF
 
 def test_with_no_files_the_first_store_is_the_base(capsys: pytest.CaptureFixture) -> None:
     combined = combine_metadatas(
-        ("Qobuz", release(("Alice", "main"), ("Bob", "guest"))), ("Deezer", release(("Alice", "main"), ("Bob", "main")))
+        ("MusicBrainz", release(("Alice", "main"), ("Bob", "guest"))),
+        ("Deezer", release(("Alice", "main"), ("Bob", "main"))),
     )
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "main")]
     out = capsys.readouterr().out
-    assert "Kept Deezer's main where other stores say guest:\n  Bob (guest at Qobuz)\n" in out
+    assert "Kept Deezer's main where other stores say guest:\n  Bob (guest at MusicBrainz)\n" in out
 
 
 def test_names_the_same_stores_dispute_share_a_line_whatever_the_order(capsys: pytest.CaptureFixture) -> None:

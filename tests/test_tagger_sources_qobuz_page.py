@@ -151,7 +151,8 @@ def test_the_existing_parsers_read_the_page_shape() -> None:
     assert ("Illy", "main") in tracks["1"]["1"]["artists"]
 
 
-# Gorgon City "Oracle": the header reads "Gorgon City & Jem Cooke", but Jem Cooke is on track 1 only.
+# Gorgon City "Oracle": the header reads "Gorgon City & Jem Cooke", but Jem Cooke is on track 1 only. Both are the
+# album's main artists, so each is main where a track names them; Taet, whom the album doesn't list, is a guest.
 ORACLE_TRACKS = (
     ("Oracle", "Gorgon City, MainArtist, Producer - Jem Cooke, MainArtist - Joe Baker, Composer"),
     ("Work It Out", "Gorgon City, MainArtist, Producer - Poppy Baskcomb, Vocals, Composer"),
@@ -177,7 +178,7 @@ def test_each_track_credits_only_its_own_artists_when_the_header_joins_two() -> 
     assert data["artist"] == {"name": "Gorgon City"}
     tracks = anyio.run(Scraper().parse_tracks, data)["1"]
     assert [tracks[n]["artists"] for n in ("1", "2", "3")] == [
-        [("Gorgon City", "main"), ("Jem Cooke", "guest")],
+        [("Gorgon City", "main"), ("Jem Cooke", "main")],
         [("Gorgon City", "main")],
         [("Gorgon City", "main"), ("Taet", "guest")],
     ]

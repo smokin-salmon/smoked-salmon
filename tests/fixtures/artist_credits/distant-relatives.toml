@@ -35,7 +35,7 @@ release = ["Nas (main)", "Damian Marley (main)", "K'Naan (guest)", "Stephen Marl
 tracks = 13
 
 [today.qobuz]
-release = ["Damian Marley (main)", "Nas & Damian \"Jr. Gong\" Marley (guest)", "K'Naan (guest)", "Stephen Marley (guest)", "Dennis Brown (guest)", "Lil Wayne (guest)", "Joss Stone (guest)"]
+release = ["Damian Marley (main)", "Nas (main)", "K'Naan (guest)", "Stephen Marley (guest)", "Dennis Brown (guest)", "Lil Wayne (guest)", "Joss Stone (guest)"]
 tracks = 13
 
 [today.merge]

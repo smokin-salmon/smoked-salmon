@@ -29,7 +29,7 @@ release = ["Santana (main)", "Carlos Santana (guest)", "Karl Perazzo (guest)", "
 tracks = 15
 
 [today.qobuz]
-release = ["Santana (main)"]
+release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Lauryn Hill (guest)", "Cee-Lo (guest)", "The Product G&B (guest)", "Mana (guest)", "Eagle-Eye Cherry (guest)", "Eric Clapton (guest)"]
 tracks = 14
 
 [today.merge]

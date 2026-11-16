@@ -33,7 +33,7 @@ release = ["Thelonious Monk (main)"]
 tracks = 6
 
 [today.qobuz]
-release = ["Thelonious Monk (main)", "John Coltrane (guest)"]
+release = ["Thelonious Monk (main)", "John Coltrane (main)"]
 tracks = 6
 
 [today.merge]
