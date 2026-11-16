@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 
 from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
-from salmon.common.credits import EXTRA_ROLES, Credit, Role, RoleWords
+from salmon.common.credits import EXTRA_ROLES, Credit, Role
 from salmon.common.strings import comparable, guests_from_title
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
@@ -19,19 +19,18 @@ from salmon.tagger.tags import is_classical_genre
 # Constants and Regular Expressions
 # ------------------------------------------------------------------------------
 
-# Qobuz's words for the roles salmon maps, in a track's performers line ("Name, Role, Role - Name, Role"). Any
-# other word is a role salmon doesn't map. Spellings fold: RoleWords matches "Main Artist" as "MainArtist".
-QOBUZ_ROLE_WORDS: dict[str, Role | None] = {
-    "MainArtist": "main",
-    "FeaturedArtist": "guest",
-    "Remixer": "remixer",
-    "Conductor": "conductor",
-    "Composer": "composer",
-    "ComposerLyricist": "composer",
-    "Producer": "producer",
-    "Arranger": "arranger",
+# Qobuz's words for the roles salmon maps, in a track's performers line ("Name, Role, Role - Name, Role"), by
+# comparable: "Main Artist" is "MainArtist". Any other word is a role salmon doesn't map.
+ROLE_WORDS: dict[str, Role] = {
+    "mainartist": "main",
+    "featuredartist": "guest",
+    "remixer": "remixer",
+    "conductor": "conductor",
+    "composer": "composer",
+    "composerlyricist": "composer",
+    "producer": "producer",
+    "arranger": "arranger",
 }
-ROLE_WORDS = RoleWords(QOBUZ_ROLE_WORDS)
 # The roles salmon reads from Qobuz on any release, and a genre's EXTRA_ROLES on a release of it (#869). Producer and
 # arranger wait for a case.
 READ_ROLES: frozenset[Role] = frozenset({"main", "guest", "remixer"})
@@ -586,7 +585,7 @@ def _performers(line: str, known: set[str]) -> list[tuple[str, list[Role | None]
     entries = []
     for entry in line.split(" - "):
         parts = entry.split(",")
-        first = next((i for i, part in enumerate(parts) if i and ROLE_WORDS.role_of(part)), None)
+        first = next((i for i, part in enumerate(parts) if i and ROLE_WORDS.get(comparable(part))), None)
         if first is None:
             continue
         size = next(
@@ -598,7 +597,7 @@ def _performers(line: str, known: set[str]) -> list[tuple[str, list[Role | None]
             1,
         )
         if name := ",".join(parts[:size]).strip(" ,"):
-            entries.append((name, [ROLE_WORDS.role_of(part) for part in parts[size:]]))
+            entries.append((name, [ROLE_WORDS.get(comparable(part)) for part in parts[size:]]))
     return entries
 
 

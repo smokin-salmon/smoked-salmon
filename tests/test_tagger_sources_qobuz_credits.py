@@ -65,6 +65,18 @@ def test_a_spaced_role_word_reads_as_its_unspaced_spelling() -> None:
     assert got == [[("Alice", "main"), ("Bob", "guest")]]
 
 
+@pytest.mark.parametrize(
+    ("main", "featured"),
+    [("MAINARTIST", "featured-artist"), ("mainartist", "Featured  Artist"), ("Main Artist", "FeaturedArtist")],
+)
+def test_a_role_word_reads_whatever_its_case_spacing_and_punctuation(main: str, featured: str) -> None:
+    data = album(track(f"Bob, {main} - Carol, {featured}"), artists=mains("Alice", "Bob"))
+
+    got = credits(data)
+
+    assert got == [[("Bob", "main"), ("Carol", "guest")]]
+
+
 def test_a_name_holding_a_comma_stays_whole_where_qobuz_gives_it_as_a_name() -> None:
     """The album's artist, an `artists[]` name of any role, and the track's performer are names Qobuz gives as such."""
     data = album(
