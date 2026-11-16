@@ -52,13 +52,19 @@ def without_tracking(url: str) -> str:
     return bare if matching_source(bare) == source else url
 
 
-def _without_artist_variations(metadata: dict[str, Any]) -> dict[str, Any]:
-    """Drop what a scraper keeps beside each track for the merge with file tags (Discogs ANVs).
+# What a scraper keeps beside each track for the merge alone: Discogs' credited names (ANVs), and a stating store's
+# guesses. The merge drops them once it has decided, and a scrape shown on its own never holds them.
+MERGE_ONLY_KEYS = ("artist_variations", "assumed_artists")
 
-    Whoever shows or uses a scrape on its own has no tags to match, so it should not see it either."""
+
+def _without_merge_only_keys(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Drop what a scraper keeps beside each track for the merge alone (MERGE_ONLY_KEYS).
+
+    Whoever shows or uses a scrape on its own has no other source to weigh it against, so it should not see it."""
     for disc in metadata["tracks"].values():
         for track in disc.values():
-            track.pop("artist_variations", None)
+            for key in MERGE_ONLY_KEYS:
+                track.pop(key, None)
     return metadata
 
 
@@ -84,6 +90,6 @@ async def run_metadata(
     for name, source in sources.items():
         if source.Scraper.regex.match(url):
             click.secho(f"Getting metadata from {name}.", fg="cyan")
-            metadata = _without_artist_variations(await source.Scraper().scrape_release(url))
+            metadata = _without_merge_only_keys(await source.Scraper().scrape_release(url))
             return (metadata, name) if return_source_name else metadata
     raise ScrapeError("URL did not match a scraper.")

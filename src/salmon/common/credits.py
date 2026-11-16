@@ -51,6 +51,7 @@ TrackMetadata = TypedDict(
         "mp3_320": NotRequired[bool | None],
         "credited_remixers": NotRequired[list[str]],
         "artist_variations": NotRequired[list[dict[str, str]]],
+        "assumed_artists": NotRequired[list[Credit]],  # a stating store's guesses, among its artists
         # The files' only.
         "numbered": NotRequired[bool],
     },

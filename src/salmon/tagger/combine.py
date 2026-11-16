@@ -14,7 +14,7 @@ from salmon.common.numbers import natural_key, number_or_text
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
-from salmon.tagger.sources import METASOURCES
+from salmon.tagger.sources import MERGE_ONLY_KEYS, METASOURCES
 from salmon.tagger.sources.base import artist_spellings, determine_label_type, generate_artists, standardize_genres
 
 PREFERENCES = [
@@ -155,11 +155,12 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     if "url" in base:
         del base["url"]
 
+    decisions = _decide_credits(base["tracks"], claims, base_source)
+    # After the decision: a base track no store paired is decided from its own marks.
     for disc in base["tracks"].values():
         for track in disc.values():
-            track.pop("artist_variations", None)
-
-    decisions = _decide_credits(base["tracks"], claims, base_source)
+            for key in MERGE_ONLY_KEYS:
+                track.pop(key, None)
     _print_disputes(decisions)
     _correct_artists(base["tracks"])
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
@@ -410,9 +411,9 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
             btrack["artists"] = list(btrack["artists"])
             before = list(btrack["artists"])  # what this store's credits are matched against, as base_artists
             variations = {(v["name"], v["role"]): v["anv"] for v in track.get("artist_variations", [])}
-            own = None if claims is None else claims.setdefault(id(btrack), _claims_of(btrack["artists"], base_source))
+            own = None if claims is None else claims.setdefault(id(btrack), _claims_of_track(btrack, base_source))
             if own is not None:
-                own += _store_claims(track["artists"], variations, before, store, _assumed(store))
+                own += _store_claims(track["artists"], variations, before, store, track.get("assumed_artists", ()))
             for a in track["artists"]:
                 if (comparable(a[0]), a[1]) in base_artists:
                     continue
@@ -430,7 +431,7 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                     if (comparable(remixer[0]), remixer[1]) not in base_artists:
                         btrack["artists"].append(remixer)
                 if own is not None:
-                    own += _store_claims(remixers, {}, before, store, assumed=True)
+                    own += _store_claims(remixers, {}, before, store, guessed=remixers)
 
             btrack["artists"] = check_for_artist_fragments(btrack["artists"])
             btrack["credited_remixers"] = list(
@@ -465,24 +466,40 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
 
 
 def _assumed(source):
-    """Whether a source's roles count as assumed: a store's until its own step-3 PR reads them, while the files'
-    plain ARTIST counts as stated until step 4 (ADR 0007)."""
-    return source != "files"
+    """Whether a source's roles count as assumed: a store's until its own step-3 PR reads them (its scraper
+    states_credits), while the files' plain ARTIST counts as stated until step 4 (ADR 0007)."""
+    return source != "files" and not METASOURCES[source].Scraper.states_credits
 
 
-def _claims_of(credits, source):
-    return [Claim(source, name, name, role, assumed=_assumed(source)) for name, role in credits]
+def _is_assumed(credit, source, guesses):
+    """Whether a source's credit is a guess: all of the source's are, or it is among `guesses`, the credits the source
+    marked by the name and role it gave them (a stating store's assumed_artists)."""
+    return _assumed(source) or credit in guesses
 
 
-def _store_claims(credits, variations, base_credits, source, assumed):
+def _claims_of(credits, source, guessed=()):
+    guesses = {tuple(guess) for guess in guessed}
+    return [
+        Claim(source, name, name, role, assumed=_is_assumed((name, role), source, guesses)) for name, role in credits
+    ]
+
+
+def _claims_of_track(track, source):
+    """A track's claims from its own credits and marks: the base's, or a scrape's used alone."""
+    return _claims_of(track["artists"], source, track.get("assumed_artists", ()))
+
+
+def _store_claims(credits, variations, base_credits, source, guessed):
     """A store's credits on a base track as claims, each named as the base already names that artist in that role
-    (the merge's match: `comparable`, or Discogs' credited name), so a match is one name to decide on."""
+    (the merge's match: `comparable`, or Discogs' credited name), so a match is one name to decide on. Whether each is
+    a guess is read before the match, on the name the store gave."""
     named = {(comparable(name), role): name for name, role in base_credits}
+    guesses = {tuple(guess) for guess in guessed}
     claims = []
     for name, role in credits:
         anv = variations.get((name, role))
         matched = named.get((comparable(name), role)) or (anv and named.get((comparable(anv), role))) or name
-        claims.append(Claim(source, matched, anv or name, role, assumed=assumed))
+        claims.append(Claim(source, matched, anv or name, role, assumed=_is_assumed((name, role), source, guesses)))
     return claims
 
 
@@ -490,14 +507,15 @@ def _decide_credits(tracks, claims, base_source):
     """Decide each track's credits from its claims (ADR 0007), in place, and return the reasons.
 
     Each name first takes the spelling generate_artists gives it, so deciding never changes a spelling. A claim whose
-    credit the merge dropped (a fragment of another name) is left out.
+    credit the merge dropped (a fragment of another name) is left out. Every kept credit has a claim: the merge claims
+    each credit it adds to a track, under the name it adds it as.
     """
     spellings = artist_spellings(tracks)
     by_track = {}
     for disc, disc_tracks in tracks.items():
         for num, track in disc_tracks.items():
             kept = {tuple(credit) for credit in track["artists"]}
-            own = claims.get(id(track)) or _claims_of(track["artists"], base_source)
+            own = claims.get(id(track)) or _claims_of_track(track, base_source)
             by_track[disc, num] = [
                 msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
                 for claim in own

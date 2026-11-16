@@ -1,5 +1,5 @@
 """What a scrape shown on its own holds: run_metadata, which `salmon meta`, descgen and salmon web's metadata
-lookup go through, leaves out what the scrapers keep only for the merge with file tags (Discogs ANVs).
+lookup go through, leaves out what the scrapers keep only for the merge (Discogs ANVs, a stating store's guesses).
 
 Discogs is a fake on 127.0.0.1: the scraper's API address is pointed at it.
 """
@@ -14,7 +14,7 @@ from typing import Any
 import anyio
 import pytest
 from asyncclick.testing import CliRunner, Result
-from helpers.tagger_run_metadata import RELEASE_URL, FakeDiscogs, pointed_at
+from helpers.tagger_run_metadata import GUESSED, RELEASE_URL, STATED, FakeDiscogs, pointed_at, stating_credits
 
 import salmon.tagger
 from salmon.errors import ScrapeError
@@ -75,6 +75,100 @@ def test_salmon_meta_prints_no_artist_variations(monkeypatch: pytest.MonkeyPatch
     assert "K-Ci & JoJo" in result.output
     assert "artist_variations" not in result.output
     assert "K-Ci And JoJo" not in result.output
+
+
+def test_a_scrape_shown_on_its_own_holds_no_assumed_artists(monkeypatch: pytest.MonkeyPatch) -> None:
+    stating_credits(monkeypatch)
+
+    metadata, _ = in_fake_discogs(monkeypatch, lambda: run_metadata(RELEASE_URL))
+
+    track = metadata["tracks"]["3"]["3"]
+    assert "assumed_artists" not in track
+    assert "artist_variations" not in track
+    json.dumps(metadata)
+
+
+def test_the_source_name_comes_with_the_same_scrape_without_assumed_artists(monkeypatch: pytest.MonkeyPatch) -> None:
+    stating_credits(monkeypatch)
+
+    (metadata, source), _ = in_fake_discogs(monkeypatch, lambda: run_metadata(RELEASE_URL, return_source_name=True))
+
+    assert source == "Discogs"
+    assert "assumed_artists" not in metadata["tracks"]["3"]["3"]
+
+
+def test_as_before_a_scraper_still_keeps_the_assumed_artists_for_the_merge(monkeypatch: pytest.MonkeyPatch) -> None:
+    stating_credits(monkeypatch)
+
+    async def scrape() -> dict[str, Any]:
+        return await discogs.Scraper().scrape_release(RELEASE_URL)
+
+    metadata, _ = in_fake_discogs(monkeypatch, scrape)
+
+    assert metadata["tracks"]["3"]["3"]["assumed_artists"] == GUESSED
+    json.dumps(metadata)
+
+
+def test_a_store_that_states_its_credits_hands_them_on_as_it_read_them(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No per-track rewriting in the scrape: the merge decides. The release's credits are generate_artists', as any
+    store's (here the same three: it lists each role a name has on the release)."""
+    stating_credits(monkeypatch)
+
+    async def scrape() -> dict[str, Any]:
+        return await discogs.Scraper().scrape_release(RELEASE_URL)
+
+    metadata, _ = in_fake_discogs(monkeypatch, scrape)
+
+    assert metadata["tracks"]["3"]["3"]["artists"] == STATED
+    assert metadata["artists"] == [("K-Ci & JoJo", "guest"), ("K-Ci & JoJo", "main"), ("Club Asylum", "remixer")]
+
+
+def test_a_stating_scrape_types_its_release_from_its_artists_spelled_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A compilation by two artists is an Anthology: "Bjork" and "Björk" are one of them, not a third."""
+    stating_credits(monkeypatch)
+    spelled_twice = [("Bjork", "main"), ("Björk", "main"), ("Carol", "main")]
+    parse_tracks = discogs.Scraper.parse_tracks
+
+    async def parsed(self: discogs.Scraper, soup: dict) -> dict:
+        tracks = await parse_tracks(self, soup)
+        tracks["3"]["3"]["artists"] = list(spelled_twice)
+        return tracks
+
+    monkeypatch.setattr(discogs.Scraper, "parse_tracks", parsed)
+
+    async def scrape() -> dict[str, Any]:
+        return await discogs.Scraper().scrape_release(RELEASE_URL)
+
+    metadata, _ = in_fake_discogs(monkeypatch, scrape)
+
+    assert metadata["tracks"]["3"]["3"]["artists"] == spelled_twice
+    assert metadata["rls_type"] == "Anthology"
+
+
+def test_as_before_a_store_that_states_nothing_has_one_credit_per_name_in_its_scrape(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stating_credits(monkeypatch, states=False)
+
+    async def scrape() -> dict[str, Any]:
+        return await discogs.Scraper().scrape_release(RELEASE_URL)
+
+    metadata, _ = in_fake_discogs(monkeypatch, scrape)
+
+    assert metadata["tracks"]["3"]["3"]["artists"] == [("K-Ci & JoJo", "guest"), ("Club Asylum", "remixer")]
+
+
+def test_salmon_meta_prints_no_assumed_artists(monkeypatch: pytest.MonkeyPatch) -> None:
+    stating_credits(monkeypatch)
+
+    async def run() -> Result:
+        return await CliRunner().invoke(salmon.tagger.meta, [RELEASE_URL])
+
+    result, _ = in_fake_discogs(monkeypatch, run)
+
+    assert result.exit_code == 0, result.output
+    assert "K-Ci & JoJo" in result.output
+    assert "assumed_artists" not in result.output
 
 
 def test_salmon_meta_saves_json(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

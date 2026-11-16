@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -391,6 +392,31 @@ def test_combine_metadatas_from_discogs_alone_leaves_the_anv_out_too():
     combined = combine_metadatas(("Discogs", discogs))
 
     assert "artist_variations" not in combined["tracks"]["1"]["1"]
+
+
+def guessing(artists: list[tuple[str, str]], guessed: list[tuple[str, str]]) -> dict:
+    meta = make_metadata("Album")
+    meta["tracks"]["1"]["1"] = {**meta["tracks"]["1"]["1"], "artists": artists, "assumed_artists": guessed}
+    return meta
+
+
+def test_as_before_combine_metadatas_leaves_a_store_s_guesses_out_of_the_final_metadata():
+    base = make_metadata("Album")
+    qobuz = guessing([("Marius Acke", "main"), ("Bob", "guest")], [("Bob", "guest")])
+
+    combined = combine_metadatas(("Qobuz", qobuz), base=deepcopy(base))
+
+    assert "assumed_artists" not in combined["tracks"]["1"]["1"]
+    json.dumps(combined)
+
+
+def test_combine_metadatas_from_a_store_alone_leaves_its_guesses_out_too():
+    qobuz = guessing([("Marius Acke", "main"), ("Bob", "guest")], [("Bob", "guest")])
+
+    combined = combine_metadatas(("Qobuz", qobuz))
+
+    assert "assumed_artists" not in combined["tracks"]["1"]["1"]
+    json.dumps(combined)
 
 
 def remix_title(title: str, remixers: tuple[str, ...] = ("X",)) -> str:

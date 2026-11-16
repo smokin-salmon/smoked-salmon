@@ -42,3 +42,24 @@ class FakeDiscogs(FakeStore):
 def pointed_at(monkeypatch: pytest.MonkeyPatch, store: FakeStore) -> None:
     monkeypatch.setattr(ssrf, "ALLOWED", LOOPBACK)
     monkeypatch.setattr(discogs.Scraper, "url", store.url(""))
+
+
+# What a store that states its credits hands the merge for track 3-3: K-Ci & JoJo as main, and as a guest it only
+# guessed.
+STATED = [("K-Ci & JoJo", "guest"), ("K-Ci & JoJo", "main"), ("Club Asylum", "remixer")]
+GUESSED = [("K-Ci & JoJo", "guest")]
+
+
+def stating_credits(monkeypatch: pytest.MonkeyPatch, states: bool = True) -> None:
+    """Make the fake's Discogs a store that states its credits (or, with `states` false, one that gives the same
+    credits and states nothing), with one guess on track 3-3."""
+    parse_tracks = discogs.Scraper.parse_tracks
+
+    async def parsed(self: discogs.Scraper, soup: dict) -> dict:
+        tracks = await parse_tracks(self, soup)
+        tracks["3"]["3"]["artists"] = list(STATED)
+        tracks["3"]["3"]["assumed_artists"] = list(GUESSED)
+        return tracks
+
+    monkeypatch.setattr(discogs.Scraper, "parse_tracks", parsed)
+    monkeypatch.setattr(discogs.Scraper, "states_credits", states, raising=False)
