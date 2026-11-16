@@ -111,7 +111,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
                         trackno=track["number"],
                         discno=disc["position"],
                         artists=parse_artists(track["recording"]["artist-credit"]),
-                        title=track["recording"]["title"],
+                        title=track["title"] if "title" in track else track["recording"]["title"],
                     )
                 except (ValueError, IndexError) as e:
                     raise ScrapeError("Could not parse tracks.") from e
