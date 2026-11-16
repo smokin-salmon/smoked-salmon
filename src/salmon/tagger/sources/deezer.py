@@ -84,14 +84,16 @@ class Scraper(DeezerBase, MetadataMixin):
         else:
             mains, featured = [artist["ART_NAME"] for artist in default_artists], []
 
-        # The title's featured credit lists several names in one string, so it is split; the parts of a name a
-        # contributor already gives whole ("feat. Earth, Wind & Fire") are that name, not guests of their own.
-        covered = {unescape(p) for name in mains + featured if len(parts := re_split(name)) > 1 for p in parts}
+        # The title's featured credit lists several names in one string, so it is split. When it names every part
+        # of a name a contributor gives whole ("feat. Earth, Wind & Fire"), those parts are that name, not guests.
         feat = RE_FEAT.search(title)
-        if feat:
-            for artist in re_split(feat[1]):
-                if unescape(artist) not in covered:
-                    result.append((unescape(artist), "guest"))
+        guests = [unescape(artist) for artist in re_split(feat[1])] if feat else []
+        covered = set()
+        for name in mains + featured:
+            parts = [unescape(part) for part in re_split(name)]
+            if len(parts) > 1 and all(part in guests for part in parts):
+                covered.update(parts)
+        result += [(guest, "guest") for guest in guests if guest not in covered]
 
         for a in mains:
             if a and (a, "main") not in result:

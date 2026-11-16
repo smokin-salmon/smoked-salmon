@@ -68,3 +68,11 @@ def test_as_before_a_guest_without_a_separator_named_in_the_title_and_as_a_contr
         ("Carol", "guest"),
         ("Bob", "main"),
     ]
+
+
+def test_a_title_guest_sharing_a_word_with_a_contributor_s_name_stays_a_guest() -> None:
+    assert _artists({"main_artist": ["Alice & Bob"]}, title="Song (feat. Bob & Carol)") == [
+        ("Bob", "guest"),
+        ("Carol", "guest"),
+        ("Alice & Bob", "main"),
+    ]
