@@ -1,7 +1,7 @@
 album = "Kruder & Dorfmeister, DJ-Kicks"
 why = "A DJ mix: the DJs' name is the release's artist on every store and each track is by someone else."
 edition = "Studio !K7, 17 tracks, as sold digitally (Deezer 1127108 = MusicBrainz aa2eae9d by barcode); Discogs 2951 is master 252625's main release; Qobuz has the same UPC"
-known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "merge: 'Full Length' read as a remixer from the words of a remix's name"]
+known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "merge: 'Full Length' read as a remixer from the words of a remix's name", "merge: 'JMJ & Flytronix', Qobuz's guessed guest on 1.6, in place of the files' mains JMJ and Flytronix: the merge's fragment check removes the two before the decision weighs the guess", "merge: 'Herbalizer' (guest) beside 'The Herbaliser' on 1.1 and 'Kama' (guest) beside 'Karma' on 1.15: Qobuz's performers line spells the track's artist differently from its performer field, and no source disputes the guessed guest"]
 files_from = "deezer"
 output = true
 
