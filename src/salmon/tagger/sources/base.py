@@ -70,8 +70,9 @@ class MetadataMixin(ABC):
             data["url"] = self.format_url(rls_id=rls_id, rls_name=data["title"])
         data["urls"] = [data["url"]]
         if self.states_credits:
-            # The tracks' credits left as the parser read them, for the merge to decide; the release's, which the
-            # release type and the label are read from below, decided and respelled as for any other store.
+            # The tracks' credits left as the parser read them, for the merge to decide, and their titles as the store
+            # gives them, remixes included; the release's credits, which the release type and the label are read from
+            # below, decided and respelled as for any other store.
             # generate_artists replaces each track's credits: on a copy of each track, the tracks keep theirs.
             copied = {
                 disc: {num: dict(track) for num, track in tracks.items()} for disc, tracks in data["tracks"].items()
@@ -79,7 +80,7 @@ class MetadataMixin(ABC):
             data["artists"] = generate_artists(copied)[0]
         else:
             data["artists"], data["tracks"] = generate_artists(data["tracks"])
-        data["tracks"] = append_remixers_to_track_titles(data["tracks"])
+            data["tracks"] = append_remixers_to_track_titles(data["tracks"])
         data["tracks"] = assign_track_totals(data["tracks"])
         data["title"], data["rls_type"] = self.determine_rls_type(data)
         data["label"] = self.process_label(data)

@@ -185,6 +185,31 @@ def test_as_before_a_store_that_states_nothing_has_one_credit_per_name_in_its_sc
     assert metadata["tracks"]["3"]["3"]["artists"] == [("K-Ci & JoJo", "guest"), ("Club Asylum", "remixer")]
 
 
+def _title_of_3_3(monkeypatch: pytest.MonkeyPatch, states: bool) -> str:
+    stating_credits(monkeypatch, states=states)
+
+    async def scrape() -> dict[str, Any]:
+        return await discogs.Scraper().scrape_release(RELEASE_URL)
+
+    metadata, _ = in_fake_discogs(monkeypatch, scrape)
+    return metadata["tracks"]["3"]["3"]["title"]
+
+
+def test_a_store_that_states_its_credits_keeps_its_titles_as_it_gives_them(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Its remixes are in its titles already (Qobuz's version): its remixer credit adds no guessed " (X Remix)"."""
+    title = _title_of_3_3(monkeypatch, states=True)
+
+    assert title == "Tell Me It's Real"
+
+
+def test_as_before_a_store_that_states_nothing_has_its_remixer_added_to_a_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    title = _title_of_3_3(monkeypatch, states=False)
+
+    assert title == "Tell Me It's Real (Club Asylum Remix)"
+
+
 def test_salmon_meta_prints_no_assumed_artists(monkeypatch: pytest.MonkeyPatch) -> None:
     stating_credits(monkeypatch)
 
