@@ -453,7 +453,8 @@ def test_a_release_with_no_artists_list_takes_its_artist_as_main() -> None:
 
 
 def test_a_release_s_artists_list_holding_other_than_artists_reads_the_artists_it_holds() -> None:
-    data = album(track(), artists=[None, "Bob", {"roles": ["main-artist"]}, *mains("Alice")])
+    data = album(track())
+    data["artists"] = [None, "Bob", {"roles": ["main-artist"]}, *mains("Alice")]
 
     got = credits(data)
 
