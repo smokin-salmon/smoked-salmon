@@ -48,7 +48,8 @@ def test_the_files_main_is_kept_where_a_store_says_guest_and_salmon_says_so(caps
     )
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "main")]
-    assert "Kept the files' main where stores say guest:\n  Bob (guest at Qobuz)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Kept the files' main where stores say guest:\n  Bob (guest at Qobuz)\n" in out
 
 
 def test_the_files_guest_is_kept_where_a_store_says_main(capsys: pytest.CaptureFixture) -> None:
@@ -56,7 +57,8 @@ def test_the_files_guest_is_kept_where_a_store_says_main(capsys: pytest.CaptureF
         ("Deezer", release(("Alice", "main"), ("Bob", "main"))), base=release(("Alice", "main"), ("Bob", "guest"))
     )
 
-    assert "Kept the files' guest where stores say main:\n  Bob (main at Deezer)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Kept the files' guest where stores say main:\n  Bob (main at Deezer)\n" in out
 
 
 def test_with_no_files_the_first_store_is_the_base(capsys: pytest.CaptureFixture) -> None:
@@ -65,7 +67,8 @@ def test_with_no_files_the_first_store_is_the_base(capsys: pytest.CaptureFixture
     )
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "main")]
-    assert "Kept Deezer's main where other stores say guest:\n  Bob (guest at Qobuz)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Kept Deezer's main where other stores say guest:\n  Bob (guest at Qobuz)\n" in out
 
 
 def test_names_the_same_stores_dispute_share_a_line_whatever_the_order(capsys: pytest.CaptureFixture) -> None:
@@ -75,7 +78,8 @@ def test_names_the_same_stores_dispute_share_a_line_whatever_the_order(capsys: p
 
     combine_metadatas(("Qobuz", qobuz), ("Deezer", deezer), base=deepcopy(files))
 
-    assert "\n  Bob, Carol (guest at Deezer, Qobuz)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "\n  Bob, Carol (guest at Deezer, Qobuz)\n" in out
 
 
 def test_a_store_credit_the_merge_matches_to_the_base_is_one_name_to_dispute(capsys: pytest.CaptureFixture) -> None:
@@ -84,19 +88,22 @@ def test_a_store_credit_the_merge_matches_to_the_base_is_one_name_to_dispute(cap
         ("Qobuz", release(("JAY Z", "guest"))), ("Deezer", release(("Jay-Z", "guest"))), base=release(("Jay-Z", "main"))
     )
 
-    assert "\n  Jay-Z (guest at Deezer, Qobuz)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "\n  Jay-Z (guest at Deezer, Qobuz)\n" in out
 
 
 def test_a_name_spelled_two_ways_is_one_name_to_dispute(capsys: pytest.CaptureFixture) -> None:
     combine_metadatas(("Deezer", release(("Kool & the Gang", "guest"))), base=release(("Kool & The Gang", "main")))
 
-    assert "\n  Kool & the Gang (guest at Deezer)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "\n  Kool & the Gang (guest at Deezer)\n" in out
 
 
 def test_as_before_nothing_is_printed_when_the_sources_agree(capsys: pytest.CaptureFixture) -> None:
     combine_metadatas(("Qobuz", release(("Alice", "main"))), base=release(("Alice", "main")))
 
-    assert "Kept" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Kept" not in out
 
 
 def test_as_before_a_name_takes_the_spelling_with_fewer_capitals() -> None:
@@ -127,7 +134,8 @@ def test_as_before_a_store_alone_keeps_its_credits(capsys: pytest.CaptureFixture
     combined = combine_metadatas(("Deezer", release(("Alice", "main"), ("Bob", "guest"))))
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "guest")]
-    assert "Kept" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Kept" not in out
 
 
 def test_a_label_named_after_a_guest_on_every_track_is_not_self_released() -> None:
