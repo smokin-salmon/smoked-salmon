@@ -47,11 +47,7 @@ def credits(data: dict[str, Any]) -> list[list[tuple[str, str]]]:
 
 
 def guessed(data: dict[str, Any]) -> list[list[tuple[str, str]]]:
-    return [t.get("assumed_artists", []) for t in parsed(data)]
-
-
-def test_qobuz_states_its_credits() -> None:
-    assert Scraper.states_credits is True
+    return [t["assumed_artists"] for t in parsed(data)]
 
 
 # The role words
@@ -135,15 +131,17 @@ def test_as_before_an_instrument_or_other_credit_word_ends_a_name(word: str) -> 
     assert got == [[("Alice", "main"), ("Bob", "guest")]]
 
 
-def test_a_stray_comma_after_a_name_is_not_part_of_it() -> None:
-    data = album(track("Alice, MainArtist - Bob,, FeaturedArtist"))
+@pytest.mark.parametrize("listed", [[], [{"name": "Bob", "roles": ["performer"]}]], ids=["unknown", "known"])
+def test_a_stray_comma_after_a_name_is_not_part_of_it(listed: list[dict[str, Any]]) -> None:
+    """Whether or not the comma's run reaches a name Qobuz gives elsewhere."""
+    data = album(track("Alice, MainArtist - Bob,, FeaturedArtist"), artists=[*mains("Alice"), *listed])
 
     got = credits(data)
 
     assert got == [[("Alice", "main"), ("Bob", "guest")]]
 
 
-def test_a_role_word_with_no_name_before_it_credits_no_one() -> None:
+def test_as_before_a_role_word_with_no_name_before_it_credits_no_one() -> None:
     """Reiner's Vienna: some lines end on a role word alone, "- Reissue Producer"."""
     data = album(track("Alice, MainArtist - Conductor"))
 
@@ -152,7 +150,7 @@ def test_a_role_word_with_no_name_before_it_credits_no_one() -> None:
     assert got == [[("Alice", "main")]]
 
 
-def test_names_with_no_letters_or_digits_stay_apart() -> None:
+def test_as_before_names_with_no_letters_or_digits_stay_apart() -> None:
     data = album(track("!!!, MainArtist - ???, FeaturedArtist"), artist="!!!")
 
     got = credits(data)
@@ -302,6 +300,14 @@ def test_the_album_s_artist_takes_its_spelling_in_the_artists_list() -> None:
     assert got == [[("João Gilberto", "main")]]
 
 
+def test_the_album_s_artist_is_its_first_main_and_a_main_takes_its_first_listed_spelling() -> None:
+    data = album(track(), artist="Bob", artists=mains("Alice", "Bob", "Böb"))
+
+    got = credits(data)
+
+    assert got == [[("Bob", "main"), ("Alice", "main")]]
+
+
 def test_as_before_an_album_main_the_album_also_lists_as_featured_is_not_its_own_guest() -> None:
     data = album(track(), artists=[{"name": "Alice", "roles": ["main-artist", "featured-artist"]}])
 
@@ -350,6 +356,14 @@ def test_a_guest_read_from_the_title_is_assumed() -> None:
 
     assert first["artists"] == [("Alice", "main"), ("Bob", "guest"), ("Carol", "guest")]
     assert first["assumed_artists"] == [("Carol", "guest")]
+
+
+def test_as_before_a_title_s_guests_come_last_and_once() -> None:
+    data = album(track("A, FeaturedArtist - C, FeaturedArtist", "Song (feat. A & B)"), artist="Bob")
+
+    got = credits(data)
+
+    assert got == [[("Bob", "main"), ("A", "guest"), ("C", "guest"), ("B", "guest")]]
 
 
 def test_as_before_an_album_featured_artist_is_a_guest_on_every_track() -> None:
@@ -436,6 +450,14 @@ def test_a_release_with_no_artists_list_takes_its_artist_as_main() -> None:
 
     assert first["artists"] == [("Alice", "main"), ("Bob", "guest")]
     assert first["assumed_artists"] == [("Bob", "guest")]
+
+
+def test_a_release_s_artists_list_holding_other_than_artists_reads_the_artists_it_holds() -> None:
+    data = album(track(), artists=[None, "Bob", {"roles": ["main-artist"]}, *mains("Alice")])
+
+    got = credits(data)
+
+    assert got == [[("Alice", "main")]]
 
 
 def test_a_release_with_no_artist_credits_no_empty_name() -> None:

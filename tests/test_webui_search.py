@@ -39,6 +39,7 @@ import salmon.uploader
 from salmon import cfg, ssrf
 from salmon.config.validations import ProxyCfg
 from salmon.search import SEARCHSOURCES, metas
+from salmon.tagger.sources import MERGE_ONLY_KEYS
 from salmon.trackers import base
 from salmon.webui.jobs import JobManager
 
@@ -210,27 +211,10 @@ def test_a_lookup_gives_what_salmon_meta_prints(monkeypatch: pytest.MonkeyPatch)
     _lookup_run(test)
 
 
-def test_a_discogs_lookup_with_a_credited_name_answers_without_artist_variations(
+def test_a_discogs_lookup_with_a_credited_name_and_a_guess_answers_without_either(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    store = FakeDiscogs()
-
-    async def test(client: TestClient, store: FakeStore) -> None:
-        pointed_at(monkeypatch, store)
-        response = await client.get("/api/metadata", params={"url": RELEASE_URL}, headers=AUTH)
-        assert response.status == 200, await response.text()
-        track = (await response.json())["metadata"]["tracks"]["3"]["3"]
-        assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
-        assert "artist_variations" not in track
-        assert store.requests == ["/releases/2520452"]
-
-    _lookup_run(test, store)
-
-
-def test_a_lookup_of_a_store_that_states_its_credits_answers_without_its_guesses(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """msgspec.to_builtins would answer with the key, not fail on it: the answer itself has to lack it."""
+    """msgspec.to_builtins would answer with the keys, not fail on them: the answer itself has to lack them."""
     store = FakeDiscogs()
     stating_credits(monkeypatch)
 
@@ -240,7 +224,8 @@ def test_a_lookup_of_a_store_that_states_its_credits_answers_without_its_guesses
         assert response.status == 200, await response.text()
         track = (await response.json())["metadata"]["tracks"]["3"]["3"]
         assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
-        assert "assumed_artists" not in track
+        assert not set(MERGE_ONLY_KEYS) & set(track)
+        assert store.requests == ["/releases/2520452"]
 
     _lookup_run(test, store)
 

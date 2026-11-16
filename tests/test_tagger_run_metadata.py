@@ -19,7 +19,7 @@ from helpers.tagger_run_metadata import GUESSED, RELEASE_URL, STATED, FakeDiscog
 
 import salmon.tagger
 from salmon.errors import ScrapeError
-from salmon.tagger.sources import discogs, run_metadata
+from salmon.tagger.sources import MERGE_ONLY_KEYS, discogs, run_metadata
 
 
 def in_fake_discogs(
@@ -35,13 +35,15 @@ def in_fake_discogs(
     return anyio.run(main), store
 
 
-def test_a_scrape_shown_on_its_own_holds_no_artist_variations(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_scrape_shown_on_its_own_holds_nothing_only_the_merge_reads(monkeypatch: pytest.MonkeyPatch) -> None:
+    stating_credits(monkeypatch)
+
     metadata, store = in_fake_discogs(monkeypatch, lambda: run_metadata(RELEASE_URL))
 
     assert store.requests == ["/releases/2520452"]
     track = metadata["tracks"]["3"]["3"]
     assert track["artists"] == [("K-Ci & JoJo", "main"), ("Club Asylum", "remixer")]
-    assert "artist_variations" not in track
+    assert not set(MERGE_ONLY_KEYS) & set(track)
     # All of it is plain data: nothing in a scrape may stop it being shown as JSON.
     json.dumps(metadata)
 
@@ -78,26 +80,6 @@ def test_salmon_meta_prints_no_artist_variations(monkeypatch: pytest.MonkeyPatch
     assert "K-Ci And JoJo" not in result.output
 
 
-def test_a_scrape_shown_on_its_own_holds_no_assumed_artists(monkeypatch: pytest.MonkeyPatch) -> None:
-    stating_credits(monkeypatch)
-
-    metadata, _ = in_fake_discogs(monkeypatch, lambda: run_metadata(RELEASE_URL))
-
-    track = metadata["tracks"]["3"]["3"]
-    assert "assumed_artists" not in track
-    assert "artist_variations" not in track
-    json.dumps(metadata)
-
-
-def test_the_source_name_comes_with_the_same_scrape_without_assumed_artists(monkeypatch: pytest.MonkeyPatch) -> None:
-    stating_credits(monkeypatch)
-
-    (metadata, source), _ = in_fake_discogs(monkeypatch, lambda: run_metadata(RELEASE_URL, return_source_name=True))
-
-    assert source == "Discogs"
-    assert "assumed_artists" not in metadata["tracks"]["3"]["3"]
-
-
 def test_a_scrape_shown_on_its_own_is_decided_as_a_merge_of_one_source(monkeypatch: pytest.MonkeyPatch) -> None:
     """One credit per name: the store's stated main, not the guest it guessed, on the track and the release."""
     stating_credits(monkeypatch)
@@ -124,18 +106,6 @@ def test_a_scrape_for_the_merge_keeps_what_the_merge_reads(monkeypatch: pytest.M
     json.dumps(metadata)
 
 
-def test_as_before_a_scraper_still_keeps_the_assumed_artists_for_the_merge(monkeypatch: pytest.MonkeyPatch) -> None:
-    stating_credits(monkeypatch)
-
-    async def scrape() -> dict[str, Any]:
-        return await discogs.Scraper().scrape_release(RELEASE_URL)
-
-    metadata, _ = in_fake_discogs(monkeypatch, scrape)
-
-    assert metadata["tracks"]["3"]["3"]["assumed_artists"] == GUESSED
-    json.dumps(metadata)
-
-
 def test_a_store_that_states_its_credits_hands_them_on_as_it_read_them(monkeypatch: pytest.MonkeyPatch) -> None:
     """No per-track rewriting in the scrape: the merge decides. The release's credits are generate_artists', as any
     store's (here the same three: it lists each role a name has on the release)."""
@@ -147,6 +117,7 @@ def test_a_store_that_states_its_credits_hands_them_on_as_it_read_them(monkeypat
     metadata, _ = in_fake_discogs(monkeypatch, scrape)
 
     assert metadata["tracks"]["3"]["3"]["artists"] == STATED
+    assert metadata["tracks"]["3"]["3"]["assumed_artists"] == GUESSED
     assert metadata["artists"] == [("K-Ci & JoJo", "guest"), ("K-Ci & JoJo", "main"), ("Club Asylum", "remixer")]
 
 
@@ -208,19 +179,6 @@ def test_as_before_a_store_that_states_nothing_has_its_remixer_added_to_a_title(
     title = _title_of_3_3(monkeypatch, states=False)
 
     assert title == "Tell Me It's Real (Club Asylum Remix)"
-
-
-def test_salmon_meta_prints_no_assumed_artists(monkeypatch: pytest.MonkeyPatch) -> None:
-    stating_credits(monkeypatch)
-
-    async def run() -> Result:
-        return await CliRunner().invoke(salmon.tagger.meta, [RELEASE_URL])
-
-    result, _ = in_fake_discogs(monkeypatch, run)
-
-    assert result.exit_code == 0, result.output
-    assert "K-Ci & JoJo" in result.output
-    assert "assumed_artists" not in result.output
 
 
 def test_salmon_meta_saves_json_with_no_assumed_artists(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

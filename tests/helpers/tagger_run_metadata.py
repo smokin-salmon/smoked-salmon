@@ -62,4 +62,4 @@ def stating_credits(monkeypatch: pytest.MonkeyPatch, states: bool = True) -> Non
         return tracks
 
     monkeypatch.setattr(discogs.Scraper, "parse_tracks", parsed)
-    monkeypatch.setattr(discogs.Scraper, "states_credits", states, raising=False)
+    monkeypatch.setattr(discogs.Scraper, "states_credits", states)

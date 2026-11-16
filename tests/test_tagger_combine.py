@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from helpers.tagger_combine import make_tracks, one_track
+from helpers.tagger_combine import make_tracks, one_track, stating
 
 from salmon.common.numbers import natural_key
 from salmon.errors import TrackCombineError
@@ -394,15 +394,15 @@ def test_combine_metadatas_from_discogs_alone_leaves_the_anv_out_too():
     assert "artist_variations" not in combined["tracks"]["1"]["1"]
 
 
-def guessing(artists: list[tuple[str, str]], guessed: list[tuple[str, str]]) -> dict:
+def guessing_bob() -> dict:
     meta = make_metadata("Album")
-    meta["tracks"]["1"]["1"] = {**meta["tracks"]["1"]["1"], "artists": artists, "assumed_artists": guessed}
-    return meta
+    meta["tracks"]["1"]["1"]["artists"] = [("Marius Acke", "main"), ("Bob", "guest")]
+    return stating(meta, ("Bob", "guest"))
 
 
 def test_as_before_combine_metadatas_leaves_a_store_s_guesses_out_of_the_final_metadata():
     base = make_metadata("Album")
-    qobuz = guessing([("Marius Acke", "main"), ("Bob", "guest")], [("Bob", "guest")])
+    qobuz = guessing_bob()
 
     combined = combine_metadatas(("Qobuz", qobuz), base=deepcopy(base))
 
@@ -411,7 +411,7 @@ def test_as_before_combine_metadatas_leaves_a_store_s_guesses_out_of_the_final_m
 
 
 def test_combine_metadatas_from_a_store_alone_leaves_its_guesses_out_too():
-    qobuz = guessing([("Marius Acke", "main"), ("Bob", "guest")], [("Bob", "guest")])
+    qobuz = guessing_bob()
 
     combined = combine_metadatas(("Qobuz", qobuz))
 

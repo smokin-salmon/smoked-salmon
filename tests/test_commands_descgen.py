@@ -10,6 +10,7 @@ from copy import deepcopy
 import anyio
 import pytest
 from asyncclick.testing import CliRunner
+from helpers.tagger_combine import stating, stores_stating
 from helpers.tagger_metadata_corrections import _scraped
 
 import salmon.commands
@@ -19,8 +20,6 @@ from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.beatport import Scraper as BeatportScraper
 from salmon.tagger.sources.discogs import Scraper as DiscogsScraper
 from salmon.uploader.description import generate_source_links
-from salmon.webui import kinds
-from salmon.webui.kinds import DescgenParams
 
 METADATA = {
     "artists": [],
@@ -437,20 +436,19 @@ QOBUZ_URL = "https://www.qobuz.com/us-en/album/album/abc123"
 
 
 def _from_stores(monkeypatch, deezer: list[tuple[str, str]], qobuz: list[tuple[str, str]], guessed=()) -> list[str]:
-    """Deezer and Qobuz answering with one track each (and a second, by Alice alone), Qobuz stating its credits:
-    run_metadata, the merge and the clean are the real ones."""
+    """Deezer and Qobuz answering with one track each (and a second, by Alice alone), Qobuz stating its credits and
+    Deezer assuming its: run_metadata, the merge and the clean are the real ones."""
     scraped = {
         "Deezer": {**_scraped(deezer, [("Alice", "main")]), "url": DEEZER_URL, "urls": [DEEZER_URL]},
-        "Qobuz": _scraped(qobuz, [("Alice", "main")]),
+        "Qobuz": stating(_scraped(qobuz, [("Alice", "main")]), *guessed),
     }
-    scraped["Qobuz"]["tracks"]["1"]["1"]["assumed_artists"] = list(guessed)
     for name, release in scraped.items():
 
         async def scrape_release(self, url, rls_id=None, release=release):
             return deepcopy(release)
 
         monkeypatch.setattr(METASOURCES[name].Scraper, "scrape_release", scrape_release)
-    monkeypatch.setattr(METASOURCES["Qobuz"].Scraper, "states_credits", True, raising=False)
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Deezer",))
     return [DEEZER_URL, QOBUZ_URL]
 
 
@@ -471,11 +469,3 @@ def test_as_before_descgen_weighs_a_stating_store_s_guess_as_a_guess(monkeypatch
     description = anyio.run(build_description, urls)
 
     assert "[b]01.[/b] Alice (feat. Bob) - Song 1\n" in description
-
-
-def test_the_web_s_description_job_weighs_a_store_s_stated_credit_too(monkeypatch) -> None:
-    urls = _from_stores(monkeypatch, [("Alice", "main"), ("Bob", "guest")], [("Alice", "main"), ("Bob", "main")])
-
-    answer = anyio.run(kinds.descgen, DescgenParams(urls=urls))
-
-    assert "[b]01.[/b] Song 1\n[b]02.[/b] Alice - Song 2\n" in answer["description"]

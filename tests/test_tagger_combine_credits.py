@@ -4,11 +4,10 @@ the disputes salmon prints."""
 from copy import deepcopy
 
 import pytest
-from helpers.tagger_combine import make_tracks, one_track
+from helpers.tagger_combine import make_tracks, one_track, stating, stores_stating
 
 from salmon.common.credits import Claim
 from salmon.tagger.combine import _decide_credits, combine_metadatas, combine_tracks
-from salmon.tagger.sources import METASOURCES
 
 
 def release(*artists: tuple[str, str], label: str | None = None) -> dict:
@@ -62,7 +61,10 @@ def test_the_files_guest_is_kept_where_a_store_says_main(capsys: pytest.CaptureF
     assert "Kept the files' guest where stores say main:\n  Bob (main at Deezer)\n" in out
 
 
-def test_with_no_files_the_first_store_is_the_base(capsys: pytest.CaptureFixture) -> None:
+def test_with_no_files_the_first_store_is_the_base(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    stores_stating(monkeypatch, stating=(), assuming=("MusicBrainz", "Deezer"))
     combined = combine_metadatas(
         ("MusicBrainz", release(("Alice", "main"), ("Bob", "guest"))),
         ("Deezer", release(("Alice", "main"), ("Bob", "main"))),
@@ -183,23 +185,13 @@ def test_the_decision_is_written_to_the_track() -> None:
     assert track["artists"] == [("Alice", "guest")]
 
 
-@pytest.fixture
-def qobuz_states(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Qobuz as a store that states its credits, as its step-3 PR makes it."""
-    monkeypatch.setattr(METASOURCES["Qobuz"].Scraper, "states_credits", True, raising=False)
-
-
-def stating(*artists: tuple[str, str], guessed: tuple[tuple[str, str], ...] = ()) -> dict:
-    """A stating store's release: its one track's credits, and those of them it guessed."""
-    meta = release(*artists)
-    meta["tracks"]["1"]["1"]["assumed_artists"] = list(guessed)
-    return meta
-
-
-@pytest.mark.usefixtures("qobuz_states")
-def test_with_no_files_a_stated_main_beats_another_store_s_assumed_guest(capsys: pytest.CaptureFixture) -> None:
+def test_with_no_files_a_stated_main_beats_another_store_s_assumed_guest(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Deezer",))
     combined = combine_metadatas(
-        ("Deezer", release(("Alice", "main"), ("Bob", "guest"))), ("Qobuz", stating(("Alice", "main"), ("Bob", "main")))
+        ("Deezer", release(("Alice", "main"), ("Bob", "guest"))),
+        ("Qobuz", stating(release(("Alice", "main"), ("Bob", "main")))),
     )
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "main")]
@@ -207,49 +199,58 @@ def test_with_no_files_a_stated_main_beats_another_store_s_assumed_guest(capsys:
     assert "Kept Qobuz's main where other stores say guest:\n  Bob (guest at Deezer)\n" in out
 
 
-@pytest.mark.usefixtures("qobuz_states")
-def test_a_stated_credit_takes_the_name_the_merge_matched_it_to() -> None:
+def test_a_stated_credit_takes_the_name_the_merge_matched_it_to(monkeypatch: pytest.MonkeyPatch) -> None:
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Deezer",))
     combined = combine_metadatas(
-        ("Deezer", release(("Kool & the Gang", "guest"))), ("Qobuz", stating(("Kool & The Gang", "main")))
+        ("Deezer", release(("Kool & the Gang", "guest"))), ("Qobuz", stating(release(("Kool & The Gang", "main"))))
     )
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Kool & the Gang", "main")]
 
 
-@pytest.mark.usefixtures("qobuz_states")
-def test_as_before_a_credit_a_stating_store_guessed_beats_no_one() -> None:
+def test_as_before_a_credit_a_stating_store_guessed_beats_no_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Deezer",))
     combined = combine_metadatas(
         ("Deezer", release(("Alice", "main"), ("Bob", "guest"))),
-        ("Qobuz", stating(("Alice", "main"), ("Bob", "main"), guessed=(("Bob", "main"),))),
+        ("Qobuz", stating(release(("Alice", "main"), ("Bob", "main")), ("Bob", "main"))),
     )
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "guest")]
 
 
-@pytest.mark.usefixtures("qobuz_states")
-def test_as_before_a_guess_is_found_under_the_store_s_own_spelling() -> None:
+def test_as_before_a_guess_is_found_under_the_store_s_own_spelling(monkeypatch: pytest.MonkeyPatch) -> None:
     """Qobuz's "Kool & The Gang" is matched to Deezer's "Kool & the Gang" main, and is still the guess it marked."""
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Tidal", "Deezer"))
     combined = combine_metadatas(
         ("Tidal", release(("Kool & the Gang", "guest"))),
         ("Deezer", release(("Kool & the Gang", "main"))),
-        ("Qobuz", stating(("Kool & The Gang", "main"), guessed=(("Kool & The Gang", "main"),))),
+        ("Qobuz", stating(release(("Kool & The Gang", "main")), ("Kool & The Gang", "main"))),
     )
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Kool & the Gang", "guest")]
 
 
-@pytest.mark.usefixtures("qobuz_states")
+def test_a_stating_store_as_the_base_has_its_own_guesses_weighed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With no files the first store is the base: Qobuz's guessed main loses to the guest Bandcamp states."""
+    stores_stating(monkeypatch, stating=("Qobuz", "Bandcamp"), assuming=())
+    combined = combine_metadatas(
+        ("Qobuz", stating(release(("Alice", "main"), ("Bob", "main")), ("Bob", "main"))),
+        ("Bandcamp", stating(release(("Alice", "main"), ("Bob", "guest")))),
+    )
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "guest")]
+
+
 def test_a_store_alone_has_its_guesses_weighed_before_they_are_dropped() -> None:
-    combined = combine_metadatas(("Qobuz", stating(("Bob", "guest"), ("Bob", "main"), guessed=(("Bob", "guest"),))))
+    combined = combine_metadatas(("Qobuz", stating(release(("Bob", "guest"), ("Bob", "main")), ("Bob", "guest"))))
 
     track = combined["tracks"]["1"]["1"]
     assert track["artists"] == [("Bob", "main")]
     assert "assumed_artists" not in track
 
 
-@pytest.mark.usefixtures("qobuz_states")
 def test_as_before_a_store_giving_one_name_two_roles_disputes_nothing(capsys: pytest.CaptureFixture) -> None:
-    qobuz = stating(("Alice", "main"), ("Bob", "main"), ("Bob", "guest"), guessed=(("Bob", "guest"),))
+    qobuz = stating(release(("Alice", "main"), ("Bob", "main"), ("Bob", "guest")), ("Bob", "guest"))
 
     combined = combine_metadatas(("Qobuz", qobuz), base=release(("Alice", "main")))
 
@@ -258,7 +259,6 @@ def test_as_before_a_store_giving_one_name_two_roles_disputes_nothing(capsys: py
     assert "Kept" not in out
 
 
-@pytest.mark.usefixtures("qobuz_states")
 def test_a_stating_store_s_claims_are_stated_but_for_its_guesses_and_a_title_s_remixers() -> None:
     base = one_track([("Alice", "main")], "Song (Bob Remix)")
     meta = one_track([("Alice", "main"), ("Carol", "guest")], "Song (Bob Remix)")
