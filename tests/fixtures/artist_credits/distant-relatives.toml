@@ -9,7 +9,7 @@ output = true
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -186,7 +186,7 @@ album = ["Distant Relatives"]
 albumartist = ["Damian Marley"]
 date = ["2010-05-18"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -928,8 +928,23 @@ qobuz = '''
  "artist": {
   "name": "Damian Marley"
  },
+ "artists": [
+  {
+   "name": "Damian Marley",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Nas",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Reggae"
+  "Musiques du monde",
+  "Musiques du monde→Reggae"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -939,66 +954,105 @@ qobuz = '''
    {
     "title": "As We Enter",
     "track_number": 1,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Mulatu Astatke, ComposerLyricist - Nasir Jones, ComposerLyricist - Damian Marley, ComposerLyricist - Jamaal Sublett, ComposerLyricist"
    },
    {
     "title": "Tribes At War",
     "track_number": 2,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - K'Naan, FeaturedArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Keinan Abdi Warsame, ComposerLyricist"
    },
    {
     "title": "Strong Will Continue",
     "track_number": 3,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Benjamin Reid, MixingSecondEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
    },
    {
     "title": "Leaders",
     "track_number": 4,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Stephen Marley, FeaturedArtist, Producer, ComposerLyricist - Marc Lee, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
    },
    {
     "title": "Friends",
     "track_number": 5,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer, ComposerLyricist - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Charles Wakeman, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Chris Athens, MasteringEngineer - Nasir Jones, ComposerLyricist"
    },
    {
     "title": "Count Your Blessings",
     "track_number": 6,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Steve Nowa, MixingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
    },
    {
     "title": "Dispear",
     "track_number": 7,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Benjamin Reid, RecordingEngineer - Miguel Bermudez, RecordingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
    },
    {
     "title": "Land Of Promise",
     "track_number": 8,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Dennis Brown, FeaturedArtist, ComposerLyricist - Damian \"Jr. Gong\" Marley, Producer - Charles Wakeman, RecordingEngineer - Marc Lee, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Andre “Illestr8” Forrest, ComposerLyricist"
    },
    {
     "title": "In His Own Words",
     "track_number": 9,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Stephen Marley, FeaturedArtist, Producer, ComposerLyricist - George Massa, RecordingEngineer - Marc Lee, RecordingEngineer - Charles Wakeman, RecordingEngineer - Josh Newell, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Steve Nowa, MixingSecondEngineer - Casey Lewis, RecordingEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
    },
    {
     "title": "Nah Mean",
     "track_number": 10,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Vernon Mungo, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Charles Wakeman, MixingSecondEngineer, RecordingSecondEngineer - Chris Athens, MasteringEngineer - Jose Quintero, RecordingSecondEngineer - Bobby Newland, RecordingSecondEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
    },
    {
     "title": "Patience",
     "track_number": 11,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Stephen Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Chris Athens, MasteringEngineer - Andrew Green, RecordingEngineer - George Massa, RecordingEngineer - Charles Wakeman, RecordingEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Amadou Bagayoko, ComposerLyricist - Mariam Doumbia, ComposerLyricist"
    },
    {
     "title": "My Generation",
     "track_number": 12,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Lil Wayne, FeaturedArtist - Joss Stone, FeaturedArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Charles Wakeman, MixingSecondEngineer, RecordingEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Dwayne Carter, ComposerLyricist"
    },
    {
     "title": "Africa Must Wake Up",
     "track_number": 13,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
     "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - K'Naan, FeaturedArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Josh Newell, RecordingEngineer - Casey Lewis, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Charles Wakeman, MixingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Keinan Abdi Warsame, ComposerLyricist"
    }
   ]

@@ -9,7 +9,7 @@ output = true
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -205,7 +205,7 @@ album = ["Doris"]
 albumartist = ["Earl Sweatshirt"]
 date = ["2013-08-16"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -776,8 +776,16 @@ qobuz = '''
  "artist": {
   "name": "Earl Sweatshirt"
  },
+ "artists": [
+  {
+   "name": "Earl Sweatshirt",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Hip-Hop/Rap"
+  "Rap"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -790,7 +798,8 @@ qobuz = '''
     "track_number": 1,
     "performer": {
      "name": "Earl Sweatshirt feat. SK La' Flare"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. SK La' Flare, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Michael \"Uzi\" Uzowuru, Performer\r - Michael \"Uzi\" Uzowuru, Producer\r - Om'Mas Keith, Engineer\r - Om'Mas Keith, Performer\r - Shakeir Duarte, Composer\r - Shakeir Duarte, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Burgundy",
@@ -798,7 +807,8 @@ qobuz = '''
     "track_number": 2,
     "performer": {
      "name": "Earl Sweatshirt feat. Vince Staples"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Vince Staples, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Vince Staples, Background Vocal\r - Pharrell Williams, Composer\r - Pharrell Williams, Lyricist\r - The Neptunes, Producer\r - Mike Larson, Recording Engineer\r - Cesar Loza, Assistant Engineer\r - Chad Hugo, Composer\r - Chad Hugo, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "20 Wave Caps",
@@ -806,7 +816,8 @@ qobuz = '''
     "track_number": 3,
     "performer": {
      "name": "Earl Sweatshirt feat. Domo Genesis"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Domo Genesis, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Samiyam, Producer\r - Dominique Cole, Composer\r - Dominique Cole, Lyricist\r - randomblackdude, Producer\r - Alchemist, Recording Engineer\r - Jaycen Joshua, Mixing Engineer\r - Ryan Kaul, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Sunday",
@@ -814,7 +825,8 @@ qobuz = '''
     "track_number": 4,
     "performer": {
      "name": "Earl Sweatshirt feat. Frank Ocean"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Frank Ocean, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Frank Ocean, Keyboards\r - Frank Ocean, Producer\r - Christopher Breaux, Composer\r - Christopher Breaux, Lyricist\r - randomblackdude, Producer\r - Jeff Ellis, Recording Engineer\r - Malay Ho, Recording Engineer\r - Jaycen Joshua, Mixing Engineer\r - Ryan Kaul, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Hive",
@@ -822,7 +834,8 @@ qobuz = '''
     "track_number": 5,
     "performer": {
      "name": "Earl Sweatshirt feat. Vince Staples & Casey Veggies"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Vince Staples & Casey Veggies, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - randomblackdude, Producer\r - Matt Martians of The Super 3, Producer\r - Vince Staples, Composer\r - Vince Staples, Lyricist\r - Casey Jones, Composer\r - Casey Jones, Lyricist\r - Syd, Engineer\r - Jaycen Joshua, Mixing Engineer\r - Dave Kutch, Mastering Engineer\r - Trehy Harris, Assistant Engineer\r"
    },
    {
     "title": "Chum",
@@ -830,7 +843,8 @@ qobuz = '''
     "track_number": 6,
     "performer": {
      "name": "Earl Sweatshirt"
-    }
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Chad Hugo, Composer\r - Chad Hugo, Lyricist\r - Chad Hugo, Misc. Prod.\r - Chad Hugo, Trumpet\r - Taiwo Hassan, Composer\r - Taiwo Hassan, Lyricist\r - randomblackdude, Misc. Prod.\r - randomblackdude, Producer\r - Christian Rich, Misc. Prod.\r - Christian Rich, Producer\r - Julian Prindle, Recording Engineer\r - Kehinde Hassan, Composer\r - Kehinde Hassan, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Dave Kutch, Mastering Engineer\r - Trehy Harris, Assistant Engineer\r"
    },
    {
     "title": "Sasquatch",
@@ -838,7 +852,8 @@ qobuz = '''
     "track_number": 7,
     "performer": {
      "name": "Various Artists"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Tyler, The Creator, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Tyler, The Creator, Producer\r - Tyler Okonma, Composer\r - Tyler Okonma, Lyricist\r - Vic Wainstein, Recording Engineer\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Centurion",
@@ -846,7 +861,8 @@ qobuz = '''
     "track_number": 8,
     "performer": {
      "name": "Earl Sweatshirt feat. Vince Staples"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Vince Staples, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Christian Rich, Producer\r - Jaycen Joshua, Mixing Engineer\r - Taiwo Hassan, Composer\r - Taiwo Hassan, Lyricist\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r - Kehinde Hassan, Composer\r - Kehinde Hassan, Lyricist\r - Vince Staples, Composer\r - Vince Staples, Lyricist\r - Holger Czukay, Composer\r - Holger Czukay, Lyricist\r - Irmin Schmidt, Composer\r - Irmin Schmidt, Lyricist\r - Jaki Liebezeit, Composer\r - Jaki Liebezeit, Lyricist\r - Michael Karoli, Composer\r - Michael Karoli, Lyricist\r - David Axelrod, Composer\r - David Axelrod, Lyricist\r"
    },
    {
     "title": "523",
@@ -854,7 +870,8 @@ qobuz = '''
     "track_number": 9,
     "performer": {
      "name": "Earl Sweatshirt"
-    }
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - randomblackdude, Producer\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Uncle Al",
@@ -862,7 +879,8 @@ qobuz = '''
     "track_number": 10,
     "performer": {
      "name": "Earl Sweatshirt"
-    }
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - randomblackdude, Producer\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Guild",
@@ -870,7 +888,8 @@ qobuz = '''
     "track_number": 11,
     "performer": {
      "name": "Earl Sweatshirt"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Mac Miller, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - randomblackdude, Producer\r - Josh Berg, Engineer\r - Josh Berg, Mixing Engineer\r - Malcolm McCormick, Composer\r - Malcolm McCormick, Lyricist\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Molasses",
@@ -878,7 +897,8 @@ qobuz = '''
     "track_number": 12,
     "performer": {
      "name": "Earl Sweatshirt feat. RZA"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. RZA, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - RZA, Producer\r - Christian Rich, Co-Producer\r - Lennie Hibbert, Composer\r - Lennie Hibbert, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Clement Dodd, Composer\r - Clement Dodd, Lyricist\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Whoa",
@@ -886,7 +906,8 @@ qobuz = '''
     "track_number": 13,
     "performer": {
      "name": "Various Artists"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Tyler, The Creator, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Tyler, The Creator, Producer\r - Trehy Harris, Assistant Engineer\r - Tyler Okonma, Composer\r - Tyler Okonma, Lyricist\r - Vic Wainstein, Recording Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Hoarse",
@@ -894,7 +915,8 @@ qobuz = '''
     "track_number": 14,
     "performer": {
      "name": "Earl Sweatshirt"
-    }
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Frank Ocean, Vocal\r - BADBADNOTGOOD, Mixing Engineer\r - BADBADNOTGOOD, Producer\r - Christopher Breaux, Composer\r - Christopher Breaux, Lyricist\r - Vic Wainstein, Recording Engineer\r - Dave Kutch, Mastering Engineer\r"
    },
    {
     "title": "Knight",
@@ -902,7 +924,8 @@ qobuz = '''
     "track_number": 15,
     "performer": {
      "name": "Earl Sweatshirt feat. Domo Genesis"
-    }
+    },
+    "performers": "Earl Sweatshirt feat. Domo Genesis, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Chad Hugo, Keyboards\r - Dominique Cole, Composer\r - Dominique Cole, Lyricist\r - Ron Gilmore, Keyboards\r - Christian Rich, Producer\r - Jaycen Joshua, Mixing Engineer\r - Paul Willis, Composer\r - Paul Willis, Lyricist\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r - Tyrone Douglas, Composer\r - Tyrone Douglas, Lyricist\r"
    }
   ]
  }
