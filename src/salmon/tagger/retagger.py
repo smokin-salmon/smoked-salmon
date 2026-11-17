@@ -36,6 +36,7 @@ from salmon.constants import (
 from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
 from salmon.tagger.mutation import abort_partial
 from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
+from salmon.tagger.playlists import rewrite_playlists
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
 from salmon.tagger.tagfile import TagFile
 
@@ -794,6 +795,8 @@ def _rename_or_undo(path: str, renames: list[tuple[str, str]]) -> None:
             done.append(rename)
         # Once, after the last: a record that cannot be written leaves every rename to put back, and itself as it was.
         note_renamed(path, renames)
+        # Last, so a batch put back leaves the playlists as they were.
+        rewrite_playlists(path, renames)
     except BaseException as e:
         undone = _undo_renames(path, done)
         if isinstance(e, RenameStopped):

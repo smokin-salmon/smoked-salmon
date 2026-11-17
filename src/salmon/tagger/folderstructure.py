@@ -17,6 +17,7 @@ from salmon.constants import (
     ESSENTIAL_EXTENSIONS,
 )
 from salmon.errors import NoncompliantFolderStructure
+from salmon.tagger.playlists import rewrite_playlists
 from salmon.tagger.renames import RenameStopped, name_key, rename_recorded
 
 # Used when no tracker is known yet (e.g. `salmon tag`), and as the fallback for trackers whose
@@ -396,8 +397,11 @@ def _rename_or_stop(path: str, renames: list[tuple[str, str]]) -> None:
     try:
         rename_recorded(path, renames)
     except RenameStopped as e:
+        # Not put back: the playlists follow the renames that were made.
+        rewrite_playlists(path, e.done)
         click.secho(e.report(path), fg="red", bold=True)
         raise NoncompliantFolderStructure from e
+    rewrite_playlists(path, renames)
     for _, new in renames:
         click.echo(f" >> {new}")
 
