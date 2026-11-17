@@ -217,3 +217,17 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.LOWER_CASE_REPO_NAME }}:${{ env.VERSION }}
             ${{ steps.meta.outputs.tags }}
           registry-token: ${{ github.token }}
+
+      # uv installs follow `stable` (README). It moves to the release once the release has shipped, in a push of its
+      # own so that a refusal never holds the release back. GitHub may refuse an App's push that carries workflow
+      # changes, and the App has no workflows permission: after a cycle that changed .github/workflows/, the warning
+      # says how to move it by hand (docs/ci-and-releases.md).
+      - name: Move the stable branch to the release (only on release)
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if ! git push "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" "refs/tags/$VERSION^{commit}:refs/heads/stable"; then
+            echo "::warning::stable was not moved to $VERSION. Move it by hand: git fetch --force origin tag $VERSION && git push origin '$VERSION^{commit}:refs/heads/stable'"
+          fi
