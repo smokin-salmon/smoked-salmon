@@ -49,6 +49,12 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+    # The image stays on Python 3.13 until pyoxipng ships wheels for 3.14+ or abi3 wheels. Patch bumps of
+    # 3.13 and the digest updates still come through. Remove this ignore then (and add a smoke check in
+    # .github/docker-smoke.sh that `import oxipng` works, if there is none yet).
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-minor"]
     groups:
       minor-and-patch:
         update-types:
