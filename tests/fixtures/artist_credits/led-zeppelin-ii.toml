@@ -8,7 +8,7 @@ files_from = "deezer"
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -131,7 +131,7 @@ album = ["Led Zeppelin II (Remaster)"]
 albumartist = ["Led Zeppelin"]
 date = ["1969-10-22"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -410,8 +410,17 @@ qobuz = '''
  "artist": {
   "name": "Led Zeppelin"
  },
+ "artists": [
+  {
+   "name": "Led Zeppelin",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Rock"
+  "Pop/Rock",
+  "Pop/Rock→Rock"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -422,103 +431,171 @@ qobuz = '''
     "title": "Whole Lotta Love ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "Doc Pomus, Writer - Mort Shuman, Writer - Gene Pitney, Writer - John Lee Hooker, Writer - WILLIE DIXON, Writer - Robert Plant, Band Member, Vocals, Writer - Jimmy Page, Producer, Band Member, Guitar, Writer, Theremin - Arthur Crudup, Writer - John Bonham, Band Member, Drums, Writer - Led Zeppelin, MainArtist - John Paul Jones, Band Member, Guitar, Writer - James Oden, Writer - Bukka White, Writer - Bernie Besman, Writer"
    },
    {
     "title": "What Is and What Should Never Be ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, Remastering Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar"
    },
    {
     "title": "The Lemon Song ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "CHESTER BURNETT, Writer - John Davis, Remastering Engineer - Eddie Kramer, Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums, Writer - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Writer"
    },
    {
     "title": "Thank You ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, Remastering Engineer - Eddie Kramer, Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Backing Vocals, Writer - John Bonham, Drums, Backing Vocals - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Organ, Backing Vocals"
    },
    {
     "title": "Heartbreaker ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, Remastering Engineer - Eddie Kramer, Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums, Writer - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Writer"
    },
    {
     "title": "Living Loving Maid (She's Just a Woman) ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, Remastering Engineer - Eddie Kramer, Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Backing Vocals, Writer - John Bonham, Drums, Backing Vocals - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Backing Vocals"
    },
    {
     "title": "Ramble On ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, Remastering Engineer - Eddie Kramer, Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar"
    },
    {
     "title": "Moby Dick ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, Remastering Engineer - Eddie Kramer, Engineer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums, Writer - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Writer"
    },
    {
     "title": "Bring It on Home ",
     "version": "Remaster",
     "media_number": 1,
-    "track_number": 9
+    "track_number": 9,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, MasteringEngineer - Eddie Kramer, Engineer - WILLIE DIXON, Writer - Robert Plant, Vocals, Harmonica - Jimmy Page, Producer, Guitar - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar"
    },
    {
     "title": "Whole Lotta Love ",
     "version": "Rough Mix with Vocal",
     "media_number": 2,
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "Doc Pomus, Writer - Mort Shuman, Writer - John Davis, MasteringEngineer - Gene Pitney, Writer - Eddie Kramer, Engineer - John Lee Hooker, Writer - WILLIE DIXON, Writer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer, Theremin - Arthur Crudup, Writer - John Bonham, Drums, Writer - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Writer - James Oden, Writer - Bukka White, Writer - George Chkiantz, Engineer - Bernie Besman, Writer"
    },
    {
     "title": "What Is and What Should Never Be ",
     "version": "Rough Mix with Vocal",
     "media_number": 2,
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, MasteringEngineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar - George Chkiantz, Engineer"
    },
    {
     "title": "Thank You ",
     "version": "Backing Track",
     "media_number": 2,
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "ANDY JOHNS, Engineer - John Davis, Remastering Engineer - Robert Plant, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Organ"
    },
    {
     "title": "Heartbreaker ",
     "version": "Rough Mix with Vocal",
     "media_number": 2,
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, MasteringEngineer - Eddie Kramer, Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums, Writer - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Writer"
    },
    {
     "title": "Living Loving Maid (She's Just a Woman) ",
     "version": "Backing Track",
     "media_number": 2,
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "ANDY JOHNS, Engineer - John Davis, MasteringEngineer - Robert Plant, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar"
    },
    {
     "title": "Ramble On ",
     "version": "Rough Mix with Vocal",
     "media_number": 2,
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, Remastering Engineer - Robert Plant, Vocals, Writer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar - George Chkiantz, Engineer"
    },
    {
     "title": "Moby Dick ",
     "version": "Intro / Outro Rough Mix",
     "media_number": 2,
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, MasteringEngineer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums, Writer - Led Zeppelin, MainArtist - John Paul Jones, Bass Guitar, Writer - George Chkiantz, Engineer"
    },
    {
     "title": "La La ",
     "version": "Backing Track",
     "media_number": 2,
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Led Zeppelin"
+    },
+    "performers": "John Davis, MasteringEngineer - Jimmy Page, Producer, Guitar, Writer - John Bonham, Drums - Led Zeppelin, MainArtist - John Paul Jones, Keyboards, Organ, Writer - George Chkiantz, Engineer"
    }
   ]
  }

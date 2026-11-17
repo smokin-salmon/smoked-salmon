@@ -8,7 +8,7 @@ files_from = "deezer"
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -91,7 +91,7 @@ album = ["Kind Of Blue"]
 albumartist = ["Miles Davis"]
 date = ["2021-05-01"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -294,6 +294,14 @@ qobuz = '''
  "artist": {
   "name": "Miles Davis"
  },
+ "artists": [
+  {
+   "name": "Miles Davis",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
   "Jazz"
  ],
@@ -304,23 +312,43 @@ qobuz = '''
   "items": [
    {
     "title": "So What",
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Bill Evans, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "Freddie Freeloader",
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Wynton Kelly, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "Blue in Green",
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Patti Matheny\r - Bill Evans, Piano\r - Darren Salmieri\r - Seth Foster, Mastering Engineer\r - Paul Chambers, Bass\r - Fred Plaut, Recording Engineer\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "All Blues",
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Composer, Lyricist, Main Artist, Trumpet, Associated Performer, Composer, Lyricist, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - Bill Evans, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    },
    {
     "title": "Flamenco Sketches",
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Miles Davis"
+    },
+    "performers": "Miles Davis, Associated Performer, Main Artist, Trumpet, Associated Performer, Trumpet\r - Irving Townsend, Producer\r - Jimmy Cobb, Drums\r - M. Davis, Composer, Lyricist\r - Bill Evans, Piano\r - Paul Chambers, Bass\r - Julian \"Cannonball\" Adderley, Alto Saxophone\r - John Coltrane, Tenor Saxophone"
    }
   ]
  }

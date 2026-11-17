@@ -23,7 +23,9 @@ Each `<album>.toml` holds, in this order:
   `[[track]]`. A control for the tags' shape: `today.output-salmon-tags` is the output from those files.
 - `[stores]`: what each store sent (`deezer`, `musicbrainz`, `discogs`, `qobuz`, and `bandcamp` where the album is
   there), as the response's text, trimmed to the fields salmon's parser reads (the parse is the same as from the full
-  response).
+  response). Qobuz's also keeps the credits Qobuz sends beyond what the parser reads: the album's `artists[]`,
+  each track's `performer` and performers line, and `composer` on a classical release, with `genres_list` as Qobuz
+  sends it. `[sources]` says what each store's entry keeps.
 
 ## Add a case
 
