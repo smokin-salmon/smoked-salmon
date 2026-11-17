@@ -1,7 +1,7 @@
 album = "Puccini, La Bohème: Karajan, Berliner Philharmoniker"
 why = "A famous opera: Deezer makes the composer a main artist, and the stores list 14 or 15 performers. Discogs' parse loses every track."
 edition = "Decca 2024 remaster (Deezer, MusicBrainz); Qobuz ayakfjxmkegvb is another issue of the same recording, UPC 0028948712984"
-known_wrong = ["Deezer parse: Giacomo Puccini a main artist (and in ARTIST on every track of the files tagged from it); Herbert von Karajan a main, not conductor; no composer role", "MusicBrainz parse: chorus master Walter Hagen-Groll a main artist; Karajan a main, not conductor", "Discogs parse: 0 tracks", "merge: Puccini and Hagen-Groll both main"]
+known_wrong = ["Deezer parse: Giacomo Puccini a main artist (and in ARTIST on every track of the files tagged from it); Herbert von Karajan a main, not conductor; no composer role", "MusicBrainz parse: chorus master Walter Hagen-Groll a main artist; Karajan a main, not conductor", "Discogs parse: 0 tracks", "merge: Puccini and Hagen-Groll both main", "Qobuz parse: Pavarotti, the album's one main-artist, the only main; the other singers, the orchestra, the chorus and Karajan, each a MainArtist on its tracks, guessed guests (Karajan beside conductor)"]
 files_from = "deezer"
 
 [sources]
