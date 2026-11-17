@@ -28,11 +28,8 @@ ROLE_WORDS: dict[str, Role] = {
     "conductor": "conductor",
     "composer": "composer",
     "composerlyricist": "composer",
-    "producer": "producer",
-    "arranger": "arranger",
 }
-# The roles salmon reads from Qobuz on any release, and a genre's EXTRA_ROLES on a release of it (#869). Producer and
-# arranger wait for a case.
+# The roles salmon reads from Qobuz on any release, and a genre's EXTRA_ROLES on a release of it (#869).
 READ_ROLES: frozenset[Role] = frozenset({"main", "guest", "remixer"})
 # The parts after a comma that are still a name's, by comparable: "Sammy Davis, Jr.", "Johann Strauss, II".
 NAME_SUFFIXES = frozenset({"jr", "sr", "ii", "iii", "iv"})
@@ -544,24 +541,23 @@ def _album_featured(album: dict[str, Any], album_mains: list[str]) -> list[str]:
     return [
         name
         for name, roles in _album_artists(album)
-        if _key(name) not in mains and any("feat" in str(role).lower() for role in roles)
+        if _key(name) not in mains and any("feat" in role.lower() for role in roles)
     ]
 
 
 def _album_artists(album: dict[str, Any]) -> list[tuple[str, list[str]]]:
     """Each name `artists[]` lists, whatever its role (an orchestra, a conductor), with its roles."""
-    artists = album.get("artists")
     return [
         (name, entry.get("roles") or [])
-        for entry in (artists if isinstance(artists, list) else [])
-        if isinstance(entry, dict) and (name := str(entry.get("name") or "").strip())
+        for entry in album.get("artists") or []
+        if isinstance(entry, dict) and (name := (entry.get("name") or "").strip())
     ]
 
 
 def _is_classical(album: dict[str, Any]) -> bool:
     """Whether Qobuz files the release under a classical genre: its own genres_list, read whatever
     no_genres_from_qobuz says, through salmon's genre table ("Classique→Opéra" is Classical and Opera)."""
-    genres = [str(genre) for genre in album.get("genres_list") or [] if genre]
+    genres = [genre for genre in album.get("genres_list") or [] if genre]
     return any(is_classical_genre(genre) for genre in standardize_genres(genres))
 
 
@@ -576,11 +572,10 @@ def _performers(line: str, known: set[str]) -> list[tuple[str, Role | None]]:
     credits: list[tuple[str, Role | None]] = []
     for entry in line.split(" - "):
         parts = entry.split(",")
-        first = next((i for i, part in enumerate(parts) if i and ROLE_WORDS.get(comparable(part))), len(parts))
         size = next(
             (
                 k
-                for k in range(first, 1, -1)
+                for k in range(len(parts), 1, -1)
                 if _key(",".join(parts[:k])) in known or all(comparable(part) in NAME_SUFFIXES for part in parts[1:k])
             ),
             1,
@@ -603,8 +598,8 @@ def _track_credits(
     performer's name or in the title, both guests by salmon's reading, the album's featured artists on a track whose
     line doesn't name them, and the album's main artists on a track that names only others (unless it states one of
     them as its guest: then its own MainArtists are its mains). Nothing is decided here: one name may hold two roles,
-    for the merge to weigh. The claims run mains first, then the line's, and a name keeps the first spelling it is
-    claimed under: the album's over the line's.
+    for the merge to weigh. The claims run the album's mains and featured artists first, then the line's, and a name
+    keeps the first spelling it is claimed under: the album's over the line's.
     """
     album = {_key(name): name for name in album_mains}
     named: set[str] = set()
@@ -646,8 +641,8 @@ def _track_credits(
     else:
         # A track naming none of the album's mains gets them all: as Qobuz's word if it names no one, else as a guess.
         claims = [(name, "main", False) for name in mains] or [(name, "main", bool(leads)) for name in album_mains]
-    claims.extend(read)
     claims.extend((guest, "guest", _key(guest) not in on_line) for guest in featured)
+    claims.extend(read)
     claims.extend((guest, "guest", True) for guest in guests_from_title(track.get("title") or ""))
     if "composer" in extra:
         # The composer field's spelling ("Béla Bartók") over the line's ("Bela Bartok"); the line's when it has none.

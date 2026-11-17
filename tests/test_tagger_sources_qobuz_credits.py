@@ -53,17 +53,14 @@ def guessed(data: dict[str, Any]) -> list[list[tuple[str, str]]]:
 # The role words
 
 
-def test_a_spaced_role_word_reads_as_its_unspaced_spelling() -> None:
-    data = album(track("Alice, Associated Performer, Main Artist\r - Bob, Featured Artist\r - Carol, Guitar"))
-
-    got = credits(data)
-
-    assert got == [[("Alice", "main"), ("Bob", "guest")]]
-
-
 @pytest.mark.parametrize(
     ("main", "featured"),
-    [("MAINARTIST", "featured-artist"), ("mainartist", "Featured  Artist"), ("Main Artist", "FeaturedArtist")],
+    [
+        ("MAINARTIST", "featured-artist"),
+        ("mainartist", "Featured  Artist"),
+        ("Main Artist", "FeaturedArtist"),
+        ("Associated Performer, Main Artist\r", "Featured Artist\r"),
+    ],
 )
 def test_a_role_word_reads_whatever_its_case_spacing_and_punctuation(main: str, featured: str) -> None:
     data = album(track(f"Bob, {main} - Carol, {featured}"), artists=mains("Alice", "Bob"))
@@ -243,12 +240,20 @@ def test_the_album_s_artist_on_a_track_that_names_no_one_is_stated() -> None:
 def test_the_album_s_artists_on_a_track_that_names_only_others_are_assumed() -> None:
     """DJ-Kicks and a compilation: each track names its own artists, none of them the album's. The album's credit
     stands in for the track's main, but Qobuz didn't say so: salmon did."""
-    data = album(track("Bob, MainArtist"), artist="Various Artists", artists=mains("Various Artists"))
+    data = album(
+        track("Bob, MainArtist"),
+        track("Bob, MainArtist - Carol, FeaturedArtist"),
+        artist="Various Artists",
+        artists=mains("Various Artists"),
+    )
 
-    first = parsed(data)[0]
+    got = parsed(data)
 
-    assert first["artists"] == [("Various Artists", "main"), ("Bob", "guest")]
-    assert first["assumed_artists"] == [("Various Artists", "main"), ("Bob", "guest")]
+    assert [t["artists"] for t in got] == [
+        [("Various Artists", "main"), ("Bob", "guest")],
+        [("Various Artists", "main"), ("Bob", "guest"), ("Carol", "guest")],
+    ]
+    assert [t["assumed_artists"] for t in got] == [[("Various Artists", "main"), ("Bob", "guest")]] * 2
 
 
 def test_another_artist_s_track_featuring_the_album_s_artist_is_led_by_its_own_main_artist() -> None:
@@ -290,6 +295,18 @@ def test_an_album_main_is_credited_under_the_album_s_spelling() -> None:
     got = credits(data)
 
     assert got == [[("Stan Getz", "main"), ("João Gilberto", "main")], [("Sigur Rós", "main")]]
+
+
+def test_an_album_featured_artist_is_credited_under_the_album_s_spelling() -> None:
+    data = album(
+        track("Alice, MainArtist - Joao Gilberto, FeaturedArtist"),
+        artists=[*mains("Alice"), {"name": "João Gilberto", "roles": ["featured-artist"]}],
+    )
+
+    first = parsed(data)[0]
+
+    assert first["artists"] == [("Alice", "main"), ("João Gilberto", "guest")]
+    assert first["assumed_artists"] == []
 
 
 def test_the_album_s_artist_takes_its_spelling_in_the_artists_list() -> None:
@@ -454,7 +471,15 @@ def test_a_release_with_no_artists_list_takes_its_artist_as_main() -> None:
 
 def test_a_release_s_artists_list_holding_other_than_artists_reads_the_artists_it_holds() -> None:
     data = album(track())
-    data["artists"] = [None, "Bob", {"roles": ["main-artist"]}, *mains("Alice")]
+    data["artists"] = [None, "Bob", {"roles": ["main-artist"]}, {"name": "Carol", "roles": None}, *mains("Alice")]
+
+    got = credits(data)
+
+    assert got == [[("Alice", "main")]]
+
+
+def test_an_entry_with_no_name_before_its_role_word_credits_no_one() -> None:
+    data = album(track("Alice, MainArtist - , FeaturedArtist"))
 
     got = credits(data)
 

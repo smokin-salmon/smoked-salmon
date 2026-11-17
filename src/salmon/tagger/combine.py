@@ -471,7 +471,7 @@ def _assumed(source, credit, guesses):
 
 def _claims_of(track, source):
     """A track's claims from its own credits and marks: the base's, or a scrape's used alone."""
-    guesses = {tuple(guess) for guess in track.get("assumed_artists", ())}
+    guesses = track.get("assumed_artists", ())
     return [
         Claim(source, name, name, role, assumed=_assumed(source, (name, role), guesses))
         for name, role in track["artists"]
@@ -483,12 +483,11 @@ def _store_claims(credits, variations, base_credits, source, guessed):
     (the merge's match: `comparable`, or Discogs' credited name), so a match is one name to decide on. Whether each is
     a guess is read before the match, on the name the store gave."""
     named = {(comparable(name), role): name for name, role in base_credits}
-    guesses = {tuple(guess) for guess in guessed}
     claims = []
     for name, role in credits:
         anv = variations.get((name, role))
         matched = named.get((comparable(name), role)) or (anv and named.get((comparable(anv), role))) or name
-        claims.append(Claim(source, matched, anv or name, role, assumed=_assumed(source, (name, role), guesses)))
+        claims.append(Claim(source, matched, anv or name, role, assumed=_assumed(source, (name, role), guessed)))
     return claims
 
 
