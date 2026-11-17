@@ -108,7 +108,7 @@ def test_a_scrape_for_the_merge_keeps_what_the_merge_reads(monkeypatch: pytest.M
 
 def test_a_store_that_states_its_credits_hands_them_on_as_it_read_them(monkeypatch: pytest.MonkeyPatch) -> None:
     """No per-track rewriting in the scrape: the merge decides. The release's credits are generate_artists', as any
-    store's (here the same three: it lists each role a name has on the release)."""
+    store's (here main and guest are one credit per name on the track, so K-Ci & JoJo is listed once)."""
     stating_credits(monkeypatch)
 
     async def scrape() -> dict[str, Any]:
@@ -118,7 +118,7 @@ def test_a_store_that_states_its_credits_hands_them_on_as_it_read_them(monkeypat
 
     assert metadata["tracks"]["3"]["3"]["artists"] == STATED
     assert metadata["tracks"]["3"]["3"]["assumed_artists"] == GUESSED
-    assert metadata["artists"] == [("K-Ci & JoJo", "guest"), ("K-Ci & JoJo", "main"), ("Club Asylum", "remixer")]
+    assert metadata["artists"] == [("K-Ci & JoJo", "guest"), ("Club Asylum", "remixer")]
 
 
 def test_a_stating_scrape_types_its_release_from_its_artists_spelled_once(monkeypatch: pytest.MonkeyPatch) -> None:
