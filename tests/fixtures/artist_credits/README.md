@@ -32,8 +32,8 @@ Each `<album>.toml` holds, in this order:
 1. Make `<album>.toml` with `why`, `files_from` (the store the tags come from), `bandcamp_url` if there is
    Bandcamp data, and an empty `[right]` and `[today]` (the test needs both tables; `[right]` may hold only `open`).
 2. Add the `[[track]]` tags and each store's response under `[stores]` as a `'''` string, trimmed: take out what the
-   parser doesn't read and check the parse is unchanged. A full Discogs response can be tens of KB, so untrimmed
-   cases would grow the repo quickly.
+   parser doesn't read (Qobuz's keeps more: see `[stores]` above) and check the parse is unchanged. A full Discogs
+   response can be tens of KB, so untrimmed cases would grow the repo quickly.
 3. Run the test and paste each stage's value from its failure into `[today.<stage>]`.
 
 ## The scoreboard
