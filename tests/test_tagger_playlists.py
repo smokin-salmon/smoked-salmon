@@ -1,6 +1,7 @@
 """Playlists and cue sheets are rewritten to name the files salmon renamed, in the encoding they were written in."""
 
 import os
+import shutil
 from pathlib import Path
 
 import anyio
@@ -145,7 +146,8 @@ def test_a_name_cp1252_cannot_hold_is_left_and_warned_about(tmp_path, capsys) ->
     rewrite_playlists(str(tmp_path), _rename(tmp_path, ("01.flac", "01 東.flac"), ("02.flac", "2.flac")))
 
     assert playlist.read_bytes() == "01.flac\n2.flac\ncaf\xe9\n".encode("cp1252")
-    assert "cp1252 cannot hold" in capsys.readouterr().out
+    captured = capsys.readouterr()
+    assert "cp1252 cannot hold" in captured.out
 
 
 # The two places that rename
@@ -181,6 +183,35 @@ def test_a_playlist_moved_out_of_a_disc_folder_names_the_tracks_from_its_new_fol
     assert not (tmp_path / "CD1").exists()
     assert (tmp_path / "rip.cue").read_text() == 'FILE "1.01 One.flac" WAVE\n'
     assert (tmp_path / "rip.m3u").read_text() == "1.01 One.flac\n"
+
+
+def test_a_playlist_moved_with_its_tracks_also_rebases_entries_for_files_that_stayed(tmp_path, monkeypatch) -> None:
+    _tracks(tmp_path, "CD1/01.flac", "Bonus/bonus.flac")
+    (tmp_path / "CD1" / "rip.m3u").write_text("01.flac\n../Bonus/bonus.flac\n")
+
+    _rename_files(tmp_path, {"CD1/01.flac": {"tracknumber": "1", "title": "One"}}, monkeypatch)
+
+    assert (tmp_path / "rip.m3u").read_text() == "1.01 One.flac\nBonus/bonus.flac\n"
+
+
+def test_a_move_of_other_files_that_fails_still_updates_the_playlists_for_what_moved(tmp_path, monkeypatch) -> None:
+    _tracks(tmp_path, "CD1/01.flac")
+    (tmp_path / "CD1" / "a.cue").write_text('FILE "01.flac" WAVE\n')
+    (tmp_path / "CD1" / "b.cue").write_text('FILE "01.flac" WAVE\n')
+    real_move = shutil.move
+
+    def move(src, dst):
+        if str(src).endswith("b.cue"):
+            raise OSError(5, "I/O error")
+        return real_move(src, dst)
+
+    monkeypatch.setattr("salmon.tagger.retagger.shutil.move", move)
+
+    with pytest.raises(OSError, match="I/O error"):
+        _rename_files(tmp_path, {"CD1/01.flac": {"tracknumber": "1", "title": "One"}}, monkeypatch)
+
+    assert (tmp_path / "a.cue").read_text() == 'FILE "1.01 One.flac" WAVE\n'
+    assert (tmp_path / "CD1" / "b.cue").read_text() == 'FILE "../1.01 One.flac" WAVE\n'
 
 
 def test_a_batch_put_back_leaves_the_playlists_as_they_were(tmp_path, monkeypatch) -> None:
@@ -247,4 +278,5 @@ def test_a_failed_write_leaves_no_temporary_file(tmp_path, monkeypatch, capsys) 
 
     assert sorted(p.name for p in tmp_path.iterdir()) == ["1.flac", "a.m3u"]
     assert playlist.read_text() == "01.flac\n"
-    assert "Could not write" in capsys.readouterr().out
+    captured = capsys.readouterr()
+    assert "Could not write" in captured.out

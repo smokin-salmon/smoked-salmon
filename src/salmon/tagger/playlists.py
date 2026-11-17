@@ -215,9 +215,12 @@ def _candidates(entry: str, old_folder: str) -> list[str]:
 def _new_entry(entry: str, old_folder: str, folder: str, renames: Sequence[Rename]) -> str | None:
     """The entry naming the file ``entry`` pointed to, in its separator style; None if no rename touched that file."""
     olds = [_key(old) for old, _ in renames]
+    relocated = _key(old_folder) != _key(folder)
     for candidate in _candidates(entry, old_folder):
         resolved = _key(candidate)
-        if not any(resolved == old or resolved.startswith(old + os.sep) for old in olds):
+        touched = any(resolved == old or resolved.startswith(old + os.sep) for old in olds)
+        # A playlist that moved names even a file that stayed from its new folder; a file that is not there is not ours.
+        if not touched and not (relocated and os.path.lexists(os.path.normpath(candidate))):
             continue
         moved = _moved(candidate, renames)
         relative = os.path.relpath(moved, os.path.normpath(folder))
