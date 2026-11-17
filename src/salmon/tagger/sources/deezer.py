@@ -3,6 +3,7 @@ from collections import defaultdict
 from html import unescape
 
 from salmon.common import RE_FEAT, parse_copyright, re_split
+from salmon.common.strings import guests_from_title
 from salmon.sources import DeezerBase
 from salmon.tagger.sources.base import MetadataMixin, label_names_a_main_artist
 
@@ -86,8 +87,7 @@ class Scraper(DeezerBase, MetadataMixin):
 
         # The title's featured credit lists several names in one string, so it is split. When it names every part
         # of a name a contributor gives whole ("feat. Earth, Wind & Fire"), those parts are that name, not guests.
-        feat = RE_FEAT.search(title)
-        guests = [unescape(artist) for artist in re_split(feat[1])] if feat else []
+        guests = guests_from_title(title)
         covered = set()
         for name in mains + featured:
             parts = [unescape(part) for part in re_split(name)]

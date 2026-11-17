@@ -1,5 +1,5 @@
 """RE_FEAT, the featured credit five store parsers read from a title (#910), and guests_from_title, which reads it for
-Qobuz."""
+Qobuz and Deezer."""
 
 import pytest
 
