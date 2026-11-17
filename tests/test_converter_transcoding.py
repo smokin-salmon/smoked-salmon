@@ -184,6 +184,27 @@ def test_a_downconversion_still_keeps_subfolder_extras(tmp_path: Path) -> None:
     assert _tree(out) == ["Scans/01.jpg", "cover.jpg", "info.txt"]
 
 
+@pytest.mark.parametrize(
+    ("spectrals", "kept"),
+    [
+        (["01 Full.png", "01 Zoom.png"], []),
+        (["notes.txt"], ["Spectrals/notes.txt"]),
+    ],
+    ids=["salmon's", "the user's"],
+)
+def test_a_downconversion_leaves_out_only_a_spectrals_folder_salmon_made(
+    tmp_path: Path, spectrals: list[str], kept: list[str]
+) -> None:
+    album, out = _scans_album(tmp_path), tmp_path / "out"
+    (album / "Spectrals").mkdir()
+    for name in spectrals:
+        (album / "Spectrals" / name).write_bytes(b"x")
+
+    dc._copy_extra_files(str(album), str(out), frozenset({str(album / "01.flac")}))
+
+    assert _tree(out) == sorted(["Scans/01.jpg", "cover.jpg", "info.txt", *kept])
+
+
 def test_disc_folders_still_get_their_mp3s_and_no_loose_files(tmp_path: Path) -> None:
     album = tmp_path / "src"
     for cd in ("CD1", "CD2"):

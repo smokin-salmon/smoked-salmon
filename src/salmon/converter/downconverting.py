@@ -221,7 +221,8 @@ def _copy_extra_files(
     essential_only: bool = False,
 ) -> None:
     """Copy non-conversion files (images, text, 16-bit audio) to the output directory, but no .torrent or macOS
-    metadata file.
+    metadata file, and not the album's Spectrals folder when salmon made it: an upload moves that folder out of the
+    album before its conversions are made, so none of them holds it.
 
     Args:
         path: Source album directory path.
@@ -229,14 +230,19 @@ def _copy_extra_files(
         convert_srcs: Set of source paths that will be converted (to exclude).
         essential_only: If True, only copy image files; skip everything else.
     """
+    from salmon.uploader.spectrals import made_by_salmon  # local: the uploader imports this module
+
     src_path = Path(path)
     dst_path = Path(new_path)
+    salmon_spectrals = made_by_salmon(str(src_path / "Spectrals"))
 
     for p in src_path.rglob("*"):
         if not p.is_file() or str(p) in convert_srcs:
             continue
         rel = p.relative_to(src_path)
-        unwanted = is_torrent_file(p.name) or is_apple_double(p.name)
+        unwanted = (
+            is_torrent_file(p.name) or is_apple_double(p.name) or (salmon_spectrals and rel.parts[0] == "Spectrals")
+        )
         if unwanted or (essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS):
             click.secho(f"Skip  {rel}", fg="yellow")
             continue

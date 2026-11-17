@@ -356,6 +356,7 @@ GENRE_LIST = {
     "musiqueelectronique": {"Electronic"},
     "electronique": {"Electronic"},
     "musiqueclassique": {"Classical"},
+    "classique": {"Classical"},
     "rapfrancais": {"French Rap"},
     "musiquedumonde": {"World Music"},
     "musiquesdumonde": {"World Music"},

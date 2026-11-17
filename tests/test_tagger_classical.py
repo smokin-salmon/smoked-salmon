@@ -1,7 +1,12 @@
+from functools import partial
 from types import SimpleNamespace
 
+from helpers.interaction_typed_sites import ask, review_metadata
+
+import salmon.tagger.review as review
 from salmon.tagger.pre_data import construct_track_artists
 from salmon.tagger.retagger import create_artist_str, create_composer_str, create_track_changes
+from salmon.tagger.sources.base import standardize_genres
 from salmon.tagger.tags import check_required_tags
 
 
@@ -167,3 +172,56 @@ def test_check_required_tags_flags_missing_composer_for_classical_release(capsys
 
     captured = capsys.readouterr()
     assert "composer" in captured.out
+
+
+def _review_output(monkeypatch, capsys, genres: list[str]) -> str:
+    review_metadata(monkeypatch)  # the field editors and the metadata print, faked
+    metadata = {"artists": [("Artist", "main")], "rls_type": "Album", "genres": genres, "tracks": {}}
+    ask(monkeypatch, partial(review.review_metadata, metadata, lambda _metadata: None, False), ["n"])
+    return capsys.readouterr().out
+
+
+def test_the_review_warns_about_a_classical_genre_spelled_with_a_space(monkeypatch, capsys) -> None:
+    out = _review_output(monkeypatch, capsys, ["Chamber Music"])
+
+    assert "CLASSICAL MUSIC WARNING" in out
+
+
+def test_as_before_the_review_warns_about_classical(monkeypatch, capsys) -> None:
+    out = _review_output(monkeypatch, capsys, ["Classical"])
+
+    assert "CLASSICAL MUSIC WARNING" in out
+
+
+def test_as_before_the_review_does_not_warn_about_pop(monkeypatch, capsys) -> None:
+    out = _review_output(monkeypatch, capsys, ["Pop"])
+
+    assert "CLASSICAL MUSIC WARNING" not in out
+
+
+def test_as_before_a_genre_spelled_with_a_space_makes_a_track_classical() -> None:
+    track = SimpleNamespace(artist="Quartet", conductor=None, composer="Haydn", genre="Chamber Music")
+
+    assert construct_track_artists(track) == [("Quartet", "main"), ("Haydn", "composer")]
+
+
+def test_a_file_tagged_in_french_as_classique_is_classical() -> None:
+    track = SimpleNamespace(artist="Quartet", conductor=None, composer="Haydn", genre="Classique")
+
+    assert construct_track_artists(track) == [("Quartet", "main"), ("Haydn", "composer")]
+
+
+def test_the_review_warns_about_classique(monkeypatch, capsys) -> None:
+    out = _review_output(monkeypatch, capsys, ["Classique"])
+
+    assert "CLASSICAL MUSIC WARNING" in out
+
+
+def test_qobuz_s_french_classique_is_the_classical_genre() -> None:
+    assert standardize_genres(["Classique"]) == ["Classical"]
+
+
+def test_as_before_rock_classique_is_not_classical() -> None:
+    track = SimpleNamespace(artist="Band", conductor=None, composer="Writer", genre="Rock classique")
+
+    assert construct_track_artists(track) == [("Band", "main")]
