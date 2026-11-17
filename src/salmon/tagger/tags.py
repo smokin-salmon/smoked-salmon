@@ -6,7 +6,8 @@ from mutagen import File as MutagenFile
 from mutagen import flac, mp4
 
 from salmon import cfg, interaction
-from salmon.common import get_audio_files
+from salmon.common import fetch_genre, get_audio_files
+from salmon.errors import GenreNotInWhitelist
 from salmon.tagger.mutation import abort_partial
 from salmon.tagger.tagfile import ID3_FILES, TAG_FIELDS, TagFile
 
@@ -117,7 +118,17 @@ def is_classical(tag_item) -> bool:
         return False
     if isinstance(genres, str):
         genres = [genres]
-    return any(str(genre).strip().lower().replace(" ", "") in CLASSICAL_GENRES for genre in genres)
+    return any(is_classical_genre(str(genre)) for genre in genres)
+
+
+def is_classical_genre(genre: str) -> bool:
+    """Whether a genre, from a tag or a store, is a classical one: as written ("Chamber Music" as "chambermusic"), or
+    as salmon's genre table reads it ("Classique" as Classical)."""
+    try:
+        names = [genre, *fetch_genre(genre)]
+    except GenreNotInWhitelist:
+        names = [genre]
+    return any(name.strip().lower().replace(" ", "") in CLASSICAL_GENRES for name in names)
 
 
 def print_a_tag(tag_item: TagFile) -> None:
