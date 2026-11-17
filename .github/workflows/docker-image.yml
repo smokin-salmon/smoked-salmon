@@ -221,9 +221,9 @@ jobs:
           registry-token: ${{ github.token }}
 
       # uv installs follow `stable` (README). It moves to the release once the release has shipped, in a push of its
-      # own so that a refusal never holds the release back. GitHub may refuse an App's push that carries workflow
-      # changes, and the App has no workflows permission: after a cycle that changed .github/workflows/, the warning
-      # says how to move it by hand (docs/ci-and-releases.md).
+      # own so that a refusal never holds the release back. The App's token carries workflows: write, so a push that
+      # carries workflow changes should not be refused; if it is, the warning says how to move it by hand
+      # (docs/ci-and-releases.md).
       - name: Move the stable branch to the release (only on release)
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         env:
