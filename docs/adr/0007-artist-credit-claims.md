@@ -161,8 +161,8 @@ same place, from the guests `resolve_credits` gives.
   stops running `filter_artists` for that store. The title reading for remixers leaves each store as
   its version is kept apart. `parse_credits` leaves with the Discogs PR.
   *Amended 2026-11-16 (#869 step 3a): `scrape_release` leaves a stating store's track credits as read,
-  skipping all of `generate_artists` on them, not only `filter_artists`, and the parser lists the credits
-  it guessed. A scrape used alone (`salmon meta`, salmon web's lookup) is decided too, as a merge of that
+  skipping all of `generate_artists` on them, not only `filter_artists`, leaves its titles as the store
+  gives them, and the parser lists the credits it guessed. A scrape used alone (`salmon meta`, salmon web's lookup) is decided too, as a merge of that
   one source. Parsers never decide.*
 - **Step 4:** the files' plain ARTIST becomes assumed, ALBUMARTIST gives the order, and the classical
   rule becomes part of the files' claims.
