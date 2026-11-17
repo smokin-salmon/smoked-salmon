@@ -48,14 +48,16 @@ with a tag like `0.25.0`. It then:
    clients do (`.github/scripts/check-release-version.py`) and stops if `current` or the newest entry is not the tag;
 2. builds the Docker image from that tree for both arches and scans it (see Docker image above);
 3. commits the three files to `master` as github-actions and moves the tag onto that commit;
-4. pushes the scanned image to ghcr.io as `X.Y.Z` and `latest`.
+4. pushes the scanned image to ghcr.io as `X.Y.Z` and `latest`;
+5. moves the `stable` branch to the tag's commit, in a push of its own (below).
 
 If the scan fails (step 2), nothing has left the job: the GitHub release exists, but `master`, the
-tag and ghcr.io are unchanged and no user is told. Fix the image on `master` (a base image or package
+tag, `stable` and ghcr.io are unchanged and no user is told. Fix the image on `master` (a base image or package
 bump), then re-run the failed run: it rebuilds from the new `master`. There is no need to delete the
 release. If the run fails after step 3, `master` already announces a version that has no image;
 re-run it as soon as possible: step 1 sees `current` already at `X.Y.Z` and skips the bump, and the
-run builds, scans and pushes again.
+run builds, scans and pushes again. A re-run takes `master` as it is then, so if anything merged in the
+meantime, the tag and `stable` move onto those commits too.
 
 The workflow checks out with the job's own token, which only reads the repository. Step 3 pushes
 with a token of the `smokin-salmon` organization's release GitHub App (Contents: read and write,
@@ -69,6 +71,18 @@ App's settings (organization settings, Developer settings, GitHub Apps), store i
 The App cannot change workflows: a re-run whose tag move would carry changes to `.github/workflows/`
 (a fix merged after the release was published) may be refused. Then delete the release and its tag
 and publish it again from `master`.
+
+`stable` is the branch the README's uv installs follow (`git+...@stable`), as Docker users follow
+`:latest`: `uv tool upgrade salmon` moves such an install only when a release moves the branch. An install
+with no ref follows `master`, as `:alpha` does. Step 5 pushes it with the same App token, without force, so
+it only moves forward, and in its own push, so a refusal never holds the release back: the run warns
+"stable was not moved" and goes on. GitHub is likely to refuse it when the commits since the one `stable` is on changed
+`.github/workflows/`, as the App cannot change workflows; about half of recent release cycles did.
+Then move it by hand, with an account that can (the forced fetch picks up the tag the run moved):
+`git fetch --force origin tag X.Y.Z && git push origin 'X.Y.Z^{commit}:refs/heads/stable'`. Don't re-run the
+release to retry it: a re-run moves the tag onto anything merged since. If `stable` was moved by hand to a
+commit outside the release's history, the push is refused too; then use
+`git push --force-with-lease origin 'X.Y.Z^{commit}:refs/heads/stable'`.
 
 `release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
 new version exists, so that bump commit is the release announcement, and the release description
