@@ -439,19 +439,22 @@ def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[lis
 def fix_artists_list(original_artists, to_replace):
     """
     Join each badly split name back: in a role where every part of it is
-    credited, the parts go and the whole name is credited once, where its
-    first part was. A role holding only some of the parts ("Jr." alone,
-    beside another name) is left as it is, and so is every other role.
+    credited, the parts go and the whole name is credited once, in the
+    first place its parts or the whole held. A role holding only some of
+    the parts ("Jr." alone, beside another name) is left as it is, and so
+    is every other role.
     """
     for artist_type in dict.fromkeys(importa for _, importa in original_artists):
         for replaceds, replacement in to_replace:
             if not all((part, artist_type) in original_artists for part in replaceds):
                 continue
-            first = min(original_artists.index((part, artist_type)) for part in replaceds)
-            for part in replaceds:
-                original_artists.remove((part, artist_type))
-            if (replacement, artist_type) not in original_artists:
-                original_artists.insert(first, (replacement, artist_type))
+            credits = [
+                (name, artist_type) for name in (*replaceds, replacement) if (name, artist_type) in original_artists
+            ]
+            first = min(original_artists.index(credit) for credit in credits)
+            for credit in credits:
+                original_artists.remove(credit)
+            original_artists.insert(first, (replacement, artist_type))
 
     return original_artists
 

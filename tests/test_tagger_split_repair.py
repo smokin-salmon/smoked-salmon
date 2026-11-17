@@ -112,6 +112,13 @@ def test_a_name_joined_back_takes_its_first_part_s_place_on_the_track_and_the_re
     assert artists == [("Simon & Garfunkel", "main"), ("Prince", "guest")]
 
 
+def test_a_name_joined_back_beside_its_whole_self_takes_the_first_place_either_held() -> None:
+    parts_first = [("Simon", "main"), ("Garfunkel", "main"), ("Prince", "guest"), ("Simon & Garfunkel", "main")]
+    whole_first = [("Simon & Garfunkel", "main"), ("Prince", "guest"), ("Simon", "main"), ("Garfunkel", "main")]
+
+    assert _repaired(parts_first, whole_first) == [[("Simon & Garfunkel", "main"), ("Prince", "guest")]] * 2
+
+
 def test_a_name_joined_beside_its_whole_self_in_another_performing_role_is_credited_once() -> None:
     assert _repaired([("Tyler, The Creator", "main"), ("Tyler", "guest"), ("The Creator", "guest")]) == [
         [("Tyler, The Creator", "main")]
