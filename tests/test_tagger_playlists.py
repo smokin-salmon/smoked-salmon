@@ -6,10 +6,11 @@ from pathlib import Path
 
 import anyio
 import pytest
+from test_tagger_retagger import _release, _single_folder
 
 from salmon.converter import conversions
-from salmon.errors import UploadError
-from salmon.tagger import folderstructure
+from salmon.errors import NoncompliantFolderStructure, UploadError
+from salmon.tagger import folderstructure, renames
 from salmon.tagger.playlists import rewrite_playlists
 from salmon.tagger.retagger import rename_files
 
@@ -280,3 +281,69 @@ def test_a_failed_write_leaves_no_temporary_file(tmp_path, monkeypatch, capsys) 
     assert playlist.read_text() == "01.flac\n"
     captured = capsys.readouterr()
     assert "Could not write" in captured.out
+
+
+def test_the_playlists_of_a_multi_disc_release_kept_in_one_folder_follow_their_discs(tmp_path, monkeypatch) -> None:
+    _single_folder(monkeypatch)
+    tags, metadata = _release(tmp_path, {"CD1/01.flac": (1, 1), "CD1/02.flac": (1, 2), "CD2/01.flac": (2, 1)})
+    (tmp_path / "CD1" / "rip.cue").write_bytes(b"FILE 01.flac WAVE\r\nFILE 02.flac WAVE\r\n")
+    (tmp_path / "CD1" / "rip.m3u").write_bytes(b"01.flac\r\n02.flac\r\n")
+    (tmp_path / "CD2" / "rip.cue").write_bytes(b'FILE "01.flac" WAVE\r\n')
+    (tmp_path / "CD2" / "rip.m3u8").write_bytes(b"../CD1/02.flac\r\n01.flac\r\n")
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    names = sorted(p.name for p in tmp_path.glob("*.flac"))
+    assert len(names) == 3
+    first, second, third = names
+    assert sorted(p.name for p in tmp_path.iterdir() if p.suffix != ".flac") == [
+        "rip.1.cue",
+        "rip.1.m3u",
+        "rip.2.cue",
+        "rip.2.m3u8",
+    ]
+    assert (tmp_path / "rip.1.cue").read_bytes() == f'FILE "{first}" WAVE\r\nFILE "{second}" WAVE\r\n'.encode()
+    assert (tmp_path / "rip.1.m3u").read_bytes() == f"{first}\r\n{second}\r\n".encode()
+    assert (tmp_path / "rip.2.cue").read_bytes() == f'FILE "{third}" WAVE\r\n'.encode()
+    assert (tmp_path / "rip.2.m3u8").read_bytes() == f"{second}\r\n{third}\r\n".encode()
+
+
+def test_a_stopped_folder_check_batch_leaves_the_playlist_naming_what_was_renamed(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    album = tmp_path / "Album"
+    one, two = "a" * 60 + ".flac", "b" * 60 + ".flac"
+    _tracks(album, one, two)
+    playlist = album / "a.m3u"
+    playlist.write_text(f"{one}\n{two}\n")
+    real = renames._rename_no_clobber
+    calls = []
+
+    def rename_once(old: str, new: str) -> None:
+        calls.append(old)
+        if len(calls) == 2:
+            raise PermissionError(13, "Permission denied", old)
+        real(old, new)
+
+    monkeypatch.setattr(renames, "_rename_no_clobber", rename_once)
+
+    with pytest.raises(NoncompliantFolderStructure):
+        folderstructure._check_path_lengths(str(album), False, len("Album") + 1 + 40)
+
+    (renamed,) = [p.name for p in album.glob("*.flac") if p.name not in (one, two)]
+    assert (album / two).is_file()
+    assert playlist.read_text() == f"{renamed}\n{two}\n"
+    captured = capsys.readouterr()
+    assert "Renaming" in captured.out
+
+
+def test_an_absolute_entry_outside_the_album_stays_absolute_when_its_playlist_moves(tmp_path, monkeypatch) -> None:
+    elsewhere = tmp_path / "elsewhere.flac"
+    elsewhere.write_bytes(b"fLaC")
+    album = tmp_path / "Album"
+    _tracks(album, "CD1/01.flac")
+    (album / "CD1" / "rip.m3u").write_text(f"01.flac\n{elsewhere}\n")
+
+    _rename_files(album, {"CD1/01.flac": {"tracknumber": "1", "title": "One"}}, monkeypatch)
+
+    assert (album / "rip.m3u").read_text() == f"1.01 One.flac\n{elsewhere}\n"

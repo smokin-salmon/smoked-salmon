@@ -219,8 +219,10 @@ def _new_entry(entry: str, old_folder: str, folder: str, renames: Sequence[Renam
     for candidate in _candidates(entry, old_folder):
         resolved = _key(candidate)
         touched = any(resolved == old or resolved.startswith(old + os.sep) for old in olds)
-        # A playlist that moved names even a file that stayed from its new folder; a file that is not there is not ours.
-        if not touched and not (relocated and os.path.lexists(os.path.normpath(candidate))):
+        # A playlist that moved names even a file that stayed from its new folder (an absolute entry stays as it is);
+        # a file that is not there is not ours.
+        stayed = relocated and not os.path.isabs(entry) and os.path.lexists(os.path.normpath(candidate))
+        if not touched and not stayed:
             continue
         moved = _moved(candidate, renames)
         relative = os.path.relpath(moved, os.path.normpath(folder))
