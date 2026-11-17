@@ -7,6 +7,7 @@ each of them is rewritten to name the new paths, keeping its encoding, line endi
 import os
 import re
 import shutil
+import tempfile
 import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -48,14 +49,18 @@ def _key(path: str) -> str:
 
 
 def _moved(path: str, renames: Sequence[Rename]) -> str:
-    """``path`` after each rename in turn: a renamed file, or a file under a renamed folder, takes the new name."""
-    current = _key(path)
+    """``path`` after each rename in turn: a renamed file, or a file under a renamed folder, takes the new name.
+
+    Names are matched in NFC, but the result keeps the spelling of the new names and of the untouched rest.
+    """
+    current = os.path.normpath(path)
     for old, new in renames:
         old_key = _key(old)
-        if current == old_key:
-            current = _key(new)
-        elif current.startswith(old_key + os.sep):
-            current = _key(new) + current[len(old_key) :]
+        if _key(current) == old_key:
+            current = os.path.normpath(new)
+        elif _key(current).startswith(old_key + os.sep):
+            rest = current.split(os.sep)[len(old_key.split(os.sep)) :]
+            current = os.path.join(os.path.normpath(new), *rest)
     return current
 
 
@@ -115,11 +120,15 @@ def _rewrite_file(album: str, playlist: str, renames: Sequence[Rename]) -> None:
         return
     try:
         # Beside the playlist, then over it, so an interrupted write never leaves half a playlist.
-        temporary = playlist + ".salmon-tmp"
-        with open(temporary, "wb") as f:
-            f.write(bom + "".join(outcome.lines).encode(encoding))
-        shutil.copymode(playlist, temporary)
-        os.replace(temporary, playlist)
+        descriptor, temporary = tempfile.mkstemp(dir=folder, prefix=".salmon-", suffix=".tmp")
+        try:
+            with os.fdopen(descriptor, "wb") as f:
+                f.write(bom + "".join(outcome.lines).encode(encoding))
+            shutil.copymode(playlist, temporary)
+            os.replace(temporary, playlist)
+        finally:
+            if os.path.lexists(temporary):
+                os.unlink(temporary)
     except OSError as e:
         click.secho(f"Could not write {shown}, left as it is: {e}", fg="yellow")
 
@@ -169,6 +178,9 @@ def _rewrite_lines(
         except UnicodeEncodeError:
             outcome.unwritable.append(entry)
             continue
+        if cue and not before.endswith('"') and " " in new_entry:
+            # A bare name with a space needs its quotes.
+            new_entry = f'"{new_entry}"'
         outcome.lines[index] = before + new_entry + after
         outcome.changed = True
     return outcome
@@ -207,8 +219,8 @@ def _new_entry(entry: str, old_folder: str, folder: str, renames: Sequence[Renam
         resolved = _key(candidate)
         if not any(resolved == old or resolved.startswith(old + os.sep) for old in olds):
             continue
-        moved = _moved(resolved, renames)
-        relative = os.path.relpath(moved, _key(folder))
+        moved = _moved(candidate, renames)
+        relative = os.path.relpath(moved, os.path.normpath(folder))
         if "\\" in entry and "/" not in entry:
             return relative.replace(os.sep, "\\")
         return relative.replace(os.sep, "/")

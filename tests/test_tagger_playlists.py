@@ -188,3 +188,40 @@ def test_the_folder_structure_check_rewrites_the_playlists_of_what_it_renames(tm
     (renamed,) = [p.name for p in album.glob("*.flac")]
     assert renamed != "x" * 60 + ".flac"
     assert playlist.read_text() == renamed + "\n"
+
+
+def test_a_bare_cue_name_that_gains_a_space_is_quoted(tmp_path) -> None:
+    _tracks(tmp_path, "01.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_text("FILE 01.flac WAVE\n")
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("01.flac", "01. One.flac")))
+
+    assert cue.read_text() == 'FILE "01. One.flac" WAVE\n'
+
+
+def test_an_untouched_entry_keeps_its_unicode_form_when_its_folder_is_renamed(tmp_path) -> None:
+    _tracks(tmp_path, "CD1/Cafe\u0301.flac")
+    playlist = tmp_path / "a.m3u8"
+    playlist.write_text("CD1/Cafe\u0301.flac\n", encoding="utf-8")
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("CD1", "Disc 1")))
+
+    assert playlist.read_text(encoding="utf-8") == "Disc 1/Cafe\u0301.flac\n"
+
+
+def test_a_failed_write_leaves_no_temporary_file(tmp_path, monkeypatch, capsys) -> None:
+    _tracks(tmp_path, "01.flac")
+    playlist = tmp_path / "a.m3u"
+    playlist.write_text("01.flac\n")
+    renames = _rename(tmp_path, ("01.flac", "1.flac"))
+
+    def refuse(*_args) -> None:
+        raise OSError(13, "Permission denied")
+
+    monkeypatch.setattr("salmon.tagger.playlists.os.replace", refuse)
+    rewrite_playlists(str(tmp_path), renames)
+
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["1.flac", "a.m3u"]
+    assert playlist.read_text() == "01.flac\n"
+    assert "Could not write" in capsys.readouterr().out
