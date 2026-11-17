@@ -6,6 +6,7 @@ each of them is rewritten to name the new paths, keeping its encoding, line endi
 
 import os
 import re
+import shutil
 import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -13,8 +14,7 @@ from dataclasses import dataclass
 import asyncclick as click
 
 from salmon.common.files import is_apple_double
-
-Rename = tuple[str, str]
+from salmon.tagger.renames import Rename
 
 PLAYLIST_EXTENSIONS = {".m3u", ".m3u8", ".cue"}
 # What a playlist is warned about when its entry lost its file: the files a track is.
@@ -79,7 +79,10 @@ def rewrite_playlists(path: str, renames: Sequence[Rename]) -> None:
     for root, _dirs, files in os.walk(path):
         for name in sorted(files):
             if os.path.splitext(name)[1].lower() in PLAYLIST_EXTENSIONS and not is_apple_double(name):
-                _rewrite_file(path, os.path.join(root, name), renames)
+                try:
+                    _rewrite_file(path, os.path.join(root, name), renames)
+                except (OSError, ValueError) as e:
+                    click.secho(f"Could not update {os.path.join(root, name)}, left as it is: {e}", fg="yellow")
 
 
 def _rewrite_file(album: str, playlist: str, renames: Sequence[Rename]) -> None:
@@ -111,8 +114,12 @@ def _rewrite_file(album: str, playlist: str, renames: Sequence[Rename]) -> None:
     if not outcome.changed:
         return
     try:
-        with open(playlist, "wb") as f:
+        # Beside the playlist, then over it, so an interrupted write never leaves half a playlist.
+        temporary = playlist + ".salmon-tmp"
+        with open(temporary, "wb") as f:
             f.write(bom + "".join(outcome.lines).encode(encoding))
+        shutil.copymode(playlist, temporary)
+        os.replace(temporary, playlist)
     except OSError as e:
         click.secho(f"Could not write {shown}, left as it is: {e}", fg="yellow")
 

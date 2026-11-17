@@ -795,8 +795,6 @@ def _rename_or_undo(path: str, renames: list[tuple[str, str]]) -> None:
             done.append(rename)
         # Once, after the last: a record that cannot be written leaves every rename to put back, and itself as it was.
         note_renamed(path, renames)
-        # Last, so a batch put back leaves the playlists as they were.
-        rewrite_playlists(path, renames)
     except BaseException as e:
         undone = _undo_renames(path, done)
         if isinstance(e, RenameStopped):
@@ -806,6 +804,8 @@ def _rename_or_undo(path: str, renames: list[tuple[str, str]]) -> None:
             raise UploadError(f"Could not update the record of how {path} was converted ({e}).\n{undone}") from e
         click.secho(undone, fg="red", bold=True)
         raise
+    # Only a batch that stands: one put back leaves the playlists as they were.
+    rewrite_playlists(path, renames)
 
 
 def _undo_renames(path: str, done: list[tuple[str, str]]) -> str:
