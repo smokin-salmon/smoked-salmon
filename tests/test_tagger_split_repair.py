@@ -103,6 +103,15 @@ def test_a_part_two_names_share_joins_each_name_only_where_its_own_parts_are() -
     )[:2] == [[("DJ Shadow", "main")], [("DJ Premier", "main")]]
 
 
+def test_a_name_joined_back_takes_its_first_part_s_place_on_the_track_and_the_release() -> None:
+    artists, tracks = generate_artists(
+        _tracks([("Simon", "main"), ("Garfunkel", "main"), ("Prince", "guest")], [("Prince", "guest")], WHOLE)
+    )
+
+    assert tracks["1"]["1"]["artists"] == [("Simon & Garfunkel", "main"), ("Prince", "guest")]
+    assert artists == [("Simon & Garfunkel", "main"), ("Prince", "guest")]
+
+
 def test_a_name_joined_beside_its_whole_self_in_another_performing_role_is_credited_once() -> None:
     assert _repaired([("Tyler, The Creator", "main"), ("Tyler", "guest"), ("The Creator", "guest")]) == [
         [("Tyler, The Creator", "main")]
