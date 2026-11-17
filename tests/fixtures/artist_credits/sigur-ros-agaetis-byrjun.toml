@@ -1,7 +1,7 @@
 album = "Sigur Rós, Ágætis byrjun"
 why = "A name one store spells two ways: Qobuz has Sigur Rós on the album and Sigur Ros, without the accent, in every track's performers."
 edition = "10 tracks, as sold digitally (Deezer 82417442; MusicBrainz b1e3799d is a digital edition under another barcode); Discogs 2115975 is master 9621's main release; Qobuz has the same UPC as Deezer"
-known_wrong = ["Qobuz parse: the band a guest of itself: each track's performers line has 'Sigur Ros' as MainArtist, which doesn't match the album's 'Sigur Rós'"]
+known_wrong = []
 files_from = "deezer"
 output = true
 
@@ -29,7 +29,7 @@ release = ["Sigur Rós (main)"]
 tracks = 10
 
 [today.qobuz]
-release = ["Sigur Rós (main)", "Sigur Rós (guest)"]
+release = ["Sigur Rós (main)"]
 tracks = 10
 
 [today.merge]

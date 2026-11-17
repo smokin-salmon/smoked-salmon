@@ -1,8 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from collections.abc import Callable
-from copy import copy
 from itertools import chain
 from typing import Any
 
@@ -362,43 +360,53 @@ def generate_artists(tracks):
 
 def filter_artists(artists, tracks=None):
     """
-    Takes a list of artist tuples, as [(artist, importance), ], and checks for
+    Takes a list of artist tuples, as [(artist, importance), ], and repairs
     badly split artists, such as Leslie Odom, Jr. (one artist) --> Leslie Odom
-    / Jr. (two artists). Every combination of artist pairs will be compared to
-    all others, utilizing length differences to make it more efficient, as if
-    it matters with this piece of shit, and if a stripped/sanitized ordering
-    matches a larger artist, the smaller/fragmented artists will be removed
-    from the pool.
+    / Jr. (two artists): two names whose stripped forms, joined either way,
+    give a third name on the release are its parts. On each track, a role
+    holding every part of a name gets the whole name in their place. With
+    tracks, the release's artists are then the tracks' artists, as repaired.
     """
     to_replace = construct_replacement_list(artists)
-    artists = fix_artists_list(artists, to_replace)
     if tracks:
         artist_pool = artist_spellings(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
-                # Deduplicate the artists before passing them to fix_artists_list. Main and guest, the ARTIST credit,
-                # are one credit per name; another role (remixer, arranger, ...) is kept beside it.
+                repaired = fix_artists_list(
+                    list(
+                        dict.fromkeys(
+                            (artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"]
+                        )
+                    ),
+                    to_replace,
+                )
+                # Then deduplicate, so a name joined back counts too. Main and guest, the ARTIST credit, are one credit
+                # per name; another role (remixer, arranger, ...) is kept beside it.
                 deduplicated_artists = []
                 seen_normalized = set()
 
-                for art, imp in track["artists"]:
+                for art, imp in repaired:
                     normalized_art = (normalize_accents(art.lower()), imp if imp not in {"main", "guest"} else "")
                     if normalized_art not in seen_normalized:
                         deduplicated_artists.append((art, imp))  # Add the original artist with the importance
                         seen_normalized.add(normalized_art)
 
-                track["artists"] = fix_artists_list(
-                    [(artist_pool[normalize_accents(art.lower())], imp) for art, imp in deduplicated_artists],
-                    to_replace,
-                )
+                track["artists"] = deduplicated_artists
+        # The release's artists are its tracks' artists, as repaired: a name joined on no track is joined nowhere.
+        artists = list(
+            dict.fromkeys(credit for disc in tracks.values() for track in disc.values() for credit in track["artists"])
+        )
+    else:
+        artists = fix_artists_list(artists, to_replace)
     return artists, tracks
 
 
 def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[list[str], str]]:
     """
-    Create the list of artists-to-replace. It compares a stripped version
-    of each artist to combined versions of other artists in ascending
-    length order.
+    Create the list of artists-to-replace: each pair of names whose
+    stripped forms, joined in either order, are another name's. Each name
+    counts once, whatever its roles, and a name with no letters or digits
+    is no part of another.
 
     Args:
         artists: List of (artist_name, importance) tuples.
@@ -409,47 +417,46 @@ def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[lis
     to_replace: list[tuple[list[str], str]] = []
     # Build artist pool with normalized names
     unsorted_pool: list[list[str]] = []
-    for artist_name, _ in artists:
-        stripped = "".join(s for s in str(artist_name) if s.isalnum()).replace(" ", "")
+    # Each name once, whatever its roles, so a name never pairs with itself; a name of punctuation only ("!!!") is
+    # no part of another.
+    for artist_name in dict.fromkeys(str(name) for name, _ in artists):
+        stripped = "".join(s for s in artist_name if s.isalnum()).replace(" ", "")
         normalized_result = normalize_accents(stripped)
         # normalize_accents returns str when given single argument
         normalized = str(normalized_result).lower() if normalized_result else ""
-        unsorted_pool.append([normalized, str(artist_name)])
+        if normalized:
+            unsorted_pool.append([normalized, artist_name])
     artist_pool: list[list[str]] = sorted(unsorted_pool, key=lambda x: len(x[0]))
     for i, pri_a_raw in enumerate(artist_pool):
         for other_a in reversed(artist_pool[0:i]):
-            current_replacements = [pri_a_raw[1]]
-            pri_a = copy(pri_a_raw)
-            pri_a[0] = other_a[0] + pri_a[0]
-            current_replacements.append(other_a[1])
+            current_replacements = [pri_a_raw[1], other_a[1]]
+            # Either part may come first: "Simon" and "Garfunkel", or "Leslie Odom" and "Jr.".
+            joined = {other_a[0] + pri_a_raw[0], pri_a_raw[0] + other_a[0]}
             for artist_to_compare in artist_pool[i:]:
-                if pri_a[0] == artist_to_compare[0]:
+                if artist_to_compare[0] in joined:
                     to_replace.append((current_replacements, artist_to_compare[1]))
     return to_replace
 
 
 def fix_artists_list(original_artists, to_replace):
     """
-    Iterate over the replacement list and remove any artists
-    that need to be replaced. If the replacement is not present in the
-    artists list, add it. All artist types are iterated through individually.
+    Join each badly split name back: in a role where every part of it is
+    credited, the parts go and the whole name is credited once, in the
+    first place its parts or the whole held. A role holding only some of
+    the parts ("Jr." alone, beside another name) is left as it is, and so
+    is every other role.
     """
-    artists_by_type = defaultdict(list)
-    for artist, importa in original_artists:
-        artists_by_type[importa].append(artist)
-
-    for artist_type, artists in artists_by_type.items():
+    for artist_type in dict.fromkeys(importa for _, importa in original_artists):
         for replaceds, replacement in to_replace:
-            found = False
-            for artist in sorted(artists, key=lambda a: len(a)):
-                if any(artist == r for r in replaceds) and (artist, artist_type) in original_artists:
-                    original_artists.remove((artist, artist_type))
-                else:
-                    continue
-                if artist == replacement:
-                    found = True
-            if not found and (replacement, artist_type) not in original_artists:
-                original_artists.append((replacement, artist_type))
+            if not all((part, artist_type) in original_artists for part in replaceds):
+                continue
+            credits = [
+                (name, artist_type) for name in (*replaceds, replacement) if (name, artist_type) in original_artists
+            ]
+            first = min(original_artists.index(credit) for credit in credits)
+            for credit in credits:
+                original_artists.remove(credit)
+            original_artists.insert(first, (replacement, artist_type))
 
     return original_artists
 
