@@ -1,7 +1,7 @@
 album = "Simon & Garfunkel and Dave Grusin, The Graduate (soundtrack)"
 why = "A soundtrack shared by a duo with '&' in its name and the film's composer: every store credits 'Simon & Garfunkel' as one artist on its own tracks, and Dave Grusin on his. A name with '&' that must not be split, beside another act's tracks."
 edition = "Columbia/Legacy 2019 digital, 14 tracks (Deezer 96900992 = MusicBrainz a0f4c5d7 by barcode 886447698648; Deezer's upc lookup also resolves the CD's 074640318023); Discogs 449586 is the 1990 CD (barcodes 886977066429 and 07464031802), the same 14 tracks in the same order."
-known_wrong = ["qobuz: the album's first main-artist, Simon & Garfunkel, is main on every track and each track's own MainArtist is a guest, so Dave Grusin is a guest on his own six tracks", "merge: Simon & Garfunkel main on Dave Grusin's six tracks too, beside him (from Qobuz's parse)"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]

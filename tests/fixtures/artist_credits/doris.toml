@@ -1,7 +1,7 @@
 album = "Earl Sweatshirt, Doris"
 why = "One rapper's album with one-track guests, one of them a name holding a comma, 'Tyler, The Creator' (tracks 7 and 13): a title's '(feat. Tyler, The Creator)' splits into 'Tyler' and 'The Creator' beside the whole name from a store's credits, which the bad-split repair joins. Track 5's 'Vince Staples & Casey Veggies' is a true split."
 edition = "Columbia 2013, 15 tracks, UPC 886444062770: Deezer 6866562 = MusicBrainz 0dfef043 = Qobuz by the same UPC; Discogs 21413992 is the AAC digital release, the same 15 tracks in the same order."
-known_wrong = ["qobuz: each track's performer is a Qobuz artist named for the whole credit, 'Earl Sweatshirt feat. Vince Staples' and the like, read as one guest; on 7 and 13 the performer is 'Various Artists', a guest, and Tyler, The Creator is not credited", "merge: Qobuz's 'Earl Sweatshirt feat. ...' names hold Earl Sweatshirt and the guest inside them, so the fragment check drops the other stores' and the files' separate credits: on tracks 1, 2, 3, 4, 5, 8, 12 and 15 Earl Sweatshirt is not main and the guest is credited only inside the joined name; Mac Miller is main on 11 (the files' plain ARTIST; Qobuz names no guest there); ALBUMARTIST 'Earl Sweatshirt & Mac Miller'"]
+known_wrong = ["qobuz: on 7 and 13 the performer is 'Various Artists', read as a guessed guest, and Tyler, The Creator is not credited", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so every guest but Tyler, The Creator (SK La' Flare, Vince Staples, Domo Genesis, Frank Ocean, Casey Veggies, Mac Miller, RZA) is made main and ALBUMARTIST is 'Various'"]
 files_from = "deezer"
 output = true
 
