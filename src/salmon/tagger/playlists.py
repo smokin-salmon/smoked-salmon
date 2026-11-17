@@ -104,8 +104,8 @@ def _rewrite_file(album: str, playlist: str, renames: Sequence[Rename]) -> None:
         return
     bom, text, encoding = decoded
     folder = os.path.dirname(playlist)
-    # The folder as it was when the playlist was written: the entries name files there.
-    old_folder = _moved(folder, [(new, old) for old, new in reversed(renames)])
+    # The folder the playlist was in when written (it may have been moved, or renamed): the entries name files there.
+    old_folder = os.path.dirname(_moved(playlist, [(new, old) for old, new in reversed(renames)]))
     outcome = _rewrite_lines(
         _LINE.findall(text), os.path.splitext(playlist)[1].lower() == ".cue", old_folder, folder, renames, encoding
     )

@@ -3,13 +3,14 @@
 import os
 from pathlib import Path
 
+import anyio
 import pytest
 
 from salmon.converter import conversions
 from salmon.errors import UploadError
 from salmon.tagger import folderstructure
 from salmon.tagger.playlists import rewrite_playlists
-from salmon.tagger.retagger import _rename_or_undo
+from salmon.tagger.retagger import rename_files
 
 
 def _tracks(album: Path, *names: str) -> None:
@@ -150,19 +151,41 @@ def test_a_name_cp1252_cannot_hold_is_left_and_warned_about(tmp_path, capsys) ->
 # The two places that rename
 
 
-def test_the_track_renames_of_the_metadata_review_rewrite_the_playlists(tmp_path) -> None:
+def _rename_files(album: Path, tags: dict, monkeypatch) -> None:
+    """The metadata review's rename of the tracks, each named for its track number."""
+    monkeypatch.setattr(
+        "salmon.tagger.retagger.generate_file_name", lambda tags, ext, _multi, **_: f"{tags['tracknumber']}.01 One{ext}"
+    )
+    metadata = {"tracks": {"1": {"1": {"artists": [("A", "main")]}}}}
+    anyio.run(lambda: rename_files(str(album), tags, metadata, auto_rename=True, spectral_ids=None, source="WEB"))
+
+
+def test_the_track_renames_of_the_metadata_review_rewrite_the_playlists(tmp_path, monkeypatch) -> None:
     _tracks(tmp_path, "01.flac")
     playlist = tmp_path / "a.m3u"
     playlist.write_text("01.flac\n")
 
-    _rename_or_undo(str(tmp_path), [(str(tmp_path / "01.flac"), str(tmp_path / "01. One.flac"))])
+    _rename_files(tmp_path, {"01.flac": {"tracknumber": "1", "title": "One"}}, monkeypatch)
 
-    assert playlist.read_text() == "01. One.flac\n"
+    assert playlist.read_text() == "1.01 One.flac\n"
+
+
+def test_a_playlist_moved_out_of_a_disc_folder_names_the_tracks_from_its_new_folder(tmp_path, monkeypatch) -> None:
+    _tracks(tmp_path, "CD1/01.flac")
+    (tmp_path / "CD1" / "rip.cue").write_text('FILE "01.flac" WAVE\n')
+    (tmp_path / "CD1" / "rip.m3u").write_text("01.flac\n")
+
+    _rename_files(tmp_path, {"CD1/01.flac": {"tracknumber": "1", "title": "One"}}, monkeypatch)
+
+    assert (tmp_path / "1.01 One.flac").is_file()
+    assert not (tmp_path / "CD1").exists()
+    assert (tmp_path / "rip.cue").read_text() == 'FILE "1.01 One.flac" WAVE\n'
+    assert (tmp_path / "rip.m3u").read_text() == "1.01 One.flac\n"
 
 
 def test_a_batch_put_back_leaves_the_playlists_as_they_were(tmp_path, monkeypatch) -> None:
-    _tracks(tmp_path, "01.flac")
-    playlist = tmp_path / "a.m3u"
+    _tracks(tmp_path, "CD1/01.flac")
+    playlist = tmp_path / "CD1" / "rip.m3u"
     playlist.write_text("01.flac\n")
 
     def full_disk(*_args, **_kwargs) -> None:
@@ -171,10 +194,10 @@ def test_a_batch_put_back_leaves_the_playlists_as_they_were(tmp_path, monkeypatc
     monkeypatch.setattr(conversions, "note_renamed", full_disk)
 
     with pytest.raises(UploadError):
-        _rename_or_undo(str(tmp_path), [(str(tmp_path / "01.flac"), str(tmp_path / "01. One.flac"))])
+        _rename_files(tmp_path, {"CD1/01.flac": {"tracknumber": "1", "title": "One"}}, monkeypatch)
 
     assert playlist.read_text() == "01.flac\n"
-    assert (tmp_path / "01.flac").is_file()
+    assert (tmp_path / "CD1" / "01.flac").is_file()
 
 
 def test_the_folder_structure_check_rewrites_the_playlists_of_what_it_renames(tmp_path) -> None:
