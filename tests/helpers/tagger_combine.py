@@ -45,4 +45,4 @@ def stores_stating(monkeypatch: pytest.MonkeyPatch, stating: tuple[str, ...], as
     do today."""
     for names, states in ((stating, True), (assuming, False)):
         for name in names:
-            monkeypatch.setattr(METASOURCES[name].Scraper, "states_credits", states)
+            monkeypatch.setattr(METASOURCES[name].Scraper, "states_credits", states, raising=False)

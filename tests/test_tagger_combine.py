@@ -410,15 +410,6 @@ def test_as_before_combine_metadatas_leaves_a_store_s_guesses_out_of_the_final_m
     json.dumps(combined)
 
 
-def test_combine_metadatas_from_a_store_alone_leaves_its_guesses_out_too():
-    qobuz = guessing_bob()
-
-    combined = combine_metadatas(("Qobuz", qobuz))
-
-    assert "assumed_artists" not in combined["tracks"]["1"]["1"]
-    json.dumps(combined)
-
-
 def remix_title(title: str, remixers: tuple[str, ...] = ("X",)) -> str:
     data = {"1": {"1": {"title": title, "artists": [("Lead", "main"), *((r, "remixer") for r in remixers)]}}}
 

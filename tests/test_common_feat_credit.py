@@ -62,19 +62,13 @@ def test_a_title_without_a_featured_credit_has_none() -> None:
     assert RE_FEAT.search("Song (Live) [Remastered]") is None
 
 
-def test_a_title_s_guests_are_split() -> None:
-    guests = guests_from_title("Song (feat. A & B)")
-
-    assert guests == ["A", "B"]
-
-
-def test_a_title_s_guest_is_unescaped() -> None:
-    guests = guests_from_title("Song (feat. Beyonc&eacute;)")
-
-    assert guests == ["Beyoncé"]
-
-
-def test_a_title_without_a_featured_credit_names_no_guests() -> None:
-    guests = guests_from_title("Song (Live)")
-
-    assert guests == []
+@pytest.mark.parametrize(
+    ("title", "guests"),
+    [
+        pytest.param("Song (feat. A & B)", ["A", "B"], id="split"),
+        pytest.param("Song (feat. Beyonc&eacute;)", ["Beyoncé"], id="unescaped"),
+        pytest.param("Song (Live)", [], id="no featured credit"),
+    ],
+)
+def test_a_title_s_guests(title: str, guests: list[str]) -> None:
+    assert guests_from_title(title) == guests

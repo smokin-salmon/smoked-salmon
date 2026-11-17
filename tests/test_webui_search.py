@@ -39,7 +39,6 @@ import salmon.uploader
 from salmon import cfg, ssrf
 from salmon.config.validations import ProxyCfg
 from salmon.search import SEARCHSOURCES, metas
-from salmon.tagger.sources import MERGE_ONLY_KEYS
 from salmon.trackers import base
 from salmon.webui.jobs import JobManager
 
@@ -224,7 +223,8 @@ def test_a_discogs_lookup_with_a_credited_name_and_a_guess_answers_without_eithe
         assert response.status == 200, await response.text()
         track = (await response.json())["metadata"]["tracks"]["3"]["3"]
         assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
-        assert not set(MERGE_ONLY_KEYS) & set(track)
+        assert "assumed_artists" not in track
+        assert "artist_variations" not in track
         assert store.requests == ["/releases/2520452"]
 
     _lookup_run(test, store)
