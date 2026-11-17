@@ -36,6 +36,7 @@ from salmon.constants import (
 from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
 from salmon.tagger.mutation import abort_partial
 from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
+from salmon.tagger.playlists import rewrite_playlists
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
 from salmon.tagger.tagfile import TagFile
 
@@ -771,7 +772,13 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
 
             # A folder holding one disc's tracks has its other files named for that disc (log.2.log)
             disc_of_folder = {folder: discs.pop() for folder, discs in folder_discs.items() if len(discs) == 1}
-            move_non_audio_files(directory_move_pairs, disc_of_folder)
+            moves: list[tuple[str, str]] = []
+            try:
+                move_non_audio_files(directory_move_pairs, disc_of_folder, moves)
+            finally:
+                # Once every move is made (or a failed one stopped them), the playlists among the moved files
+                # included. A batch put back raised above.
+                rewrite_playlists(path, [*renames, *moves])
             delete_empty_folders(path)
     else:
         click.secho("\nNo file renaming is recommended.", fg="green")
@@ -878,7 +885,7 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=
     return new_base + ext
 
 
-def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
+def move_non_audio_files(directory_move_pairs, disc_of_folder=None, moved=None):
     """
     Move the files other than the tracks (logs, cues, covers, scan folders) out of each folder the tracks
     were moved out of, into the tracks' new folder. A file never replaces one already there: it stays where
@@ -887,7 +894,10 @@ def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
     When the tracks of a multi-disc release are moved into the release folder, ``disc_of_folder`` gives the
     disc number of each folder that held one disc: its files are named for that disc (``rip.log`` from disc 2
     becomes ``rip.2.log``, ``Scans`` becomes ``Scans.2``), so several discs' files can sit side by side.
+
+    Each (old path, new path) it moved is appended to ``moved``, so a caller knows them if a move fails.
     """
+    moved = [] if moved is None else moved
     track_dirs = [os.path.normpath(old_dir) for _ext, old_dir, _new_dir in directory_move_pairs]
     for ext, old_dir, new_dir in sorted(directory_move_pairs):
         if old_dir == new_dir or not os.path.isdir(old_dir):
@@ -909,6 +919,7 @@ def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
                 click.secho(f"Left {old_path} where it is: {new_path} already exists.", fg="yellow")
                 continue
             shutil.move(old_path, new_path)
+            moved.append((old_path, new_path))
 
 
 def _holds_any(folder: str, paths: list[str]) -> bool:
