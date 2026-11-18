@@ -6,10 +6,12 @@ import anyio
 import asyncclick as click
 import pytest
 from bs4 import BeautifulSoup
+from musicbrainzngs import mbxml
 
 from salmon import cfg
-from salmon.search import bandcamp, beatport, discogs, qobuz
+from salmon.search import bandcamp, beatport, discogs, musicbrainz, qobuz
 from salmon.search.base import SearchMixin
+from salmon.sources import MusicBrainzBase
 
 BANDCAMP_PAGE = """
 <ul class="result-items"><li class="searchresult data-search"><div class="result-info">
@@ -74,6 +76,28 @@ def test_discogs_result_with_a_label_but_no_catalogue_number_shows_no_none(monke
     shown = _shown(anyio.run(discogs.Searcher().search_releases, "test album", 5))
 
     assert shown == "Test Artist - Test Album {CD} 2020 CD Test Label"
+
+
+MUSICBRAINZ_SEARCH = b"""<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release-list count="1" offset="0">
+<release id="00000000-0000-0000-0000-000000000001"><title>Test Album</title>
+<artist-credit><name-credit><name>Test Artist</name><artist id="00000000-0000-0000-0000-000000000002">
+<name>Test Artist</name></artist></name-credit></artist-credit>
+<label-info-list><label-info><catalog-number>TEST 001</catalog-number><label><name>Test Label</name></label>
+</label-info></label-info-list>
+<medium-list><track-count>3</track-count><medium><format>CD</format></medium></medium-list>
+</release></release-list></metadata>"""
+
+
+def test_musicbrainz_result_shows_its_catalogue_number(monkeypatch) -> None:
+    async def _call(*_args, **_kwargs):
+        return mbxml.parse_message(MUSICBRAINZ_SEARCH)
+
+    monkeypatch.setattr(MusicBrainzBase, "_call", _call)
+
+    shown = _shown(anyio.run(musicbrainz.Searcher().search_releases, "test album", 5))
+
+    assert shown == "Test Artist - Test Album {Tracks: 3} {CD} Test Label TEST 001"
 
 
 def test_qobuz_result_without_a_year_shows_no_none(monkeypatch) -> None:

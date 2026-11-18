@@ -36,8 +36,8 @@ class Searcher(MusicBrainzBase, SearchMixin):
                     and "name" in rls["label-info-list"][0]["label"]
                 ):
                     label = rls["label-info-list"][0]["label"]["name"]
-                    if "catalog_number" in rls["label-info-list"][0]:
-                        catno = rls["label-info-list"][0]["catalog_number"]
+                    if "catalog-number" in rls["label-info-list"][0]:
+                        catno = rls["label-info-list"][0]["catalog-number"]
 
                 try:
                     source = rls["medium-list"][0]["format"]
