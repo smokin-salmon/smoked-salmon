@@ -2,6 +2,7 @@
   import { apiPost } from '../lib/api'
   import { copyText } from '../lib/clipboard'
   import ImagePicker from '../lib/ImagePicker.svelte'
+  import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
   import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
@@ -16,6 +17,7 @@
   let reportComment = $state('')
   let reportSource = $state('')
   let reportFolder = $state('')
+  let reportFolderUsable = $state(false)
   let reportDryRun = $state(false)
   let reportStarting = $state(false)
   let reportError = $state('')
@@ -163,15 +165,18 @@
       </select></label>
     {/if}
     <label>Source URL (optional)<input type="text" class="mono" bind:value={reportSource} placeholder="https://…" /></label>
-    <label>Album folder (optional)<input type="text" class="mono" bind:value={reportFolder} placeholder="Path on the salmon server" /></label>
   </div>
+  <fieldset>
+    <legend>Album folder (optional)</legend>
+    <FolderPicker bind:value={reportFolder} bind:usable={reportFolderUsable} empty="no local spectrals" />
+  </fieldset>
   <label>Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
   <p class="muted">Provide a comment or source URL. With an album folder, salmon uploads full and zoomed spectral images for each track to the tracker's configured image host before final confirmation. Leave the folder empty to report without local audio. Print only checks the folder and skips image generation and upload.</p>
   <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>
   <p class="muted">Print only prepares text to copy for manual reporting. It cannot verify ownership or FLAC eligibility.</p>
   <p class="muted">If a report fails, the batch stops and the job lists completed and unattempted IDs. Check any uncertain submission on the tracker and finish manually; running the batch again can file duplicate reports.</p>
   <div class="row actions"><button class="btn" onclick={prepareReport}
-    disabled={!reportTarget.trim() || reportStarting || (reportJob && !FINISHED.includes(reportJob.status))}>Prepare report</button></div>
+    disabled={!reportTarget.trim() || (!!reportFolder && !reportFolderUsable) || reportStarting || (reportJob && !FINISHED.includes(reportJob.status))}>Prepare report</button></div>
   {#if reportError}<p class="error">{reportError}</p>{/if}
   {#if reportJob}
     <JobStatus job={reportJob} />

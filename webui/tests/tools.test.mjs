@@ -9,11 +9,15 @@ test('report text fields use the shared text-input styling', async () => {
     const { default: Tools } = await server.ssrLoadModule('/src/pages/Tools.svelte')
     const { render } = await server.ssrLoadModule('svelte/server')
     const { body } = render(Tools)
-    for (const label of ['Torrent ID or permalink', 'Source URL (optional)', 'Album folder (optional)']) {
+    for (const label of ['Torrent ID or permalink', 'Source URL (optional)']) {
       const input = body.slice(body.indexOf(label) + label.length).match(/^<input([^>]*)>/)
       assert.ok(input, `Missing ${label} input`)
       assert.match(input[1], /type="text"/, `${label} must use the shared input theme`)
     }
+    const folder = body.match(/Album folder \(optional\)<\/legend>(.*?)<\/fieldset>/s)?.[1]
+    assert.ok(folder)
+    assert.match(folder, />Browse<\/button>/)
+    assert.match(folder, /no local spectrals/)
   } finally {
     await server.close()
   }
