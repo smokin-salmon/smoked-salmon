@@ -1,16 +1,19 @@
 """Approval reports for torrents that are already on a tracker."""
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from urllib.parse import parse_qs, urlsplit
 
 import asyncclick as click
 import msgspec
 
 from salmon import interaction, trackers
-from salmon.common import commandgroup
+from salmon.common import commandgroup, get_audio_files
 from salmon.common.strings import numeric_id
 from salmon.errors import RequestError, UnknownOutcomeError
+from salmon.tagger.audio_info import gather_audio_info
 from salmon.trackers.base import BaseGazelleApi
-from salmon.uploader.spectrals import _add_spectral_links_to_lossy_comment, generate_lossy_approval_comment
+from salmon.uploader import spectrals
 
 MAX_REPORTS = 20
 
@@ -107,6 +110,7 @@ def parse_target(target: str, tracker: str | None) -> tuple[int, str | None]:
 @click.option("--tracker", type=click.Choice(["RED", "OPS"], case_sensitive=False))
 @click.option("--comment", help="Source information and evidence for the approval request.")
 @click.option("--source-url", help="Release source URL.")
+@click.option("--folder", help="Album folder containing the selected torrent's audio.")
 @click.option("--dry-run", "--print-only", is_flag=True, help="Print the report without contacting the tracker.")
 async def report(
     target: str,
@@ -115,6 +119,7 @@ async def report(
     comment: str | None,
     source_url: str | None,
     dry_run: bool,
+    folder: str | None = None,
 ) -> None:
     """Request lossy approval for your verified FLAC upload.
 
@@ -122,7 +127,7 @@ async def report(
     explicitly selected FLAC is eligible. Transcodes are not automatically reported.
     Unverifiable ownership or source metadata prevents submission.
     """
-    await run_lossy_report(target, report_type, tracker, comment, source_url, dry_run)
+    await run_lossy_report(target, report_type, tracker, comment, source_url, dry_run, folder)
 
 
 async def run_lossy_report(
@@ -132,9 +137,17 @@ async def run_lossy_report(
     comment: str | None,
     source_url: str | None,
     dry_run: bool,
+    folder: str | None = None,
 ) -> str:
     """Build, preview and optionally submit the CLI or web job's approval report."""
     torrent_id, tracker = parse_target(target, tracker)
+    if folder is not None:
+        if not folder or not Path(folder).is_dir():
+            raise click.BadParameter("Album folder must be an existing directory.")
+        files = get_audio_files(folder)
+        if not files:
+            raise click.BadParameter("Album folder contains no audio files.")
+        click.echo(f"Album folder for torrent {torrent_id}: {folder} ({len(files)} audio files)")
     choices = [code for code in trackers.tracker_list if code in ("RED", "OPS")]
     if not choices:
         raise click.ClickException("Configure RED or OPS before requesting approval.")
@@ -147,14 +160,16 @@ async def run_lossy_report(
     if source_url is None:
         source_url = await interaction.prompt("Source URL (optional)", default="")
     if comment is None:
-        comment = await generate_lossy_approval_comment(source_url, [], force_prompt_lossy_master=True)
+        comment = await interaction.prompt("Source comment (include any evidence for this report)", default="")
     if not (comment or "").strip() and not (source_url or "").strip():
         raise click.BadParameter("Provide a comment or source URL explaining the source.")
-    text = _add_spectral_links_to_lossy_comment(comment, source_url, None, None)
+    text = spectrals._add_spectral_links_to_lossy_comment(comment, source_url, None, None)
     label = "WEB" if tracker == "RED" and report_type == "web" else "Master"
     click.echo(f"{tracker} torrent {torrent_id}: Lossy {label} Approval")
     click.echo(text)
     if dry_run:
+        if folder:
+            click.echo("Print only: spectral images were neither generated nor uploaded.")
         click.echo("Print only: FLAC eligibility and authenticated ownership were not verified; nothing was submitted.")
         return text
     if not await interaction.confirm("Verify this FLAC belongs to your authenticated account?", default=False):
@@ -163,6 +178,20 @@ async def run_lossy_report(
     try:
         await client.ensure_authenticated()
         targets = await related_report_targets(client, torrent_id)
+        if folder:
+            try:
+                with TemporaryDirectory() as output:
+                    ids = await spectrals.generate_spectrals_all(folder, output, gather_audio_info(folder))
+                    await spectrals.compress_chosen_spectrals(output, ids)
+                    urls = await spectrals.upload_spectrals(output, ids, tracker, ask_host=False)
+                    if not urls or urls.keys() != ids.keys():
+                        raise ValueError("Missing spectral images.")
+                text = spectrals._add_spectral_links_to_lossy_comment(comment, source_url, urls, ids)
+            except Exception as err:
+                click.echo(f"Could not attach spectrals: {err}")
+                if not await interaction.confirm("Continue without spectrals?", default=False):
+                    raise click.ClickException("Report aborted before submission.") from err
+            click.echo(text)
         click.echo(f"Torrents to report on {tracker}: {', '.join(map(str, targets))}")
         if await interaction.confirm(f"Submit this approval report for all {len(targets)} torrents?", default=False):
             await submit_reports(client, targets, text, "WEB" if report_type == "web" else "CD")
