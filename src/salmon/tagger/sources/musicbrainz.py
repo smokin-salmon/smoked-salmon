@@ -7,7 +7,7 @@ from musicbrainzngs import musicbrainz as mb_module
 
 from salmon.common import RE_FEAT_JOIN
 from salmon.errors import ScrapeError
-from salmon.sources import MusicBrainzBase
+from salmon.sources import MusicBrainzBase, is_placeholder_catno
 from salmon.tagger.sources.base import MetadataMixin
 
 RELEASE_TYPES = {
@@ -84,9 +84,8 @@ class Scraper(MusicBrainzBase, MetadataMixin):
             # Convert to string and clean whitespace
             catno = str(catno).strip()
 
-            # Check for exact matches of none variants (case insensitive)
-            none_variants = ["none", "[none]", "(none)", "n/a", "[n/a]", "(n/a)"]
-            if catno.lower() in none_variants:
+            # Exact matches of none variants only (case insensitive)
+            if is_placeholder_catno(catno):
                 return None
 
             # Don't match "non" or "NON" as they're often part of valid catalog numbers

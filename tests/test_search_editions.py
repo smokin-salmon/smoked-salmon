@@ -78,26 +78,37 @@ def test_discogs_result_with_a_label_but_no_catalogue_number_shows_no_none(monke
     assert shown == "Test Artist - Test Album {CD} 2020 CD Test Label"
 
 
-MUSICBRAINZ_SEARCH = b"""<?xml version="1.0" encoding="UTF-8"?>
+def _musicbrainz_search(catno: str) -> bytes:
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
 <metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release-list count="1" offset="0">
 <release id="00000000-0000-0000-0000-000000000001"><title>Test Album</title>
 <artist-credit><name-credit><name>Test Artist</name><artist id="00000000-0000-0000-0000-000000000002">
 <name>Test Artist</name></artist></name-credit></artist-credit>
-<label-info-list><label-info><catalog-number>TEST 001</catalog-number><label><name>Test Label</name></label>
+<label-info-list><label-info><catalog-number>{catno}</catalog-number><label><name>Test Label</name></label>
 </label-info></label-info-list>
 <medium-list><track-count>3</track-count><medium><format>CD</format></medium></medium-list>
-</release></release-list></metadata>"""
+</release></release-list></metadata>""".encode()
 
 
-def test_musicbrainz_result_shows_its_catalogue_number(monkeypatch) -> None:
+def _musicbrainz_shown(monkeypatch, catno: str) -> str:
     async def _call(*_args, **_kwargs):
-        return mbxml.parse_message(MUSICBRAINZ_SEARCH)
+        return mbxml.parse_message(_musicbrainz_search(catno))
 
     monkeypatch.setattr(MusicBrainzBase, "_call", _call)
 
-    shown = _shown(anyio.run(musicbrainz.Searcher().search_releases, "test album", 5))
+    return _shown(anyio.run(musicbrainz.Searcher().search_releases, "test album", 5))
+
+
+def test_musicbrainz_result_shows_its_catalogue_number(monkeypatch) -> None:
+    shown = _musicbrainz_shown(monkeypatch, "TEST 001")
 
     assert shown == "Test Artist - Test Album {Tracks: 3} {CD} Test Label TEST 001"
+
+
+def test_musicbrainz_result_with_a_placeholder_catalogue_number_shows_no_none(monkeypatch) -> None:
+    shown = _musicbrainz_shown(monkeypatch, "[none]")
+
+    assert shown == "Test Artist - Test Album {Tracks: 3} {CD} Test Label"
 
 
 def test_qobuz_result_without_a_year_shows_no_none(monkeypatch) -> None:
