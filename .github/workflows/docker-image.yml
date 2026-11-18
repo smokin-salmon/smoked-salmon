@@ -181,7 +181,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       # The release App may push to master. Its token is minted only here, after the build and the scan,
-      # and scoped to this repository's contents.
+      # and scoped to this repository's contents, plus workflows: GitHub refuses an App's push that brings
+      # in changes to .github/workflows/ without that permission.
       - name: Get the release App's token (only on release)
         id: app-token
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
@@ -190,6 +191,7 @@ jobs:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
+          permission-workflows: write
 
       # One atomic push: master and the moved tag both land, or neither does.
       - name: Commit the version update, move the tag and push both (only on release)
@@ -219,9 +221,9 @@ jobs:
           registry-token: ${{ github.token }}
 
       # uv installs follow `stable` (README). It moves to the release once the release has shipped, in a push of its
-      # own so that a refusal never holds the release back. GitHub may refuse an App's push that carries workflow
-      # changes, and the App has no workflows permission: after a cycle that changed .github/workflows/, the warning
-      # says how to move it by hand (docs/ci-and-releases.md).
+      # own so that a refusal never holds the release back. The App's token carries workflows: write, so a push that
+      # carries workflow changes should not be refused; if it is, the warning says how to move it by hand
+      # (docs/ci-and-releases.md).
       - name: Move the stable branch to the release (only on release)
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         env:

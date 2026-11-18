@@ -60,7 +60,7 @@ run builds, scans and pushes again. A re-run takes `master` as it is then, so if
 meantime, the tag and `stable` move onto those commits too.
 
 The workflow checks out with the job's own token, which only reads the repository. Step 3 pushes
-with a token of the `smokin-salmon` organization's release GitHub App (Contents: read and write,
+with a token of the `smokin-salmon` organization's release GitHub App (Contents and Workflows: read and write,
 installed on this repository only, a bypass actor of the `master` ruleset), minted in the run, after
 the scan, from the repository variable `RELEASE_APP_CLIENT_ID` (the App's Client ID) and the
 repository secret `RELEASE_APP_PRIVATE_KEY`. To rotate its key, generate a new private key in the
@@ -68,17 +68,17 @@ App's settings (organization settings, Developer settings, GitHub Apps), store i
 `gh secret set RELEASE_APP_PRIVATE_KEY < key.pem`, then delete the old key there. Step 3 pushes
 `master` and the moved tag in one atomic push, so without a valid key, or if the push is refused,
 `master`, the tag and ghcr.io are unchanged, and the failed run can be re-run once that is fixed.
-The App cannot change workflows: a re-run whose tag move would carry changes to `.github/workflows/`
-(a fix merged after the release was published) may be refused. Then delete the release and its tag
-and publish it again from `master`.
+The token carries `workflows: write`, so a push that brings in changes to `.github/workflows/` is not
+refused for that. If a re-run's tag move is refused anyway, delete the release and its tag and publish it
+again from `master`.
 
 `stable` is the branch the README's uv installs follow (`git+...@stable`), as Docker users follow
 `:latest`: `uv tool upgrade salmon` moves such an install only when a release moves the branch. An install
 with no ref follows `master`, as `:alpha` does. Step 5 pushes it with the same App token, without force, so
 it only moves forward, and in its own push, so a refusal never holds the release back: the run warns
-"stable was not moved" and goes on. GitHub is likely to refuse it when the commits since the one `stable` is on changed
-`.github/workflows/`, as the App cannot change workflows; about half of recent release cycles did.
-Then move it by hand, with an account that can (the forced fetch picks up the tag the run moved):
+"stable was not moved" and goes on. The token carries `workflows: write`, so a refusal over commits that changed
+`.github/workflows/` should not happen. If the push is refused anyway, move it by hand, with an account that can (the forced fetch
+picks up the tag the run moved):
 `git fetch --force origin tag X.Y.Z && git push origin 'X.Y.Z^{commit}:refs/heads/stable'`. Don't re-run the
 release to retry it: a re-run moves the tag onto anything merged since. If `stable` was moved by hand to a
 commit outside the release's history, the push is refused too; then use
