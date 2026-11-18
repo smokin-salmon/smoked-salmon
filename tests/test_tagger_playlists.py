@@ -167,7 +167,9 @@ def test_a_cue_in_another_code_page_is_warned_about_where_its_names_did_not_foll
     )
 
     assert cue.read_bytes() == f'FILE "01 {name}.flac" WAVE\r\nFILE "02. B.flac" WAVE\r\n'.encode(code_page)
-    assert "a.cue: read as cp1252, which may not be its encoding" in capsys.readouterr().out
+    out = capsys.readouterr().out
+
+    assert "a.cue: read as cp1252, which may not be its encoding" in out
 
 
 def test_as_before_a_true_cp1252_cue_is_not_warned_about(tmp_path, capsys) -> None:
@@ -181,7 +183,9 @@ def test_as_before_a_true_cp1252_cue_is_not_warned_about(tmp_path, capsys) -> No
     assert cue.read_bytes() == (
         'FILE "01. Été.flac" WAVE\r\nFILE "02 Où.flac" WAVE\r\nFILE "03.flac" WAVE\r\n'.encode("cp1252")
     )
-    assert capsys.readouterr().out == ""
+    out = capsys.readouterr().out
+
+    assert out == ""
 
 
 # The two places that rename
