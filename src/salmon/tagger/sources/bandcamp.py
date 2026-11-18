@@ -7,7 +7,7 @@ from salmon.common import RE_FEAT, fetch_genre, re_split
 from salmon.common.strings import comparable, names_no_artist
 from salmon.errors import GenreNotInWhitelist, ScrapeError
 from salmon.sources import BandcampBase
-from salmon.tagger.sources.base import MetadataMixin
+from salmon.tagger.sources.base import MetadataMixin, add_track
 
 CATNO_PREFIX_RE = re.compile(r"^(?P<catno>(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ._-]{1,31})\s*/\s*(?P<title>.+)$")
 BRACKETED_CATNO_PREFIX_RE = re.compile(
@@ -106,12 +106,13 @@ class Scraper(BandcampBase, MetadataMixin):
                     num = track.select(".track-number-col .track_number")[0].text.rstrip(".")
                     title = extract_track_title(track)
                     track_artists, strip_artist_prefix = parse_artists(artist, title, release_title=release_title)
-                    tracks["1"][num] = self.generate_track(
+                    new_track = self.generate_track(
                         trackno=int(num),
                         discno=1,
                         artists=track_artists,
                         title=parse_title(title, strip_artist_prefix=strip_artist_prefix),
                     )
+                    add_track(tracks, "1", num, new_track)
                 except (ValueError, IndexError, TypeError) as e:
                     raise ScrapeError("Could not parse tracks.") from e
         else:

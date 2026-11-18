@@ -4,7 +4,7 @@ from collections import defaultdict
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError
 from salmon.sources import AppleMusicBase
-from salmon.tagger.sources.base import MetadataMixin
+from salmon.tagger.sources.base import MetadataMixin, add_track
 
 ALIAS_GENRE = {
     "Hip-Hop/Rap": {"Hip Hop", "Rap"},
@@ -175,7 +175,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                         if (guest, "guest") not in artists:
                             artists.append((guest, "guest"))
 
-                tracks[str(disc_num)][track_num] = self.generate_track(
+                new_track = self.generate_track(
                     trackno=track_num,
                     discno=disc_num,
                     artists=artists,
@@ -183,6 +183,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                     isrc=attrs.get("isrc"),
                     explicit=attrs.get("contentRating") == "explicit",
                 )
+                add_track(tracks, str(disc_num), track_num, new_track)
 
             if not tracks:
                 raise ScrapeError("No valid song tracks found in Apple Music API response")
