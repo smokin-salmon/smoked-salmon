@@ -1,8 +1,9 @@
 """The group description's tracklist leaves out a track's artist when it credits only the album's artists (#895).
 
-A track that credits anyone else keeps its artist, as do every track of a various-artists release, every track when
+A guest of the album's artists goes after the title, and one remixer of every track is said once (#971). A track that
+credits anyone else, or a remix, keeps its artist, as do every track of a various-artists release, every track when
 no album artists are given (a cross-upload), and every track of a compilation, anthology or DJ mix unless all of them
-credit only the album's artists (#971). salmon up reads the credits from the files' tags; salmon descgen (and the web
+are listed without it (#971). salmon up reads the credits from the files' tags; salmon descgen (and the web
 interface's Tools page) from the store's metadata.
 """
 
@@ -70,22 +71,7 @@ def test_a_one_artist_albums_tracklist_names_no_artist() -> None:
 @pytest.mark.parametrize(
     ("album", "tags", "line"),
     [
-        # Each track keeps its artist when it credits anyone besides the album's.
-        (
-            [("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest")],
-            {"artist": ["Sullivan Murphy (feat. Dierdre Simpson)"]},
-            "Sullivan Murphy (feat. Dierdre Simpson) - Song 1",
-        ),
-        (
-            # guests_in_track_title: the guest is in the title, and in ARTISTS after the main artists.
-            [("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest")],
-            {
-                "artist": ["Sullivan Murphy"],
-                "artists": ["Sullivan Murphy", "Dierdre Simpson"],
-                "title": "Song 1 (feat. Dierdre Simpson)",
-            },
-            "Sullivan Murphy - Song 1 (feat. Dierdre Simpson)",
-        ),
+        # Each track keeps its artist when it credits anyone besides the album's and their guests.
         (
             # An AAC file has no ARTISTS: the title alone credits the guest.
             [("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest")],
@@ -188,8 +174,6 @@ def test_a_one_artist_albums_tracklist_names_no_artist() -> None:
         ),
     ],
     ids=[
-        "a guest in ARTIST",
-        "a guest in the title",
         "a guest in the title alone",
         "a remix in the title alone",
         "a mix in the title",
@@ -225,6 +209,26 @@ def test_a_track_names_its_artist_only_when_it_credits_anyone_besides_the_albums
 
     expected = line or f"{tags['artist'][0]} - Song 1"
     assert _lines(description) == [f"[b]01.[/b] {expected} [i](3:20)[/i]"]
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [
+        {"artist": ["Sullivan Murphy (feat. Dierdre Simpson)"]},
+        # guests_in_track_title: the guest is in the title, and in ARTISTS after the main artists.
+        {
+            "artist": ["Sullivan Murphy"],
+            "artists": ["Sullivan Murphy", "Dierdre Simpson"],
+            "title": "Song 1 (feat. Dierdre Simpson)",
+        },
+    ],
+    ids=["a guest in ARTIST", "a guest in the title"],
+)
+def test_a_guest_of_the_album_artist_goes_after_the_title(tags: dict[str, Any]) -> None:
+    # #971 item 6: only the album's artist goes, as on every other line; the guest stays on the line.
+    description = generate_description(_tracks(tags), _album(("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest")))
+
+    assert _lines(description) == ["[b]01.[/b] Song 1 (feat. Dierdre Simpson) [i](3:20)[/i]"]
 
 
 @pytest.mark.parametrize(
@@ -298,13 +302,12 @@ def test_a_duos_compilation_names_no_artist() -> None:
     ("other", "line"),
     [
         ({"artist": ["Other Artist"]}, "Other Artist - Song 2"),
-        ({"artist": ["Sullivan Murphy (feat. Dierdre Simpson)"]}, "Sullivan Murphy (feat. Dierdre Simpson) - Song 2"),
         (
             {"artist": ["Sullivan Murphy"], "title": "Song 2 (Remi Xer Remix)"},
             "Sullivan Murphy - Song 2 (Remi Xer Remix)",
         ),
     ],
-    ids=["another artist", "a guest", "a remix in the title"],
+    ids=["another artist", "a remix in the title"],
 )
 def test_as_before_one_track_with_anyone_else_keeps_every_artist_on_a_compilation(
     rls_type: str, other: dict[str, Any], line: str
@@ -317,6 +320,26 @@ def test_as_before_one_track_with_anyone_else_keeps_every_artist_on_a_compilatio
         "[b]01.[/b] Sullivan Murphy - Song 1 [i](3:20)[/i]",
         f"[b]02.[/b] {line} [i](3:20)[/i]",
     ]
+
+
+@pytest.mark.parametrize("rls_type", COMPILATIONS)
+def test_a_guest_of_the_album_artist_on_a_compilation_goes_after_the_title(rls_type: str) -> None:
+    tracks = _tracks({"artist": ["Sullivan Murphy"]}, {"artist": ["Sullivan Murphy (feat. Dierdre Simpson)"]})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main"), rls_type=rls_type))
+
+    assert _lines(description) == [
+        "[b]01.[/b] Song 1 [i](3:20)[/i]",
+        "[b]02.[/b] Song 2 (feat. Dierdre Simpson) [i](3:20)[/i]",
+    ]
+
+
+def test_a_guest_in_artists_goes_after_the_title_when_artist_is_the_albums_credit() -> None:
+    description = generate_description(
+        _tracks({"artist": ["Alice"], "artists": ["Alice (feat. Bob)"]}), _album(("Alice", "main"))
+    )
+
+    assert _lines(description) == ["[b]01.[/b] Song 1 (feat. Bob) [i](3:20)[/i]"]
 
 
 def test_as_before_an_album_keeps_the_artist_only_on_the_tracks_with_anyone_else() -> None:
@@ -361,14 +384,12 @@ def test_a_name_only_in_artists_doesnt_keep_the_artist_when_artist_credits_the_a
             "Alice - Song 1",
         ),
         ([("Alice", "main")], {"artist": ["Other"], "artists": ["Alice"]}, "Other - Song 1"),
-        ([("Alice", "main")], {"artist": ["Alice"], "artists": ["Alice (feat. Bob)"]}, "Alice - Song 1"),
         ([("Alice", "main")], {"artist": ["Alice"], "artists": ["Alice (Remix by Bob)"]}, "Alice - Song 1"),
     ],
     ids=[
         "ARTISTS completes the credit",
         "ARTISTS still short of it",
         "ARTIST someone else",
-        "a guest in ARTISTS",
         "a remix in ARTISTS",
     ],
 )
@@ -539,7 +560,7 @@ def test_descgen_names_no_artist_on_a_one_artist_album(monkeypatch) -> None:
     assert lines == ["[b]01.[/b] Song 1", "[b]02.[/b] Song 2"]
 
 
-def test_descgen_names_the_artist_of_a_track_that_credits_anyone_else(monkeypatch) -> None:
+def test_descgen_names_the_artist_of_a_remix_and_lists_a_guest_after_the_title(monkeypatch) -> None:
     guest = [("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest")]
     remix = [("Sullivan Murphy", "main"), ("Remi Xer", "remixer")]
     album = _store_album([("Sullivan Murphy", "main")], guest, remix)
@@ -548,7 +569,7 @@ def test_descgen_names_the_artist_of_a_track_that_credits_anyone_else(monkeypatc
 
     assert lines == [
         "[b]01.[/b] Song 1",
-        f"[b]02.[/b] {create_artist_str(guest)} - Song 2",
+        "[b]02.[/b] Song 2 (feat. Dierdre Simpson)",
         f"[b]03.[/b] {create_artist_str(remix)} - Song 3",
     ]
 
@@ -562,12 +583,16 @@ def test_descgen_names_no_artist_on_a_compilation_all_by_the_album_artist(monkey
 
 
 def test_as_before_descgen_keeps_every_artist_on_a_compilation_with_anyone_else(monkeypatch) -> None:
-    guest = [("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest")]
-    album = _store_album([("Sullivan Murphy", "main")], guest, rls_type="Compilation")
+    other = [("Other Artist", "main")]
+    album = _store_album([("Sullivan Murphy", "main")], [("Sullivan Murphy", "main")], other, rls_type="Compilation")
 
     lines = _descgen(monkeypatch, album)
 
-    assert lines == ["[b]01.[/b] Sullivan Murphy - Song 1", f"[b]02.[/b] {create_artist_str(guest)} - Song 2"]
+    assert lines == [
+        "[b]01.[/b] Sullivan Murphy - Song 1",
+        "[b]02.[/b] Sullivan Murphy - Song 2",
+        "[b]03.[/b] Other Artist - Song 3",
+    ]
 
 
 def _write_flac(path: Path) -> None:
@@ -621,14 +646,10 @@ def test_files_salmon_tagged_are_listed_by_the_same_rule_in_each_format(
     assert tags[f"04{extension}"].remixer == ["Remi Xer"]
     description = generate_description({name: {"duration": 200, "t": tag} for name, tag in tags.items()}, album)
 
-    guest = (
-        "Sullivan Murphy - Song 2 (feat. Dierdre Simpson)"
-        if guests_in_track_title
-        else ("Sullivan Murphy (feat. Dierdre Simpson) - Song 2")
-    )
+    # With the setting on or off, a guest of the album's artist goes after the title (#971 item 6).
     assert _lines(description) == [
         "[b]01.[/b] Song 1 [i](3:20)[/i]",
-        f"[b]02.[/b] {guest} [i](3:20)[/i]",
+        "[b]02.[/b] Song 2 (feat. Dierdre Simpson) [i](3:20)[/i]",
         "[b]03.[/b] Sullivan Murphy - Song 3 (Remi Xer Remix) [i](3:20)[/i]",
         "[b]04.[/b] Sullivan Murphy - Song 4 [i](3:20)[/i]",
         "[b]05.[/b] Other Artist - Song 5 [i](3:20)[/i]",
@@ -642,10 +663,7 @@ def test_descgen_names_no_artist_on_a_track_by_the_albums_orchestra_and_conducto
 
     lines = _descgen(monkeypatch, album)
 
-    assert lines == [
-        "[b]01.[/b] Song 1",
-        f"[b]02.[/b] {create_artist_str(guest)} - Song 2",
-    ]
+    assert lines == ["[b]01.[/b] Song 1", "[b]02.[/b] Song 2 (feat. A Soloist)"]
 
 
 def test_descgen_names_the_artist_of_a_track_whose_title_alone_credits_a_guest(monkeypatch) -> None:
@@ -676,3 +694,169 @@ def test_descgen_compares_with_the_albums_artists_after_the_tracks_are_cleaned(m
     description = anyio.run(build_description, ["https://www.qobuz.com/album/x"])
 
     assert _lines(description) == ["[b]01.[/b] Song 1", "[b]02.[/b] A - Song 2 (B Remix)"]
+
+
+def test_one_remixer_on_every_track_is_said_once() -> None:
+    # #971 item 5: the remix is the album's, so the lines leave the artist out and say it once.
+    tracks = _tracks(
+        {"artist": ["Sullivan Murphy"], "remixer": ["Remi Xer"], "title": "Song 1 (Remi Xer Remix)"},
+        {"artist": ["Sullivan Murphy"], "remixer": ["Remi Xer"], "title": "Song 2 (Remi Xer Remix)"},
+    )
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main"), ("Remi Xer", "remixer")))
+
+    assert description == (
+        "[b][size=4]Tracklist[/size][/b]\n"
+        "[b]01.[/b] Song 1 (Remi Xer Remix) [i](3:20)[/i]\n"
+        "[b]02.[/b] Song 2 (Remi Xer Remix) [i](3:20)[/i]\n"
+        "\nAll tracks remixed by Remi Xer.\n"
+        "\n[b]Total length: [/b]6:40\n"
+    )
+
+
+def test_one_remixer_named_only_in_every_title_is_said_once() -> None:
+    # An AAC file has no REMIXER: the title alone credits the remix.
+    tracks = _tracks(
+        {"artist": ["Sullivan Murphy"], "title": "Song 1 (Remi Xer Remix)"},
+        {"artist": ["Sullivan Murphy"], "title": "Song 2 (Remi Xer Remix)"},
+    )
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert description == (
+        "[b][size=4]Tracklist[/size][/b]\n"
+        "[b]01.[/b] Song 1 (Remi Xer Remix) [i](3:20)[/i]\n"
+        "[b]02.[/b] Song 2 (Remi Xer Remix) [i](3:20)[/i]\n"
+        "\nAll tracks remixed by Remi Xer.\n"
+        "\n[b]Total length: [/b]6:40\n"
+    )
+
+
+@pytest.mark.parametrize(
+    "second",
+    [
+        {"artist": ["Sullivan Murphy"], "remixer": ["Other Mixer"], "title": "Song 2 (Other Mixer Remix)"},
+        {"artist": ["Sullivan Murphy"], "title": "Song 2"},
+    ],
+    ids=["another remixer", "no remix"],
+)
+def test_as_before_a_remix_on_some_tracks_keeps_their_artist(second: dict[str, Any]) -> None:
+    tracks = _tracks(
+        {"artist": ["Sullivan Murphy"], "remixer": ["Remi Xer"], "title": "Song 1 (Remi Xer Remix)"}, second
+    )
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    lines = _lines(description)
+
+    assert lines[0] == "[b]01.[/b] Sullivan Murphy - Song 1 (Remi Xer Remix) [i](3:20)[/i]"
+    assert len(lines) == 2
+    assert "remixed by" not in description
+
+
+def _descgen_description(monkeypatch, metadata: dict[str, Any]) -> str:
+    async def fake_run_metadata(url, **_options):
+        return metadata, "Qobuz"
+
+    monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
+    monkeypatch.setattr(salmon.commands, "combine_metadatas", lambda *_: metadata)
+    monkeypatch.setattr(salmon.commands, "clean_metadata", lambda metadata: metadata)
+    return anyio.run(build_description, ["https://www.qobuz.com/album/x"])
+
+
+def test_descgen_says_one_remixer_on_every_track_once(monkeypatch) -> None:
+    remix = [("Sullivan Murphy", "main"), ("Remi Xer", "remixer")]
+    album = _store_album(remix, remix)
+
+    description = _descgen_description(monkeypatch, album)
+
+    assert description.splitlines()[1:] == [
+        "[b]01.[/b] Song 1",
+        "[b]02.[/b] Song 2",
+        "",
+        "All tracks remixed by Remi Xer.",
+    ]
+
+
+REMIXED = {"remixer": ["Remi Xer"], "title": "Song (Remi Xer Remix)"}
+
+
+@pytest.mark.parametrize(
+    ("album", "second"),
+    [
+        ([("Various Artists", "main")], {"artist": ["Other Artist"], **REMIXED}),
+        ([("Sullivan Murphy", "main")], {"artist": ["Other Artist"], **REMIXED}),
+    ],
+    ids=["various artists", "another artist on one track"],
+)
+def test_as_before_one_remixer_is_not_said_once_when_a_line_keeps_its_artist(
+    album: list[tuple[str, str]], second: dict[str, Any]
+) -> None:
+    tracks = _tracks({"artist": ["Sullivan Murphy"], **REMIXED}, second)
+
+    description = generate_description(tracks, _album(*album))
+
+    assert _lines(description) == [
+        "[b]01.[/b] Sullivan Murphy - Song (Remi Xer Remix) [i](3:20)[/i]",
+        "[b]02.[/b] Other Artist - Song (Remi Xer Remix) [i](3:20)[/i]",
+    ]
+    assert "remixed by" not in description
+
+
+def test_a_guest_goes_before_the_albums_one_remix() -> None:
+    tracks = _tracks(
+        {"artist": ["Sullivan Murphy (feat. Dierdre Simpson)"], **REMIXED},
+        {"artist": ["Sullivan Murphy"], **REMIXED},
+    )
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == [
+        "[b]01.[/b] Song (feat. Dierdre Simpson) (Remi Xer Remix) [i](3:20)[/i]",
+        "[b]02.[/b] Song (Remi Xer Remix) [i](3:20)[/i]",
+    ]
+    assert "All tracks remixed by Remi Xer." in description
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [
+        ({"artist": ["Sullivan Murphy"], **REMIXED},),
+        (
+            {"artist": ["Sullivan Murphy"], "title": "Song (Remix)"},
+            {"artist": ["Sullivan Murphy"], "title": "Song (Remix)"},
+        ),
+    ],
+    ids=["one track", "a remix naming no one"],
+)
+def test_as_before_no_remixer_is_said_once_without_one_on_several_tracks(tags: tuple[dict[str, Any], ...]) -> None:
+    description = generate_description(_tracks(*tags), _album(("Sullivan Murphy", "main")))
+
+    assert all(line.startswith("[b]0") and "Sullivan Murphy - " in line for line in _lines(description))
+    assert "remixed by" not in description
+
+
+def test_every_guest_is_named_after_the_title() -> None:
+    # The tags name each guest, so the line does, however many: no various-artists word.
+    tracks = _tracks({"artist": ["Sullivan Murphy (feat. Ann, Bea, Cat & Dee)"]})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == ["[b]01.[/b] Song 1 (feat. Ann, Bea, Cat, Dee) [i](3:20)[/i]"]
+
+
+def test_as_before_a_guests_track_with_no_title_keeps_its_artist() -> None:
+    tracks = _tracks({"artist": ["Sullivan Murphy (feat. Dierdre Simpson)"], "title": None})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == ["[b]01.[/b] Sullivan Murphy (feat. Dierdre Simpson) - None [i](3:20)[/i]"]
+
+
+def test_the_remix_line_wraps_its_names_as_the_lines_do(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.description, "artist_tags_in_tracklist", True)
+    tracks = _tracks({"artist": ["Sullivan Murphy"], **REMIXED}, {"artist": ["Sullivan Murphy"], **REMIXED})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert "\nAll tracks remixed by [artist]Remi Xer[/artist].\n" in description

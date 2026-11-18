@@ -41,7 +41,7 @@ from salmon.trackers.connection import check_trackers
 from salmon.uploader.description import (
     TracklistLine,
     album_credit_names,
-    listed_bare,
+    listed_titles,
     tracklist_description,
 )
 from salmon.uploader.seedbox import config_args, seedbox_secrets
@@ -141,20 +141,23 @@ async def build_description(urls: Sequence[str]) -> str:
     if cfg.upload.formatting.guests_in_track_title:
         for _dnum, _tnum, track in numbered:
             track["title"] = append_guests_to_track_titles(track)
-    bare = listed_bare(
+    titles, remixers = listed_titles(
         [(track["artists"], track["title"]) for _dnum, _tnum, track in numbered],
         album_credit_names(metadata),
         metadata.get("rls_type"),
     )
     lines: list[TracklistLine] = []
-    for (dnum, tnum, track), is_bare in zip(numbered, bare, strict=True):
+    for (dnum, tnum, track), bare in zip(numbered, titles, strict=True):
         number = padded_number(str(tnum))
         if multi_disc:
             number = f"{padded_number(str(dnum))}-{number}"
-        artist = None if is_bare else create_artist_str(track["artists"])
+        if bare is None:
+            title, artist = track["title"], create_artist_str(track["artists"])
+        else:
+            title, artist = bare, None
         # Most stores give no length, and a store's 0 is no length either.
-        lines.append(TracklistLine(number, track["title"], artist, track.get("duration") or None))
-    return tracklist_description(lines, metadata["comment"], metadata["urls"])
+        lines.append(TracklistLine(number, title, artist, track.get("duration") or None))
+    return tracklist_description(lines, metadata["comment"], metadata["urls"], remixers)
 
 
 @commandgroup.command()
