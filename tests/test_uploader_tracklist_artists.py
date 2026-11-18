@@ -867,6 +867,15 @@ def test_an_artists_name_the_title_does_not_credit_is_no_guest(title: str) -> No
     assert _lines(description) == [f"[b]01.[/b] Sullivan Murphy - {title} [i](3:20)[/i]"]
 
 
+def test_a_title_crediting_a_guest_the_tags_dont_keeps_the_artist() -> None:
+    # The tags credit Bob; the title credits Carol too.
+    tracks = _tracks({"artist": ["Sullivan Murphy (feat. Bob)"], "title": "Song (feat. Bob & Carol)"})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == ["[b]01.[/b] Sullivan Murphy (feat. Bob) - Song (feat. Bob & Carol) [i](3:20)[/i]"]
+
+
 def test_a_guests_name_inside_a_title_word_is_not_named() -> None:
     # "Ann" in "Anniversary" is no credit: Ann would be named nowhere if the line left the artist out.
     tracks = _tracks({"artist": ["Sullivan Murphy (feat. Bob & Ann)"], "title": "Anniversary (feat. Bob)"})

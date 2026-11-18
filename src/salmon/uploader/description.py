@@ -102,10 +102,10 @@ _REMIX_BRACKET = re.compile(r" \([^)]+Remix(?:er)?\)", flags=re.IGNORECASE)
 
 def _with_guests(title: str, guests: list[str]) -> str | None:
     """The title naming its guests, as guests_in_track_title puts them but with every name (the line is where they
-    show): unchanged when it already names them, and None, the line keeping its artist, when it credits someone but
-    not every guest ("Song (feat. B)" for guests B and C)."""
+    show): unchanged when its credit names them all and its feat. credit no one else, and None, the line keeping its
+    artist, when not ("Song (feat. B)" for guests B and C, "Song (feat. B & C)" for guest B)."""
     if credit_in_title(title, guests):
-        return title if _names_each(title, guests) else None
+        return title if _names_each(title, guests, only=True) else None
     remix = _REMIX_BRACKET.search(title)
     head, tail = (title[: remix.start()] + title[remix.end() :], remix[0]) if remix else (title, "")
     return f"{head} (feat. {join_artists(guests)}){tail}"
@@ -113,15 +113,23 @@ def _with_guests(title: str, guests: list[str]) -> str | None:
 
 # A title's credit and the names it holds: "feat. B & C", "(ft. B)", "featuring B", "(with B)", "[vs. B]".
 _RE_TITLE_CREDIT = re.compile(
-    r"(?:\b(?:feat|ft)\b\.?|\bfeaturing\b|[(\[]\s*(?:with|vs\.?)\s)\s*([^)\]]*)", flags=re.IGNORECASE
+    r"(?:(?P<feat>\b(?:feat|ft)\b\.?|\bfeaturing\b)|[(\[]\s*(?:with|vs\.?)\s)\s*(?P<names>[^)\]]*)",
+    flags=re.IGNORECASE,
 )
 
 
-def _names_each(title: str, names: list[str]) -> bool:
-    """Whether a title's credit names each of these, whole: "Song (feat. B & C)" names B and C, "Anniversary
-    (feat. B)" doesn't name Ann, nor "Alice's Song (feat. B)" Alice."""
-    credited = {comparable(name) for credit in _RE_TITLE_CREDIT.finditer(title) for name in re_split(credit[1])}
-    return all(comparable(part) in credited for name in names for part in re_split(name))
+def _names_each(title: str, names: list[str], only: bool = False) -> bool:
+    """Whether a title's credit names each of these, whole, and with `only` its feat. credit no one else: "Song
+    (feat. B & C)" names B and C, "Anniversary (feat. B)" doesn't name Ann, nor "Alice's Song (feat. B)" Alice. A with
+    bracket's other names may be no one ("Song (with Strings)")."""
+    credits = [
+        (credit["feat"], comparable(name))
+        for credit in _RE_TITLE_CREDIT.finditer(title)
+        for name in re_split(credit["names"])
+    ]
+    wanted = {comparable(part) for name in names for part in re_split(name)}
+    others = {name for feat, name in credits if feat} - wanted if only else set()
+    return wanted <= {name for _feat, name in credits} and not others
 
 
 def _remixers(credits: list[tuple[str, str]], title: str | None) -> list[str]:
