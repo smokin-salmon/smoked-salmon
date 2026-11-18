@@ -105,10 +105,18 @@ def test_musicbrainz_result_shows_its_catalogue_number(monkeypatch) -> None:
     assert shown == "Test Artist - Test Album {Tracks: 3} {CD} Test Label TEST 001"
 
 
-def test_musicbrainz_result_with_a_placeholder_catalogue_number_shows_no_none(monkeypatch) -> None:
-    shown = _musicbrainz_shown(monkeypatch, "[none]")
+@pytest.mark.parametrize("catno", ["[none]", "None", "(N/A)", " n/a "])
+def test_musicbrainz_result_with_a_placeholder_catalogue_number_shows_no_none(monkeypatch, catno) -> None:
+    shown = _musicbrainz_shown(monkeypatch, catno)
 
     assert shown == "Test Artist - Test Album {Tracks: 3} {CD} Test Label"
+
+
+@pytest.mark.parametrize("catno", ["None Audio 1", "NON 5"])
+def test_musicbrainz_result_keeps_a_catalogue_number_that_only_contains_none(monkeypatch, catno) -> None:
+    shown = _musicbrainz_shown(monkeypatch, catno)
+
+    assert shown == f"Test Artist - Test Album {{Tracks: 3}} {{CD}} Test Label {catno}"
 
 
 def test_qobuz_result_without_a_year_shows_no_none(monkeypatch) -> None:
