@@ -78,12 +78,12 @@ def _starts_a_disc(number: str, on_disc: dict, after_heading: bool) -> bool:
     alone starts none: headings also group one disc's tracks (a record's side, a composer's works)."""
     if number in on_disc and (after_heading or number in _FIRST_POSITIONS):
         return True
-    # A part goes back by its number: "1a" after "2" does, "3a" after "2" doesn't.
-    lead = _lead_number(number)
+    # A part goes back by its number, then its letter: "1a" after "2" does, "3a" after "2" and "1b" after "1a" don't.
+    place = _place(number)
     return (
         after_heading
-        and lead is not None
-        and any((n := _lead_number(other)) is not None and n >= lead for other in on_disc)
+        and place is not None
+        and any((other_place := _place(other)) is not None and other_place >= place for other in on_disc)
     )
 
 
@@ -92,10 +92,11 @@ def _numbered(position: str) -> bool:
     return any(char.isalnum() for char in position)
 
 
-def _lead_number(number: str) -> int | None:
-    """The number a track number starts with ("1" of "1A"), or None ("A1", "-")."""
+def _place(number: str) -> tuple[int, str] | None:
+    """A track number's place in a numbering of parts: (1, "B") for "1B", (2, "") for "2", or None when it starts with
+    no number ("A1", "-")."""
     match = re.match(r"\d+", number)
-    return int(match[0]) if match else None
+    return (int(match[0]), number[match.end() :]) if match else None
 
 
 class Scraper(DiscogsBase, MetadataMixin):

@@ -221,6 +221,12 @@ def test_a_part_numbered_on_after_a_heading_stays_on_its_disc() -> None:
     assert parsed == {"1": ["1", "2", "3A"]}
 
 
+def test_a_track_s_next_part_after_a_heading_stays_on_its_disc() -> None:
+    parsed = discs([track("1a", "One, part a"), heading("Interlude"), track("1b", "One, part b"), track("2", "Two")])
+
+    assert parsed == {"1": ["1A", "1B", "2"]}
+
+
 def test_as_before_one_work_numbered_by_its_parts_stays_as_written() -> None:
     # "1.1", "1.2": one track's parts on a single CD, not disc 1's tracks.
     parsed = discs([track("1.1", "Part one"), track("1.2", "Part two")])
