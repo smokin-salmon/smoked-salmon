@@ -149,6 +149,39 @@ def test_a_name_cp1252_cannot_hold_is_left_and_warned_about(tmp_path, capsys) ->
     assert playlist.read_bytes() == "01.flac\n2.flac\ncaf\xe9\n".encode("cp1252")
     captured = capsys.readouterr()
     assert "cp1252 cannot hold" in captured.out
+    # Only ASCII names were renamed, so its "café", naming no file, is no sign of another code page.
+    assert "may not be its encoding" not in captured.out
+
+
+@pytest.mark.parametrize(("code_page", "name"), [("cp1251", "Привет"), ("shift_jis", "日本")])
+def test_a_cue_in_another_code_page_is_warned_about_where_its_names_did_not_follow(
+    tmp_path, capsys, code_page: str, name: str
+) -> None:
+    """EAC writes cue sheets in the system's code page, which reads as cp1252 without error but names nothing."""
+    _tracks(tmp_path, f"01 {name}.flac", "02 b.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_bytes(f'FILE "01 {name}.flac" WAVE\r\nFILE "02 b.flac" WAVE\r\n'.encode(code_page))
+
+    rewrite_playlists(
+        str(tmp_path), _rename(tmp_path, (f"01 {name}.flac", f"01. {name}.flac"), ("02 b.flac", "02. B.flac"))
+    )
+
+    assert cue.read_bytes() == f'FILE "01 {name}.flac" WAVE\r\nFILE "02. B.flac" WAVE\r\n'.encode(code_page)
+    assert "a.cue: read as cp1252, which may not be its encoding" in capsys.readouterr().out
+
+
+def test_as_before_a_true_cp1252_cue_is_not_warned_about(tmp_path, capsys) -> None:
+    """An untouched name that is there, and a name that was never there, read right as cp1252: nothing to check."""
+    _tracks(tmp_path, "01 Café.flac", "02 Où.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_bytes('FILE "01 Café.flac" WAVE\r\nFILE "02 Où.flac" WAVE\r\nFILE "03.flac" WAVE\r\n'.encode("cp1252"))
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("01 Café.flac", "01. Été.flac")))
+
+    assert cue.read_bytes() == (
+        'FILE "01. Été.flac" WAVE\r\nFILE "02 Où.flac" WAVE\r\nFILE "03.flac" WAVE\r\n'.encode("cp1252")
+    )
+    assert capsys.readouterr().out == ""
 
 
 # The two places that rename
