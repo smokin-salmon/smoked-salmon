@@ -51,8 +51,9 @@ RELEASE_TYPES = {
 _RE_DISC_TRACK = re.compile(r"(?:CD|SACD)?(\d+)-(\S+)")
 # A disc's first position: seen again on that disc, its numbering or a record's sides start again.
 _FIRST_POSITIONS = {"1", "A1"}
-# "1.1", "2.1": a disc and track when the whole tracklist is numbered so; else the dot numbers a track's parts ("12.1").
-_RE_DOTTED = re.compile(r"\d+\.\d+")
+# "1.1", "2.1": a disc and track when every numbered position is so, over more than one disc; else the dot numbers a
+# track's parts ("12.1", or "1.1" and "1.2" of one work).
+_RE_DOTTED = re.compile(r"(\d+)\.\d+")
 
 
 def _clean_discogs_position(position: str) -> tuple[int | None, str]:
@@ -77,7 +78,24 @@ def _starts_a_disc(number: str, on_disc: dict, after_heading: bool) -> bool:
     alone starts none: headings also group one disc's tracks (a record's side, a composer's works)."""
     if number in on_disc and (after_heading or number in _FIRST_POSITIONS):
         return True
-    return after_heading and number.isdecimal() and any(n.isdecimal() and int(n) >= int(number) for n in on_disc)
+    # A part goes back by its number: "1a" after "2" does, "3a" after "2" doesn't.
+    lead = _lead_number(number)
+    return (
+        after_heading
+        and lead is not None
+        and any((n := _lead_number(other)) is not None and n >= lead for other in on_disc)
+    )
+
+
+def _numbered(position: str) -> bool:
+    """Whether a position numbers its track at all: "-" and "" don't."""
+    return any(char.isalnum() for char in position)
+
+
+def _lead_number(number: str) -> int | None:
+    """The number a track number starts with ("1" of "1A"), or None ("A1", "-")."""
+    match = re.match(r"\d+", number)
+    return int(match[0]) if match else None
 
 
 class Scraper(DiscogsBase, MetadataMixin):
@@ -126,9 +144,9 @@ class Scraper(DiscogsBase, MetadataMixin):
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
-        dotted = all(
-            _RE_DOTTED.fullmatch(str(t.get("position", "")).strip()) for t in soup["tracklist"] if t["type_"] == "track"
-        )
+        positions = (str(t.get("position", "")).strip() for t in soup["tracklist"] if t["type_"] == "track")
+        matches = [_RE_DOTTED.fullmatch(position) for position in positions if _numbered(position)]
+        dotted = all(matches) and len({match[1] for match in matches if match}) > 1
         after_heading = False
         for track in soup["tracklist"]:
             if track["type_"] == "heading":
@@ -141,7 +159,7 @@ class Scraper(DiscogsBase, MetadataMixin):
                 elif _starts_a_disc(track_num, tracks.get(str(cur_disc), {}), after_heading):
                     cur_disc += 1
                 # An unnumbered track ("-") after a heading leaves the restart to the next.
-                after_heading = after_heading and not any(char.isalnum() for char in track_num)
+                after_heading = after_heading and not _numbered(track_num)
                 disc_str = str(cur_disc)
                 disc_num = cur_disc
 
