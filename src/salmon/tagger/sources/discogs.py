@@ -46,26 +46,38 @@ RELEASE_TYPES = {
 }
 
 
-def _clean_discogs_position(position: str, default_disc: int) -> tuple[str, str]:
-    """Parse raw Discogs position string into clean disc and track numbers.
+# A disc and what follows it: "2-15", a box set's "CD2-15", or "2-1a", a track's part. A video disc's ("DVD1-1")
+# stays as written, so its entries never take a CD's track numbers.
+_RE_DISC_TRACK = re.compile(r"(?:CD|SACD)?(\d+)-(\S+)")
+# A disc's first position: seen again on that disc, its numbering or a record's sides start again.
+_FIRST_POSITIONS = {"1", "A1"}
+# "1.1", "2.1": a disc and track when the whole tracklist is numbered so; else the dot numbers a track's parts ("12.1").
+_RE_DOTTED = re.compile(r"\d+\.\d+")
+
+
+def _clean_discogs_position(position: str) -> tuple[int | None, str]:
+    """A Discogs position's disc (None when it names none) and track number.
 
     Examples:
-        '1-01' -> ('1', '1')
-        '2-15' -> ('2', '15')
-        '01'   -> ('1', '1')
+        '1-01'   -> (1, '1')
+        'CD2-15' -> (2, '15')
+        '2-1a'   -> (2, '2-1A')
+        '01'     -> (None, '1')
+        'A1'     -> (None, 'A1')
     """
     pos = str(position).strip().upper()
+    if match := _RE_DISC_TRACK.fullmatch(pos):
+        return int(match[1]), (str(int(match[2])) if match[2].isdecimal() else pos)
+    return None, (str(int(pos)) if pos.isdecimal() else pos)
 
-    # Handles "1-01", "2-15" multi-disc format
-    match = re.match(r"^(\d+)-(\d+)$", pos)
-    if match:
-        return str(int(match[1])), str(int(match[2]))
 
-    # Handles "01", "02", "1"
-    if pos.isdecimal():
-        return str(default_disc), str(int(pos))
-
-    return str(default_disc), pos
+def _starts_a_disc(number: str, on_disc: dict, after_heading: bool) -> bool:
+    """Whether a track numbered `number`, its position naming no disc, starts the next one: the disc's first position
+    seen again on it, or, after a heading, numbering that goes back ("1" after "12", a side's "A" again). A heading
+    alone starts none: headings also group one disc's tracks (a record's side, a composer's works)."""
+    if number in on_disc and (after_heading or number in _FIRST_POSITIONS):
+        return True
+    return after_heading and number.isdecimal() and any(n.isdecimal() and int(n) >= int(number) for n in on_disc)
 
 
 class Scraper(DiscogsBase, MetadataMixin):
@@ -114,13 +126,24 @@ class Scraper(DiscogsBase, MetadataMixin):
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
+        dotted = all(
+            _RE_DOTTED.fullmatch(str(t.get("position", "")).strip()) for t in soup["tracklist"] if t["type_"] == "track"
+        )
+        after_heading = False
         for track in soup["tracklist"]:
-            if track["type_"] == "heading" and tracks:
-                cur_disc += 1
+            if track["type_"] == "heading":
+                after_heading = True
             elif track["type_"] == "track":
-                raw_pos = track.get("position", "")
-                disc_str, track_num = _clean_discogs_position(raw_pos, cur_disc)
-                disc_num = int(disc_str)
+                position = str(track.get("position", ""))
+                disc, track_num = _clean_discogs_position(position.replace(".", "-") if dotted else position)
+                if disc is not None:
+                    cur_disc = disc
+                elif _starts_a_disc(track_num, tracks.get(str(cur_disc), {}), after_heading):
+                    cur_disc += 1
+                # An unnumbered track ("-") after a heading leaves the restart to the next.
+                after_heading = after_heading and not any(char.isalnum() for char in track_num)
+                disc_str = str(cur_disc)
+                disc_num = cur_disc
 
                 artists, variations = parse_credits(soup["artists"], track)
                 tracks[disc_str][track_num] = self.generate_track(

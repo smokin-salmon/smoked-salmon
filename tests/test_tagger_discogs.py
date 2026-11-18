@@ -90,7 +90,7 @@ def test_discogs_plain_positions_stay_on_a_single_disc() -> None:
     assert tracks["1"]["3"]["disc#"] == "1"
 
 
-def test_discogs_headings_with_plain_positions_still_split_by_heading() -> None:
+def test_discogs_headings_with_plain_positions_split_where_the_numbering_restarts() -> None:
     scraper = Scraper()
     soup = make_soup(
         [
@@ -130,6 +130,141 @@ def test_discogs_vinyl_style_positions_keep_their_side_prefixed_keys() -> None:
     assert tracks["1"]["A1"]["disc#"] == "1"
     assert tracks["1"]["B1"]["title"] == "Side B Track One"
     assert tracks["1"]["B1"]["disc#"] == "1"
+
+
+def discs(tracklist: list[dict]) -> dict[str, list[str]]:
+    """Each disc parse_tracks gives, with its track numbers in order."""
+    tracks = asyncio.run(Scraper().parse_tracks(make_soup(tracklist)))
+    return {disc: list(numbers) for disc, numbers in tracks.items()}
+
+
+def test_a_vinyl_side_heading_does_not_start_a_disc() -> None:
+    # Side letters start again on each side, but one record is one disc (#984, #922).
+    tracklist = [heading("Side A"), track("A1", "One"), track("A2", "Two"), heading("Side B"), track("B1", "Three")]
+
+    assert discs(tracklist) == {"1": ["A1", "A2", "B1"]}
+
+
+def test_a_heading_inside_one_disc_does_not_start_a_disc() -> None:
+    # Headings that group one disc's tracks by composer, numbered on through them (Reiner, Vienna).
+    tracklist = [heading("Strauss"), track("1", "One"), track("2", "Two"), heading("Lehár"), track("3", "Three")]
+
+    assert discs(tracklist) == {"1": ["1", "2", "3"]}
+
+
+def test_numbering_back_to_one_starts_a_disc_without_a_heading() -> None:
+    assert discs([track("1", "One"), track("2", "Two"), track("1", "Three"), track("2", "Four")]) == {
+        "1": ["1", "2"],
+        "2": ["1", "2"],
+    }
+
+
+def test_as_before_a_second_record_numbered_from_a1_again_starts_a_disc() -> None:
+    tracklist = [heading("LP 1"), track("A1", "One"), track("B1", "Two"), heading("LP 2"), track("A1", "Three")]
+
+    assert discs(tracklist) == {"1": ["A1", "B1"], "2": ["A1"]}
+
+
+def test_a_box_set_position_names_its_disc() -> None:
+    tracklist = [
+        heading("CD 1"),
+        track("CD1-1", "One"),
+        track("CD1-2", "Two"),
+        heading("CD 2"),
+        track("CD2-1", "Three"),
+    ]
+
+    assert discs(tracklist) == {"1": ["1", "2"], "2": ["1"]}
+
+
+@pytest.mark.parametrize("position", ["CD1-1", "cd1-1", "SACD1-1"])
+def test_a_medium_before_the_disc_and_track_is_read(position: str) -> None:
+    assert _clean_discogs_position(position) == (1, "1")
+
+
+def test_a_release_numbered_disc_dot_track_throughout_reads_its_discs() -> None:
+    tracklist = [
+        heading("Album"),
+        track("1.1", "One"),
+        track("1.2", "Two"),
+        heading("Instrumentals"),
+        track("2.1", "Three"),
+    ]
+
+    assert discs(tracklist) == {"1": ["1", "2"], "2": ["1"]}
+
+
+def test_as_before_a_dot_numbering_a_tracks_parts_stays_as_written() -> None:
+    # A single CD whose 12th track has parts: "12.1" is no disc.
+    assert discs([track("11", "Eleven"), track("12.1", "Part one"), track("12.2", "Part two")]) == {
+        "1": ["11", "12.1", "12.2"]
+    }
+
+
+def test_as_before_an_unnumbered_track_before_a1_does_not_start_a_disc() -> None:
+    tracklist = [track("-", "Introduction"), track("A1", "One"), track("B1", "Two")]
+
+    assert discs(tracklist) == {"1": ["-", "A1", "B1"]}
+
+
+def test_as_before_a_video_position_stays_as_written() -> None:
+    # Read as a disc, a DVD's entries would take the CD's track numbers.
+    assert discs([track("1-1", "One"), track("DVD1-1", "Film")]) == {"1": ["1", "DVD1-1"]}
+
+
+def test_as_before_a_disc_and_track_with_a_part_letter_stays_on_its_disc() -> None:
+    tracklist = [track("1-1", "One"), heading("Disc 2"), track("2-0a", "Intro, part a"), track("2-1", "Two")]
+
+    assert discs(tracklist) == {"1": ["1"], "2": ["2-0A", "1"]}
+
+
+def test_as_before_a_disc_numbered_0_is_a_disc_of_its_own() -> None:
+    assert discs([track("0-1", "Zero"), track("1-1", "One")]) == {"0": ["1"], "1": ["1"]}
+
+
+def test_as_before_a_second_record_of_one_track_sides_starts_a_disc() -> None:
+    tracklist = [heading("LP 1"), track("A", "One"), track("B", "Two"), heading("LP 2"), track("A", "Three")]
+
+    assert discs(tracklist) == {"1": ["A", "B"], "2": ["A"]}
+
+
+def test_an_unnumbered_track_after_a_heading_leaves_the_restart_to_the_next() -> None:
+    # The "-" stays on the disc before; the second record's "A" still starts its own, so none is written over.
+    tracklist = [heading("LP 1"), track("A", "One"), track("B", "Two"), heading("LP 2"), track("-", "Intro")]
+    tracklist.append(track("A", "Three"))
+
+    assert discs(tracklist) == {"1": ["A", "B", "-"], "2": ["A"]}
+
+
+def test_as_before_numbering_going_back_after_a_heading_starts_a_disc() -> None:
+    # Disc 1's first track has parts, so its "1" is never seen again: the "2" would otherwise replace disc 1's.
+    tracklist = [
+        heading("CD 1"),
+        track("1a", "One"),
+        track("2", "Two"),
+        heading("CD 2"),
+        track("1", "Three"),
+        track("2", "Four"),
+    ]
+
+    assert discs(tracklist) == {"1": ["1A", "2"], "2": ["1", "2"]}
+
+
+def test_as_before_a_dvd_numbered_from_1_after_a_heading_takes_no_cd_track() -> None:
+    tracklist = [track("1a", "One"), track("2", "Two"), heading("DVD"), track("1", "Film"), track("2", "Extra")]
+
+    assert discs(tracklist) == {"1": ["1A", "2"], "2": ["1", "2"]}
+
+
+def test_as_before_a_repeated_position_after_the_first_does_not_start_a_disc() -> None:
+    # #968: a repeated position is a tracklist error, not a new disc.
+    tracklist = [heading("Live"), track("1", "One"), track("2", "Two"), track("2", "Again")]
+
+    assert list(discs(tracklist)) == ["1"]
+
+
+def test_a_second_record_from_a1_again_starts_a_disc_without_a_heading() -> None:
+    assert discs([track("A1", "One"), track("B1", "Two"), track("A1", "Three")]) == {"1": ["A1", "B1"], "2": ["A1"]}
 
 
 def artist(name: str, join: str = "") -> dict:
@@ -289,9 +424,9 @@ def test_discogs_remix_credit_does_not_add_a_second_version_to_the_title() -> No
 
 
 def test_a_discogs_position_with_a_superscript_stays_as_written() -> None:
-    assert _clean_discogs_position("1²", 2) == ("2", "1²")
+    assert _clean_discogs_position("1²") == (None, "1²")
 
 
-@pytest.mark.parametrize(("position", "parsed"), [("03", ("2", "3")), ("a1", ("2", "A1")), ("1-05", ("1", "5"))])
-def test_a_discogs_position_is_read_as_before(position: str, parsed: tuple[str, str]) -> None:
-    assert _clean_discogs_position(position, 2) == parsed
+@pytest.mark.parametrize(("position", "parsed"), [("03", (None, "3")), ("a1", (None, "A1")), ("1-05", (1, "5"))])
+def test_a_discogs_position_is_read_as_before(position: str, parsed: tuple[int | None, str]) -> None:
+    assert _clean_discogs_position(position) == parsed

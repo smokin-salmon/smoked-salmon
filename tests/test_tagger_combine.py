@@ -483,7 +483,7 @@ def source_track(num: str, disc: str, tracktotal: int, disctotal: int) -> dict:
 
 
 def test_discogs_vinyl_sides_keep_the_files_numbers_and_give_no_totals():
-    # Discogs release 74364 (#765): heading, S, heading, 5 parse as disc 1 track S and disc 2 track 5.
+    # Discogs release 74364 (#765): heading, S, heading, 5, one record, parse as disc 1 tracks S and 5 (#984).
     soup = {
         "artists": [{"name": "Adam F"}],
         "tracklist": [
@@ -494,7 +494,7 @@ def test_discogs_vinyl_sides_keep_the_files_numbers_and_give_no_totals():
         ],
     }
     meta = asyncio.run(Scraper().parse_tracks(soup))
-    assert set(meta) == {"1", "2"}
+    assert {disc: list(numbers) for disc, numbers in meta.items()} == {"1": ["S", "5"]}
 
     combined = combine_tracks(local_files("01", "02"), meta, True)
 
