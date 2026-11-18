@@ -856,13 +856,26 @@ def test_a_title_naming_only_some_of_the_guests_keeps_the_artist() -> None:
     assert _lines(description) == ["[b]01.[/b] Sullivan Murphy (feat. Bob & Carol) - Song (feat. Bob) [i](3:20)[/i]"]
 
 
-def test_an_artists_name_the_title_does_not_name_is_no_guest() -> None:
-    # ARTISTS repeats the album's artist; the title credits someone else, whom the tags don't name.
-    tracks = _tracks({"artist": ["Sullivan Murphy"], "artists": ["Sullivan Murphy"], "title": "Song (feat. Bob)"})
+@pytest.mark.parametrize("title", ["Song (feat. Bob)", "Sullivan Murphy's Song (feat. Bob)"])
+def test_an_artists_name_the_title_does_not_credit_is_no_guest(title: str) -> None:
+    # ARTISTS repeats the album's artist; the title credits someone else, whom the tags don't name, if it names the
+    # artist outside its credit.
+    tracks = _tracks({"artist": ["Sullivan Murphy"], "artists": ["Sullivan Murphy"], "title": title})
 
     description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
 
-    assert _lines(description) == ["[b]01.[/b] Sullivan Murphy - Song (feat. Bob) [i](3:20)[/i]"]
+    assert _lines(description) == [f"[b]01.[/b] Sullivan Murphy - {title} [i](3:20)[/i]"]
+
+
+def test_a_guests_name_inside_a_title_word_is_not_named() -> None:
+    # "Ann" in "Anniversary" is no credit: Ann would be named nowhere if the line left the artist out.
+    tracks = _tracks({"artist": ["Sullivan Murphy (feat. Bob & Ann)"], "title": "Anniversary (feat. Bob)"})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == [
+        "[b]01.[/b] Sullivan Murphy (feat. Bob & Ann) - Anniversary (feat. Bob) [i](3:20)[/i]"
+    ]
 
 
 def test_as_before_a_guests_track_with_no_title_keeps_its_artist() -> None:

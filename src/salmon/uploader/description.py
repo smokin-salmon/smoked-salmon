@@ -111,10 +111,17 @@ def _with_guests(title: str, guests: list[str]) -> str | None:
     return f"{head} (feat. {join_artists(guests)}){tail}"
 
 
+# A title's credit and the names it holds: "feat. B & C", "(ft. B)", "featuring B", "(with B)", "[vs. B]".
+_RE_TITLE_CREDIT = re.compile(
+    r"(?:\b(?:feat|ft)\b\.?|\bfeaturing\b|[(\[]\s*(?:with|vs\.?)\s)\s*([^)\]]*)", flags=re.IGNORECASE
+)
+
+
 def _names_each(title: str, names: list[str]) -> bool:
-    """Whether a title names each of these, loosely: "Song (feat. B & C)" names B and C."""
-    plain = comparable(title)
-    return all(comparable(part) in plain for name in names for part in re_split(name))
+    """Whether a title's credit names each of these, whole: "Song (feat. B & C)" names B and C, "Anniversary
+    (feat. B)" doesn't name Ann, nor "Alice's Song (feat. B)" Alice."""
+    credited = {comparable(name) for credit in _RE_TITLE_CREDIT.finditer(title) for name in re_split(credit[1])}
+    return all(comparable(part) in credited for name in names for part in re_split(name))
 
 
 def _remixers(credits: list[tuple[str, str]], title: str | None) -> list[str]:
@@ -172,7 +179,7 @@ def _tag_credits(tags: Any, album: frozenset[str] | None) -> list[tuple[str, str
         for name, role in parse_artists(artists):
             if not (artist_is_the_album and role == "main"):
                 credits.append((name, role))
-            elif credit_in_title(tags.title or "", [name]) and _names_each(tags.title or "", [name]):
+            elif _names_each(tags.title or "", [name]):
                 credits.append((name, "guest"))
     credits += [(name, "remixer") for name in getattr(tags, "remixer", None) or []]
     return credits
