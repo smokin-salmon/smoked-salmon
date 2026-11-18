@@ -1,0 +1,1157 @@
+album = "Elton John, The Lockdown Sessions"
+why = "One artist's album of duets, some of them other artists' songs with him as a guest: tracks 6 (Gorillaz), 8 (Miley Cyrus) and 12 (Lil Nas X) are led by others with Elton John featured, the bonus-track shape. On track 3 the stores disagree: MusicBrainz and Discogs give Surfaces with Elton John featured, Deezer and Qobuz both as main. Track 12 has no Qobuz performers line."
+edition = "EMI 2021, 16 tracks, UPC 602438711611: Deezer 265764282 = MusicBrainz 3a823c2c = Discogs 21373180; Qobuz is UPC 0602438711857, the same 16 tracks in the same order."
+known_wrong = ["qobuz: each duet partner (Dua Lipa, Charlie Puth, Brandi Carlile and nine more) is a guessed guest: Qobuz names both MainArtist, and the album's artists[] lists only Elton John", "qobuz: on 3, where Qobuz names Surfaces and Elton John both MainArtist, Elton John is main and Surfaces a guess; Deezer has both main, MusicBrainz and Discogs Surfaces with Elton John featured", "qobuz: 12 has no performers line, so Elton John is main and its performer, Lil Nas X, a guessed guest", "qobuz: 7's 'Olly Alexander (Years & Years)' is read as one guest's name, where the other stores credit Years & Years as main", "musicbrainz: 8's 'Miley Cyrus feat. WATT, Elton John, Yo-Yo Ma, Robert Trujillo & Chad Smith' is read with every name main, Miley Cyrus as 'MILEY'", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so Elton John is main on 6, 8 and 12 and 6LACK, Andrew Watt, Yo-Yo Ma, Robert Trujillo and Chad Smith main on theirs", "merge: 7 credits 'Olly Alexander (Years & Years)' as a guest, and Years & Years nowhere", "output: ALBUMARTIST is 'Various', not Elton John"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz agree: Elton John the album's artist; Gorillaz, Miley Cyrus and Lil Nas X lead 6, 8 and 12 with Elton John featured (Qobuz has no line for 12, and gives Lil Nas X as its performer); 6LACK on 6, and Andrew Watt, Yo-Yo Ma, Robert Trujillo and Chad Smith on 8, featured; PNAU the remixer on 1; the other tracks name two or three mains"
+open = "Not judged by the test: the release-wide judge reads Elton John's guest credits on 6, 8 and 12 beside his main ones as 'main and guest at once', which here is right, and whether a duet partner is the release's main or guest is RED's call, not the stores'. Per track: 6, 8 and 12 led by their own artists with Elton John a guest; 3 open (Surfaces with Elton John featured, or both main)"
+
+[today.deezer]
+release = ["Elton John (main)", "Dua Lipa (main)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "Elton John (guest)", "6LACK (guest)", "Years & Years (main)", "Miley Cyrus (main)", "WATT (guest)", "Yo-Yo Ma (guest)", "Robert Trujillo (guest)", "Chad Smith (guest)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
+tracks = 16
+
+[today.musicbrainz]
+release = ["Elton John (main)", "Dua Lipa (main)", "PNAU (remixer)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Elton John (guest)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "6LACK (guest)", "Years & Years (main)", "MILEY (main)", "Andrew Watt (main)", "Yo‐Yo Ma (main)", "Robert Trujillo (main)", "Chad Smith (main)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
+tracks = 16
+
+[today.discogs]
+release = ["Elton John (main)", "Dua Lipa (main)", "Pnau (remixer)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Elton John (guest)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "6lack (guest)", "Years & Years (main)", "Miley Cyrus (main)", "Andrew Watt (guest)", "Chad Smith (guest)", "Robert Trujillo (guest)", "Yo-Yo Ma (guest)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
+tracks = 16
+
+[today.qobuz]
+release = ["Elton John (main)", "Dua Lipa (guest)", "PNAU (remixer)", "Young Thug (guest)", "Nicki Minaj (guest)", "Surfaces (guest)", "Charlie Puth (guest)", "Rina Sawayama (guest)", "Gorillaz (main)", "Elton John (guest)", "6LACK (guest)", "Olly Alexander (Years & Years) (guest)", "Miley Cyrus (main)", "Watt (guest)", "Yo-Yo Ma (guest)", "Robert Trujillo (guest)", "Chad Smith (guest)", "SG Lewis (guest)", "Brandi Carlile (guest)", "Jimmie Allen (guest)", "Lil Nas X (guest)", "Eddie Vedder (guest)", "Stevie Wonder (guest)", "Stevie Nicks (guest)", "Glen Campbell (guest)"]
+tracks = 16
+
+[today.merge]
+release = ["Elton John (main)", "Dua Lipa (main)", "PNAU (remixer)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "6LACK (main)", "Olly Alexander (Years & Years) (guest)", "Miley Cyrus (main)", "Yo-Yo Ma (main)", "Robert Trujillo (main)", "Chad Smith (main)", "Andrew Watt (main)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
+tracks = 16
+credits = ["1.1: Elton John (main), Dua Lipa (main), PNAU (remixer)", "1.2: Elton John (main), Young Thug (main), Nicki Minaj (main)", "1.3: Surfaces (main), Elton John (main)", "1.4: Elton John (main), Charlie Puth (main)", "1.5: Rina Sawayama (main), Elton John (main)", "1.6: Gorillaz (main), Elton John (main), 6LACK (main)", "1.7: Elton John (main), Olly Alexander (Years & Years) (guest)", "1.8: Miley Cyrus (main), Elton John (main), Yo-Yo Ma (main), Robert Trujillo (main), Chad Smith (main), Andrew Watt (main)", "1.9: Elton John (main), SG Lewis (main)", "1.10: Elton John (main), Brandi Carlile (main)", "1.11: Jimmie Allen (main), Elton John (main)", "1.12: Lil Nas X (main), Elton John (main)", "1.13: Elton John (main), Eddie Vedder (main)", "1.14: Elton John (main), Stevie Wonder (main)", "1.15: Elton John (main), Stevie Nicks (main)", "1.16: Glen Campbell (main), Elton John (main)"]
+
+[today.output]
+albumartist = "Various"
+tracks = ["Elton John & Dua Lipa | Cold Heart (PNAU Remix) | REMIXER PNAU", "Elton John, Young Thug, Nicki Minaj | Always Love You", "Surfaces & Elton John | Learn To Fly", "Elton John & Charlie Puth | After All", "Rina Sawayama & Elton John | Chosen Family", "Gorillaz, Elton John, 6LACK | The Pink Phantom", "Elton John (feat. Olly Alexander (Years & Years)) | It's A Sin", "Miley Cyrus, Elton John, Yo-Yo Ma, Robert Trujillo, Chad Smith, Andrew Watt | Nothing Else Matters", "Elton John & SG Lewis | Orbit", "Elton John & Brandi Carlile | Simple Things", "Jimmie Allen & Elton John | Beauty In The Bones", "Lil Nas X & Elton John | One Of Me", "Elton John & Eddie Vedder | E-Ticket", "Elton John & Stevie Wonder | Finish Line", "Elton John & Stevie Nicks | Stolen Car", "Glen Campbell & Elton John | I'm Not Going To Miss You"]
+
+[today."output-guests-in-title"]
+albumartist = "Various"
+tracks = ["Elton John & Dua Lipa | Cold Heart (PNAU Remix) | REMIXER PNAU", "Elton John, Young Thug, Nicki Minaj | Always Love You", "Surfaces & Elton John | Learn To Fly", "Elton John & Charlie Puth | After All", "Rina Sawayama & Elton John | Chosen Family", "Gorillaz, Elton John, 6LACK | The Pink Phantom", "Elton John | It's A Sin (feat. Olly Alexander (Years & Years))", "Miley Cyrus, Elton John, Yo-Yo Ma, Robert Trujillo, Chad Smith, Andrew Watt | Nothing Else Matters", "Elton John & SG Lewis | Orbit", "Elton John & Brandi Carlile | Simple Things", "Jimmie Allen & Elton John | Beauty In The Bones", "Lil Nas X & Elton John | One Of Me", "Elton John & Eddie Vedder | E-Ticket", "Elton John & Stevie Wonder | Finish Line", "Elton John & Stevie Nicks | Stolen Car", "Glen Campbell & Elton John | I'm Not Going To Miss You"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's artists as its own plain ARTIST value, guests included,
+# the title with Deezer's version, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Cold Heart (PNAU Remix)"]
+artist = ["Elton John", "Dua Lipa", "PNAU"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Always Love You"]
+artist = ["Elton John", "Young Thug", "Nicki Minaj"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Learn To Fly"]
+artist = ["Surfaces", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["After All"]
+artist = ["Elton John", "Charlie Puth"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Chosen Family"]
+artist = ["Rina Sawayama", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["The Pink Phantom"]
+artist = ["Gorillaz", "Elton John", "6LACK"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["It's a sin (global reach mix)"]
+artist = ["Elton John", "Olly Alexander"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Nothing Else Matters"]
+artist = ["Miley Cyrus", "WATT", "Elton John", "Yo-Yo Ma", "Robert Trujillo", "Chad Smith"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Orbit"]
+artist = ["Elton John", "SG Lewis"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Simple Things"]
+artist = ["Elton John", "Brandi Carlile"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Beauty In The Bones"]
+artist = ["Jimmie Allen", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["One Of Me"]
+artist = ["Lil Nas X", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["E-Ticket"]
+artist = ["Elton John", "Eddie Vedder"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Finish Line"]
+artist = ["Elton John", "Stevie Wonder"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Stolen Car"]
+artist = ["Elton John", "Stevie Nicks"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["I'm Not Gonna Miss You"]
+artist = ["Glen Campbell", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 265764282,
+ "title": "The Lockdown Sessions",
+ "upc": "602438711611",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 132,
+    "name": "Pop"
+   }
+  ]
+ },
+ "label": "EMI",
+ "release_date": "2021-10-22",
+ "tracklist": [
+  {
+   "SNG_ID": "1522676892",
+   "SNG_TITLE": "Cold Heart",
+   "VERSION": "(PNAU Remix)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Dua Lipa"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBUM72104705",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676902",
+   "SNG_TITLE": "Always Love You",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Young Thug",
+     "Nicki Minaj"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBUM72105172",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676912",
+   "SNG_TITLE": "Learn To Fly",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Surfaces",
+     "Elton John"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBUM72105887",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676922",
+   "SNG_TITLE": "After All",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Charlie Puth"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBUM72105396",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676932",
+   "SNG_TITLE": "Chosen Family",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rina Sawayama",
+     "Elton John"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBUM72105818",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676942",
+   "SNG_TITLE": "The Pink Phantom",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Elton John",
+     "6LACK"
+    ],
+    "main_artist": [
+     "Gorillaz"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBUM72105820",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676952",
+   "SNG_TITLE": "It's a sin",
+   "VERSION": "(global reach mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Years & Years"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBUM72105509",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676962",
+   "SNG_TITLE": "Nothing Else Matters",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "WATT",
+     "Elton John",
+     "Yo-Yo Ma",
+     "Robert Trujillo",
+     "Chad Smith"
+    ],
+    "main_artist": [
+     "Miley Cyrus"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "QMKHM2100037",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676972",
+   "SNG_TITLE": "Orbit",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "SG Lewis"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBUM72105136",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522676982",
+   "SNG_TITLE": "Simple Things",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Brandi Carlile"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBUM72105174",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522677002",
+   "SNG_TITLE": "Beauty In The Bones",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Jimmie Allen",
+     "Elton John"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBUM72105821",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522677012",
+   "SNG_TITLE": "One Of Me",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Elton John"
+    ],
+    "main_artist": [
+     "Lil Nas X"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USSM12105735",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "1522677022",
+   "SNG_TITLE": "E-Ticket",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Eddie Vedder"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "GBUM72105173",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522677032",
+   "SNG_TITLE": "Finish Line",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Stevie Wonder"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "GBUM72105169",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522677042",
+   "SNG_TITLE": "Stolen Car",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elton John",
+     "Stevie Nicks"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "15",
+   "ISRC": "GBUM72105171",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "1522677052",
+   "SNG_TITLE": "I'm Not Gonna Miss You",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Glen Campbell",
+     "Elton John"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "16",
+   "ISRC": "GBUM72105841",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="3a823c2c-b8fa-464a-8942-636dd2d558a5"><title>The Lockdown Sessions</title><artist-credit><name-credit><artist><name>Elton John</name></artist></name-credit></artist-credit><date>2021-10-22</date><release-event-list><release-event><date>2021-10-22</date></release-event></release-event-list><barcode>00602438711611</barcode><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>EMI</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Cold Heart (PNAU remix)</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>Dua Lipa</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Rafael Fadul</name></artist></relation><relation type="engineer"><artist><name>Peter Mayes</name></artist></relation><relation type="mix"><artist><name>Josh Gudwin</name></artist></relation><relation type="producer"><artist><name>Nick Littlemore</name></artist></relation><relation type="producer"><artist><name>Sam Littlemore</name></artist></relation><relation type="producer"><artist><name>Peter Mayes</name></artist></relation><relation type="producer"><artist><name>Mark Schick</name></artist></relation><relation type="programming"><artist><name>Nick Littlemore</name></artist></relation><relation type="programming"><artist><name>Nick Littlemore</name></artist></relation><relation type="programming"><artist><name>Nick Littlemore</name></artist></relation><relation type="programming"><artist><name>Sam Littlemore</name></artist></relation><relation type="programming"><artist><name>Sam Littlemore</name></artist></relation><relation type="programming"><artist><name>Sam Littlemore</name></artist></relation><relation type="programming"><artist><name>Peter Mayes</name></artist></relation><relation type="programming"><artist><name>Peter Mayes</name></artist></relation><relation type="programming"><artist><name>Peter Mayes</name></artist></relation><relation type="remixer"><artist><name>PNAU</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Dua Lipa</name></artist></relation></relation-list><relation-list target-type="url"><relation type="free streaming" /><relation type="free streaming" /><relation type="free streaming" /><relation type="free streaming" /><relation type="free streaming" /><relation type="other databases" /><relation type="purchase for download" /><relation type="streaming" /><relation type="streaming" /></relation-list></recording></track><track><position>2</position><number>2</number><recording><title>Always Love You</title><artist-credit><name-credit joinphrase=", "><artist><name>Elton John</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Young Thug</name></artist></name-credit><name-credit><artist><name>Nicki Minaj</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Chris Galland</name></artist></relation><relation type="engineer"><artist><name>Paul LaMalfa</name></artist></relation><relation type="engineer"><artist><name>Marco Sonzini</name></artist></relation><relation type="instrument"><artist><name>Louis Bell</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="mix"><artist><name>Scott Desmarais</name></artist></relation><relation type="mix"><artist><name>Robin Florent</name></artist></relation><relation type="mix"><artist><name>Jeremie Inhaber</name></artist></relation><relation type="mix"><artist><name>Manny Marroquin</name></artist></relation><relation type="producer"><artist><name>Louis Bell</name></artist></relation><relation type="producer"><artist><name>Andrew Watt</name></artist></relation><relation type="programming"><artist><name>Louis Bell</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Nicki Minaj</name></artist></relation><relation type="vocal"><artist><name>Andrew Watt</name></artist></relation><relation type="vocal"><artist><name>Young Thug</name></artist></relation></relation-list></recording></track><track><position>3</position><number>3</number><recording><title>Learn to Fly</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Surfaces</name></artist></name-credit><name-credit><artist><name>Elton John</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="mix"><artist><name>Alex Sacco</name></artist></relation><relation type="mix"><artist><name>Luke Swirsky</name></artist></relation><relation type="producer"><artist><name>Forrest Frank</name></artist></relation><relation type="producer"><artist><name>Colin Padalecki</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation></relation-list></recording></track><track><position>4</position><number>4</number><recording><title>After All</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>Charlie Puth</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Chris Galland</name></artist></relation><relation type="engineer"><artist><name>Charlie Puth</name></artist></relation><relation type="instrument"><artist><name>Janene Bjerger</name></artist></relation><relation type="instrument"><artist><name>David Bukovinszky</name></artist></relation><relation type="instrument"><artist><name>Mattias Bylund</name></artist></relation><relation type="instrument"><artist><name>Wojtek Goral</name></artist></relation><relation type="instrument"><artist><name>Magnus Johansson</name></artist></relation><relation type="instrument"><artist><name>Mattias Johansson</name></artist></relation><relation type="instrument"><artist><name>Peter Noos Johansson</name></artist></relation><relation type="instrument"><artist><name>Tomas Jönsson</name></artist></relation><relation type="instrument"><artist><name>Tomas Jönsson</name></artist></relation><relation type="instrument"><artist><name>Charlie Puth</name></artist></relation><relation type="instrument"><artist><name>Charlie Puth</name></artist></relation><relation type="instrument arranger"><artist><name>Mattias Bylund</name></artist></relation><relation type="instrument arranger"><artist><name>Mattias Bylund</name></artist></relation><relation type="mix"><artist><name>Scott Desmarais</name></artist></relation><relation type="mix"><artist><name>Robin Florent</name></artist></relation><relation type="mix"><artist><name>Jeremie Inhaber</name></artist></relation><relation type="mix"><artist><name>Manny Marroquin</name></artist></relation><relation type="mix"><artist><name>Charlie Puth</name></artist></relation><relation type="producer"><artist><name>Charlie Puth</name></artist></relation><relation type="programming"><artist><name>Charlie Puth</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Charlie Puth</name></artist></relation></relation-list></recording></track><track><position>5</position><number>5</number><recording><title>Chosen Family</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Rina Sawayama</name></artist></name-credit><name-credit><artist><name>Elton John</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Matt Doughty</name></artist></relation><relation type="instrument"><artist><name>Danny L Harle</name></artist></relation><relation type="instrument"><artist><name>Danny L Harle</name></artist></relation><relation type="instrument"><artist><name>Danny L Harle</name></artist></relation><relation type="instrument"><artist><name>Danny L Harle</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="mix"><artist><name>Tim Rowkins</name></artist></relation><relation type="producer"><artist><name>Danny L Harle</name></artist></relation><relation type="programming"><artist><name>Danny L Harle</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Rina Sawayama</name></artist></relation></relation-list></recording></track><track><position>6</position><number>6</number><recording><title>The Pink Phantom</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Gorillaz</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>6LACK</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="instrument"><artist><name>Damon Albarn</name></artist></relation><relation type="instrument"><artist><name>Damon Albarn</name></artist></relation><relation type="instrument"><artist><name>Gorillaz</name></artist></relation><relation type="instrument"><artist><name>Gorillaz</name></artist></relation><relation type="instrument"><artist><name>Gorillaz</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="mix"><artist><name>Stephen Sedgwick</name></artist></relation><relation type="producer"><artist><name>Damon Albarn</name></artist></relation><relation type="producer"><artist><name>Gorillaz</name></artist></relation><relation type="producer"><artist><name>Jamie Hewlett</name></artist></relation><relation type="producer"><artist><name>Remi Kabaka Jr.</name></artist></relation><relation type="programming"><artist><name>Remi Kabaka Jr.</name></artist></relation><relation type="vocal"><artist><name>6LACK</name></artist></relation><relation type="vocal"><artist><name>Damon Albarn</name></artist></relation><relation type="vocal"><artist><name>Gorillaz</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation></relation-list></recording></track><track><position>7</position><number>7</number><recording><title>It’s a sin (global reach mix)</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>Years &amp; Years</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Davide Rossi</name></artist></relation><relation type="instrument arranger"><artist><name>Davide Rossi</name></artist></relation><relation type="mix"><artist><name>Stuart Price</name></artist></relation><relation type="producer"><artist><name>Pet Shop Boys</name></artist></relation><relation type="producer"><artist><name>Stuart Price</name></artist></relation><relation type="programming"><artist><name>Stuart Price</name></artist></relation><relation type="programming"><artist><name>Stuart Price</name></artist></relation><relation type="recording"><artist><name>Toby Alington</name></artist></relation><relation type="recording"><artist><name>Alex Robinson</name></artist></relation><relation type="recording"><artist><name>Harpaal Sanghera</name></artist></relation><relation type="vocal"><artist><name>Olly Alexander</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation></relation-list></recording></track><track><position>8</position><number>8</number><artist-credit><name-credit joinphrase=" feat. "><name>Miley Cyrus</name><artist><name>MILEY</name></artist></name-credit><name-credit joinphrase=", "><name>WATT</name><artist><name>Andrew Watt</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Elton John</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Yo‐Yo Ma</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Robert Trujillo</name></artist></name-credit><name-credit><artist><name>Chad Smith</name></artist></name-credit></artist-credit><recording><title>Nothing Else Matters</title><artist-credit><name-credit joinphrase=", "><name>Miley Cyrus</name><artist><name>MILEY</name></artist></name-credit><name-credit joinphrase=", "><name>Watt</name><artist><name>Andrew Watt</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Elton John</name></artist></name-credit><name-credit joinphrase=", "><name>Yo-Yo Ma</name><artist><name>Yo‐Yo Ma</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Robert Trujillo</name></artist></name-credit><name-credit><artist><name>Chad Smith</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Paul LaMalfa</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Yo‐Yo Ma</name></artist></relation><relation type="instrument"><artist><name>Chad Smith</name></artist></relation><relation type="instrument"><artist><name>Robert Trujillo</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument arranger"><artist><name>Mike Block</name></artist></relation><relation type="instrument arranger"><artist><name>Andrew Watt</name></artist></relation><relation type="mix"><artist><name>Caesar Edmunds</name></artist></relation><relation type="mix"><artist><name>Alan Moulder</name></artist></relation><relation type="producer"><artist><name>Andrew Watt</name></artist></relation><relation type="vocal"><artist><name>MILEY</name></artist></relation></relation-list></recording></track><track><position>9</position><number>9</number><recording><title>Orbit</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>SG Lewis</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>SG Lewis</name></artist></relation><relation type="mix"><artist><name>Josh Gudwin</name></artist></relation><relation type="producer"><artist><name>SG Lewis</name></artist></relation><relation type="programming"><artist><name>SG Lewis</name></artist></relation><relation type="vocal"><artist><name>Sophie Francis Cook</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation></relation-list></recording></track><track><position>10</position><number>10</number><recording><title>Simple Things</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>Brandi Carlile</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Paul LaMalfa</name></artist></relation><relation type="engineer"><artist><name>Marco Sonzini</name></artist></relation><relation type="engineer"><artist><name>Bobby Tis</name></artist></relation><relation type="engineer"><artist><name>Nate Yaccino</name></artist></relation><relation type="instrument"><artist><name>Chris Chaney</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Abe Laboriel Jr.</name></artist></relation><relation type="instrument"><artist><name>Abe Laboriel Jr.</name></artist></relation><relation type="instrument"><artist><name>James Poyser</name></artist></relation><relation type="instrument"><artist><name>Matthew Pynn</name></artist></relation><relation type="instrument"><artist><name>Derek Trucks</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="mix"><artist><name>Paul LaMalfa</name></artist></relation><relation type="mix"><artist><name>Marco Sonzini</name></artist></relation><relation type="producer"><artist><name>Andrew Watt</name></artist></relation><relation type="vocal"><artist><name>Brandi Carlile</name></artist></relation><relation type="vocal"><artist><name>Brandi Carlile</name></artist></relation><relation type="vocal"><artist><name>Phil Hanseroth</name></artist></relation><relation type="vocal"><artist><name>Tim Hanseroth</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Andrew Watt</name></artist></relation></relation-list></recording></track><track><position>11</position><number>11</number><recording><title>Beauty in the Bones</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Jimmie Allen</name></artist></name-credit><name-credit><artist><name>Elton John</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="instrument"><artist><name>Phil Bentley</name></artist></relation><relation type="instrument"><artist><name>Taylor Bird</name></artist></relation><relation type="instrument"><artist><name>Geoffro</name></artist></relation><relation type="instrument"><artist><name>Geoffro</name></artist></relation><relation type="mix"><artist><name>Taylor Bird</name></artist></relation><relation type="producer"><artist><name>Taylor Bird</name></artist></relation><relation type="producer"><artist><name>Tom Norris</name></artist></relation><relation type="producer"><artist><name>Bruce Roberts</name></artist></relation><relation type="programming"><artist><name>Taylor Bird</name></artist></relation><relation type="programming"><artist><name>Tom Norris</name></artist></relation><relation type="recording"><artist><name>Taylor Bird</name></artist></relation><relation type="recording"><artist><name>Peter Stengaard</name></artist></relation><relation type="vocal"><artist><name>Jimmie Allen</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation></relation-list></recording></track><track><position>12</position><number>12</number><title>One of Me</title><recording><title>ONE OF ME</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Lil Nas X</name></artist></name-credit><name-credit><artist><name>Elton John</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="instrument"><artist><name>18YOMAN</name></artist></relation><relation type="instrument"><artist><name>John Cunningham</name></artist></relation><relation type="instrument"><artist><name>John Cunningham</name></artist></relation><relation type="instrument"><artist><name>John Cunningham</name></artist></relation><relation type="instrument"><artist><name>Danny Flam</name></artist></relation><relation type="instrument"><artist><name>Danny Flam</name></artist></relation><relation type="instrument"><artist><name>Glenn Hopper</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Ryan Svendsen</name></artist></relation><relation type="instrument"><artist><name>Ryan Svendsen</name></artist></relation><relation type="instrument"><artist><name>Ben Ward</name></artist></relation><relation type="instrument"><artist><name>Jack Ward</name></artist></relation><relation type="instrument"><artist><name>William K Ward</name></artist></relation><relation type="instrument arranger"><artist><name>18YOMAN</name></artist></relation><relation type="instrument arranger"><artist><name>Glenn Hopper</name></artist></relation><relation type="instrument arranger"><artist><name>William K Ward</name></artist></relation><relation type="misc"><artist><name>David Dickenson</name></artist></relation><relation type="misc"><artist><name>Mervin Hernandez</name></artist></relation><relation type="misc"><artist><name>Drew Sliger</name></artist></relation><relation type="mix"><artist><name>Serban Ghenea</name></artist></relation><relation type="mix"><artist><name>John Hanes</name></artist></relation><relation type="producer"><artist><name>Denzel Baptiste</name></artist></relation><relation type="producer"><artist><name>David Biral</name></artist></relation><relation type="producer"><artist><name>John Cunningham</name></artist></relation><relation type="producer"><artist><name>John Cunningham</name></artist></relation><relation type="producer"><artist><name>Kuk Harrell</name></artist></relation><relation type="producer"><artist><name>Jasper Sheff</name></artist></relation><relation type="programming"><artist><name>Jasper Sheff</name></artist></relation><relation type="programming"><artist><name>Jasper Sheff</name></artist></relation><relation type="recording"><artist><name>Denzel Baptiste</name></artist></relation><relation type="recording"><artist><name>David Biral</name></artist></relation><relation type="recording"><artist><name>John Cunningham</name></artist></relation><relation type="recording"><artist><name>Jelli Dorman</name></artist></relation><relation type="recording"><artist><name>Danny Flam</name></artist></relation><relation type="recording"><artist><name>Danny Flam</name></artist></relation><relation type="recording"><artist><name>Kuk Harrell</name></artist></relation><relation type="recording"><artist><name>Roy Lenzo</name></artist></relation><relation type="recording"><artist><name>Drew Sliger</name></artist></relation><relation type="recording"><artist><name>Ryan Svendsen</name></artist></relation><relation type="recording"><artist><name>Ryan Svendsen</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Lil Nas X</name></artist></relation></relation-list></recording></track><track><position>13</position><number>13</number><recording><title>E‐Ticket</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>Eddie Vedder</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Paul LaMalfa</name></artist></relation><relation type="engineer"><artist><name>Marco Sonzini</name></artist></relation><relation type="instrument"><artist><name>Taylor Hawkins</name></artist></relation><relation type="instrument"><artist><name>Taylor Hawkins</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="mix"><artist><name>Mark “Spike” Stent</name></artist></relation><relation type="producer"><artist><name>Andrew Watt</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Eddie Vedder</name></artist></relation><relation type="vocal"><artist><name>Eddie Vedder</name></artist></relation><relation type="vocal"><artist><name>Andrew Watt</name></artist></relation></relation-list></recording></track><track><position>14</position><number>14</number><recording><title>Finish Line</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>Stevie Wonder</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="chorus master"><artist><name>Jason White</name></artist></relation><relation type="concertmaster"><artist><name>Charlie Bisharat</name></artist></relation><relation type="conductor"><artist><name>David Campbell</name></artist></relation><relation type="conductor"><artist><name>Suzie Katayama</name></artist></relation><relation type="engineer"><artist><name>Gabe Burch</name></artist></relation><relation type="engineer"><artist><name>Steve Churchyard</name></artist></relation><relation type="engineer"><artist><name>Paul LaMalfa</name></artist></relation><relation type="engineer"><artist><name>Marco Sonzini</name></artist></relation><relation type="instrument"><artist><name>Charlie Bisharat</name></artist></relation><relation type="instrument"><artist><name>Jacqueline Brand</name></artist></relation><relation type="instrument"><artist><name>Jacob Braun</name></artist></relation><relation type="instrument"><artist><name>Mario DeLeon</name></artist></relation><relation type="instrument"><artist><name>Zach Dellinger</name></artist></relation><relation type="instrument"><artist><name>Erika Duke-Kirkpatrick</name></artist></relation><relation type="instrument"><artist><name>Nina Evtuhov</name></artist></relation><relation type="instrument"><artist><name>Larry Greenfield</name></artist></relation><relation type="instrument"><artist><name>Jessica Guideri</name></artist></relation><relation type="instrument"><artist><name>Paula Hochhalter</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Abe Laboriel Jr.</name></artist></relation><relation type="instrument"><artist><name>Abe Laboriel Jr.</name></artist></relation><relation type="instrument"><artist><name>Lorand Lokuszta</name></artist></relation><relation type="instrument"><artist><name>Pino Palladino</name></artist></relation><relation type="instrument"><artist><name>Sara Parkins</name></artist></relation><relation type="instrument"><artist><name>Jenny Takamatsu</name></artist></relation><relation type="instrument"><artist><name>Benmont Tench</name></artist></relation><relation type="instrument"><artist><name>Josefina Vergara</name></artist></relation><relation type="instrument"><artist><name>David Walther</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument"><artist><name>Rodney Wirth</name></artist></relation><relation type="instrument"><artist><name>Stevie Wonder</name></artist></relation><relation type="instrument"><artist><name>Stevie Wonder</name></artist></relation><relation type="instrument arranger"><artist><name>David Campbell</name></artist></relation><relation type="misc"><artist><name>Bettie Ross</name></artist></relation><relation type="mix"><artist><name>Serban Ghenea</name></artist></relation><relation type="mix"><artist><name>John Hanes</name></artist></relation><relation type="producer"><artist><name>Andrew Watt</name></artist></relation><relation type="vocal"><artist><name>Naarai Jacobs</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Mark Kibble</name></artist></relation><relation type="vocal"><artist><name>The Samples</name></artist></relation><relation type="vocal"><artist><name>Andrew Watt</name></artist></relation><relation type="vocal"><artist><name>Stevie Wonder</name></artist></relation><relation type="vocal arranger"><artist><name>Mark Kibble</name></artist></relation></relation-list></recording></track><track><position>15</position><number>15</number><recording><title>Stolen Car</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Elton John</name></artist></name-credit><name-credit><artist><name>Stevie Nicks</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="concertmaster"><artist><name>Charlie Bisharat</name></artist></relation><relation type="conductor"><artist><name>David Campbell</name></artist></relation><relation type="conductor"><artist><name>Suzie Katayama</name></artist></relation><relation type="engineer"><artist><name>Gabe Burch</name></artist></relation><relation type="engineer"><artist><name>Paul LaMalfa</name></artist></relation><relation type="engineer"><artist><name>Marco Sonzini</name></artist></relation><relation type="instrument"><artist><name>Charlie Bisharat</name></artist></relation><relation type="instrument"><artist><name>Jacqueline Brand</name></artist></relation><relation type="instrument"><artist><name>Jacob Braun</name></artist></relation><relation type="instrument"><artist><name>Mario DeLeon</name></artist></relation><relation type="instrument"><artist><name>Zach Dellinger</name></artist></relation><relation type="instrument"><artist><name>Erika Duke-Kirkpatrick</name></artist></relation><relation type="instrument"><artist><name>Nina Evtuhov</name></artist></relation><relation type="instrument"><artist><name>Larry Greenfield</name></artist></relation><relation type="instrument"><artist><name>Jessica Guideri</name></artist></relation><relation type="instrument"><artist><name>Paula Hochhalter</name></artist></relation><relation type="instrument"><artist><name>Elton John</name></artist></relation><relation type="instrument"><artist><name>Josh Klinghoffer</name></artist></relation><relation type="instrument"><artist><name>Lorand Lokuszta</name></artist></relation><relation type="instrument"><artist><name>Sara Parkins</name></artist></relation><relation type="instrument"><artist><name>Jenny Takamatsu</name></artist></relation><relation type="instrument"><artist><name>Benmont Tench</name></artist></relation><relation type="instrument"><artist><name>Josefina Vergara</name></artist></relation><relation type="instrument"><artist><name>David Walther</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument"><artist><name>Andrew Watt</name></artist></relation><relation type="instrument"><artist><name>Rodney Wirth</name></artist></relation><relation type="instrument arranger"><artist><name>David Campbell</name></artist></relation><relation type="misc"><artist><name>Bettie Ross</name></artist></relation><relation type="mix"><artist><name>Serban Ghenea</name></artist></relation><relation type="mix"><artist><name>John Hanes</name></artist></relation><relation type="producer"><artist><name>Andrew Watt</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation><relation type="vocal"><artist><name>Stevie Nicks</name></artist></relation><relation type="vocal"><artist><name>Stevie Nicks</name></artist></relation><relation type="vocal"><artist><name>Ali Tamposi</name></artist></relation><relation type="vocal"><artist><name>Andrew Watt</name></artist></relation></relation-list></recording></track><track><position>16</position><number>16</number><recording><title>I’m Not Gonna Miss You</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Glen Campbell</name></artist></name-credit><name-credit><artist><name>Elton John</name></artist></name-credit></artist-credit><relation-list target-type="artist"><relation type="engineer"><artist><name>Lars Fox</name></artist></relation><relation type="engineer"><artist><name>Giles Martin</name></artist></relation><relation type="engineer"><artist><name>Howard Willing</name></artist></relation><relation type="mix"><artist><name>Chris Lord‐Alge</name></artist></relation><relation type="producer"><artist><name>Giles Martin</name></artist></relation><relation type="producer"><artist><name>Julian Raymond</name></artist></relation><relation type="recording"><artist><name>Giles Martin</name></artist></relation><relation type="recording"><artist><name>Howard Willing</name></artist></relation><relation type="vocal"><artist><name>Glen Campbell</name></artist></relation><relation type="vocal"><artist><name>Elton John</name></artist></relation></relation-list></recording></track></track-list></medium></medium-list><relation-list target-type="url"><relation type="free streaming" /></relation-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 21373180,
+ "year": 2021,
+ "artists": [
+  {
+   "name": "Elton John",
+   "anv": "",
+   "role": "",
+   "id": 57103
+  }
+ ],
+ "labels": [
+  {
+   "name": "EMI",
+   "catno": "none",
+   "id": 26126
+  }
+ ],
+ "formats": [
+  {
+   "name": "File"
+  }
+ ],
+ "title": "The Lockdown Sessions",
+ "released": "2021-10-22",
+ "genres": [
+  "Pop"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Dua Lipa",
+     "anv": "",
+     "role": "",
+     "id": 4357593
+    }
+   ],
+   "title": "Cold Heart (PNAU Remix)",
+   "extraartists": [
+    {
+     "name": "Pnau",
+     "anv": "",
+     "role": "Remix",
+     "id": 9549
+    }
+   ],
+   "duration": "3:22"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Young Thug (2)",
+     "anv": "",
+     "role": "",
+     "id": 3243777
+    },
+    {
+     "name": "Nicki Minaj",
+     "anv": "",
+     "role": "",
+     "id": 1615988
+    }
+   ],
+   "title": "Always Love You",
+   "duration": "4:17"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Surfaces",
+     "anv": "",
+     "role": "",
+     "id": 6890536
+    }
+   ],
+   "title": "Learn To Fly",
+   "extraartists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "Featuring",
+     "id": 57103
+    }
+   ],
+   "duration": "3:31"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Charlie Puth",
+     "anv": "",
+     "role": "",
+     "id": 4061019
+    }
+   ],
+   "title": "After All",
+   "duration": "3:28"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Rina Sawayama",
+     "anv": "",
+     "role": "",
+     "id": 3371472
+    },
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    }
+   ],
+   "title": "Chosen Family",
+   "duration": "4:40"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Gorillaz",
+     "anv": "",
+     "role": "",
+     "id": 6378
+    }
+   ],
+   "title": "The Pink Phantom",
+   "extraartists": [
+    {
+     "name": "6lack",
+     "anv": "",
+     "role": "Featuring",
+     "id": 4561700
+    },
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "Featuring",
+     "id": 57103
+    }
+   ],
+   "duration": "4:13"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Years & Years",
+     "anv": "",
+     "role": "",
+     "id": 3458283
+    }
+   ],
+   "title": "It's A Sin",
+   "duration": "4:44"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Miley Cyrus",
+     "anv": "",
+     "role": "",
+     "id": 676432
+    }
+   ],
+   "title": "Nothing Else Matters",
+   "extraartists": [
+    {
+     "name": "Andrew Watt (3)",
+     "anv": "WATT",
+     "role": "Featuring",
+     "id": 3821409
+    },
+    {
+     "name": "Chad Smith",
+     "anv": "",
+     "role": "Featuring",
+     "id": 225315
+    },
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "Featuring",
+     "id": 57103
+    },
+    {
+     "name": "Robert Trujillo",
+     "anv": "",
+     "role": "Featuring",
+     "id": 490079
+    },
+    {
+     "name": "Yo-Yo Ma",
+     "anv": "",
+     "role": "Featuring",
+     "id": 276145
+    }
+   ],
+   "duration": "6:35"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "SG Lewis",
+     "anv": "",
+     "role": "",
+     "id": 4401954
+    }
+   ],
+   "title": "Orbit",
+   "duration": "3:28"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Brandi Carlile",
+     "anv": "",
+     "role": "",
+     "id": 502784
+    }
+   ],
+   "title": "Simple Things",
+   "duration": "4:11"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Jimmie Allen (3)",
+     "anv": "",
+     "role": "",
+     "id": 6655726
+    },
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    }
+   ],
+   "title": "Beauty In The Bones",
+   "duration": "3:50"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Lil Nas X",
+     "anv": "",
+     "role": "",
+     "id": 7080995
+    }
+   ],
+   "title": "One Of Me",
+   "extraartists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "Featuring",
+     "id": 57103
+    }
+   ],
+   "duration": "2:41"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Eddie Vedder",
+     "anv": "",
+     "role": "",
+     "id": 262214
+    }
+   ],
+   "title": "E-Ticket",
+   "duration": "3:18"
+  },
+  {
+   "position": "14",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Stevie Wonder",
+     "anv": "",
+     "role": "",
+     "id": 18956
+    }
+   ],
+   "title": "Finish Line",
+   "duration": "4:24"
+  },
+  {
+   "position": "15",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    },
+    {
+     "name": "Stevie Nicks",
+     "anv": "",
+     "role": "",
+     "id": 13735
+    }
+   ],
+   "title": "Stolen Car",
+   "duration": "5:37"
+  },
+  {
+   "position": "16",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Glen Campbell",
+     "anv": "",
+     "role": "",
+     "id": 175776
+    },
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "",
+     "id": 57103
+    }
+   ],
+   "title": "I'm Not Going To Miss You",
+   "duration": "2:56"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0602438711857",
+ "upc": "0602438711857",
+ "title": "The Lockdown Sessions",
+ "version": null,
+ "tracks_count": 16,
+ "artist": {
+  "name": "Elton John"
+ },
+ "artists": [
+  {
+   "name": "Elton John",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Pop/Rock",
+  "Pop/Rock→Pop"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Cold Heart",
+    "version": "PNAU Remix",
+    "track_number": 1,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, ComposerLyricist - Dua Lipa, MainArtist, Vocalist - Nicholas Littlemore, Producer, DrumProgrammer, ComposerLyricist - Peter Mayes, Producer, Engineer, DrumProgrammer, ComposerLyricist - Sam Littlemore, Producer, DrumProgrammer, ComposerLyricist - PNAU, Remixer - Mark Schick, VocalProducer - Rafael Fadul, Engineer - Josh Gudwin, MixingEngineer - Randy Merrill, MasteringEngineer - Bernie Taupin, ComposerLyricist - Dean Meredith, ComposerLyricist - Andrew Meecham, ComposerLyricist"
+   },
+   {
+    "title": "Always Love You",
+    "version": null,
+    "track_number": 2,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, ComposerLyricist - Young Thug, MainArtist, Vocalist - Nicki Minaj, MainArtist, RapVocalist, ComposerLyricist - Andrew Watt, Producer, BackgroundVocalist - Louis Bell, Producer, Programmer, ComposerLyricist - Paul Lamalfa, Engineer - Marco Sonzini, AdditionalEngineer - MANNY MARROQUIN, MixingEngineer - Chris Galland, MixingEngineer - Robin Florent, MixingSecondEngineer - Scott Desmarais, MixingSecondEngineer - Jeremie Inhaber, MixingSecondEngineer - Randy Merrill, MasteringEngineer - Chelsea Fodero, ProductionCoordinator - Jeffery Lamar Williams, ComposerLyricist - Andrew Wotman, ComposerLyricist - Ali Tamposi, ComposerLyricist - Billy Walsh, ComposerLyricist"
+   },
+   {
+    "title": "Learn To Fly",
+    "version": null,
+    "track_number": 3,
+    "performer": {
+     "name": "Surfaces"
+    },
+    "performers": "Surfaces, MainArtist - Elton John, MainArtist - Colin Padalecki, Producer, ComposerLyricist - Forrest Frank, Producer, ComposerLyricist - Alex Sacco, MixingEngineer - Colin Leonard, MasteringEngineer - Luke Swirsky, MixingEngineer"
+   },
+   {
+    "title": "After All",
+    "version": null,
+    "track_number": 4,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, ComposerLyricist - Charlie Puth, MainArtist, Producer, RecordingEngineer, Engineer, MixingEngineer, Vocalist, ComposerLyricist - MANNY MARROQUIN, MixingEngineer - Chris Galland, MixingEngineer - Robin Florent, MixingSecondEngineer - Scott Desmarais, MixingSecondEngineer - Jeremie Inhaber, MixingSecondEngineer - Mattias Bylund, StringArranger - Randy Merrill, MasteringEngineer - Jacob Kasher Hindlin, ComposerLyricist"
+   },
+   {
+    "title": "Chosen Family",
+    "version": null,
+    "track_number": 5,
+    "performer": {
+     "name": "Rina Sawayama"
+    },
+    "performers": "Rina Sawayama, MainArtist, Vocalist, ComposerLyricist - Elton John, MainArtist, Vocalist - Danny L Harle, Producer, Programmer, ComposerLyricist - Tim Rowkins, MixingEngineer - Robin Schmidt, MasteringEngineer - Jonny Lattimer, ComposerLyricist"
+   },
+   {
+    "title": "The Pink Phantom",
+    "version": null,
+    "track_number": 6,
+    "performer": {
+     "name": "Gorillaz"
+    },
+    "performers": "Gorillaz, MainArtist, Producer, Vocalist - Elton John, FeaturedArtist, Vocalist - 6LACK, FeaturedArtist, Vocalist - Remi Kabaka, Producer, DrumProgrammer, ComposerLyricist - Stephen Sedgwick, MixingEngineer - John Davis, MasteringEngineer - Damon Albarn, ComposerLyricist - Ricardo Valdez Valentine Jr, ComposerLyricist"
+   },
+   {
+    "title": "It's a sin",
+    "version": "global reach mix",
+    "track_number": 7,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist - Olly Alexander (Years & Years), MainArtist - Stuart Price, Producer, MixingEngineer, DrumProgrammer - Pet Shop Boys, Producer - Alex Robinson, RecordingEngineer - Toby Alington, RecordingEngineer - Harpaal Sanghera, RecordingSecondEngineer - Olly Alexander, Vocalist - Randy Merrill, MasteringEngineer - NEIL TENNANT, ComposerLyricist - Chris Lowe, ComposerLyricist"
+   },
+   {
+    "title": "Nothing Else Matters",
+    "version": null,
+    "track_number": 8,
+    "performer": {
+     "name": "Miley Cyrus"
+    },
+    "performers": "Miley Cyrus, MainArtist, Vocalist - Watt, FeaturedArtist - Elton John, FeaturedArtist - Yo-Yo Ma, FeaturedArtist - Robert Trujillo, FeaturedArtist - Chad Smith, FeaturedArtist - Andrew Watt, Producer, StringArranger - Paul Lamalfa, Engineer - ALAN MOULDER, MixingEngineer - Caesar Edmunds, MixingSecondEngineer - Mike Block, StringArranger - Randy Merrill, MasteringEngineer - James Hetfield, ComposerLyricist - Lars Ulrich, ComposerLyricist"
+   },
+   {
+    "title": "Orbit",
+    "version": null,
+    "track_number": 9,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, ComposerLyricist - SG Lewis, MainArtist, Producer, Programmer - Josh Gudwin, MixingEngineer - Sophie Frances Cooke, BackgroundVocalist, ComposerLyricist - Randy Merrill, MasteringEngineer - Samuel George Lewis, ComposerLyricist"
+   },
+   {
+    "title": "Simple Things",
+    "version": null,
+    "track_number": 10,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, BackgroundVocalist, ComposerLyricist - Brandi Carlile, MainArtist, Vocalist, BackgroundVocalist - Andrew Watt, Producer, BackgroundVocalist - Paul Lamalfa, Engineer, MixingEngineer - Marco Sonzini, AdditionalEngineer, MixingSecondEngineer - Nate Yaccino, AdditionalEngineer - Bobby Tis, AdditionalEngineer - Tim Hanseroth, BackgroundVocalist - Phil Hanseroth, BackgroundVocalist - Randy Merrill, MasteringEngineer - Chelsea Fodero, ProductionCoordinator - Andrew Wotman, ComposerLyricist - Roman Campolo, ComposerLyricist"
+   },
+   {
+    "title": "Beauty In The Bones",
+    "version": null,
+    "track_number": 11,
+    "performer": {
+     "name": "Jimmie Allen"
+    },
+    "performers": "Jimmie Allen, MainArtist, Vocalist, ComposerLyricist - Elton John, MainArtist, Vocalist - Taylor Bird, Producer, RecordingEngineer, MixingEngineer, DrumProgrammer, ComposerLyricist - Bruce Roberts, Producer, ComposerLyricist - Tom Norris, Engineer, DrumProgrammer - Peter Stengaard, AdditionalEngineer - Phil Bentley, ComposerLyricist - Randy Merrill, MasteringEngineer"
+   },
+   {
+    "title": "One Of Me",
+    "version": null,
+    "track_number": 12,
+    "performer": {
+     "name": "Lil Nas X"
+    },
+    "performers": null
+   },
+   {
+    "title": "E-Ticket",
+    "version": null,
+    "track_number": 13,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, ComposerLyricist - Eddie Vedder, MainArtist, Vocalist, BackgroundVocalist, ComposerLyricist - Andrew Watt, Producer, BackgroundVocalist - Paul Lamalfa, Engineer - Marco Sonzini, AdditionalEngineer - Mark 'Spike' Stent, MixingEngineer - Randy Merrill, MasteringEngineer - Chelsea Fodero, ProductionCoordinator - Andrew Wotman, ComposerLyricist"
+   },
+   {
+    "title": "Finish Line",
+    "version": null,
+    "track_number": 14,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, ComposerLyricist - Stevie Wonder, MainArtist, Vocalist - Andrew Watt, Producer, BackgroundVocalist - Paul Lamalfa, Engineer - Marco Sonzini, AdditionalEngineer - STEVE Churchyard, AdditionalEngineer - Gabe Burch, RecordingSecondEngineer - Serban Ghenea, MixingEngineer - John Hanes, MixingEngineer - Mark Kibble, VocalArranger, BackgroundVocalist - Charlotte Lawrence, BackgroundVocalist - The Samples, BackgroundVocalist - Naarai Jacobs, BackgroundVocalist - David Campbell, StringArranger - Randy Merrill, MasteringEngineer - Chelsea Fodero, ProductionCoordinator - Andrew Wotman, ComposerLyricist - Ali Tamposi, ComposerLyricist - Roman Campolo, ComposerLyricist"
+   },
+   {
+    "title": "Stolen Car",
+    "version": null,
+    "track_number": 15,
+    "performer": {
+     "name": "Elton John"
+    },
+    "performers": "Elton John, MainArtist, Vocalist, ComposerLyricist - Stevie Nicks, MainArtist, Vocalist, BackgroundVocalist - Andrew Watt, Producer, BackgroundVocalist - Paul Lamalfa, Engineer - Marco Sonzini, AdditionalEngineer - STEVE Churchyard, AdditionalEngineer - Gabe Burch, RecordingSecondEngineer - Serban Ghenea, MixingEngineer - John Hanes, MixingEngineer - Ali Tamposi, BackgroundVocalist, ComposerLyricist - David Campbell, StringArranger - Randy Merrill, MasteringEngineer - Chelsea Fodero, ProductionCoordinator - Andrew Wotman, ComposerLyricist"
+   },
+   {
+    "title": "I'm Not Gonna Miss You",
+    "version": null,
+    "track_number": 16,
+    "performer": {
+     "name": "Glen Campbell"
+    },
+    "performers": "Glen Campbell, MainArtist, Vocalist, ComposerLyricist - Elton John, MainArtist, Vocalist - Julian Raymond, Producer, ComposerLyricist - STEVE MARCANTONIO, RecordingEngineer - Howard Willing, Engineer - Giles Martin, VocalProducer - Lars Fox, Engineer - CHRIS LORD-ALGE, MixingEngineer - Randy Merrill, MasteringEngineer"
+   }
+  ]
+ }
+}
+'''
