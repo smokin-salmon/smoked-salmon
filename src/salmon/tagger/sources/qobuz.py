@@ -398,6 +398,7 @@ class Scraper(QobuzBase, MetadataMixin):
                 trackno=track_number,
                 discno=disc_number,
                 artists=list(artists),
+                credited_remixers=[name for name, role in artists if role == "remixer"],
                 title=title,
                 isrc=track.get("isrc"),
                 explicit=track.get("parental_warning", False),

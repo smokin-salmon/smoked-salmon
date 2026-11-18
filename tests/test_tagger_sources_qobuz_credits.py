@@ -164,6 +164,15 @@ def test_a_remixer_and_a_conductor_are_stated() -> None:
     assert first["assumed_artists"] == []
 
 
+def test_a_remixer_on_the_line_is_credited_so_its_tag_is_written() -> None:
+    """The REMIXER tag holds only the remixers a store credits, not those read from a title."""
+    data = album(track("Alice, MainArtist - Bob, Remixer", title="Song (Carol Remix)"))
+
+    first = parsed(data)[0]
+
+    assert first["credited_remixers"] == ["Bob"]
+
+
 def test_as_before_a_producer_an_arranger_and_an_unmapped_word_credit_no_one() -> None:
     data = album(track("Alice, MainArtist - Bob, Producer - Carol, Arranger - Dan, Writer - Eve, Lyricist"))
 
