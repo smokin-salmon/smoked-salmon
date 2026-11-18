@@ -2,6 +2,8 @@ import html
 import re
 import unicodedata
 
+from unidecode import unidecode
+
 from salmon import cfg
 from salmon.common.constants import RE_FEAT
 from salmon.common.regexes import re_split, re_strip
@@ -329,6 +331,74 @@ def _bracket_depths(text: str) -> list[int] | None:
         elif char in pairs and (not stack or stack.pop() != pairs[char]):
             return None
     return depths if not stack else None
+
+
+def enclosed(text: str) -> bool:
+    """Whether one pair of brackets encloses all of `text`: "(A (B))", not "(A) (B)"."""
+    depths = _bracket_depths(text)
+    return bool(text) and text[0] in "([" and depths is not None and all(depth > 0 for depth in depths[1:])
+
+
+def unbracketed(version: str | None) -> str | None:
+    """A version without the brackets a store may give it in ("(Mixed)"), its own kept ("Album Version (Explicit)");
+    None for an empty one."""
+    version = (version or "").strip()
+    return (version[1:-1].strip() if enclosed(version) else version) or None
+
+
+def split_version(folded: str, title: str) -> tuple[str, str] | None:
+    """`folded` as `title` and the version in brackets after it, both in `folded`'s own text: "Spellbound (Mixed)" and
+    "Spellbound" give ("Spellbound", "Mixed"). Titles compare as the merge compares them. Else None."""
+    for at in (index for index, char in enumerate(folded) if char in "(["):
+        head, tail = folded[:at].rstrip(), folded[at:].strip()
+        if enclosed(tail) and same_title(head, title):
+            return head, tail[1:-1].strip()
+    return None
+
+
+def restore_accents(title: str, accented: str) -> str:
+    """`title` with the accented letters `accented` has where `title` has them plain, in `title`'s case: "Ny Batteri"
+    and "Ný batterí" give "Ný Batterí". Its capitals and punctuation stay; any other difference leaves it as it is."""
+    accented = unicodedata.normalize("NFC", accented)
+    composed = unicodedata.normalize("NFC", title)
+    if len(composed) != len(accented):
+        return title
+    letters = []
+    for mine, theirs in zip(composed, accented, strict=True):
+        if mine.lower() == theirs.lower() or not (mine.isalnum() or theirs.isalnum()):
+            letters.append(mine)
+        elif mine.lower() != mine.upper() and _plain_letter(theirs) == mine.lower():
+            # A cased letter and its accents ("é" is "e" and an acute), never a look-alike from another script nor a
+            # kana's voicing mark; in the title's case only where that is one letter too ("ǰ" has no one capital).
+            cased = theirs.upper() if mine.isupper() else theirs.lower()
+            letters.append(cased if len(cased) == 1 else mine)
+        else:
+            return title
+    restored = "".join(letters)
+    return title if restored == composed else restored
+
+
+def _plain_letter(letter: str) -> str:
+    """The plain letter an accented Latin one is: "é" is "e" and an acute, and "ø", "ł", "đ", which decompose to
+    none, are "o", "l", "d", as unidecode reads them."""
+    plain = unicodedata.normalize("NFD", letter)[0].lower()
+    if (
+        plain == letter.lower()
+        and unicodedata.name(letter, "").startswith("LATIN")
+        and len(folded := unidecode(letter)) == 1
+    ):
+        return folded.lower()
+    return plain
+
+
+def title_key(title: str) -> str:
+    """A title as the merge and the pairing compare titles: without case, accents and punctuation."""
+    return re_strip(unidecode(title))
+
+
+def same_title(one: str, other: str) -> bool:
+    """Whether two titles are the same but for case, accents and punctuation."""
+    return title_key(one) == title_key(other)
 
 
 def tagify(genre: str) -> str:

@@ -13,7 +13,7 @@ import re
 
 from unidecode import unidecode
 
-from salmon.common import re_strip
+from salmon.common.strings import title_key
 
 # Seconds two tracks may differ by and still be taken for the same recording.
 DURATION_TOLERANCE = 2
@@ -25,7 +25,7 @@ BY_ISRC_OR_TITLE = frozenset({"isrc", "title", "partial title"})
 
 def norm_title(title):
     """Normalise a title the way the merge in combine.py compares them."""
-    return re_strip(unidecode(title)) if title else ""
+    return title_key(title) if title else ""
 
 
 def title_words(title):
@@ -47,7 +47,7 @@ def pair_by_content(locals_, metas, *, numbered=False):
     """Work out which local track belongs to each scraped track.
 
     Both arguments are sequences of mappings with ``title``, ``isrc`` and ``duration`` keys; a missing or empty
-    one is skipped as a signal.
+    one is skipped as a signal. A scraped track's ``titles``, when given, are each a title its exact-title pass takes.
 
     Passes run in confidence order: ISRC, exact title, then a local title found as whole words in the scraped
     one ("Django" in "Django (Original Mix)", but not "Work" in "Homework"). A pass only pairs a scraped track and
@@ -107,8 +107,8 @@ def pair_by_content(locals_, metas, *, numbered=False):
 
     run_pass(
         "title",
-        lambda m: norm_title(m.get("title")),
-        lambda t, want: norm_title(t.get("title")) == want,
+        lambda m: frozenset(filter(None, map(norm_title, m.get("titles") or [m.get("title")]))),
+        lambda t, want: norm_title(t.get("title")) in want,
         duration_breaks_ties=True,
     )
 

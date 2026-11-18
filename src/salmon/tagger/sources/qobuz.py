@@ -388,18 +388,13 @@ class Scraper(QobuzBase, MetadataMixin):
             track_number = str(track.get("track_number", 1))
             artists, guessed = _track_credits(track, album_mains, featured, album_names, extra)
 
-            # Parse track title with version
-            title = track.get("title", "")
-            if version := track.get("version"):
-                title = f"{title} ({version})"
-
-            # Create track entry
             tracks[disc_number][track_number] = self.generate_track(
                 trackno=track_number,
                 discno=disc_number,
                 artists=list(artists),
                 credited_remixers=[name for name, role in artists if role == "remixer"],
-                title=title,
+                title=(track.get("title") or "").strip(),
+                version=(track.get("version") or "").strip() or None,
                 isrc=track.get("isrc"),
                 explicit=track.get("parental_warning", False),
             )

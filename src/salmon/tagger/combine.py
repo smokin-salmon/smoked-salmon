@@ -5,17 +5,24 @@ from itertools import chain
 
 import asyncclick as click
 import msgspec
-from unidecode import unidecode
 
 from salmon import cfg
-from salmon.common import normalize_accents, re_strip
+from salmon.common import normalize_accents
 from salmon.common.credits import Claim, resolve_credits
 from salmon.common.numbers import natural_key, number_or_text
-from salmon.common.strings import comparable
+from salmon.common.strings import comparable, restore_accents, split_version
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
-from salmon.tagger.sources.base import artist_spellings, determine_label_type, generate_artists, standardize_genres
+from salmon.tagger.sources.base import (
+    artist_spellings,
+    determine_label_type,
+    featuring_clause,
+    folded_title,
+    generate_artists,
+    standardize_genres,
+    title_with_version,
+)
 
 PREFERENCES = [
     "Tidal",
@@ -156,6 +163,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
         del base["url"]
 
     decisions = _decide_credits(base["tracks"], claims, base_source)
+    _decide_titles(base["tracks"], base_source)
     # After the decision: a base track no store paired is decided from its own marks.
     without_merge_only_keys(base)
     _print_disputes(decisions)
@@ -251,8 +259,20 @@ def _pair_base_tracks(btracks, mtracks):
     key (another source's) counts as numbered.
     """
     numbered = all(track.get("numbered", True) for track in btracks)
-    pairing, reasons = pair_by_content(btracks, mtracks, numbered=numbered)
+    pairing, reasons = pair_by_content(_with_folded_titles(btracks), _with_folded_titles(mtracks), numbered=numbered)
     return [None if bi is None else btracks[bi] for bi in pairing], reasons
+
+
+def _with_folded_titles(tracks):
+    """The tracks with each title as its store folds it, for pairing: the files' titles hold their versions. A title
+    pairs as written too ("Song" for "Song", "Remastered", by strip_useless_versions), as it did before the store gave
+    its version apart."""
+    return [
+        {**track, "title": folded_title(track), "titles": (folded_title(track), title_with_version(track["title"], v))}
+        if (v := track.get("version")) and track["title"]
+        else {**track, "title": folded_title(track)}
+        for track in tracks
+    ]
 
 
 def _numbers_usable(meta):
@@ -324,11 +344,11 @@ def _print_pairing(mtracks, ordered, reasons):
     click.secho("\nMatched local tracks to the metadata source:", fg="yellow", bold=True)
     for mtrack, btrack, why in zip(mtracks, ordered, reasons, strict=False):
         if btrack is None:
-            click.secho(f"  {mtrack['track#']:>3}. {mtrack['title']} -> (no local track)", fg="red")
+            click.secho(f"  {mtrack['track#']:>3}. {folded_title(mtrack)} -> (no local track)", fg="red")
             continue
         moved = str(btrack["track#"]) != str(mtrack["track#"])
         click.secho(
-            f"  {mtrack['track#']:>3}. {mtrack['title']} <- {btrack['title']} "
+            f"  {mtrack['track#']:>3}. {folded_title(mtrack)} <- {folded_title(btrack)} "
             f"(was track {btrack['track#']}, matched on {why})",
             fg="red" if why == "position" else ("yellow" if moved else "green"),
         )
@@ -382,27 +402,11 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
         for _num, track in _sorted_naturally(tracks.items()):
             btrack = next(paired_btracks)
 
-            if (
-                # Use unidecode comparison when there are accents in the title
-                re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"]))
-                and btrack["title"] is not None
-            ) and (
-                btrack["title"]
-                and track["title"]
-                # Allow replacement if the base title is part of the meta title (e.g., remix scenario)
-                and re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))
-            ):
-                btrack["title"] = track["title"]
-
-            if btrack["title"] is None:
-                btrack["title"] = track["title"]
-
-            # Scraped title is the same than title when ignoring metadatas, and it contains accents and special
-            # characters, prefer that one.
-            if re_strip(track["title"]) != re_strip(unidecode(track["title"])) and re_strip(
-                unidecode(track["title"])
-            ) == re_strip(unidecode(btrack["title"])):
-                btrack["title"] = track["title"]
+            if _untitled(btrack["title"]):
+                # The files name no title ("Track 01"): the first store's names it, for the next store's pairing too.
+                btrack["title"], btrack["version"] = track["title"], track.get("version")
+            # Each store's title and version beside the base's, for _decide_titles once the last store is merged.
+            btrack.setdefault("store_titles", []).append((track["title"], track.get("version")))
 
             base_artists = {(comparable(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
@@ -421,7 +425,7 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                 btrack["artists"].append(a)
 
             if _reads_title_remixers(track, store, meta_has_remixer):
-                remixers = _extract_remixers_from_title(track["title"])
+                remixers = _extract_remixers_from_title(folded_title(track))
                 for remixer in remixers:
                     if (comparable(remixer[0]), remixer[1]) not in base_artists:
                         btrack["artists"].append(remixer)
@@ -441,7 +445,6 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                 btrack["isrc"] = track["isrc"]
             if not btrack["replay_gain"]:
                 btrack["replay_gain"] = track["replay_gain"]
-                btrack["title"] = track["title"]
             # A source whose numbering is not 1..n on each disc has no totals to give either.
             if usable and not btrack["tracktotal"]:
                 btrack["tracktotal"] = track["tracktotal"]
@@ -498,6 +501,76 @@ def _store_claims(credits, variations, base_credits, source, guessed):
     return claims
 
 
+# A ripper's placeholder: "Track 01", "Audio Track 1", and its French, Spanish, Italian, German, Portuguese words.
+_RE_PLACEHOLDER_TITLE = re.compile(r"\s*(?:audio\s*)?(?:track|piste|pista|traccia|titel|faixa)\s*\d+\s*", re.IGNORECASE)
+
+
+def _untitled(title):
+    """Whether a base track's title names nothing: none, or a ripper's placeholder ("Track 01")."""
+    return not title or bool(_RE_PLACEHOLDER_TITLE.fullmatch(title))
+
+
+def _decide_titles(tracks, base_source):
+    """Write each track's one title from its own and from each store's beside it (`store_titles`), in place."""
+    for disc in tracks.values():
+        for track in disc.values():
+            credited = {comparable(name) for name, _ in track["artists"]}
+            # A files' track holds a version only where it took a store's title for its placeholder: a store's title.
+            own = base_source == "files" and "version" not in track
+            track["title"] = _written_title(
+                track["title"], track.get("version"), track.get("store_titles", []), own, credited
+            )
+
+
+def _written_title(title, version, stores, files, credited):
+    """The title written from the base's title and version and each store's (title, version), in the merge's order.
+
+    The files' title is written as it is, with no store's version added, with the accents a store restores and without
+    a featuring clause naming only artists the track credits (`credited`, by comparable): what the release says is not
+    trimmed. A store's (descgen, salmon meta) is written with its version, by strip_useless_versions. One version at
+    most either way.
+    """
+    if not title:
+        return title
+    title = _with_store_accents(title, stores)
+    if files:
+        clause = featuring_clause(title)
+        strip = cfg.upload.formatting.strip_useless_versions
+        return clause[0] if strip and clause and _names_only(clause[1], credited) else title
+    # A store's featuring clause, in its version ("ft. Mary J Blige") or its title, goes only as the files' does: when
+    # the track credits them.
+    guests, named = featuring_clause(f"({version})") if version else None, featuring_clause(title)
+    return title_with_version(
+        title,
+        version,
+        keep_featuring=bool(guests) and not _names_only(guests[1], credited),
+        keep_title_featuring=bool(named) and not _names_only(named[1], credited),
+    )
+
+
+def _names_only(names, credited):
+    """Whether `names` ("A & B", a featuring clause's) are only artists in `credited` (by comparable), however they're
+    joined: "Tyler, The Creator" is one."""
+    whole = left = comparable(names)  # letters and digits only: "frankoceanmigos"
+    for name in sorted(credited, key=len, reverse=True):
+        left = left.replace(name, "", 1) if name else left
+    # Some name was credited, and what's left only joins them: a band named "X" is no joining word.
+    return left != whole and re.fullmatch(r"(?:and|with|x)*", left) is not None
+
+
+def _with_store_accents(title, stores):
+    """The title with the accents the first store to give them restores, letter by letter: the two compared without a
+    version either folds in ("Ny Batteri (Remastered)" and "Ný batterí")."""
+    for store_title, _ in stores:
+        if not store_title:
+            continue
+        own, theirs = split_version(title, store_title), split_version(store_title, title)
+        head, store_head = own[0] if own else title, theirs[0] if theirs else store_title
+        if (accented := restore_accents(head, store_head)) != head:
+            return accented + title[len(head) :]
+    return title
+
+
 def _decide_credits(tracks, claims, base_source):
     """Decide each track's credits from its claims (ADR 0007), in place, and return the reasons.
 
@@ -526,6 +599,7 @@ def decide_alone(metadata, source):
     """Decide a scrape used alone as a merge of that one source, in place (no disputes to print): each track's
     credits from its claims, then the release's from the tracks."""
     _decide_credits(metadata["tracks"], {}, source)
+    _decide_titles(metadata["tracks"], source)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 
 
