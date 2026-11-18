@@ -1,4 +1,5 @@
 from functools import partial
+from unittest.mock import AsyncMock
 
 import anyio
 import pytest
@@ -44,6 +45,61 @@ def test_dry_run_without_audio():
     assert result.exit_code == 0, result.output
     assert "Source evidence" in result.output
     assert "Sourced from: https://example.org/album" in result.output
+
+
+def test_folder_validation_and_offline_preview(tmp_path):
+    args = ("123", "--tracker", "OPS", "--comment", "Evidence", "--source-url", "", "--print-only", "--folder")
+    track = tmp_path / "01.flac"
+    assert "existing directory" in run(*args, str(track)).output
+    assert "no audio files" in run(*args, str(tmp_path)).output
+    track.touch()
+    assert "existing directory" in run(*args, str(track)).output
+    result = run(*args, str(tmp_path))
+    assert result.exit_code == 0, result.output
+    assert "1 audio files" in result.output
+    assert "neither generated nor uploaded" in result.output
+
+
+@pytest.mark.parametrize("tracker", ["RED", "OPS"])
+@pytest.mark.parametrize("failure,proceed", [(None, True), ("generate", False), ("upload", False), ("upload", True)])
+def test_report_folder_evidence(monkeypatch, tmp_path, tracker, failure, proceed):
+    from salmon import reports
+
+    (tmp_path / "01.flac").touch()
+    client = AsyncMock()
+    monkeypatch.setattr(reports.trackers, "get_class", lambda _: lambda: client)
+    monkeypatch.setattr(reports, "related_report_targets", AsyncMock(return_value=[123]))
+    monkeypatch.setattr(reports, "gather_audio_info", lambda _: {})
+    generate = AsyncMock(return_value={1: "01.flac"})
+    upload = AsyncMock(return_value={1: ["https://example.org/full", "https://example.org/zoom"]})
+    if failure:
+        (generate if failure == "generate" else upload).side_effect = ValueError("spectral failure")
+    monkeypatch.setattr(reports.spectrals, "generate_spectrals_all", generate)
+    monkeypatch.setattr(reports.spectrals, "compress_chosen_spectrals", AsyncMock())
+    monkeypatch.setattr(reports.spectrals, "upload_spectrals", upload)
+    result = run(
+        "123",
+        "--tracker",
+        tracker,
+        "--type",
+        "master",
+        "--folder",
+        str(tmp_path),
+        "--comment",
+        "Evidence",
+        "--source-url",
+        "",
+        input="y\n" + ("y\ny\n" if proceed else "n\n"),
+    )
+    assert result.exit_code == (0 if proceed else 1), result.output
+    if failure:
+        assert "spectral failure" in result.output
+    if proceed:
+        body = client.report_lossy_master.await_args.args[1]
+        assert body in result.output
+        assert ("[img=https://example.org/full]" in body) == (failure is None)
+    else:
+        client.report_lossy_master.assert_not_awaited()
 
 
 def test_ops_does_not_prompt_for_type():
