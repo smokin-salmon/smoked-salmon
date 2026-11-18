@@ -130,6 +130,25 @@ async def report(
     await run_lossy_report(target, report_type, tracker, comment, source_url, dry_run, folder)
 
 
+async def _spectral_evidence(folder: str, tracker: str) -> tuple[dict[int, str], dict[int, list[str]]]:
+    with TemporaryDirectory() as output:
+        ids = await spectrals.generate_spectrals_all(folder, output, gather_audio_info(folder))
+        await spectrals.compress_chosen_spectrals(output, ids)
+        urls = await spectrals.upload_spectrals(output, ids, tracker, ask_host=False)
+        if not urls or urls.keys() != ids.keys():
+            raise ValueError("Missing spectral images.")
+        return ids, urls
+
+
+def _preview_folder(folder: str, torrent_id: int) -> None:
+    if not folder or not Path(folder).is_dir():
+        raise click.BadParameter("Album folder must be an existing directory.")
+    files = get_audio_files(folder)
+    if not files:
+        raise click.BadParameter("Album folder contains no audio files.")
+    click.echo(f"Album folder for torrent {torrent_id}: {folder} ({len(files)} audio files)")
+
+
 async def run_lossy_report(
     target: str,
     report_type: str | None,
@@ -142,12 +161,7 @@ async def run_lossy_report(
     """Build, preview and optionally submit the CLI or web job's approval report."""
     torrent_id, tracker = parse_target(target, tracker)
     if folder is not None:
-        if not folder or not Path(folder).is_dir():
-            raise click.BadParameter("Album folder must be an existing directory.")
-        files = get_audio_files(folder)
-        if not files:
-            raise click.BadParameter("Album folder contains no audio files.")
-        click.echo(f"Album folder for torrent {torrent_id}: {folder} ({len(files)} audio files)")
+        _preview_folder(folder, torrent_id)
     choices = [code for code in trackers.tracker_list if code in ("RED", "OPS")]
     if not choices:
         raise click.ClickException("Configure RED or OPS before requesting approval.")
@@ -160,7 +174,11 @@ async def run_lossy_report(
     if source_url is None:
         source_url = await interaction.prompt("Source URL (optional)", default="")
     if comment is None:
-        comment = await interaction.prompt("Source comment (include any evidence for this report)", default="")
+        prompt = "Comment about the source (your source URL and any spectral links will be included)"
+        comment = await interaction.prompt(prompt, default="")
+        while not comment and not source_url:
+            click.echo("Provide a comment explaining the source.")
+            comment = await interaction.prompt(prompt, default="")
     if not (comment or "").strip() and not (source_url or "").strip():
         raise click.BadParameter("Provide a comment or source URL explaining the source.")
     text = spectrals._add_spectral_links_to_lossy_comment(comment, source_url, None, None)
@@ -172,7 +190,10 @@ async def run_lossy_report(
             click.echo("Print only: spectral images were neither generated nor uploaded.")
         click.echo("Print only: FLAC eligibility and authenticated ownership were not verified; nothing was submitted.")
         return text
-    if not await interaction.confirm("Verify this FLAC belongs to your authenticated account?", default=False):
+    question = "Verify this FLAC belongs to your authenticated account?"
+    if folder:
+        question = "Verify this FLAC is yours and upload spectral images from the displayed folder if eligible?"
+    if not await interaction.confirm(question, default=False):
         return text
     client = trackers.get_class(tracker)()
     try:
@@ -180,12 +201,7 @@ async def run_lossy_report(
         targets = await related_report_targets(client, torrent_id)
         if folder:
             try:
-                with TemporaryDirectory() as output:
-                    ids = await spectrals.generate_spectrals_all(folder, output, gather_audio_info(folder))
-                    await spectrals.compress_chosen_spectrals(output, ids)
-                    urls = await spectrals.upload_spectrals(output, ids, tracker, ask_host=False)
-                    if not urls or urls.keys() != ids.keys():
-                        raise ValueError("Missing spectral images.")
+                ids, urls = await _spectral_evidence(folder, tracker)
                 text = spectrals._add_spectral_links_to_lossy_comment(comment, source_url, urls, ids)
             except Exception as err:
                 click.echo(f"Could not attach spectrals: {err}")
