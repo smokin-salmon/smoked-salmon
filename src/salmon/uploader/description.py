@@ -10,6 +10,7 @@ from salmon.common import re_split
 from salmon.common.dsd import track_dsd_encoding
 from salmon.common.numbers import tag_number, unreadable_number
 from salmon.common.strings import (
+    comparable,
     credit_in_title,
     join_artists,
     names_no_artist,
@@ -99,14 +100,21 @@ def bare_title(
 _REMIX_BRACKET = re.compile(r" \([^)]+Remix(?:er)?\)", flags=re.IGNORECASE)
 
 
-def _with_guests(title: str, guests: list[str]) -> str:
+def _with_guests(title: str, guests: list[str]) -> str | None:
     """The title naming its guests, as guests_in_track_title puts them but with every name (the line is where they
-    show): unchanged when it already credits them."""
+    show): unchanged when it already names them, and None, the line keeping its artist, when it credits someone but
+    not every guest ("Song (feat. B)" for guests B and C)."""
     if credit_in_title(title, guests):
-        return title
+        return title if _names_each(title, guests) else None
     remix = _REMIX_BRACKET.search(title)
     head, tail = (title[: remix.start()] + title[remix.end() :], remix[0]) if remix else (title, "")
     return f"{head} (feat. {join_artists(guests)}){tail}"
+
+
+def _names_each(title: str, names: list[str]) -> bool:
+    """Whether a title names each of these, loosely: "Song (feat. B & C)" names B and C."""
+    plain = comparable(title)
+    return all(comparable(part) in plain for name in names for part in re_split(name))
 
 
 def _remixers(credits: list[tuple[str, str]], title: str | None) -> list[str]:
@@ -164,7 +172,7 @@ def _tag_credits(tags: Any, album: frozenset[str] | None) -> list[tuple[str, str
         for name, role in parse_artists(artists):
             if not (artist_is_the_album and role == "main"):
                 credits.append((name, role))
-            elif credit_in_title(tags.title or "", [name]):
+            elif credit_in_title(tags.title or "", [name]) and _names_each(tags.title or "", [name]):
                 credits.append((name, "guest"))
     credits += [(name, "remixer") for name in getattr(tags, "remixer", None) or []]
     return credits

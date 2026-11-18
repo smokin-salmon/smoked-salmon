@@ -832,7 +832,9 @@ def test_a_guest_goes_before_the_albums_one_remix() -> None:
 def test_as_before_no_remixer_is_said_once_without_one_on_several_tracks(tags: tuple[dict[str, Any], ...]) -> None:
     description = generate_description(_tracks(*tags), _album(("Sullivan Murphy", "main")))
 
-    assert all(line.startswith("[b]0") and "Sullivan Murphy - " in line for line in _lines(description))
+    lines = _lines(description)
+    assert len(lines) == len(tags)
+    assert all("Sullivan Murphy - " in line for line in lines)
     assert "remixed by" not in description
 
 
@@ -843,6 +845,24 @@ def test_every_guest_is_named_after_the_title() -> None:
     description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
 
     assert _lines(description) == ["[b]01.[/b] Song 1 (feat. Ann, Bea, Cat, Dee) [i](3:20)[/i]"]
+
+
+def test_a_title_naming_only_some_of_the_guests_keeps_the_artist() -> None:
+    # Carol would be named nowhere if the line left the artist out.
+    tracks = _tracks({"artist": ["Sullivan Murphy (feat. Bob & Carol)"], "title": "Song (feat. Bob)"})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == ["[b]01.[/b] Sullivan Murphy (feat. Bob & Carol) - Song (feat. Bob) [i](3:20)[/i]"]
+
+
+def test_an_artists_name_the_title_does_not_name_is_no_guest() -> None:
+    # ARTISTS repeats the album's artist; the title credits someone else, whom the tags don't name.
+    tracks = _tracks({"artist": ["Sullivan Murphy"], "artists": ["Sullivan Murphy"], "title": "Song (feat. Bob)"})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == ["[b]01.[/b] Sullivan Murphy - Song (feat. Bob) [i](3:20)[/i]"]
 
 
 def test_as_before_a_guests_track_with_no_title_keeps_its_artist() -> None:
