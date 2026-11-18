@@ -15,6 +15,7 @@
   let reportType = $state('')
   let reportComment = $state('')
   let reportSource = $state('')
+  let reportFolder = $state('')
   let reportDryRun = $state(false)
   let reportStarting = $state(false)
   let reportError = $state('')
@@ -35,7 +36,8 @@
           report_type: reportType || null,
           comment: reportComment || null,
           source_url: reportSource.trim(),
-        },
+          folder: reportFolder.trim() || null,
+        } satisfies import('../lib/tools').LossyReportParams,
       })
       reportJobId = job.id
       void jobStore.show(job.id)
@@ -161,9 +163,10 @@
       </select></label>
     {/if}
     <label>Source URL (optional)<input type="text" class="mono" bind:value={reportSource} placeholder="https://…" /></label>
+    <label>Album folder (optional)<input type="text" class="mono" bind:value={reportFolder} placeholder="Path on the salmon server" /></label>
   </div>
   <label>Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
-  <p class="muted">Provide source information or a source URL. Include links to existing spectrals when appropriate; this tool does not generate spectrals. Missing details are requested in the job's prompts.</p>
+  <p class="muted">Provide a comment or source URL. With an album folder, salmon uploads full and zoomed spectral images for each track to the tracker's configured image host before final confirmation. Leave the folder empty to report without local audio. Print only checks the folder and skips image generation and upload.</p>
   <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>
   <p class="muted">Print only prepares text to copy for manual reporting. It cannot verify ownership or FLAC eligibility.</p>
   <p class="muted">If a report fails, the batch stops and the job lists completed and unattempted IDs. Check any uncertain submission on the tracker and finish manually; running the batch again can file duplicate reports.</p>

@@ -15,12 +15,19 @@ class LossyReportParams(msgspec.Struct, forbid_unknown_fields=True):
     report_type: Literal["master", "web"] | None = None
     comment: str | None = None
     source_url: str | None = ""
+    folder: str | None = None
 
 
 async def lossy_report(params: LossyReportParams) -> dict[str, str]:
     """Use the command's preview and confirmation through browser interaction."""
     text = await run_lossy_report(
-        params.target, params.report_type, params.tracker, params.comment, params.source_url, dryrun.active()
+        params.target,
+        params.report_type,
+        params.tracker,
+        params.comment,
+        params.source_url,
+        dryrun.active(),
+        params.folder,
     )
     return {"text": text}
 

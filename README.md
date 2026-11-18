@@ -415,7 +415,7 @@ The pages:
 * **Convert** – transcode, downconvert and compress.
 * **Tag** – `salmon tag`.
 * **Search** – look up an album in the stores and read its metadata.
-* **Tools** – the description generator (`salmon descgen`), image uploads (`salmon images up`), and approval reports for eligible self-uploaded RED/OPS FLAC torrents (`salmon report`). Reports show the selected torrent IDs and ask for confirmation before submission; print-only mode stays offline.
+* **Tools** – the description generator (`salmon descgen`), image uploads (`salmon images up`), and approval reports for eligible self-uploaded RED/OPS FLAC torrents (`salmon report`). An optional album folder supplies full and zoomed spectral images for the report. The images go to the configured spectral host before final confirmation. Without a folder, only the comment and optional source URL are included. Print-only skips spectral generation and stays offline.
 * **Cross-upload** – `salmon cross-upload`, from torrent IDs or URLs.
 * **Jobs** – every job with its live log, the questions it waits on, and a cancel button.
 
@@ -595,6 +595,8 @@ salmon report 12345 --tracker RED --type master \
 ```
 
 Missing source information is prompted for. RED supports master and WEB approval; OPS uses its single category.
+
+Optionally pass `--folder PATH` or enter **Album folder** on the Tools page. Check the displayed path and audio file count against the selected FLAC. After verifying eligibility, salmon generates full and zoomed spectral images for each track and uploads them to the tracker's configured spectral host. The preview includes the links before you confirm submission. If preparation fails, continuing without images requires confirmation. Omit the folder to report without local audio or spectral uploads. Print-only validates the folder and skips both generation and upload.
 
 As a temporary conservative safeguard, automatic submission requires an explicitly selected FLAC owned by the authenticated reporting account. MP3 and other formats are rejected; metadata matches are never used to infer a common original master or automatically report other torrents. Hidden or unverifiable ownership, a mismatched torrent ID, or missing source metadata prevents submission. Select the original FLAC explicitly; if it cannot be identified, report manually instead. These restrictions are not confirmed tracker rules.
 

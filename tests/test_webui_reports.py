@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import anyio
 
 from salmon import dryrun
@@ -42,6 +44,32 @@ def test_optional_source_does_not_prompt_again(capsys):
     result = anyio.run(scenario)
     assert "Evidence" in result["text"]
     assert "Source URL (optional)" not in capsys.readouterr().out
+
+
+def test_folder_job_previews_links_before_declined_submission(tmp_path, monkeypatch, capsys):
+    from salmon import interaction, reports
+
+    (tmp_path / "song.flac").touch()
+    client = AsyncMock()
+    monkeypatch.setattr(reports.trackers, "get_class", lambda _: lambda: client)
+    monkeypatch.setattr(reports, "related_report_targets", AsyncMock(return_value=[123]))
+    monkeypatch.setattr(reports, "gather_audio_info", lambda _: {})
+    generate = AsyncMock(return_value={1: "song.flac"})
+    monkeypatch.setattr(reports.spectrals, "generate_spectrals_all", generate)
+    monkeypatch.setattr(reports.spectrals, "compress_chosen_spectrals", AsyncMock())
+    monkeypatch.setattr(reports.spectrals, "upload_spectrals", AsyncMock(return_value={1: ["full", "zoom"]}))
+
+    async def confirm(text, **kwargs):
+        if text.startswith("Submit"):
+            assert "[img=zoom]" in capsys.readouterr().out
+            return False
+        return True
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+    result = anyio.run(lossy_report, LossyReportParams("123", tracker="OPS", comment="Evidence", folder=str(tmp_path)))
+    assert "[img=full]" in result["text"]
+    assert generate.await_args is not None and generate.await_args.args[0] == str(tmp_path)
+    client.report_lossy_master.assert_not_awaited()
 
 
 def test_uncertain_report_keeps_batch_recovery_details():
