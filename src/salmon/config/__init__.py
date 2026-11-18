@@ -7,7 +7,6 @@ import anyio
 import asyncclick as click
 import msgspec
 import msgspec.inspect as mi
-import requests
 from platformdirs import user_config_dir
 
 from . import compat
@@ -58,29 +57,13 @@ def get_user_cfg_path() -> Path:
 
 
 def get_default_config_path() -> Path:
+    """The short config a new user starts from. It ships in the package: without it the install is broken."""
     default_config_path = _PKG_DIR / "data" / "config.default.toml"
-
-    if not default_config_path.exists():
-        click.secho(f"Default config file not found at {default_config_path}", fg="yellow")
-        click.secho("Downloading from GitHub...", fg="blue")
-
-        default_config_path.parent.mkdir(parents=True, exist_ok=True)
-
-        try:
-            github_url = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/master/src/salmon/data/config.default.toml"
-            response = requests.get(github_url, timeout=30)
-            response.raise_for_status()
-
-            default_config_path.write_text(response.text, encoding="utf-8")
-
-            click.secho(f"Successfully downloaded default config to {default_config_path}", fg="green")
-        except requests.exceptions.RequestException as e:
-            click.secho(f"Failed to download default config: {e}", fg="red")
-            raise FileNotFoundError(f"Could not find or download default config file: {e}") from e
-        except Exception as e:
-            click.secho(f"Failed to save default config: {e}", fg="red")
-            raise FileNotFoundError(f"Could not save default config file: {e}") from e
-
+    if not default_config_path.is_file():
+        raise FileNotFoundError(
+            f"{default_config_path} is missing. It ships with smoked-salmon: reinstall it, or restore the file in a"
+            " git checkout."
+        )
     return default_config_path
 
 

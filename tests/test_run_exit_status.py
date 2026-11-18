@@ -569,7 +569,7 @@ AS_BEFORE = {
     "abort_at_the_request_question": Row(1, 0, "Aborted!", fakes=_at("check_requests", click.Abort)),
     "abort_inside_upload": Row(1, 0, "Aborted!", trackers=("OPS",), setup=_upload_raises(click.Abort(), OpsApi)),
     "group_question_stdin_closed": Row(1, 0, "Aborted!", args=("-g", "7"), stdin=""),
-    "rate_refused": Row(1, 0, "two.flac", fakes=lambda: {"_sixteen_bit_refusal": lambda *_a, **_k: True}),
+    "rate_refused": Row(1, 0, "two.flac", fakes=lambda: {"_files_refusal": lambda *_a, **_k: True}),
     "bug_before_a_post": Row("traceback", 0, "RuntimeError: a bug", fakes=_at("check_requests", RuntimeError("a bug"))),
 }
 

@@ -13,10 +13,9 @@ from salmon import cfg, dryrun, interaction
 from salmon.common import clean_name, has_visible_chars
 from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.files import shares_files
-from salmon.common.strings import artists_or_various
+from salmon.common.strings import artists_or_various, substitute_forbidden_characters
 from salmon.constants import (
     BLACKLISTED_CHARS,
-    BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import UploadError
 from salmon.tagger.audio_info import gather_audio_info
@@ -218,6 +217,8 @@ def resolution_token(audio_info):
     (bit_depth,), (sample_rate,) = bits, rates
     if not bit_depth or not sample_rate or (bit_depth == 16 and sample_rate == 44100):
         return ""
+    if bit_depth == 1:
+        return ""  # DSD: its format names the rate, DSD64, not "1-2822.4".
     return f"{bit_depth}-{sample_rate / 1000:g}"
 
 
@@ -461,14 +462,11 @@ def _strip_blank_field(template, key):
 def _compile_artist_str(artist_data):
     """Create a string to represent the main artists of the release, as the album artist tag has it."""
     # This needed more than various_artist_threshold main artists, one more than ALBUMARTIST
-    return artists_or_various(a[0] for a in artist_data if a[1] == "main")
+    return artists_or_various(substitute_forbidden_characters(a[0]) for a in artist_data if a[1] == "main")
 
 
 def _sub_illegal_characters(stri):
-    if cfg.upload.formatting.fullwidth_replacements:
-        for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
-            stri = str(stri).replace(char, sub)
-    return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, str(stri))
+    return substitute_forbidden_characters(str(stri))
 
 
 def _fix_format(metadata, keys):
@@ -492,6 +490,9 @@ def _fix_format(metadata, keys):
             sub_metadata["format"] = f"AAC {enc}"
             if metadata["encoding_vbr"]:
                 sub_metadata["format"] += " (VBR)"
+        elif metadata["format"] == "DSD":
+            # Its encoding names the format and the rate: DSD256.
+            sub_metadata["format"] = metadata["encoding"] or "DSD"
     return sub_metadata
 
 

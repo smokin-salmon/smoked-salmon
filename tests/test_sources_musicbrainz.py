@@ -197,3 +197,91 @@ def test_another_join_keeps_the_artists_after_it_main(join) -> None:
     credits = [{"artist": {"name": "A"}}, join, {"artist": {"name": "B"}}]
 
     assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "main")]
+
+
+def _track(number: str, recording_title: str, title: str | None = None) -> dict:
+    track = {
+        "number": number,
+        "recording": {"title": recording_title, "artist-credit": [{"artist": {"name": "Spice Girls"}}]},
+    }
+    if title is not None:
+        track["title"] = title
+    return track
+
+
+def test_a_track_takes_its_title_from_the_release_track_list_not_its_recording() -> None:
+    # Disc 14 of MusicBrainz release https://musicbrainz.org/release/9c21406a-2032-4336-b0cd-ecb701cee16b: the track
+    # list says "(demo)" on every track, while its recordings say "(demo version)", or nothing and carry "demo" in
+    # their disambiguation.
+    disc = {
+        "position": "14",
+        "track-list": [
+            _track("2", "Wannabe (demo)", "Wannabe (demo)"),
+            _track("3", "2 Become 1", "2 Become 1 (demo)"),
+            _track("6", "Step to Me (demo version)", "Step to Me (demo)"),
+        ],
+    }
+
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})
+
+    assert {number: track["title"] for number, track in tracks["14"].items()} == {
+        "2": "Wannabe (demo)",
+        "3": "2 Become 1 (demo)",
+        "6": "Step to Me (demo)",
+    }
+
+
+def test_a_track_without_a_title_of_its_own_takes_its_recordings() -> None:
+    disc = {"position": "1", "track-list": [_track("4", "Mama")]}
+
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})
+
+    assert tracks["1"]["4"]["title"] == "Mama"
+
+
+# Tracks of MusicBrainz release https://musicbrainz.org/release/ec3baf33-2d0f-4eea-a3ec-8bcd582bf939
+# (Lady Gaga, The Remix)
+def _remix_track(number: str, recording_title: str, relations: list[tuple[str, str]]) -> dict:
+    recording: dict = {"title": recording_title, "artist-credit": [{"artist": {"name": "Lady Gaga"}}]}
+    if relations:
+        recording["artist-relation-list"] = [
+            {"type": relation_type, "direction": "backward", "artist": {"name": name}}
+            for relation_type, name in relations
+        ]
+    return {"number": number, "recording": recording}
+
+
+def test_a_recordings_remixer_relation_is_a_remixer_credit() -> None:
+    disc = {
+        "position": "1",
+        "track-list": [
+            _remix_track("1", "Just Dance (Richard Vission remix)", [("remixer", "Richard “Humpty” Vission")]),
+            _remix_track("2", "Poker Face (LLG vs. GLG radio mix remix)", []),
+            _remix_track(
+                "9",
+                "Alejandro (Sounds of Arrow remix)",
+                [("producer", "Lady Gaga"), ("producer", "RedOne"), ("remixer", "The Sound of Arrows")],
+            ),
+        ],
+    }
+
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})["1"]
+
+    assert tracks["1"]["artists"] == [("Lady Gaga", "main"), ("Richard “Humpty” Vission", "remixer")]
+    assert tracks["1"]["credited_remixers"] == ["Richard “Humpty” Vission"]
+    assert tracks["2"]["artists"] == [("Lady Gaga", "main")]
+    assert tracks["2"]["credited_remixers"] == []
+    assert tracks["9"]["artists"] == [("Lady Gaga", "main"), ("The Sound of Arrows", "remixer")]
+    assert tracks["9"]["credited_remixers"] == ["The Sound of Arrows"]
+
+
+@pytest.mark.parametrize(
+    ("release", "upc"),
+    [
+        ({"barcode": "00602527462943"}, "00602527462943"),
+        ({"barcode": ""}, None),  # MusicBrainz sends "" for a release with no barcode
+        ({}, None),
+    ],
+)
+def test_a_releases_barcode_is_its_upc(release, upc) -> None:
+    assert musicbrainz_tagger.Scraper().parse_upc(release) == upc

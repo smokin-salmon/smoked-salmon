@@ -234,6 +234,46 @@ def test_extract_remixers_no_remix_in_title():
     assert remixers == []
 
 
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Song (Extended Disco Mix)",
+        "Song (Mono Mix)",
+        "Song (Single Mix)",
+        'Song (12" Mix)',
+        "Song (Remi Xer Mix)",
+        "Song (Remi Xer Extended Mix)",
+        "Song (Remi Xer Edit)",
+    ],
+)
+def test_a_mix_or_an_edit_in_a_title_names_no_remixer(title):
+    # A mix or edit is a version far more often than a person (#1061): only "Remix" names one.
+    assert _extract_remixers_from_title(title) == []
+
+
+@pytest.mark.parametrize(
+    ("title", "remixers"),
+    [
+        ("Song (Remi Xer Club Remix)", [("Remi Xer", "remixer")]),
+        ("Song (Remi Xer & Other Xer Remix)", [("Remi Xer", "remixer"), ("Other Xer", "remixer")]),
+        ("Song (Extended Remix)", []),
+        ("Song (Original Remix)", []),
+        ("Song (Radio Edit)", []),
+    ],
+)
+def test_as_before_a_remix_in_a_title(title, remixers):
+    assert _extract_remixers_from_title(title) == remixers
+
+
+def test_a_mix_name_in_a_stores_title_adds_no_remixer_to_the_track():
+    base = one_track([("Lead", "main")], "Song")
+    meta = one_track([("Lead", "main")], "Song (Extended Disco Mix)")
+
+    combined = combine_tracks(deepcopy(base), deepcopy(meta), True)
+
+    assert combined["1"]["1"]["artists"] == [("Lead", "main")]
+
+
 # Discogs release 2520452, trimmed to the credits the merge reads
 DISCOGS_3_3 = {
     "artists": [{"name": "K-Ci & JoJo", "anv": "K-Ci And JoJo", "join": ""}],

@@ -102,7 +102,16 @@ def show_release_notification() -> None:
     Reads update_notification and update_notification_verbose from config.
     If a newer version exists, prints a notice and optionally the changelog.
     Does nothing if update_notification is disabled in config.
+    Never raises: an answer it cannot read costs one yellow line, and the command runs on.
     """
+    try:
+        _show_release_notification()
+    except Exception as e:
+        click.secho(f"Update check failed: {type(e).__name__}: {e}", fg="yellow")
+
+
+def _show_release_notification() -> None:
+    """Does the check show_release_notification guards: compare versions and print the notice."""
     notify = salmon.cfg.upload.update_notification
     verbose = salmon.cfg.upload.update_notification_verbose
 

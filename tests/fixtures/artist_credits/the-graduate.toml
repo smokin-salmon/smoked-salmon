@@ -1,0 +1,833 @@
+album = "Simon & Garfunkel and Dave Grusin, The Graduate (soundtrack)"
+why = "A soundtrack shared by a duo with '&' in its name and the film's composer: every store credits 'Simon & Garfunkel' as one artist on its own tracks, and Dave Grusin on his. A name with '&' that must not be split, beside another act's tracks."
+edition = "Columbia/Legacy 2019 digital, 14 tracks (Deezer 96900992 = MusicBrainz a0f4c5d7 by barcode 886447698648; Deezer's upc lookup also resolves the CD's 074640318023); Discogs 449586 is the 1990 CD (barcodes 886977066429 and 07464031802), the same 14 tracks in the same order."
+known_wrong = ["qobuz: the album's first main-artist, Simon & Garfunkel, is main on every track and each track's own MainArtist is a guest, so Dave Grusin is a guest on his own six tracks", "merge: Simon & Garfunkel main on Dave Grusin's six tracks too, beside him (from Qobuz's parse)"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+performers = ["Simon & Garfunkel", "Dave Grusin"]
+how_we_know = "Deezer, MusicBrainz and Discogs agree track by track: Simon & Garfunkel on tracks 1, 3, 5, 7, 9, 11, 13 and 14, Dave Grusin (credited 'David Grusin' on MusicBrainz) on 2, 4, 6, 8, 10 and 12, each the only artist on its tracks"
+open = "The release's artist: Deezer's album artist is Simon & Garfunkel (with both as album contributors), MusicBrainz credits 'Paul Simon; Simon & Garfunkel; David Grusin', Discogs Various; ALBUMARTIST is left open, as for Pulp Fiction. Per track, not judged by the test yet: Simon & Garfunkel main on their eight tracks and Dave Grusin on his six, neither on the other's"
+
+[right.name_forms]
+"Dave Grusin" = ["David Grusin"]
+
+[today.deezer]
+release = ["Simon & Garfunkel (main)", "Dave Grusin (main)"]
+tracks = 14
+
+[today.musicbrainz]
+release = ["Simon & Garfunkel (main)", "Dave Grusin (main)"]
+tracks = 14
+
+[today.discogs]
+release = ["Simon & Garfunkel (main)", "Dave Grusin (main)"]
+tracks = 14
+
+[today.qobuz]
+release = ["Simon & Garfunkel (main)", "Dave Grusin (guest)"]
+tracks = 14
+
+[today.merge]
+release = ["Simon & Garfunkel (main)", "Dave Grusin (main)"]
+tracks = 14
+credits = ["1.1: Simon & Garfunkel (main)", "1.2: Dave Grusin (main), Simon & Garfunkel (main)", "1.3: Simon & Garfunkel (main)", "1.4: Dave Grusin (main), Simon & Garfunkel (main)", "1.5: Simon & Garfunkel (main)", "1.6: Dave Grusin (main), Simon & Garfunkel (main)", "1.7: Simon & Garfunkel (main)", "1.8: Dave Grusin (main), Simon & Garfunkel (main)", "1.9: Simon & Garfunkel (main)", "1.10: Dave Grusin (main), Simon & Garfunkel (main)", "1.11: Simon & Garfunkel (main)", "1.12: Dave Grusin (main), Simon & Garfunkel (main)", "1.13: Simon & Garfunkel (main)", "1.14: Simon & Garfunkel (main)"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
+# the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["The Sound of Silence (Electric Version)"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["The Singleman Party Foxtrot"]
+artist = ["Dave Grusin"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Mrs. Robinson (Version 1)"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Sunporch Cha-Cha-Cha"]
+artist = ["Dave Grusin"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Scarborough Fair / Canticle (Interlude)"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["On the Strip"]
+artist = ["Dave Grusin"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["April Come She Will"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["The Folks"]
+artist = ["Dave Grusin"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Scarborough Fair / Canticle (Extended Version)"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["A Great Effect"]
+artist = ["Dave Grusin"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["The Big Bright Green Pleasure Machine (Alternate Version)"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Whew"]
+artist = ["Dave Grusin"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Mrs. Robinson (Version 2)"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["The Sound of Silence (Reprise)"]
+artist = ["Simon & Garfunkel"]
+album = ["The Graduate"]
+albumartist = ["Simon & Garfunkel"]
+date = ["1968-01-21"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 96900992,
+ "title": "The Graduate",
+ "upc": "886447698648",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 466,
+    "name": "Folk"
+   }
+  ]
+ },
+ "label": "Legacy/Columbia",
+ "release_date": "1968-01-21",
+ "tracklist": [
+  {
+   "SNG_ID": "679967242",
+   "SNG_TITLE": "The Sound of Silence",
+   "VERSION": "(Electric Version)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USSM16401131",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "679967252",
+   "SNG_TITLE": "The Singleman Party Foxtrot",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dave Grusin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USSM16800476",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "679967262",
+   "SNG_TITLE": "Mrs. Robinson",
+   "VERSION": "(Version 1)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USSM16800477",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "679967272",
+   "SNG_TITLE": "Sunporch Cha-Cha-Cha",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dave Grusin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USSM16800478",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "679967282",
+   "SNG_TITLE": "Scarborough Fair / Canticle",
+   "VERSION": "(Interlude)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USSM16800479",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "679967292",
+   "SNG_TITLE": "On the Strip",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dave Grusin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USSM16800480",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "679967302",
+   "SNG_TITLE": "April Come She Will",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USSM16501152",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "679967312",
+   "SNG_TITLE": "The Folks",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dave Grusin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USSM16800482",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "679967322",
+   "SNG_TITLE": "Scarborough Fair / Canticle",
+   "VERSION": "(Extended Version)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USSM16800483",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "679967332",
+   "SNG_TITLE": "A Great Effect",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dave Grusin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USSM16800484",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "679967342",
+   "SNG_TITLE": "The Big Bright Green Pleasure Machine",
+   "VERSION": "(Alternate Version)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USSM16800485",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "679967352",
+   "SNG_TITLE": "Whew",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dave Grusin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USSM16800486",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "679967362",
+   "SNG_TITLE": "Mrs. Robinson",
+   "VERSION": "(Version 2)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "USSM19918648",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "679967372",
+   "SNG_TITLE": "The Sound of Silence",
+   "VERSION": "(Reprise)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Simon & Garfunkel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "USSM19918649",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="a0f4c5d7-d05c-45b3-8b9e-4ec4ae932ba0"><title>The Graduate: The Original Sound Track Recording</title><artist-credit><name-credit><artist><name>Paul Simon</name></artist></name-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit><release-group type="Soundtrack"><title>The Graduate: The Original Sound Track Recording</title><first-release-date>1968-02</first-release-date><artist-credit><name-credit><artist><name>Paul Simon</name></artist></name-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit></release-group><date>2019-05-24</date><release-event-list><release-event><date>2019-05-24</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>G010004089083D</catalog-number><label><name>Columbia</name></label></label-info><label-info><catalog-number>G010004089083D</catalog-number><label><name>Legacy</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><title>The Sound of Silence (electric version)</title><recording><title>The Sound of Silence</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1966-01-17</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>The Singleman Party Foxtrot</title><artist-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>3</position><number>3</number><title>Mrs. Robinson (version 1)</title><recording><title>Mrs. Robinson</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Sunporch Cha‐Cha‐Cha</title><artist-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Scarborough Fair / Canticle (interlude)</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>On the Strip</title><artist-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>April Come She Will</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1966-01-17</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>The Folks</title><artist-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>9</position><number>9</number><title>Scarborough Fair / Canticle (extended version)</title><recording><title>Scarborough Fair / Canticle</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>A Great Effect</title><artist-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>11</position><number>11</number><title>The Big Bright Green Pleasure Machine (alternate version)</title><recording><title>The Big Bright Green Pleasure Machine</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>Whew</title><artist-credit><name-credit><name>David Grusin</name><artist><name>Dave Grusin</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>13</position><number>13</number><title>Mrs. Robinson (version 2)</title><recording><title>Mrs. Robinson</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track><track><position>14</position><number>14</number><title>The Sound of Silence (reprise)</title><recording><title>The Sound of Silence</title><artist-credit><name-credit><artist><name>Simon &amp; Garfunkel</name></artist></name-credit></artist-credit><first-release-date>1968-02</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 449586,
+ "year": 1990,
+ "artists": [
+  {
+   "name": "Various",
+   "id": 194
+  }
+ ],
+ "labels": [
+  {
+   "name": "Columbia",
+   "catno": "CK 3180",
+   "id": 1866
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Album",
+    "Reissue",
+    "Remastered"
+   ]
+  }
+ ],
+ "title": "The Graduate (Original Soundtrack)",
+ "released": "1990-10-25",
+ "genres": [
+  "Rock",
+  "Stage & Screen"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "The Sound Of Silence",
+   "duration": "3:06"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dave Grusin",
+     "id": 37730
+    }
+   ],
+   "title": "The Singleman Party Foxtrot",
+   "duration": "2:53"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "Mrs. Robinson",
+   "duration": "1:15"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dave Grusin",
+     "id": 37730
+    }
+   ],
+   "title": "Sunporch Cha-Cha-Cha",
+   "duration": "2:54"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "Scarborough Fair / Canticle (Interlude)",
+   "duration": "1:42"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dave Grusin",
+     "id": 37730
+    }
+   ],
+   "title": "On The Strip",
+   "duration": "2:00"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "April Come She Will",
+   "duration": "1:51"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dave Grusin",
+     "id": 37730
+    }
+   ],
+   "title": "The Folks",
+   "duration": "2:28"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "Scarborough Fair / Canticle",
+   "duration": "6:22"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dave Grusin",
+     "id": 37730
+    }
+   ],
+   "title": "A Great Effect",
+   "duration": "4:07"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "The Big Bright Green Pleasure Machine",
+   "duration": "1:46"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dave Grusin",
+     "id": 37730
+    }
+   ],
+   "title": "Whew",
+   "duration": "2:12"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "Mrs. Robinson",
+   "duration": "1:13"
+  },
+  {
+   "position": "14",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Simon & Garfunkel",
+     "id": 232157
+    }
+   ],
+   "title": "The Sound Of Silence",
+   "duration": "3:07"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "u6yja5ire3iuc",
+ "upc": "0886447698648",
+ "title": "The Graduate",
+ "version": null,
+ "tracks_count": 14,
+ "artist": {
+  "name": "Simon & Garfunkel"
+ },
+ "artists": [
+  {
+   "name": "Simon & Garfunkel",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Dave Grusin",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Blues/Country/Folk",
+  "Blues/Country/Folk→Folk"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "The Sound of Silence",
+    "version": "Electric Version",
+    "track_number": 1,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Al Gorgoni, Electric Guitar - Vinnie Bell, Electric Guitar - Bob Bushnell, Bass - Bobby Gregg, Drums - Paul Simon, Composer, Lyricist - Tom Wilson, Producer - Roy Halee, Engineer"
+   },
+   {
+    "title": "The Singleman Party Foxtrot",
+    "version": null,
+    "track_number": 2,
+    "performer": {
+     "name": "Dave Grusin"
+    },
+    "performers": "Dave Grusin, MainArtist, AssociatedPerformer - David Grusin, Composer - Teo Macero, Producer"
+   },
+   {
+    "title": "Mrs. Robinson",
+    "version": "Version 1",
+    "track_number": 3,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Paul Simon, Composer, Lyricist"
+   },
+   {
+    "title": "Sunporch Cha-Cha-Cha",
+    "version": null,
+    "track_number": 4,
+    "performer": {
+     "name": "Dave Grusin"
+    },
+    "performers": "Dave Grusin, MainArtist, AssociatedPerformer - David Grusin, Composer - Teo Macero, Producer"
+   },
+   {
+    "title": "Scarborough Fair / Canticle",
+    "version": "Interlude",
+    "track_number": 5,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Traditional, Composer - Paul Simon, Arranger - Art Garfunkel, Arranger"
+   },
+   {
+    "title": "On the Strip",
+    "version": null,
+    "track_number": 6,
+    "performer": {
+     "name": "Dave Grusin"
+    },
+    "performers": "Dave Grusin, MainArtist, AssociatedPerformer - David Grusin, Composer - Teo Macero, Producer"
+   },
+   {
+    "title": "April Come She Will",
+    "version": null,
+    "track_number": 7,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Paul Simon, Composer, Lyricist - Bob Johnston, Producer"
+   },
+   {
+    "title": "The Folks",
+    "version": null,
+    "track_number": 8,
+    "performer": {
+     "name": "Dave Grusin"
+    },
+    "performers": "Dave Grusin, MainArtist, AssociatedPerformer - David Grusin, Composer - Teo Macero, Producer"
+   },
+   {
+    "title": "Scarborough Fair / Canticle",
+    "version": "Extended Version",
+    "track_number": 9,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Traditional, Composer - Paul Simon, Arranger - Art Garfunkel, Arranger"
+   },
+   {
+    "title": "A Great Effect",
+    "version": null,
+    "track_number": 10,
+    "performer": {
+     "name": "Dave Grusin"
+    },
+    "performers": "Dave Grusin, MainArtist, AssociatedPerformer - David Grusin, Composer - Teo Macero, Producer"
+   },
+   {
+    "title": "The Big Bright Green Pleasure Machine",
+    "version": "Alternate Version",
+    "track_number": 11,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Paul Simon, Composer, Lyricist - Bob Johnston, Producer"
+   },
+   {
+    "title": "Whew",
+    "version": null,
+    "track_number": 12,
+    "performer": {
+     "name": "Dave Grusin"
+    },
+    "performers": "Dave Grusin, MainArtist, AssociatedPerformer - David Grusin, Composer - Teo Macero, Producer"
+   },
+   {
+    "title": "Mrs. Robinson",
+    "version": "Version 2",
+    "track_number": 13,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Paul Simon, Composer, Lyricist"
+   },
+   {
+    "title": "The Sound of Silence",
+    "version": "Reprise",
+    "track_number": 14,
+    "performer": {
+     "name": "Simon & Garfunkel"
+    },
+    "performers": "Simon & Garfunkel, MainArtist, AssociatedPerformer - Paul Simon, Composer, Lyricist - Tom Wilson, Producer"
+   }
+  ]
+ }
+}
+'''

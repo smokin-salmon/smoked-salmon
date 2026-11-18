@@ -5,17 +5,19 @@ from pathlib import Path
 
 import asyncclick as click
 
-from salmon import cfg, interaction
+from salmon import interaction
 from salmon.checks.tag_rules import in_torrent_path
 from salmon.common import clean_name, has_visible_chars, invisible_chars, show_invisible
+from salmon.common.dsd import DSD_EXTENSIONS
 from salmon.common.files import is_apple_double, is_torrent_file
+from salmon.common.strings import substitute_forbidden_characters
 from salmon.constants import (
     ALLOWED_EXTENSIONS,
     BLACKLISTED_CHARS,
-    BLACKLISTED_FULLWIDTH_REPLACEMENTS,
     ESSENTIAL_EXTENSIONS,
 )
 from salmon.errors import NoncompliantFolderStructure
+from salmon.tagger.playlists import rewrite_playlists
 from salmon.tagger.renames import RenameStopped, name_key, rename_recorded
 
 # Used when no tracker is known yet (e.g. `salmon tag`), and as the fallback for trackers whose
@@ -217,10 +219,7 @@ def _forbidden_characters(name: str) -> list[str]:
 
 def _substitute_forbidden_characters(name: str) -> str:
     """Replace the forbidden characters in *name* the same way generated folder and file names are."""
-    if cfg.upload.formatting.fullwidth_replacements:
-        for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
-            name = name.replace(char, sub)
-    return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, name)
+    return substitute_forbidden_characters(name)
 
 
 async def _check_forbidden_characters(path: str, scene: bool) -> None:
@@ -398,8 +397,11 @@ def _rename_or_stop(path: str, renames: list[tuple[str, str]]) -> None:
     try:
         rename_recorded(path, renames)
     except RenameStopped as e:
+        # Not put back: the playlists follow the renames that were made.
+        rewrite_playlists(path, e.done)
         click.secho(e.report(path), fg="red", bold=True)
         raise NoncompliantFolderStructure from e
+    rewrite_playlists(path, renames)
     for _, new in renames:
         click.echo(f" >> {new}")
 
@@ -447,7 +449,7 @@ async def _check_extensions(
             contains files with invalid extensions.
         click.Abort: If the user aborts during interactive extension handling.
     """
-    mp3, aac, flac = [], [], []
+    mp3, aac, flac, dsd = [], [], [], []
     offending_files = []  # Collect offending files for scene releases, and for -yyy on the album itself
     stop_instead = album_itself and await interaction.assume_defaults()
     effective_extensions = ESSENTIAL_EXTENSIONS if essential_only else ALLOWED_EXTENSIONS
@@ -461,6 +463,8 @@ async def _check_extensions(
                 flac.append(fln)
             elif ext == ".m4a":
                 aac.append(fln)
+            elif ext in DSD_EXTENSIONS:
+                dsd.append(fln)
             elif ext not in effective_extensions:
                 if scene or (stop_instead and not is_torrent_file(fln) and not is_apple_double(fln)):
                     offending_files.append(os.path.join(root, fln))
@@ -473,7 +477,7 @@ async def _check_extensions(
             click.echo(f" >> {filepath}")
         raise NoncompliantFolderStructure
 
-    if len([li for li in [mp3, flac, aac] if li]) > 1:
+    if len([li for li in [mp3, flac, aac, dsd] if li]) > 1:
         await _handle_multiple_audio_exts()
     else:
         click.secho("File extensions have been validated.", fg="green")

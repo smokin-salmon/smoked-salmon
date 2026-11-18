@@ -8,7 +8,7 @@ files_from = "deezer"
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -16,7 +16,7 @@ not_main = ["No Artist"]
 how_we_know = "'No Artist' is Discogs' placeholder for a track with no artist; no other store has it"
 
 [today.deezer]
-release = ["Tim Roth (main)", "Amanda Plummer (main)", "Dick Dale And His Del-Tones (main)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool (main)", "The Gang (main)", "Al Green (main)", "The Tornadoes (main)", "Ricky Nelson (main)", "Dusty Springfield (main)", "Maria De Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Maria McKee (main)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "The Statler Brothers (main)", "The Lively Ones (main)"]
+release = ["Tim Roth (main)", "Amanda Plummer (main)", "Dick Dale And His Del-Tones (main)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool & The Gang (main)", "Al Green (main)", "The Tornadoes (main)", "Ricky Nelson (main)", "Dusty Springfield (main)", "Maria De Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Maria McKee (main)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "The Statler Brothers (main)", "The Lively Ones (main)"]
 tracks = 20
 
 [today.musicbrainz]
@@ -32,8 +32,9 @@ release = ["Various Artists (main)", "Tim Roth (guest)", "Amanda Plummer (guest)
 tracks = 20
 
 [today.merge]
-release = ["Tim Roth (main)", "Amanda Plummer (main)", "No Artist (main)", "Dick Dale and His Del-Tones (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool & the Gang (guest)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Ricky Nelson (main)", "Rick Nelson (main)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "Maria de Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "The Centurions (main)", "Bob Keene (producer)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Kramer (producer)", "Urge Overkill (producer)", "Maria McKee (main)", "Bruce Brody (producer)", "Maria McKee (producer)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
+release = ["Tim Roth (main)", "Amanda Plummer (main)", "No Artist (main)", "Dick Dale and His Del-Tones (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Ricky Nelson (main)", "Rick Nelson (main)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "Maria de Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "The Centurions (main)", "Bob Keene (producer)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Kramer (producer)", "Urge Overkill (producer)", "Maria McKee (main)", "Bruce Brody (producer)", "Maria McKee (producer)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
 tracks = 20
+credits = ["1.1: Tim Roth (main), Amanda Plummer (main), No Artist (main)", "1.2: Dick Dale and His Del-Tones (main), Dick Dale & His Del-Tones (main), Jim Monsour (producer)", "1.3: John Travolta (main), Samuel L. Jackson (main), No Artist (main)", "1.4: Kool & The Gang (main)", "1.5: Al Green (main), Willie Mitchell (producer)", "1.6: The Tornadoes (main), Bob Irwin (producer)", "1.7: Ricky Nelson (main), Rick Nelson (main), Jimmie Haskell (producer), Ozzie Nelson (producer), Ricky Nelson (producer)", "1.8: Dusty Springfield (main), Arif Mardin (producer), Jerry Wexler (producer), Tom Dowd (producer)", "1.9: Maria de Medeiros (main), Bruce Willis (main), No Artist (main)", "1.10: The Centurians (main), The Centurions (main), Bob Keene (producer)", "1.11: Jerome Patrick Hoban (main), No Artist (main)", "1.12: Chuck Berry (main)", "1.13: Urge Overkill (main), Kramer (producer), Urge Overkill (producer)", "1.14: Maria McKee (main), Bruce Brody (producer), Maria McKee (producer)", "1.15: Peter Greene (main), Duane Whitaker (main), No Artist (main)", "1.16: The Revels (main), Bill Wenzel (producer)", "1.17: The Statler Brothers (main), Jerry Kennedy (producer)", "1.18: John Travolta (main), Samuel L. Jackson (main), No Artist (main)", "1.19: The Lively Ones (main)", "1.20: Samuel L. Jackson (main), No Artist (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -240,7 +241,7 @@ album = ["Pulp Fiction (Music From The Motion Picture)"]
 albumartist = ["Various Artists"]
 date = ["2019-03-15"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -1466,8 +1467,10 @@ qobuz = '''
  "artist": {
   "name": "Various Artists"
  },
+ "artists": [],
  "genres_list": [
-  "Film Soundtracks"
+  "Film",
+  "Film→Bandes originales de films"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -1478,10 +1481,10 @@ qobuz = '''
     "title": "Pumpkin And Honey Bunny",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 1,
-    "performers": "Tim Roth, MainArtist, SpokenWord - Amanda Plummer, MainArtist, SpokenWord - Jim Monsour, Producer - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Tim Roth"
-    }
+    },
+    "performers": "Tim Roth, MainArtist, SpokenWord - Amanda Plummer, MainArtist, SpokenWord - Jim Monsour, Producer - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Misirlou",
@@ -1495,19 +1498,19 @@ qobuz = '''
     "title": "Royale With Cheese",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 3,
-    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "John Travolta"
-    }
+    },
+    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Jungle Boogie",
     "version": null,
     "track_number": 4,
-    "performers": "Kool & The Gang, MainArtist - Kool & The Gang Enterprises, Inc., Producer, RecordingArranger - Jeff Lesser, Engineer - Harvey Goldberg, Engineer - Donald Boyce, BackgroundVocalist, Vocalist, ComposerLyricist - Jay Landers, Other - Christopher B. Pearman, Other - Elliot Lurie, Other - Dennis Ronald Thomas, Vocalist, ComposerLyricist - Something Sweet, BackgroundVocalist - Ronald Bell, Vocalist - Robert Bell, Vocalist, ComposerLyricist - George Brown, Vocalist, ComposerLyricist - Amir Bayyan, Vocalist - Claydes Smith, Vocalist, ComposerLyricist - Caldwell MacMillan, Vocalist - Kevin W. Lassiter, Vocalist - Clifford Adams, Vocalist - Ricky West, Vocalist - Larry Gittens, Vocalist - Robert Spike Mickens, ComposerLyricist - Richard Westfield, ComposerLyricist - Ronald Nathan Bell, ComposerLyricist",
     "performer": {
      "name": "Kool & The Gang"
-    }
+    },
+    "performers": "Kool & The Gang, MainArtist - Kool & The Gang Enterprises, Inc., Producer, RecordingArranger - Jeff Lesser, Engineer - Harvey Goldberg, Engineer - Donald Boyce, BackgroundVocalist, Vocalist, ComposerLyricist - Jay Landers, Other - Christopher B. Pearman, Other - Elliot Lurie, Other - Dennis Ronald Thomas, Vocalist, ComposerLyricist - Something Sweet, BackgroundVocalist - Ronald Bell, Vocalist - Robert Bell, Vocalist, ComposerLyricist - George Brown, Vocalist, ComposerLyricist - Amir Bayyan, Vocalist - Claydes Smith, Vocalist, ComposerLyricist - Caldwell MacMillan, Vocalist - Kevin W. Lassiter, Vocalist - Clifford Adams, Vocalist - Ricky West, Vocalist - Larry Gittens, Vocalist - Robert Spike Mickens, ComposerLyricist - Richard Westfield, ComposerLyricist - Ronald Nathan Bell, ComposerLyricist"
    },
    {
     "title": "Let's Stay Together",
@@ -1529,10 +1532,10 @@ qobuz = '''
     "title": "Lonesome Town",
     "version": "Single Version",
     "track_number": 7,
-    "performers": "Ricky Nelson, MainArtist, Producer - Ozzie Nelson, Producer - Jimmie Haskell, Producer - BAKER KNIGHT, ComposerLyricist",
     "performer": {
      "name": "Ricky Nelson"
-    }
+    },
+    "performers": "Ricky Nelson, MainArtist, Producer - Ozzie Nelson, Producer - Jimmie Haskell, Producer - BAKER KNIGHT, ComposerLyricist"
    },
    {
     "title": "Son Of A Preacher Man",
@@ -1546,10 +1549,10 @@ qobuz = '''
     "title": "Zed's Dead Baby",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 9,
-    "performers": "Maria de Medeiros, MainArtist, SpokenWord - Bruce Willis, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Maria de Medeiros"
-    }
+    },
+    "performers": "Maria de Medeiros, MainArtist, SpokenWord - Bruce Willis, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Bullwinkle",
@@ -1563,19 +1566,19 @@ qobuz = '''
     "title": "Jack Rabbit Slims Twist Contest",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 11,
-    "performers": "Jerome Patrick Hoban, MainArtist - Quentin Tarantino, Producer, ComposerLyricist",
     "performer": {
      "name": "Jerome Patrick Hoban"
-    }
+    },
+    "performers": "Jerome Patrick Hoban, MainArtist - Quentin Tarantino, Producer, ComposerLyricist"
    },
    {
     "title": "You Never Can Tell",
     "version": "1964 Single Version",
     "track_number": 12,
-    "performers": "Chuck Berry, MainArtist, Vocalist, ComposerLyricist - Phil Chess, Producer - Leonard Chess, Producer",
     "performer": {
      "name": "Chuck Berry"
-    }
+    },
+    "performers": "Chuck Berry, MainArtist, Vocalist, ComposerLyricist - Phil Chess, Producer - Leonard Chess, Producer"
    },
    {
     "title": "Girl, You'll Be A Woman Soon",
@@ -1589,19 +1592,19 @@ qobuz = '''
     "title": "If Love Is A Red Dress (Hang Me In Rags)",
     "version": "Acoustic Demo Version",
     "track_number": 14,
-    "performers": "Maria McKee, MainArtist, Producer, ComposerLyricist - Bruce Bennett Brody, Producer",
     "performer": {
      "name": "Maria McKee"
-    }
+    },
+    "performers": "Maria McKee, MainArtist, Producer, ComposerLyricist - Bruce Bennett Brody, Producer"
    },
    {
     "title": "Bring Out The Gimp",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 15,
-    "performers": "Peter Greene, MainArtist, SpokenWord - Duane Whitaker, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Peter Greene"
-    }
+    },
+    "performers": "Peter Greene, MainArtist, SpokenWord - Duane Whitaker, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Comanche",
@@ -1615,19 +1618,19 @@ qobuz = '''
     "title": "Flowers On The Wall",
     "version": "1975 Version",
     "track_number": 17,
-    "performers": "The Statler Brothers, MainArtist - Jerry Kennedy, Producer - Tom Sparkman, Engineer - Lewis De Witt, ComposerLyricist",
     "performer": {
      "name": "The Statler Brothers"
-    }
+    },
+    "performers": "The Statler Brothers, MainArtist - Jerry Kennedy, Producer - Tom Sparkman, Engineer - Lewis De Witt, ComposerLyricist"
    },
    {
     "title": "Personality Goes A Long Way",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 18,
-    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "John Travolta"
-    }
+    },
+    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist"
    },
    {
     "title": "Surf Rider",
@@ -1641,10 +1644,10 @@ qobuz = '''
     "title": "Ezekiel 25:17",
     "version": "Dialogue Excerpt From \"Pulp Fiction\"",
     "track_number": 20,
-    "performers": "Samuel L. Jackson, MainArtist - Quentin Tarantino, ComposerLyricist",
     "performer": {
      "name": "Samuel L. Jackson"
-    }
+    },
+    "performers": "Samuel L. Jackson, MainArtist - Quentin Tarantino, ComposerLyricist"
    }
   ]
  }

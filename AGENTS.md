@@ -55,9 +55,9 @@ the test run never reads a developer's config.
 | `src/salmon/config/` | Config schema (`validations.py`, msgspec structs); validation runs in `__post_init__` |
 | `src/salmon/data/config.default.toml` | The short config new users start from. It has no tracker, so it loads only once one is filled in |
 | `src/salmon/data/config.reference.toml` | Documents every key, commented out with its default; a test keeps it in sync with the schema |
-| `src/salmon/data/version.toml` | Version and changelog. **See Releases below before touching it** |
+| `src/salmon/data/version.toml` | Version and changelog. **See [docs/ci-and-releases.md](docs/ci-and-releases.md) before touching it** |
 | `src/salmon/trackers/` | Tracker API clients. `base.py` (`BaseGazelleApi`) does all tracker HTTP |
-| `src/salmon/uploader/` | The upload flow (`__init__.py`; one tracker's turn in `tracker_run.py`, a torrent's upload in `upload.py`, its conversions' in `conversion_upload.py`; the cover in `cover_upload.py`, the checks before upload in `upload_checks.py`, the metadata review in `metadata_review.py`), dupe/request checks, spectrals, seedbox, torrent clients |
+| `src/salmon/uploader/` | The upload flow (`__init__.py`; one tracker's turn in `tracker_run.py`, a torrent's upload in `upload.py`, its group and torrent descriptions in `description.py`, its conversions' in `conversion_upload.py`; the cover in `cover_upload.py`, the checks before upload in `upload_checks.py`, the metadata review in `metadata_review.py`), dupe/request checks, spectrals, seedbox, torrent clients |
 | `src/salmon/sources/` | Shared HTTP scraper per store (Qobuz, Tidal, Apple Music, Bandcamp, ...) |
 | `src/salmon/search/` | Store search, built on `sources/` |
 | `src/salmon/tagger/` | Metadata gathering, review, retagging, renaming; `tagger/sources/` parses store metadata |
@@ -67,6 +67,7 @@ the test run never reads a developer's config.
 | `src/salmon/web/` | Small aiohttp server for viewing spectrals |
 | `src/salmon/webui/`, `webui/` | `salmon web` (ADR 0004): the aiohttp server and its jobs (`jobs.py`, each in a thread of its own), the browser's side of `salmon.interaction`, and the Svelte front end, whose build is committed in `src/salmon/webui/static/` |
 | `docs/adr/` | Decision records: read before re-proposing something they rule out |
+| `docs/ci-and-releases.md` | CI, the Docker image and how a release is cut |
 
 ## Tracker safety rules
 
@@ -109,7 +110,8 @@ Several rules in this file have a test, named next to the rule (`tests/test_rule
   Changes to existing keys follow [ADR 0005](docs/adr/0005-config-compatibility.md): renaming,
   moving or removing a key needs an entry in its old-key table, never a silent change; a changed
   default is a breaking change, with a release-notes line that keeps the old behaviour.
-- Every bug fix comes with a test that fails without the fix.
+- Every bug fix comes with a test that fails without the fix. How to write a test, the shared helpers and the size
+  guideline are in [tests/README.md](tests/README.md).
 - **Never change or delete a user's album in place when it may be in `library_dirs`.** Steps that
   retag, rename, sanitize or delete work on the folder `staged_source` (`uploader/staging.py`)
   returns, which is a real copy for `--skip-flac-upload` and for library albums. A new command or
@@ -133,65 +135,23 @@ Several rules in this file have a test, named next to the rule (`tests/test_rule
 - Image hosts that only display for one tracker's members (RED's) must never be usable through a
   setting shared by all trackers. See [ADR 0002](docs/adr/0002-per-tracker-cover-host.md).
 
-## Docker image
+## CI, the Docker image and releases
 
-A PR that touches the `Dockerfile` builds the image for `linux/amd64` and `linux/arm64`
-(`.github/workflows/docker-pr.yml`) and runs `.github/docker-smoke.sh` in it. An image change gets a
-smoke check that fails before it. rclone is pinned by `ARG` (version and one SHA-256 per arch, from
-the release's `SHA256SUMS`); Dependabot cannot bump it, so bump all three by hand.
-`.github/workflows/rclone-check.yml` runs weekly and fails when rclone has a newer release, naming
-it and where its `SHA256SUMS` are.
+Read [docs/ci-and-releases.md](docs/ci-and-releases.md) before touching the `Dockerfile`, anything under
+`.github/`, `.trivyignore` or `src/salmon/data/version.toml`. What holds for every PR:
 
-Everything CI and the image run is pinned: each `uses:` to a full commit SHA with its version in a
-comment, the `Dockerfile`'s base and uv images by tag and digest, Python packages and the dev tools
-(ruff, pytest, basedpyright) by `uv.lock`.
-Dependabot (`.github/dependabot.yml`) proposes every update to them as a PR, except the job-local
-`registry:3` service in the publishing workflows, whose digest is bumped by hand. Pin a new action or
-image the same way, checking that the SHA is the commit its release tag points to
-(`tests/test_rule_pinned.py`).
-
-A `pull_request` workflow runs the PR's code: it declares its permissions, none of them `write`, logs
-in to no registry, and each checkout in it sets `persist-credentials: false`
-(`tests/test_rule_pull_request_workflows.py`). No script interpolates a value an outsider writes (a
-title, a body, a commit message, a PR's branch name): it goes through `env:` and is read as
-`"$VALUE"` (`tests/test_rule_workflow_untrusted_input.py`).
-
-Every workflow that builds the image scans it with `.github/actions/scan-image` (Trivy): fixable
-HIGH and CRITICAL vulnerabilities are listed in the job summary, and a fixable CRITICAL fails the
-job. `build-alpha.yml` and `docker-image.yml` build both arches into a registry local to the job,
-scan that image, then copy the scanned digest to ghcr.io, so the published image is the one scanned,
-never a rebuild. An allowlist entry goes in `.trivyignore` with a `# reason` line above it and an
-`exp:YYYY-MM-DD` end date on it; the scan action refuses entries without both.
-
-## Releases
-
-A release is cut by publishing a GitHub release (tag `X.Y.Z`), never by bumping versions by hand.
-Publishing it runs `.github/workflows/docker-image.yml`, which:
-
-1. checks out `master` (not the tagged commit), sets `current` in `src/salmon/data/version.toml`,
-   adds a `[[changelog]]` entry whose notes are the release's description, sets `version` in
-   `pyproject.toml` and refreshes `uv.lock`, without committing yet;
-2. builds the Docker image from that tree for both arches and scans it (see Docker image above);
-3. commits the three files to `master` as github-actions and moves the tag onto that commit;
-4. pushes the scanned image to ghcr.io as `X.Y.Z` and `latest`.
-
-If the scan fails (step 2), nothing has left the job: the GitHub release exists, but `master`, the
-tag and ghcr.io are unchanged and no user is told. Fix the image on `master` (a base image or package
-bump), then re-run the failed run: it rebuilds from the new `master`. There is no need to delete the
-release. If the run fails after step 3, `master` already announces a version that has no image;
-re-run it as soon as possible: step 1 sees `current` already at `X.Y.Z` and skips the bump, and the
-run builds, scans and pushes again.
-
-The workflow checks out and pushes with the `BUMP_VERSION_TOKEN_ACTION` secret, a token whose
-owner can bypass the `master` ruleset. If that token expires or is regenerated (which changes its
-value), store the new value with `gh secret set BUMP_VERSION_TOKEN_ACTION`; otherwise the whole
-workflow fails at checkout: no version bump, no Docker image. A failed run can be re-run once the
-secret is fixed.
-
-`release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
-new version exists, so that bump commit is the release announcement, and the release description
-is the changelog users read. A PR must never change `current` or add a `[[changelog]]` entry
-(`tests/test_rule_version_toml.py` fails when one changes without the others).
+- **A PR must never change `current` or add a `[[changelog]]` entry** in `version.toml`
+  (`tests/test_rule_version_toml.py` fails when one changes without the others). A release is cut by publishing
+  a GitHub release, never by bumping versions by hand: its workflow makes that commit, which is what tells every
+  user a new version exists.
+- Everything CI and the image run is pinned: each `uses:` to a full commit SHA with its version in a comment,
+  images by tag and digest, Python packages and the dev tools by `uv.lock`, and uv in CI by the Dockerfile's uv
+  image tag (`tests/test_rule_pinned.py`).
+- A `pull_request` workflow declares its permissions, none of them `write`, logs in to no registry, and each
+  checkout in it sets `persist-credentials: false` (`tests/test_rule_pull_request_workflows.py`). No script
+  interpolates a value an outsider writes: it goes through `env:` and is read as `"$VALUE"`
+  (`tests/test_rule_workflow_untrusted_input.py`).
+- An image change gets a smoke check in `.github/docker-smoke.sh` that fails before it.
 
 ## Scratch work
 

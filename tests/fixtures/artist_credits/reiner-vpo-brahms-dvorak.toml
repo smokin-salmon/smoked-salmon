@@ -8,7 +8,7 @@ files_from = "deezer"
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -37,6 +37,7 @@ tracks = 13
 [today.merge]
 release = ["Fritz Reiner (main)", "Vienna Philharmonic (main)", "Wiener Philharmoniker (main)"]
 tracks = 13
+credits = ["1.1: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.2: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.3: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.4: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.5: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.6: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.7: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.8: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.9: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.10: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.11: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.12: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)", "1.13: Fritz Reiner (main), Vienna Philharmonic (main), Wiener Philharmoniker (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -173,7 +174,7 @@ album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 4
 albumartist = ["Fritz Reiner"]
 date = ["2011-12-07"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -501,8 +502,23 @@ qobuz = '''
  "artist": {
   "name": "Fritz Reiner"
  },
+ "artists": [
+  {
+   "name": "Fritz Reiner",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Wiener Philharmonic Orchestra",
+   "roles": [
+    "main-artist",
+    "orchestra"
+   ]
+  }
+ ],
  "genres_list": [
-  "Classical"
+  "Classique"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -513,79 +529,157 @@ qobuz = '''
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 5, Allegro ",
     "version": "Remastered 2023",
     "track_number": 1,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 6, Vivace ",
     "version": "Remastered 2023",
     "track_number": 2,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 7, Allegretto ",
     "version": "Remastered 2023",
     "track_number": 3,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 12, Presto ",
     "version": "Remastered 2023",
     "track_number": 4,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 13, Andantino grazioso ",
     "version": "Remastered 2023",
     "track_number": 5,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 19, Allegretto ",
     "version": "Remastered 2023",
     "track_number": 6,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 21, Vivace ",
     "version": "Remastered 2023",
     "track_number": 7,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 1, Allegro molto ",
     "version": "Remastered 2023",
     "track_number": 8,
-    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Johannes Brahms"
+    }
    },
    {
     "title": "Slavonic Dances, Op. 46, B. 83: No. 1, Furiant in C Major ",
     "version": "Remastered 2023",
     "track_number": 9,
-    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Antonín Dvořák"
+    }
    },
    {
     "title": "Slavonic Dances, Op. 46, B. 83: No. 3, Polka in A-Flat Major ",
     "version": "Remastered 2023",
     "track_number": 10,
-    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Antonín Dvořák"
+    }
    },
    {
     "title": "Slavonic Dances, Op. 46, B. 83: No. 8, Furiant in G Minor ",
     "version": "Remastered 2023",
     "track_number": 11,
-    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Antonín Dvořák"
+    }
    },
    {
     "title": "Slavonic Dances, Op. 72, B. 147: No. 2, Dumka in E Minor ",
     "version": "Remastered 2023",
     "track_number": 12,
-    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Antonín Dvořák"
+    }
    },
    {
     "title": "Slavonic Dances, Op. 72, B. 147: No. 1, Odzemek in B Major ",
     "version": "Remastered 2023",
     "track_number": 13,
-    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Composer, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+    "performer": {
+     "name": "Fritz Reiner"
+    },
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Composer, MainArtist - Vienna Philharmonic, Orchestra, MainArtist",
+    "composer": {
+     "name": "Fritz Reiner"
+    }
    }
   ]
  }

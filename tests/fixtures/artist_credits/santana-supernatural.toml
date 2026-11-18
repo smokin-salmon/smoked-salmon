@@ -8,7 +8,7 @@ files_from = "deezer"
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -35,6 +35,7 @@ tracks = 14
 [today.merge]
 release = ["Santana (main)", "Dave Matthews (main)", "Carter Beauford (main)", "Everlast (main)", "Rob Thomas (main)", "Ms. Lauryn Hill (guest)", "CeeLo Green (guest)", "The Product G&B (main)", "Maná (main)", "Eagle-Eye Cherry (main)", "Eric Clapton (main)"]
 tracks = 14
+credits = ["1.1: Santana (main)", "1.2: Santana (main), Dave Matthews (main), Carter Beauford (main)", "1.3: Santana (main), Everlast (main)", "1.4: Santana (main)", "1.5: Santana (main), Rob Thomas (main)", "1.6: Santana (main), Ms. Lauryn Hill (guest), CeeLo Green (guest)", "1.7: Santana (main), The Product G&B (main)", "1.8: Santana (main)", "1.9: Santana (main), Maná (main)", "1.10: Santana (main), Eagle-Eye Cherry (main)", "1.11: Santana (main)", "1.12: Santana (main)", "1.13: Santana (main), Eric Clapton (main)", "1.14: Santana (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -181,7 +182,7 @@ album = ["Supernatural (Remastered)"]
 albumartist = ["Santana"]
 date = ["1999-06-15"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -2449,8 +2450,17 @@ qobuz = '''
  "artist": {
   "name": "Santana"
  },
+ "artists": [
+  {
+   "name": "Santana",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Pop"
+  "Pop/Rock",
+  "Pop/Rock→Pop"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -2460,72 +2470,128 @@ qobuz = '''
    {
     "title": "(Da Le) Yaleo",
     "version": null,
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Shakara Mutela, Composer, Lyricist\r - Christian Polloni, Composer, Lyricist\r - Herve Bastien, Composer, Lyricist\r - Carlos Santana, Guitar, Producer\r - Chester Thompson, Keyboards\r - Benny Rietveld, Bass Guitar\r - Billy Johnson, Drums\r - Karl Perazzo, Percussion\r - Raul Rekow, Congas\r - Tony Lindsay\r - Jose Abel Figueroa, Trombone\r - Mic Gillette, Trombone, Trumpet\r - Marvin McFadden, Trumpet\r - Mike Couzi, Engineer\r - Glen Kolotkin, Engineer\r - Chris Manning, Assistant Engineer\r - Gaines Jim, Mixing Engineer\r - Ben Conrad, Assistant Engineer\r - Steve Fontano, Assistant Engineer"
    },
    {
     "title": "Love of My Life",
     "version": null,
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Dave Matthews, Associated Performer, Featured Artist\r - Carter Beauford, Associated Performer, Drums, Featured Artist\r - Santana feat. Dave Matthews & Carter Beauford, Associated Performer\r - Carlos Santana, Composer, Guitar, Lyricist, Producer\r - David Matthews, Composer, Lyricist\r - George Whitty, Keyboards\r - Benny Rietveld, Bass Guitar\r - Karl Perazzo, Congas, Percussion\r - Steven M. Harris, Producer\r - John Seymour, Engineer\r - Gaines Jim, Engineer, Mixing Engineer\r - Steve Fontano, Assistant Engineer, Engineer\r - Andy Salas, Assistant Engineer\r - Dave Dar, Assistant Engineer"
    },
    {
     "title": "Put Your Lights On",
     "version": null,
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Everlast, Associated Performer, Featured Artist, Guitar\r - Santana feat. Everlast, Associated Performer\r - Erik Schrody, Composer, Lyricist\r - Carlos Santana, Congas, Guitar, Percussion\r - Chester Thompson, Keyboards\r - Benny Rietveld, Bass Guitar\r - Dante Ross, Producer, Programmer\r - John Gamble, Engineer, Producer, Programmer\r - THE STIMULATED DUMMIES, Producer\r - Steve Fontano, Engineer\r - Steve Farrone, Engineer\r - Mike Anderson, Assistant Engineer\r - TOM LORD-ALGE, Mixing Engineer\r - Femio Hernandez, Assistant Engineer"
    },
    {
     "title": "Africa Bamba",
     "version": null,
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Ismaïla Touré, Composer, Lyricist\r - S. Tidiane Toure, Composer, Lyricist\r - Ousmane Toure, Composer, Lyricist\r - Hamidou Toure, Composer, Lyricist\r - Carlos Santana, Composer, Guitar, Lyricist, Producer\r - Karl Perazzo, Composer, Lyricist, Percussion\r - Chester Thompson, Keyboards\r - Benny Rietveld, Bass Guitar\r - Horacio Hernandez, Drums\r - Raul Rekow, Congas\r - Tony Lindsay\r - Jose Abel Figueroa, Trombone\r - Mic Gillette, Trombone, Trumpet\r - Marvin McFadden, Trumpet\r - Mike Couzi, Engineer\r - Gaines Jim, Mixing Engineer\r - Ben Conrad, Assistant Engineer\r - Steve Fontano, Assistant Engineer"
    },
    {
     "title": "Smooth",
     "version": null,
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Rob Thomas, Associated Performer, Composer, Featured Artist, Lyricist - Santana, Associated Performer, Main Artist, Associated Performer - Santana Feat. Rob Thomas, Associated Performer - Itaal Shur, Composer - Carlos Santana, Guitar - Chester Thompson, Keyboards - Benny Rietveld, Bass Guitar - Rodney Holmes, Drums - Karl Perazzo, Percussion - Raul Rekow, Congas - Jeff Cressman, Trombone - Jose Abel Figueroa, Trombone - Julius Melendez, Trumpet - William Ortiz, Trumpet - Matt Serletic, Producer - David Thoener, Mixing Engineer, Recording Engineer - Steve Fontano, Assistant Engineer - Andy Haller, Assistant Engineer - Mark Dobson, Editor, Programmer"
    },
    {
     "title": "Do You Like the Way",
     "version": null,
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Lauryn Hill, Arranger, Associated Performer, Composer, Featured Artist, Lyricist, Producer\r - Cee-Lo, Associated Performer, Featured Artist\r - Santana featuring Lauryn Hill & Cee-Lo, Associated Performer\r - Carlos Santana, Guitar\r - Francis Dunnery, Guitar\r - Al Anderson, Guitar\r - Loris Holland, Keyboards\r - Tom Barney, Bass Guitar\r - Lenesha Randolph\r - Danny Wolinski, Flute, Saxophone\r - Steve Touré, Trombone\r - Earl Gardner, Trumpet\r - Joseph Daley, Tuba\r - Commissioner Gordon, Engineer\r - Tony Prendatt, Engineer\r - Steve Fontano, Engineer\r - Jamie Siegel, Assistant Engineer\r - WARREN RIKER, Mixing Engineer\r - Mario Curci, Engineer\r - Kobie Brown, Programmer\r - Che Pope, Programmer"
    },
    {
     "title": "Maria Maria",
     "version": null,
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - The Product G&B, Associated Performer, Featured Artist\r - Santana feat. The Product G&B, Associated Performer\r - Wyclef Jean, Composer, Lyricist, Producer\r - Jerry \"Wonda\" Duplessis, Composer, Lyricist\r - Marvin L. Moore-Hough, Composer, Lyricist\r - David McRae, Composer, Lyricist\r - Carlos Santana, Composer, Guitar, Lyricist\r - Karl Perazzo, Composer, Lyricist\r - Raul Rekow, Composer, Lyricist\r - Herbert Joseph, Cello\r - Danny Seidenberg, Viola\r - Hari Balakrisnan, Viola\r - Jeremy Cohen, Violin\r - Carol Steele, Percussion\r - JERRY \"WONDER\" DUPLESSIS, Producer\r - CHRIS THEIS, Engineer\r - ANDY GRASSI, Engineer, Mixing Engineer\r - Steve Fontano, Engineer\r - Chuck Bailey, Assistant Engineer\r - Jason Gorucott, Assistant Engineer\r - Michael McCoy, Assistant Engineer"
    },
    {
     "title": "Migra",
     "version": null,
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Rachid Taha, Composer, Lyricist\r - Carlos Santana, Bells, Composer, Guitar, Lyricist, Producer\r - Tony Lindsay, Composer, Lyricist\r - Chester Thompson, Keyboards\r - K.C. Porter, Accordion, Producer, Programmer\r - Benny Rietveld, Bass Guitar\r - Rodney Holmes, Drums\r - Karl Perazzo, Percussion\r - Raul Rekow, Congas\r - Ramon Flores, Trombone\r - Mic Gillette, Trombone, Trumpet\r - Jose Abel Figueroa, Trumpet\r - Marvin McFadden, Trumpet\r - Gaines Jim, Engineer\r - Steve Fontano, Engineer\r - Jeff Poe, Engineer, Mixing Engineer\r - John Karpowich, Engineer\r - Mike Anderson, Assistant Engineer"
    },
    {
     "title": "Corazon Espinado",
     "version": null,
-    "track_number": 9
+    "track_number": 9,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Mana, Associated Performer, Featured Artist\r - Santana featuring Mana, Associated Performer\r - Fher Olvera, Composer, Lyricist, Producer\r - Carlos Santana, Guitar\r - Fher\r - Sergio Vallin, Guitar\r - ALBERTO SALAS, Keyboards\r - Chester Thompson, Keyboards\r - Juan D. Calleros, Bass Guitar\r - Alex Gonzales, Co-Producer, Drums\r - Karl Perazzo, Percussion\r - Raul Rekow, Congas\r - Gonzalo Chomat\r - K.C. Porter, Producer\r - BENNY FACCONE, Engineer, Mixing Engineer\r - Claudio Leiva, Assistant Engineer\r - Adam Olmsted, Assistant Engineer\r - Andy Haller, Assistant Engineer\r - Tony Flores, Assistant Engineer\r - Steve Fontano, Engineer\r - José Quintana"
    },
    {
     "title": "Wishing It Was",
     "version": null,
-    "track_number": 10
+    "track_number": 10,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana featuring Eagle-Eye Cherry, Associated Performer, Main Artist, Associated Performer\r - Eagle-Eye Cherry, Composer, Lyricist\r - Michael Simpson, Composer, Lyricist\r - John King, Composer, Lyricist\r - Mark Nishita, Composer, Lyricist\r - Carlos Santana, Guitar\r - Chad\r - Earl\r - Chester Thompson, Keyboards\r - Benny Rietveld, Bass Guitar\r - Rodney Holmes, Drums\r - Karl Perazzo, Percussion\r - Raul Rekow, Congas, Percussion\r - Humberto Hernandez, Percussion\r - The Dust Brothers (John King & Michael Simpson), Producer\r - T-Ray, Engineer, Mixing Engineer\r - Charles Goodan, Co-Producer\r - Art Hodge, Co-Producer\r - David Frazer, Engineer\r - Steve Fontano, Engineer\r - Anton Pukshansky, Engineer\r - Billy Konkel, Assistant Engineer\r - Bill Kinsley, Assistant Engineer\r - Tracey Brown, Assistant Engineer"
    },
    {
     "title": "El Farol",
     "version": null,
-    "track_number": 11
+    "track_number": 11,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Carlos Santana, Composer, Guitar, Lyricist\r - K.C. Porter, Composer, Keyboards, Lyricist, Producer, Programmer\r - Raul Pacheco, Guitar, Percussion\r - Chester Thompson, Keyboards, Programmer\r - Benny Rietveld, Bass Guitar\r - Greg Bissonette, Drums\r - Karl Perazzo, Percussion\r - Raul Rekow, Congas\r - J.B. Eckl, Co-Producer\r - Glen Kolotkin, Engineer\r - Jeff Poe, Engineer, Mixing Engineer\r - John Karpowich, Engineer\r - Gaines Jim, Engineer\r - Steve Fontano, Engineer\r - Chris Manning, Assistant Engineer"
    },
    {
     "title": "Primavera",
     "version": null,
-    "track_number": 12
+    "track_number": 12,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - K.C. Porter, Composer, Keyboards, Lyricist, Producer, Programmer\r - J.B. Eckl, Co-Producer, Composer, Guitar, Lyricist\r - C. G. Alonso, Composer, Lyricist\r - Carlos Santana, Guitar\r - Chester Thompson, Keyboards\r - Mike Porcaro, Bass Guitar\r - Jimmy Keegan, Drums\r - Karl Perazzo, Percussion\r - Luis Conte, Congas, Percussion\r - Fher\r - Tony Lindsay\r - Jim Scott, Engineer\r - Jeff Poe, Engineer, Mixing Engineer\r - John Karpowich, Engineer\r - Matty Spindel, Engineer\r - Gaines Jim, Engineer\r - Steve Fontano, Engineer\r - Glenn Kolotkin, Engineer\r - Alvaro Villagra, Engineer\r - Chris Manning, Assistant Engineer\r - Adrian Rodriguez, Assistant Engineer\r - Alejandro Cassini, Assistant Engineer"
    },
    {
     "title": "The Calling",
     "version": null,
-    "track_number": 13
+    "track_number": 13,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Eric Clapton, Associated Performer, Featured Artist, Guitar\r - Santana feat. Eric Clapton, Associated Performer\r - Carlos Santana, Composer, Guitar, Lyricist, Percussion, Producer\r - Chester Thompson, Composer, Keyboards, Lyricist\r - Larry Graham, Composer, Lyricist\r - Freddie Stone, Composer, Lyricist\r - Tony Lindsay\r - Jeanie Tracy\r - Steve Fontano, Engineer, Mixing Engineer\r - Frank Aglieri'rinella, Assistant Engineer\r - Ben Conrad, Assistant Engineer, Mixing Engineer\r - Mike Mani, Programmer\r - André, Editor"
    },
    {
     "title": "Day of Celebration",
     "version": null,
-    "track_number": 14
+    "track_number": 14,
+    "performer": {
+     "name": "Santana"
+    },
+    "performers": "Santana, Associated Performer, Main Artist, Associated Performer\r - Carlos Santana, Composer, Guitar, Lyricist, Producer\r - Chester Thompson, Composer, Keyboards, Lyricist\r - Tony Lindsay, Composer, Lyricist\r - Benny Rietveld, Bass Guitar\r - Horacio Hernandez, Drums\r - Karl Perazzo, Percussion\r - Raul Rekow, Congas\r - Mike Couzi, Engineer\r - Glenn Kolotkin, Engineer\r - Ben Conrad, Assistant Engineer\r - David Frazer, Mixing Engineer\r - Steve Fontano, Assistant Engineer"
    }
   ]
  }

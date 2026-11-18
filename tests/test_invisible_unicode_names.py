@@ -139,7 +139,7 @@ def test_generated_names_keep_fullwidth_replacements_accents_and_emoji(monkeypat
 
     name = generate_file_name(tags, ".flac", multiple_artists=False)
 
-    sub = "：" if replacements else cfg.upload.formatting.blacklisted_substitution
+    sub = "：" if replacements else " -"  # colon_as_dash
     question = "？" if replacements else cfg.upload.formatting.blacklisted_substitution
     assert name == f"01. Café{sub} 日本語 \U0001f3b5 What{question}.flac"
 

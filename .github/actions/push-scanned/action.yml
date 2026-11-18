@@ -1,0 +1,47 @@
+name: Push the scanned image
+description: >-
+  Log in to ghcr.io and copy the image .github/actions/build-scan scanned in the job's registry to
+  each tag, manifests and layers as they are, so what publishes is the bytes the scan passed, never a
+  rebuild.
+
+inputs:
+  source:
+    description: The scanned image, as build-scan outputs it (`steps.<id>.outputs.image-ref`).
+    required: true
+  tags:
+    description: The ghcr.io tags to push it to, one per line (from docker/metadata-action, and any others).
+    required: true
+  registry-token:
+    description: The token to log in to ghcr.io with (the job's `github.token`, allowed to write packages).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Log in to ghcr.io
+      uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.registry-token }}
+
+    # skopeo reads the login above from ~/.docker/config.json. --preserve-digests makes the copy
+    # fail rather than push anything but the scanned manifests and layers.
+    - name: Push the scanned image
+      shell: bash
+      env:
+        SOURCE: ${{ inputs.source }}
+        TAGS: ${{ inputs.tags }}
+      run: |
+        set -euo pipefail
+        pushed=0
+        while IFS= read -r tag; do
+          [ -n "$tag" ] || continue
+          skopeo copy --all --preserve-digests --src-tls-verify=false "docker://$SOURCE" "docker://$tag"
+          echo "pushed $tag (${SOURCE#*@})"
+          pushed=$((pushed + 1))
+        done < <(sort -u <<< "$TAGS")
+        if [ "$pushed" -eq 0 ]; then
+          echo "No tag to push $SOURCE to: the tags input is empty." >&2
+          exit 1
+        fi

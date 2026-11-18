@@ -253,7 +253,7 @@ async def _group_id_of_url(gazelle_site: "BaseGazelleApi", url: str) -> int | No
     query = parse.parse_qs(parse.urlparse(url).query)
     if "torrentid" in query and "id" not in query:
         torrent_id = numeric_id(query["torrentid"][0].strip())
-        if torrent_id and (group_id := await gazelle_site.get_redirect_torrentgroupid(torrent_id)):
+        if torrent_id and (group_id := await gazelle_site.torrent_group_id(torrent_id)):
             return group_id
         click.echo("Could not get group ID from torrent ID.")
         return None
@@ -332,7 +332,7 @@ async def _prompt_for_recent_upload_results(
                 torrent_id = recent_uploads[group_id_num - 1][0]
                 # Need to convert torrent ID to group ID
                 try:
-                    result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
+                    result_group_id = await gazelle_site.torrent_group_id(torrent_id)
                     if result_group_id is not None:
                         return result_group_id
                     click.echo("Could not get group ID from torrent ID.")

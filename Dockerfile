@@ -1,11 +1,11 @@
 # Every image this file pulls is pinned by tag and digest (the multi-arch index digest), so a build
 # is reproducible and each update arrives as a Dependabot PR (docker ecosystem) instead of silently.
-FROM ghcr.io/astral-sh/uv:0.13.8@sha256:5cc1805e2426484abca4ad46ea783bab281fdb225fd82d8ce6d66a81254bac85 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.9@sha256:d3b601f0c7b118bc1753febf7c41cc80981df678445e0254284eecf84db79a7d AS uv
 
 # ===========================================
 # Stage 1: Builder - Install dependencies and build the project
 # ===========================================
-FROM python:3.13-slim-trixie@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb AS builder
+FROM python:3.13-slim-trixie@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90 AS builder
 COPY --from=uv /uv /uvx /bin/
 
 # Set working directory
@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 # ===========================================
 # Stage 2: Runtime - Minimal Python slim image
 # ===========================================
-FROM python:3.13-slim-trixie@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb
+FROM python:3.13-slim-trixie@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
 
 # Set working directory
 WORKDIR /app

@@ -76,8 +76,9 @@ from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
+from salmon.uploader.description import upload_footer
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs
-from salmon.uploader.upload import generate_torrent, upload_footer
+from salmon.uploader.upload import generate_torrent
 
 GROUP_ID = 500002
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
@@ -1271,6 +1272,21 @@ def test_a_media_salmon_cannot_map_stops_the_release() -> None:
     response["torrent"]["media"] = "Floppy"
     with pytest.raises(CrossUploadRefused, match="has the media 'Floppy'"):
         cross_upload_module._check_torrent(response, OpsApi(), RedApi())
+
+
+@pytest.mark.parametrize(
+    ("target", "reason"),
+    [(OpsApi, "OPS does not take DSD"), (DICApi, "salmon does not know whether DICMusic takes DSD")],
+    ids=["OPS takes none", "DIC not known"],
+)
+def test_a_dsd_torrent_is_refused_for_a_tracker_that_does_not_take_dsd(target, reason: str) -> None:
+    response = _fixture("red-torrent-cd-log.json")
+    response["torrent"].update(media="WEB", format="DSD", encoding="DSD256")
+    # Before any request to TARGET: _prepare checks the torrent first.
+    with pytest.raises(CrossUploadRefused, match=reason):
+        cross_upload_module._check_torrent(response, RedApi(), target())
+    # RED takes it, from another tracker.
+    cross_upload_module._check_torrent(response, target(), RedApi())
 
 
 def _change_torrent(**changes: Any) -> Callable[[dict[str, Any]], None]:

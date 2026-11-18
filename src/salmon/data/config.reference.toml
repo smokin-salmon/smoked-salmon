@@ -348,6 +348,9 @@
 # add_edition_title_to_album_tag = true
 # review_as_comment_tag = true
 # fullwidth_replacements = false
+# A subtitle colon (a colon followed by a space) becomes " - " in folder and file names; false keeps
+# blacklisted_substitution for every colon. fullwidth_replacements wins when it is on.
+# colon_as_dash = true
 # empty_track_comment_tag = true
 
 # torrent description settings

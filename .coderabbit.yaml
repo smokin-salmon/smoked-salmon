@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-# CodeRabbit review settings. The rules it enforces come from AGENTS.md; keep the two in step.
+# CodeRabbit review settings. The rules it enforces come from AGENTS.md and docs/ci-and-releases.md; keep them in step.
 language: en-US
 tone_instructions: "Terse and specific. Report correctness, security, data loss and tracker safety; skip style that ruff and basedpyright already enforce."
 reviews:
@@ -110,3 +110,4 @@ knowledge_base:
       - "AGENTS.md"
       - "CONTRIBUTING.md"
       - "docs/adr/*.md"
+      - "docs/ci-and-releases.md"

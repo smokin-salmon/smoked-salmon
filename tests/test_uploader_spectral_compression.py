@@ -39,7 +39,7 @@ def test_without_oxipng_spectrals_are_left_as_is_and_the_notice_is_printed_once(
     assert {p.name: p.read_bytes() for p in path.iterdir()} == before
     out = capsys.readouterr().out
     assert out.count("Spectrals are not compressed") == 1
-    assert "uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" in out
+    assert "uv tool upgrade salmon --python 3.13" in out
     assert "Finished compressing" not in out
 
 

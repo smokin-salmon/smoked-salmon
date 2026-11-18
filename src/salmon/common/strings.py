@@ -4,7 +4,7 @@ import unicodedata
 
 from salmon import cfg
 from salmon.common.regexes import re_split, re_strip
-from salmon.constants import GENRE_LIST
+from salmon.constants import BLACKLISTED_CHARS, BLACKLISTED_FULLWIDTH_REPLACEMENTS, GENRE_LIST
 from salmon.errors import GenreNotInWhitelist
 
 _RE_NUMBERED_SUFFIX = re.compile(r" \(\d+\)$")
@@ -74,6 +74,25 @@ def has_visible_chars(name: str) -> bool:
         unicodedata.category(char) not in _REPLACED_CATEGORIES and unicodedata.category(char) not in _REMOVED_CATEGORIES
         for char in name
     )
+
+
+_SUBTITLE_COLON = re.compile(r"\s*:\s+")
+
+
+def substitute_forbidden_characters(name: str, *, subtitle_colon: bool = True) -> str:
+    """*name* without the characters a tracker refuses in a path.
+
+    With fullwidth_replacements on they become their full-width forms. Otherwise, with colon_as_dash on, a colon
+    followed by whitespace (a subtitle: "Tin Cup: The Movie") becomes " - ". Every other forbidden character,
+    and any colon left, becomes blacklisted_substitution. subtitle_colon=False leaves out the colon rule.
+    """
+    formatting = cfg.upload.formatting
+    if formatting.fullwidth_replacements:
+        for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
+            name = name.replace(char, sub)
+    elif subtitle_colon and formatting.colon_as_dash:
+        name = _SUBTITLE_COLON.sub(" - ", name)
+    return re.sub(BLACKLISTED_CHARS, formatting.blacklisted_substitution, name)
 
 
 def clean_name(name: str) -> str:

@@ -13,7 +13,8 @@ from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
 class OpsApi(BaseGazelleApi):
-    TAG_RULES = TagRules(max_path_length=255, sixteen_bit_above_48khz="refused")
+    # No DSD: its upload form's formats are MP3, FLAC, Ogg Vorbis, AAC, AC3 and DTS.
+    TAG_RULES = TagRules(max_path_length=255, sixteen_bit_above_48khz="refused", takes_dsd=False)
 
     def __init__(self):
         self.site_code = "OPS"

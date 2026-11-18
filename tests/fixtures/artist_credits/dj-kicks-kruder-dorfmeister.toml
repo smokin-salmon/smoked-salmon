@@ -1,7 +1,7 @@
 album = "Kruder & Dorfmeister, DJ-Kicks"
 why = "A DJ mix: the DJs' name is the release's artist on every store and each track is by someone else."
 edition = "Studio !K7, 17 tracks, as sold digitally (Deezer 1127108 = MusicBrainz aa2eae9d by barcode); Discogs 2951 is master 252625's main release; Qobuz has the same UPC"
-known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "Deezer parse: Kruder & Dorfmeister split in two", "merge: 'Soundtrack', 'full length' and 'Rude Boy Fandango' read as remixers from the words of a mix's name"]
+known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "merge: 'Full Length' read as a remixer from the words of a remix's name"]
 files_from = "deezer"
 output = true
 
@@ -9,7 +9,7 @@ output = true
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -17,7 +17,7 @@ open = "Whether the release's main artist is the DJ or Various: every store name
 settled = "nothing yet: see open"
 
 [today.deezer]
-release = ["Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Hardfloor (main)", "Thievery Corporation (main)", "Kruder (main)", "Dorfmeister (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
+release = ["Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Hardfloor (main)", "Thievery Corporation (main)", "Kruder & Dorfmeister (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
 tracks = 17
 
 [today.musicbrainz]
@@ -33,9 +33,9 @@ release = ["Kruder & Dorfmeister (main)", "Herbaliser (guest)", "Small World (gu
 tracks = 17
 
 [today.merge]
-release = ["Kruder & Dorfmeister (main)", "The Herbaliser (main)", "Small World (main)", "Soundtrack (remixer)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Big Brothers Dubbing You Full On - Dub Tractor (remixer)", "full length (remixer)", "Hardfloor (main)", "Thievery Corporation (main)", "Beanfield (main)", "Sapien (main)", "Rude Boy Fandango (remixer)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
+release = ["Kruder & Dorfmeister (main)", "The Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Big Brothers Dubbing You Full On - Dub Tractor (remixer)", "Full Length (remixer)", "Hardfloor (main)", "Thievery Corporation (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
 tracks = 17
-
+credits = ["1.1: Kruder & Dorfmeister (main), The Herbaliser (main)", "1.2: Small World (main), Kruder & Dorfmeister (main)", "1.3: Tango (main), Kruder & Dorfmeister (main)", "1.4: The Lab Rats (main), Kruder & Dorfmeister (main)", "1.5: Statik Sound System (main), Kruder & Dorfmeister (main)", "1.6: JMJ (main), Flytronix (main), Kruder & Dorfmeister (main)", "1.7: Aquasky (main), Kruder & Dorfmeister (main)", "1.8: James Bong (main), Big Brothers Dubbing You Full On - Dub Tractor (remixer), Kruder & Dorfmeister (main), Full Length (remixer)", "1.9: Hardfloor (main), Kruder & Dorfmeister (main)", "1.10: Thievery Corporation (main), Kruder & Dorfmeister (main)", "1.11: Kruder & Dorfmeister (main)", "1.12: Beanfield (main), Kruder & Dorfmeister (main)", "1.13: Sapien (main), Kruder & Dorfmeister (main)", "1.14: Shantel (main), Kruder & Dorfmeister (main)", "1.15: Karma (main), Kruder & Dorfmeister (main)", "1.16: Showroom Recordings (main), Kruder & Dorfmeister (main)", "1.17: Kruder & Dorfmeister (main)"]
 [today.output]
 albumartist = "Various"
 tracks = ["Kruder & Dorfmeister, The Herbaliser | A Mother (For Your Mind)", "Small World, Kruder & Dorfmeister | Livin' Free", "Tango, Kruder & Dorfmeister | Spellbound", "The Lab Rats, Kruder & Dorfmeister | Give My Soul", "Statik Sound System, Kruder & Dorfmeister | Revolutionary Pilot", "JMJ, Flytronix, Kruder & Dorfmeister | In Too Deep", "Aquasky, Kruder & Dorfmeister | Kauna", "James Bong, Kruder & Dorfmeister | Mr. Kiss Kiss Bong Bong (Big Brother's Dubbing You Full On / Full Length Remix)", "Hardfloor, Kruder & Dorfmeister | Dubdope", "Thievery Corporation, Kruder & Dorfmeister | Shaolin Satellite", "Kruder & Dorfmeister | High Noon", "Beanfield, Kruder & Dorfmeister | Keep On Believing", "Sapien, Kruder & Dorfmeister | Que Dolor (Rude Boy Fandango Mix)", "Shantel, Kruder & Dorfmeister | Bass And Several Cars", "Karma, Kruder & Dorfmeister | Look Up Dere", "Showroom Recordings, Kruder & Dorfmeister | Radio Burning Chrome", "Kruder & Dorfmeister | Black Baby (DJ-Kicks)"]
@@ -220,7 +220,7 @@ album = ["DJ-Kicks"]
 albumartist = ["Kruder & Dorfmeister"]
 date = ["1996-08-19"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -833,8 +833,17 @@ qobuz = '''
  "artist": {
   "name": "Kruder & Dorfmeister"
  },
+ "artists": [
+  {
+   "name": "Kruder & Dorfmeister",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Chill-out"
+  "Électronique",
+  "Électronique→Downtempo"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -847,7 +856,8 @@ qobuz = '''
     "track_number": 1,
     "performer": {
      "name": "Herbaliser"
-    }
+    },
+    "performers": "Herbalizer, Main Artist\r - J.Wherry / O.Teeba / J. Cuba, Composer\r - BCP - BMGUFA"
    },
    {
     "title": "Livin' Free (Soundtrack Mix)",
@@ -855,7 +865,8 @@ qobuz = '''
     "track_number": 2,
     "performer": {
      "name": "Small World"
-    }
+    },
+    "performers": "Small World, Main Artist\r - Paul Hunter, Composer\r - FILTERBANK"
    },
    {
     "title": "Spellbound",
@@ -863,7 +874,8 @@ qobuz = '''
     "track_number": 3,
     "performer": {
      "name": "Tango"
-    }
+    },
+    "performers": "Tango, Main Artist\r - J Giltrap, Composer\r - Copyright Control"
    },
    {
     "title": "Give My Soul",
@@ -871,7 +883,8 @@ qobuz = '''
     "track_number": 4,
     "performer": {
      "name": "The Lab Rats"
-    }
+    },
+    "performers": "The Lab Rats, Main Artist\r - I.Allen / S. Smith, Composer\r - Chrysalis Music"
    },
    {
     "title": "Revolutionary Pilot",
@@ -879,7 +892,8 @@ qobuz = '''
     "track_number": 5,
     "performer": {
      "name": "Statik Sound System"
-    }
+    },
+    "performers": "Statik Sound System, Main Artist\r - P.Webb / R. mills / A. Jenks / I. Bawley, Composer\r - Cup Of Tea"
    },
    {
     "title": "In Too Deep",
@@ -887,7 +901,8 @@ qobuz = '''
     "track_number": 6,
     "performer": {
      "name": "JMJ"
-    }
+    },
+    "performers": "JMJ & Flytronix, Main Artist\r - J Hurren; D Demierre, Composer\r - Moving Shadow"
    },
    {
     "title": "Kauna",
@@ -895,7 +910,8 @@ qobuz = '''
     "track_number": 7,
     "performer": {
      "name": "Aquasky"
-    }
+    },
+    "performers": "Aquasky, Main Artist\r - Bower; D Wallace; K James, Composer\r - Moving Shadow"
    },
    {
     "title": "Mr. Kiss Kiss Bong Bong (Big Brothers Dubbing You Full On - Dub Tractor Remix)",
@@ -903,7 +919,8 @@ qobuz = '''
     "track_number": 8,
     "performer": {
      "name": "James Bong"
-    }
+    },
+    "performers": "James Bong, Main Artist\r - Knak / Remmer, Composer\r - Copyright Control"
    },
    {
     "title": "Dubdope",
@@ -911,7 +928,8 @@ qobuz = '''
     "track_number": 9,
     "performer": {
      "name": "Hardfloor"
-    }
+    },
+    "performers": "Hardfloor, Main Artist\r - R. Zenker / O. Bondzio, Composer\r - Upright SongsMoonquake Music"
    },
    {
     "title": "Shaolin Satellite",
@@ -919,7 +937,8 @@ qobuz = '''
     "track_number": 10,
     "performer": {
      "name": "Thievery Corporation"
-    }
+    },
+    "performers": "Thievery Corporation, Main Artist\r - E Hilton; R Garzia, Composer\r - ESL MUSIC"
    },
    {
     "title": "High Noon",
@@ -927,7 +946,8 @@ qobuz = '''
     "track_number": 11,
     "performer": {
      "name": "Kruder & Dorfmeister"
-    }
+    },
+    "performers": "Kruder.Dorfmeister, Main Artist, Composer\r - G-Stone Music"
    },
    {
     "title": "Keep On Believing",
@@ -935,7 +955,8 @@ qobuz = '''
     "track_number": 12,
     "performer": {
      "name": "Beanfield"
-    }
+    },
+    "performers": "Beanfield, Main Artist\r - M. Reinboth / J. Krause, Composer\r - KlangwartAlstermusik"
    },
    {
     "title": "Que Dolor",
@@ -943,7 +964,8 @@ qobuz = '''
     "track_number": 13,
     "performer": {
      "name": "Sapien"
-    }
+    },
+    "performers": "Sapien, Main Artist\r - Bush von Shock / Wittingham, Composer\r - Article DonPulpo Publ"
    },
    {
     "title": "Bass And Several Cars",
@@ -951,7 +973,8 @@ qobuz = '''
     "track_number": 14,
     "performer": {
      "name": "Shantel"
-    }
+    },
+    "performers": "Shantel, Main Artist\r - Andrea Palladio, Composer\r - Copyright Control"
    },
    {
     "title": "Look Up Dere",
@@ -959,7 +982,8 @@ qobuz = '''
     "track_number": 15,
     "performer": {
      "name": "KARMA"
-    }
+    },
+    "performers": "Kama, Main Artist\r - M. Tom / L. Dorsch, Composer\r - Copyright Control"
    },
    {
     "title": "Radio Burning Chrome",
@@ -967,7 +991,8 @@ qobuz = '''
     "track_number": 16,
     "performer": {
      "name": "Showroom Recordings"
-    }
+    },
+    "performers": "Showroom Recordings, Main Artist\r - P. Pulsinger / E. Tunakan, Composer\r - Copyright Control"
    },
    {
     "title": "Black Baby (DJ-Kicks)",
@@ -975,7 +1000,8 @@ qobuz = '''
     "track_number": 17,
     "performer": {
      "name": "Kruder & Dorfmeister"
-    }
+    },
+    "performers": "Kruder.Dorfmeister, Main Artist\r - Kruder, Dorfmeister, Composer\r - SMV Schacht Musikverlage GmbH & Co KG!K7 Publishing GmbH"
    }
   ]
  }
