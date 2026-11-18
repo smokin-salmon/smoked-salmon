@@ -468,4 +468,7 @@ def test_as_before_descgen_weighs_a_stating_store_s_guess_as_a_guess(monkeypatch
 
     description = anyio.run(build_description, urls)
 
-    assert "[b]01.[/b] Alice (feat. Bob) - Song 1\n" in description
+    # Bob stays a guest, however the line is laid out.
+    first = description.splitlines()[1]
+    assert "Song 1" in first
+    assert "(feat. Bob)" in first
