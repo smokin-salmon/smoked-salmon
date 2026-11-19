@@ -1029,4 +1029,6 @@ def test_descgen_says_a_remixer_the_store_credits_whatever_the_title_reads(monke
     for track in album["tracks"]["1"].values():
         track["title"] += " (Mono Remix)"
 
-    assert "All tracks remixed by Mono." in _descgen_description(monkeypatch, album).splitlines()
+    description = _descgen_description(monkeypatch, album)
+
+    assert "All tracks remixed by Mono." in description.splitlines()
