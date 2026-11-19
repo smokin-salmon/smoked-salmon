@@ -396,13 +396,12 @@ def _flow(
     source: str = "WEB",
     reviewed: dict[str, Any] | None = None,
     conversions: tuple[str, ...] | None = None,
-    confirm: Any = None,
+    confirm: Any = None,  # Answers the questions asked; without it, each is answered yes
     **fakes: Any,
 ) -> tuple[list[str], list[tuple]]:
     """Run upload() with --skip-flac-upload over stubbed seams. Returns the calls and the transcode runs.
 
-    `reviewed` overrides fields of the metadata as the review leaves it, `conversions` is --conversions. `confirm`
-    answers the questions asked; without it, each is answered yes.
+    `reviewed` overrides fields of the metadata as the review leaves it, `conversions` is --conversions.
     """
     calls: list[str] = []
     transcoded: list[tuple] = []
@@ -627,10 +626,7 @@ def test_a_held_format_of_another_edition_is_offered(monkeypatch) -> None:
 
 
 def _transcodes_beside_two_editions(monkeypatch, **kwargs: Any) -> list[tuple[list[str], str, str]]:
-    """The transcodes run, with their catno and source, from a FLAC filed under CAT-2 while the form says CAT1.
-
-    The group also holds an MP3 320 under CAT1.
-    """
+    """The transcodes run, with their catno and source, from a FLAC under CAT-2: the form says CAT1, which has a 320."""
     group = _group(_torrent(11, catno="CAT-2"), _torrent(12, format_="MP3", encoding="320", catno="CAT1"))
     sent: list[tuple[list[str], str, str]] = []
 

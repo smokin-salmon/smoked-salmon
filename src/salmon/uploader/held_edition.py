@@ -53,17 +53,14 @@ def _is_barcode(catno: str) -> bool:
 
 
 def names_ours(held: dict[str, str], ours: dict[str, str]) -> bool:
-    """Whether a held edition is ours: year, label and catno agree, and the title too unless only the site has one.
-
-    A title only the site has ("feat. X") is accepted when the catno is a barcode: a label's number may name several
-    editions of a release.
-    """
+    """Whether a held edition is ours: year, label and catno agree, and the title too unless only the site has one."""
     if comparable(held["year"]) != comparable(ours["year"]) or comparable(held["label"]) != comparable(ours["label"]):
         return False
     catno = _catno_key(ours["catno"])
     if _catno_key(held["catno"]) != catno:
         return False
     title = comparable(ours["edition_title"])
+    # A title only the site has ("feat. X") needs a barcode catno: a label's number may name several editions.
     return comparable(held["edition_title"]) == title or (
         not title and (_is_barcode(held["catno"]) or _is_barcode(ours["catno"]))
     )
@@ -90,10 +87,7 @@ def _line(edition: dict[str, str]) -> str:
 async def adopt_edition(
     gazelle_site: "BaseGazelleApi", metadata: dict[str, Any], editions: list[dict[str, str]]
 ) -> dict[str, Any]:
-    """metadata, or a copy filed under the one edition given that words it differently, if the user agrees.
-
-    Several editions, or one worded as ours, leave metadata as it is. -yyy (upload.yes_all) takes the default: yes.
-    """
+    """metadata, or a copy filed under the one edition given that words it differently, if the user agrees."""
     ours = _ours(metadata)
     if not editions or ours in editions:
         return metadata
@@ -119,13 +113,10 @@ async def adopt_edition(
 async def edition_in_group(
     gazelle_site: "BaseGazelleApi", group_id: int | None, metadata: dict[str, Any], group: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    """metadata for an upload into group_id (None: a new group): see adopt_edition.
-
-    group is group_id's group as already fetched, or {} when that fetch failed: it is not fetched again. Without it,
-    it is fetched once.
-    """
+    """metadata for an upload into group_id (None: a new group): see adopt_edition."""
     if not group_id:
         return metadata
+    # group: as already fetched, or {} when that fetch failed, so it is not fetched again.
     try:
         group = group if group is not None else await gazelle_site.torrentgroup(group_id)
     except RequestError as err:

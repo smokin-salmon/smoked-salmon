@@ -157,7 +157,9 @@ def test_the_held_wording_is_used_when_the_user_agrees(monkeypatch, capsys) -> N
 def test_a_declined_wording_leaves_ours(monkeypatch) -> None:
     _answer(monkeypatch, False)
 
-    assert _join(_site(), OURS, {"torrents": [_held()]}) is OURS
+    joined = _join(_site(), OURS, {"torrents": [_held()]})
+
+    assert joined is OURS
 
 
 def test_yyy_uses_the_held_wording_without_asking(monkeypatch, capsys) -> None:
@@ -168,7 +170,8 @@ def test_yyy_uses_the_held_wording_without_asking(monkeypatch, capsys) -> None:
 
     assert joined["label"] == "©SNK"
     assert joined["catno"] == "199538185515"
-    assert "Using RED's edition fields (-yyy)." in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Using RED's edition fields (-yyy)." in output
 
 
 def test_an_edition_worded_as_ours_asks_nothing(monkeypatch, capsys) -> None:
@@ -176,18 +179,22 @@ def test_an_edition_worded_as_ours_asks_nothing(monkeypatch, capsys) -> None:
 
     held = _held(label="SNK", catno="0199538185515")
 
-    assert _join(_site(), OURS, {"torrents": [held]}) is OURS
-    assert capsys.readouterr().out == ""
+    joined = _join(_site(), OURS, {"torrents": [held]})
+
+    assert joined is OURS
+    output = capsys.readouterr().out
+    assert output == ""
 
 
 def test_several_held_editions_naming_ours_leave_ours_and_say_so(monkeypatch, capsys) -> None:
     _answer(monkeypatch, None)
     torrents = [_held(), _held(id=3, label="SNK", catno="00199538185515")]
 
-    assert _join(_site(), OURS, {"torrents": torrents}) is OURS
-    assert "2 editions on RED look like this release: sending ours (2025 / SNK / 0199538185515)." in (
-        capsys.readouterr().out
-    )
+    joined = _join(_site(), OURS, {"torrents": torrents})
+
+    assert joined is OURS
+    output = capsys.readouterr().out
+    assert "2 editions on RED look like this release: sending ours (2025 / SNK / 0199538185515)." in output
 
 
 def test_the_group_is_fetched_when_not_given(monkeypatch) -> None:
@@ -204,34 +211,45 @@ def test_a_group_that_could_not_be_read_is_not_read_again(monkeypatch, capsys) -
     _answer(monkeypatch, None)
     site = _site()
 
-    assert _join(site, OURS, {}) is OURS
+    joined = _join(site, OURS, {})
+
+    assert joined is OURS
     assert site.calls == []
-    assert capsys.readouterr().out == ""
+    output = capsys.readouterr().out
+    assert output == ""
 
 
 def test_a_new_group_fetches_nothing(monkeypatch) -> None:
     _answer(monkeypatch, None)
     site = _site()
 
-    assert _join(site, OURS, None, group_id=None) is OURS
+    joined = _join(site, OURS, None, group_id=None)
+
+    assert joined is OURS
     assert site.calls == []
 
 
 def test_a_failed_fetch_sends_ours_and_says_so(monkeypatch, capsys) -> None:
     _answer(monkeypatch, None)
 
-    assert _join(_site(RequestFailedError("down")), OURS, None) is OURS
+    joined = _join(_site(RequestFailedError("down")), OURS, None)
+
+    assert joined is OURS
+    output = capsys.readouterr().out
     assert (
         "Could not read the editions of group 555 on RED (down): sending ours (2025 / SNK / 0199538185515). "
         "Check the upload is not filed as a second edition."
-    ) in capsys.readouterr().out
+    ) in output
 
 
 def test_transcodes_keep_our_edition_beside_a_flac_of_another_year(monkeypatch, capsys) -> None:
     _answer(monkeypatch, None)
 
-    assert anyio.run(edition_of_source, _site(), _held(year=0, catno="CAT-2"), OURS) is OURS
-    assert capsys.readouterr().out == ""
+    metadata = anyio.run(edition_of_source, _site(), _held(year=0, catno="CAT-2"), OURS)
+
+    assert metadata is OURS
+    output = capsys.readouterr().out
+    assert output == ""
 
 
 def test_transcodes_of_a_flac_without_a_catno_go_up_without_one(monkeypatch) -> None:

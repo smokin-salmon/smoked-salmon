@@ -1502,13 +1502,12 @@ async def _upload_conversions(
     seedbox: UploadManager,
     uploaded: list[str],
     *,
-    edition: dict[str, Any],
+    edition: dict[str, Any],  # The edition the FLAC went up in: the conversions go up in it too
     flac_uploaded: bool,
 ) -> None:
     """Upload the conversions asked for that the group does not have yet, with master's converters and forms.
 
-    `edition`: the edition the FLAC went up in, which they go up in too. `flac_uploaded`: this run sent the FLAC the
-    conversions are made from (see held_formats).
+    `flac_uploaded`: this run sent the FLAC the conversions are made from (see held_formats).
     """
     tasks = release.tasks
     if existing_group:
