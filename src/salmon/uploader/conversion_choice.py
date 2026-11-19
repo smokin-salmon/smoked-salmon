@@ -137,7 +137,7 @@ def _held_conversions(
     rls_data: dict[str, Any],
     track_data: dict[str, Any],
     *,
-    uploaded: bool = False,
+    same_edition: bool = False,
 ) -> set[str]:
     """The names of the conversions offered for this release that its edition in the group already holds.
 
@@ -148,13 +148,13 @@ def _held_conversions(
             --skip-flac-upload transcodes), which never counts as held.
         rls_data: The release data the conversions are offered for.
         track_data: The tracks' audio info.
-        uploaded: Whether this run sent the source FLAC (see held_formats).
+        same_edition: Whether the source FLAC is filed under the conversions' edition (see held_formats).
     """
     formats = {
         option["name"]: downconversion_format(option)
         for option in get_downconversion_options(rls_data, track_data, quiet=True)
     }
-    return held_formats(group, release, source_flac, formats, uploaded=uploaded)
+    return held_formats(group, release, source_flac, formats, same_edition=same_edition)
 
 
 def conversion_kind(task: dict[str, Any]) -> str:

@@ -783,6 +783,8 @@ async def _upload_staged(  # noqa: C901
     source_flac = None
     # The release the first tracker's group was picked for, as it was then: None for a group given with -g.
     weighed_against: dict[str, Any] | None = None
+    # That group as recheck_edition fetched it: the first tracker's upload reads its editions from it.
+    rechecked: dict[str, Any] | None = None
 
     dupe_searchstrs: list[str] = []
     # A release the first tracker's list forbids gets no group search there, so no prompt to pick a group. The
@@ -884,7 +886,7 @@ async def _upload_staged(  # noqa: C901
             elif group_id and flac_group is None and not first_listed:
                 # The review may have moved the release into an edition the group holds. With
                 # --skip-flac-upload, choose_source_flac below weighs the reviewed edition instead.
-                group_id = await recheck_edition(gazelle_site, group_id, metadata, weighed_against)
+                group_id, rechecked = await recheck_edition(gazelle_site, group_id, metadata, weighed_against)
             # From here on, the review may have changed the artists, title or catno, so search strings and
             # our title come from the reviewed metadata, not the pre-review rls_data.
             searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
@@ -1051,7 +1053,8 @@ async def _upload_staged(  # noqa: C901
 
                 remaining_gazelle_sites.remove(tracker)
 
-                turn = await upload_to_tracker(release, gazelle_site, group_id, run)
+                turn = await upload_to_tracker(release, gazelle_site, group_id, run, rechecked)
+                rechecked = None  # The first tracker's: a later tracker's group is another
                 tracker = None
                 if turn is Turn.SKIPPED:
                     if not remaining_gazelle_sites or not go_on:

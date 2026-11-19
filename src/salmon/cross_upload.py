@@ -1491,7 +1491,7 @@ async def _upload_conversions(
     if existing_group:
         group = await target.torrentgroup(group_id)
         formats = {task["name"]: downconversion_format(task) for task in tasks}
-        held = held_formats(group, edition, {"id": torrent_id}, formats, uploaded=flac_uploaded)
+        held = held_formats(group, edition, {"id": torrent_id}, formats, same_edition=flac_uploaded)
         for name in sorted(held):
             click.secho(f"Not uploading {name}: the group already has it in this edition.", fg="yellow")
         tasks = [task for task in tasks if task["name"] not in held]

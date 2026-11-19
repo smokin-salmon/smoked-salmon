@@ -760,7 +760,7 @@ def _group_as_result(group: dict) -> dict:
 
 async def recheck_edition(
     gazelle_site: "BaseGazelleApi", group_id: int, release: dict[str, Any], weighed_against: dict[str, Any] | None
-) -> int | None:
+) -> tuple[int | None, dict | None]:
     """Weigh a group picked or given before the review against the reviewed edition.
 
     The group is fetched once. Only a torrent of the reviewed edition that the pick did not already name for
@@ -774,7 +774,8 @@ async def recheck_edition(
             --group-id, which nothing weighed.
 
     Returns:
-        The group to upload to, or None for a new group.
+        The group to upload to, or None for a new group; and that group as fetched, for the upload to read its
+        editions from (None when the fetch failed or a new group was chosen).
 
     Raises:
         click.Abort: If the user aborts.
@@ -789,14 +790,14 @@ async def recheck_edition(
             fg="red",
             bold=True,
         )
-        return group_id
+        return group_id, None
     named = {torrent.get("id") for torrent in held_in_group(group, weighed_against)}
     if all(torrent.get("id") in named for torrent in held_in_group(group, release)):
-        return group_id
+        return group_id, group
     click.secho(f"\nThe reviewed edition is already in group {group_id}:", fg="red", bold=True)
     # The fetched group's own id, so the row is found and not fetched again.
     confirmed = await _confirm_group_id(gazelle_site, group["groupId"], [group], release=release)
-    return group_id if confirmed else None
+    return (group_id, group) if confirmed else (None, None)
 
 
 async def print_torrents(
@@ -1019,7 +1020,7 @@ def held_formats(
     source_flac: dict,
     formats: dict[str, tuple[str, str]],
     *,
-    uploaded: bool = False,
+    same_edition: bool = False,
 ) -> set[str]:
     """Find the formats that the release's edition in the group already holds, the source FLAC aside.
 
@@ -1028,18 +1029,18 @@ def held_formats(
         release: The reviewed release metadata.
         source_flac: The FLAC the transcodes are made from, which never counts as held.
         formats: The format and encoding of each candidate, by name.
-        uploaded: Whether this run sent the source FLAC, with the form the transcodes use. The site has then
-            filed it under their edition, catalogue number included, so a format is held only by a torrent in
-            that edition. The group must be fetched after the upload. False (a FLAC already on the site, which
-            may be filed under another edition), or a source FLAC missing from the group, keeps to the year
-            and edition title.
+        same_edition: Whether the source FLAC is filed under the transcodes' edition, catalogue number included: this
+            run sent it with the form they use (the group must then be fetched after the upload), or they take
+            its edition fields. A format is then held only by a torrent in that edition. False (a FLAC on the
+            site that may be filed under another edition), or a source FLAC missing from the group, keeps to the
+            year and edition title.
 
     Returns:
         The names of the candidates the edition already has.
     """
     source_id = str(source_flac.get("id"))
     placed = None
-    if uploaded:
+    if same_edition:
         placed = next((t for t in group.get("torrents") or [] if str(t.get("id")) == source_id), None)
     filed_under = _site_edition(placed, group) if placed is not None else None
     held = set()

@@ -76,6 +76,7 @@ def _release(**overrides: Any) -> dict[str, Any]:
         "format": "FLAC",
         "encoding": "Lossless",
         "year": 2020,
+        "label": "Label",
         "catno": "CAT1",
         "edition_title": None,
         "artists": [("Artist", "main")],
@@ -623,15 +624,22 @@ def test_a_held_format_of_another_edition_is_offered(monkeypatch) -> None:
     assert transcoded == [(["MP3 320", "MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
 
 
-def test_a_format_held_in_the_forms_edition_is_left_out_beside_a_flac_of_another(monkeypatch) -> None:
-    # The transcodes go up with the form's catalogue number (CAT1), not the existing FLAC's (CAT-2): the FLAC
-    # was not sent by this run, so no edition is known to be theirs and every match counts.
+def test_transcodes_go_up_in_the_edition_of_their_flac_and_count_only_its_formats(monkeypatch, capsys) -> None:
+    # The form says CAT1, the FLAC they are made from is filed under CAT-2: -yyy takes the FLAC's edition, where
+    # the MP3 320 held under CAT1 is not.
     monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", True)
     group = _group(_torrent(11, catno="CAT-2"), _torrent(12, format_="MP3", encoding="320", catno="CAT1"))
+    sent: list[tuple[list[str], str, str]] = []
 
-    _calls, transcoded = _flow(monkeypatch, group)
+    async def execute(tasks, _path, _site, _group_id, metadata, *args: Any, **_kwargs: Any) -> None:
+        sent.append(([t["name"] for t in tasks], metadata["catno"], args[-1]))
 
-    assert transcoded == [(["MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
+    _flow(monkeypatch, group, execute_downconversion_tasks=execute)
+
+    assert sent == [(["MP3 320", "MP3 V0"], "CAT-2", "https://tracker.test/torrents.php?torrentid=11")]
+    output = capsys.readouterr().out
+    assert "RED files this release as: 2020 / Label / CAT-2" in output
+    assert "Using RED's edition fields (-yyy)." in output
 
 
 def test_a_held_format_with_another_catalogue_number_is_held() -> None:

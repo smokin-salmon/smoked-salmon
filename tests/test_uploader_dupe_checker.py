@@ -189,9 +189,9 @@ def test_held_formats_count_only_the_edition_the_site_filed_the_flac_under() -> 
     group = {"group": {"year": 2024}, "torrents": [flac, other, same, titled]}
     formats = {"16bit": ("FLAC", "Lossless"), "MP3 320": ("MP3", "320"), "MP3 V0": ("MP3", "V0 (VBR)")}
 
-    filed = dupe_checker.held_formats(group, _HELD_RELEASE, flac, formats, uploaded=True)
+    filed = dupe_checker.held_formats(group, _HELD_RELEASE, flac, formats, same_edition=True)
     # Not in the group, or not sent by this run: the transcodes' edition is unknown, so every match counts.
-    unfiled = dupe_checker.held_formats(group, _HELD_RELEASE, {"id": 99}, formats, uploaded=True)
+    unfiled = dupe_checker.held_formats(group, _HELD_RELEASE, {"id": 99}, formats, same_edition=True)
     existing = dupe_checker.held_formats(group, _HELD_RELEASE, flac, formats)
 
     assert filed == {"MP3 320"}
@@ -225,7 +225,7 @@ def test_held_formats_tell_editions_apart_by_their_fields(flac_fields, mp3_field
     mp3 = {**flac, "id": 2, "format": "MP3", "encoding": "320", **mp3_fields}
     group = {"group": {"year": 2024, "recordLabel": "Label", "catalogueNumber": "CAT-2"}, "torrents": [flac, mp3]}
 
-    found = dupe_checker.held_formats(group, _HELD_RELEASE, {"id": 1}, {"MP3 320": ("MP3", "320")}, uploaded=True)
+    found = dupe_checker.held_formats(group, _HELD_RELEASE, {"id": 1}, {"MP3 320": ("MP3", "320")}, same_edition=True)
 
     assert found == held
 
