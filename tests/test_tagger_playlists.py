@@ -188,6 +188,31 @@ def test_as_before_a_true_cp1252_cue_is_not_warned_about(tmp_path, capsys) -> No
     assert out == ""
 
 
+def test_a_true_cp1252_cue_in_a_non_ascii_album_folder_is_not_warned_about(tmp_path, capsys) -> None:
+    """Only ASCII names were renamed: the album folder's own name is no sign of another code page."""
+    album = tmp_path / "Björk - Homogenic"
+    _tracks(album, "01.flac")
+    cue = album / "a.cue"
+    cue.write_bytes('FILE "01.flac" WAVE\r\nFILE "03 Café.flac" WAVE\r\n'.encode("cp1252"))
+
+    rewrite_playlists(str(album), _rename(album, ("01.flac", "01. One.flac")))
+
+    assert cue.read_bytes() == 'FILE "01. One.flac" WAVE\r\nFILE "03 Café.flac" WAVE\r\n'.encode("cp1252")
+    assert capsys.readouterr().out == ""
+
+
+def test_as_before_a_utf8_cue_is_not_warned_about(tmp_path, capsys) -> None:
+    """Read as UTF-8, a name that is not there is not misread, whatever was renamed."""
+    _tracks(tmp_path, "01 Café.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_bytes('FILE "01 Café.flac" WAVE\r\nFILE "03 Où.flac" WAVE\r\n'.encode())
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("01 Café.flac", "01. Été.flac")))
+
+    assert cue.read_bytes() == 'FILE "01. Été.flac" WAVE\r\nFILE "03 Où.flac" WAVE\r\n'.encode()
+    assert capsys.readouterr().out == ""
+
+
 # The two places that rename
 
 
