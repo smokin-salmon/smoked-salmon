@@ -541,12 +541,23 @@ def _descgen(monkeypatch, metadata: dict[str, Any]) -> list[str]:
     return _lines(description)
 
 
-def _store_album(*tracks: list[tuple[str, str]], rls_type: str = "Album") -> dict[str, Any]:
+def _store_album(*tracks: list[tuple[str, str]], rls_type: str = "Album", credited: bool = True) -> dict[str, Any]:
+    """A store's release, its remixers credited as a parser credits the remixers the store names, unless not
+    `credited` (read from a title, as the merge and Tidal's parser read them)."""
     artists = list(dict.fromkeys(credit for track in tracks for credit in track))
     return {
         "artists": artists,
         "rls_type": rls_type,
-        "tracks": {"1": {str(n): {"artists": track, "title": f"Song {n}"} for n, track in enumerate(tracks, 1)}},
+        "tracks": {
+            "1": {
+                str(n): {
+                    "artists": track,
+                    "title": f"Song {n}",
+                    "credited_remixers": [name for name, role in track if role == "remixer" and credited],
+                }
+                for n, track in enumerate(tracks, 1)
+            }
+        },
         "comment": None,
         "urls": [],
     }
@@ -972,6 +983,8 @@ def test_as_before_a_remixer_s_name_holding_a_year_or_a_kind_of_remix_is_said_wh
         (["Remi Xer"], "(REMI XER Remix)"),
         (["Remi Xer"], "(Remi Xer's Remix)"),
         (["X & Y"], "(X & Y Remix)"),
+        (["X"], "(X & Y Remix)"),
+        (["Mono"], "(Mono Remix)"),
     ],
 )
 def test_a_remixer_in_remixer_is_said_and_the_title_not_read(remixer: list[str], title: str) -> None:
@@ -1002,10 +1015,18 @@ def test_descgen_reads_a_remixer_the_merge_read_from_the_titles_as_the_titles_ar
 ) -> None:
     # With several URLs, the merge credits what it reads in a later store's titles: "2021" is no one here either.
     remixer = title[1 : -len(" Remix)")]
-    album = _store_album(*([("Sullivan Murphy", "main"), (remixer, "remixer")] for _ in (1, 2)))
+    album = _store_album(*([("Sullivan Murphy", "main"), (remixer, "remixer")] for _ in (1, 2)), credited=False)
     for track in album["tracks"]["1"].values():
         track["title"] += f" {title}"
 
     description = _descgen_description(monkeypatch, album)
 
     assert (line in description.splitlines()) if line else ("remixed by" not in description)
+
+
+def test_descgen_says_a_remixer_the_store_credits_whatever_the_title_reads(monkeypatch) -> None:
+    album = _store_album(*([("Sullivan Murphy", "main"), ("Mono", "remixer")] for _ in (1, 2)))
+    for track in album["tracks"]["1"].values():
+        track["title"] += " (Mono Remix)"
+
+    assert "All tracks remixed by Mono." in _descgen_description(monkeypatch, album).splitlines()

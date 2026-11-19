@@ -34,7 +34,7 @@ from salmon.sources.tidal import credentials_configured as tidal_credentials_con
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
-from salmon.tagger.retagger import append_guests_to_track_titles, create_artist_str
+from salmon.tagger.retagger import append_guests_to_track_titles, create_artist_str, create_remixer_list
 from salmon.tagger.sources import METASOURCES, run_metadata
 from salmon.tagger.sources.base import generate_artists
 from salmon.trackers.connection import check_trackers
@@ -141,8 +141,20 @@ async def build_description(urls: Sequence[str]) -> str:
     if cfg.upload.formatting.guests_in_track_title:
         for _dnum, _tnum, track in numbered:
             track["title"] = append_guests_to_track_titles(track)
+    # A remixer the store doesn't credit was read from a title (by the merge, or Tidal's parser): the tracklist reads
+    # the title itself, as REMIXER holds only the credited ones (create_remixer_list).
+    tracks = [
+        (
+            [
+                *((name, role) for name, role in track["artists"] if role != "remixer"),
+                *((name, "remixer") for name in create_remixer_list(track)),
+            ],
+            track["title"],
+        )
+        for _dnum, _tnum, track in numbered
+    ]
     titles, remixers = listed_titles(
-        [(track["artists"], track["title"]) for _dnum, _tnum, track in numbered],
+        tracks,
         album_credit_names(metadata),
         metadata.get("rls_type"),
     )

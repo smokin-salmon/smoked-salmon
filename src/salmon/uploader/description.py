@@ -148,14 +148,11 @@ _RE_NO_ONE = re.compile(
 
 def _remixers(credits: list[tuple[str, str]], title: str | None) -> list[str]:
     """The remixers a track credits in REMIXER, or with none, as salmon reads them from its title ("Song (X Remix)"),
-    on each track as the merge does for a store that states its credits. A credit that is only the title's reading
-    (as the merge adds for another store) is read as the title is. A title names a remixer without the kind of
+    on each track as the merge does for a store that states its credits. A title names a remixer without the kind of
     remix: "2021" and "Stereo" name no one, "Steven Wilson Stereo" names Steven Wilson."""
-    read = [name for name, _ in _extract_remixers_from_title(title or "")]
-    credited = [name for name, role in credits if role == "remixer"]
-    if any(name not in read for name in credited):
+    if credited := [name for name, role in credits if role == "remixer"]:
         return list(dict.fromkeys(credited))
-    names = (_RE_REMIX_KIND.sub("", name).strip() for name in read)
+    names = (_RE_REMIX_KIND.sub("", name).strip() for name, _ in _extract_remixers_from_title(title or ""))
     return list(dict.fromkeys(name for name in names if name and not _RE_NO_ONE.fullmatch(name)))
 
 
