@@ -272,10 +272,11 @@ def test_going_back_after_the_ai_review_applied_its_changes_asks_first(monkeypat
 
 def test_what_the_pick_after_going_back_writes_is_what_a_rerun_clears(monkeypatch, tmp_path) -> None:
     # `written` starts empty with each edit_metadata: going back leaves the files alone, so the abandoned pick has
-    # nothing in them to clear, and the new pick's own record is what the metadata step's re-run clears.
+    # nothing in them to clear, and the new pick's own record is what the metadata step's re-run clears. The album's
+    # UPC is a field only the abandoned pick sets: a record carried over from it would delete the UPC at the re-run.
     edit_metadata_stubs(monkeypatch)
-    file = _flac_album(tmp_path, CATALOGNUMBER="ORIGINAL")
-    abandoned = _release(catno="ABANDONED", label="Label")
+    file = _flac_album(tmp_path, CATALOGNUMBER="ORIGINAL", UPC="KEPT")
+    abandoned = _release(catno="ABANDONED", label="Label", upc="ABANDONED")
     picked = _release(catno="CAT1", label="Label")
     rerun = _release(label="Label")
     queue: list[Any] = [PickOtherResults, picked, rerun]
@@ -328,3 +329,5 @@ def test_what_the_pick_after_going_back_writes_is_what_a_rerun_clears(monkeypatc
     names = {name.upper() for name, _ in _flac_tags(file)}
     assert "CATALOGNUMBER" not in names
     assert "LABEL" in names
+    # Only the abandoned pick sets a UPC, so a leaked record of it would have cleared this tag.
+    assert FLAC(file).get("upc") == ["KEPT"]
