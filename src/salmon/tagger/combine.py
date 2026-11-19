@@ -420,9 +420,7 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                     continue
                 btrack["artists"].append(a)
 
-            # Skip title-based remixer inference if remixers are already credited
-            # (e.g. from Discogs), to avoid adding spurious artists from mix names
-            if not meta_has_remixer:
+            if _reads_title_remixers(track, store, meta_has_remixer):
                 remixers = _extract_remixers_from_title(track["title"])
                 for remixer in remixers:
                     if (comparable(remixer[0]), remixer[1]) not in base_artists:
@@ -460,6 +458,15 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
         btrack["track#"] = new_num
         base[disc_no][new_num] = btrack
     return base
+
+
+def _reads_title_remixers(track, store, meta_has_remixer):
+    """Whether a store's track title is read for remixers: not once remixers are credited, to avoid adding spurious
+    artists from mix names ("Attitude Dub Mix"). A store that states its credits says so of each track; any other's
+    one credited remixer (e.g. from Discogs) says it of the whole release."""
+    if store in METASOURCES and METASOURCES[store].Scraper.states_credits:
+        return not any(role == "remixer" for _, role in track["artists"])
+    return not meta_has_remixer
 
 
 def _assumed(source, credit, guesses):

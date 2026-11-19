@@ -273,3 +273,32 @@ def test_a_stating_store_s_claims_are_stated_but_for_its_guesses_and_a_title_s_r
         ("Qobuz", "Carol", "guest", True),
         ("Qobuz", "Bob", "remixer", True),
     ]
+
+
+def remixed(store: str, files: bool = False) -> dict:
+    """Two tracks, each a remix by its title; the store credits the first's remixer (not the one its title names),
+    the files none."""
+    meta = two_tracks(
+        [("Alice", "main")] if files else [("Alice", "main"), ("Remi Xer", "remixer")], [("Alice", "main")]
+    )
+    meta["tracks"]["1"]["1"]["title"], meta["tracks"]["1"]["2"]["title"] = (
+        "One (Attitude Remix)",
+        "Two (Other Xer Remix)",
+    )
+    return meta
+
+
+def test_a_stating_store_s_remixer_on_one_track_leaves_another_s_title_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=())
+    tracks = combine_metadatas(("Qobuz", remixed("Qobuz")), base=remixed("files", files=True))["tracks"]["1"]
+
+    assert tracks["1"]["artists"] == [("Alice", "main"), ("Remi Xer", "remixer")]
+    assert tracks["2"]["artists"] == [("Alice", "main"), ("Other Xer", "remixer")]
+
+
+def test_as_before_an_assuming_store_s_remixer_on_one_track_reads_no_title(monkeypatch: pytest.MonkeyPatch) -> None:
+    stores_stating(monkeypatch, stating=(), assuming=("Deezer",))
+    tracks = combine_metadatas(("Deezer", remixed("Deezer")), base=remixed("files", files=True))["tracks"]["1"]
+
+    assert tracks["1"]["artists"] == [("Alice", "main"), ("Remi Xer", "remixer")]
+    assert tracks["2"]["artists"] == [("Alice", "main")]
