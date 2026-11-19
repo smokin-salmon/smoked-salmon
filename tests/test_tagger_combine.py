@@ -502,6 +502,37 @@ def test_discogs_vinyl_sides_keep_the_files_numbers_and_give_no_totals():
     assert all(t["tracktotal"] is None and t["disctotal"] is None for t in combined["1"].values())
 
 
+def test_as_before_a_one_cd_discogs_release_numbering_movements_by_dots_merges_its_files():
+    # "1.1" to "2.2": two works' movements on one CD, so four tracks of one disc, not two discs (#984).
+    tracklist = [{"type_": "track", "position": p, "title": f"Movement {p}"} for p in ("1.1", "1.2", "2.1", "2.2")]
+    soup = {"artists": [{"name": "Orchestra"}], "formats": [{"name": "CD", "qty": "1"}], "tracklist": tracklist}
+    meta = asyncio.run(Scraper().parse_tracks(soup))
+
+    combined = combine_tracks(local_files("1", "2", "3", "4"), meta, True)
+
+    assert [t["track#"] for t in combined["1"].values()] == ["1", "2", "3", "4"]
+
+
+def test_as_before_a_discogs_disc_shown_by_a_repeat_starts_at_its_heading():
+    # Heading, A, B, heading, AA, B: the repeated "B" shows the second heading started a disc, so "AA" is on it too.
+    tracklist = [{"type_": "heading", "position": "", "title": "1"}]
+    tracklist += [{"type_": "track", "position": p, "title": t} for p, t in (("A", "One"), ("B", "Two"))]
+    tracklist += [{"type_": "heading", "position": "", "title": "2"}]
+    tracklist += [{"type_": "track", "position": p, "title": t} for p, t in (("AA", "Three"), ("B", "Four"))]
+    meta = asyncio.run(Scraper().parse_tracks({"artists": [{"name": "A"}], "tracklist": tracklist}))
+    base = {**local_files("1", "2", disc="1"), **local_files("1", "2", disc="2")}
+    for disc in base.values():
+        for local in disc.values():
+            local["title"] = ""  # Untitled files take the source's titles, in the order they pair.
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {disc: [t["title"] for t in tracks.values()] for disc, tracks in combined.items()} == {
+        "1": ["One", "Two"],
+        "2": ["Three", "Four"],
+    }
+
+
 def test_single_disc_source_numbered_1_5_keeps_the_files_numbers():
     meta = {"1": {"1": source_track("1", "1", 2, 1), "5": source_track("5", "1", 2, 1)}}
 
