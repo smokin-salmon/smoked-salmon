@@ -1,0 +1,369 @@
+album = "Asking Alexandria, Where Do We Go From Here? The Remixes EP"
+why = "A remix EP whose remixers Qobuz states as Remixer, and three of them also as MainArtist on their own remix (\"Weird Genius, Remixer, MainArtist\"); Deezer lists those three as main_artist beside the band."
+edition = "The 7-track digital EP, Better Noise Music 2024 (Qobuz tfw5m00ec42ab = Deezer 631629531 by barcode 846070079702, Qobuz's with a leading 0). Only the two stores whose credits the case is about."
+known_wrong = ["Deezer parse: its contributors give Weird Genius, Fairlane and Sullivan King as main_artist on their remixes, so they are main and no remixer is credited; the merge credits them only as remixers"]
+files_from = "qobuz"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Asking Alexandria"]
+not_main = ["Weird Genius", "Kodeblooded", "Cass Dillon", "Fairlane", "Sullivan King"]
+remixers = ["Weird Genius", "Kodeblooded", "Cass Dillon", "Fairlane", "Sullivan King"]
+how_we_know = "Qobuz and Deezer both give Asking Alexandria alone as the album's artist, and each remix's version names its remixer; Qobuz's line states all five as Remixer, and Deezer's contributors list them as remixer (a key its parser doesn't read, so trimmed here)"
+
+[today.deezer]
+release = ["Asking Alexandria (main)", "Weird Genius (main)", "Fairlane (main)", "Sullivan King (main)"]
+tracks = 7
+
+[today.qobuz]
+release = ["Asking Alexandria (main)", "Weird Genius (remixer)", "Kodeblooded (remixer)", "Cass Dillon (remixer)", "Fairlane (remixer)", "Sullivan King (remixer)"]
+tracks = 7
+
+[today.merge]
+release = ["Asking Alexandria (main)", "Weird Genius (remixer)", "Kodeblooded (remixer)", "Cass Dillon (remixer)", "Fairlane (remixer)", "Sullivan King (remixer)"]
+tracks = 7
+credits = ["1.1: Asking Alexandria (main), Weird Genius (remixer)", "1.2: Asking Alexandria (main), Kodeblooded (remixer)", "1.3: Asking Alexandria (main), Cass Dillon (remixer)", "1.4: Asking Alexandria (main), Fairlane (remixer)", "1.5: Asking Alexandria (main)", "1.6: Asking Alexandria (main), Sullivan King (remixer)", "1.7: Asking Alexandria (main)"]
+
+[today.output]
+albumartist = "Asking Alexandria"
+tracks = ["Asking Alexandria | Bad Blood (Weird Genius Remix) | REMIXER Weird Genius", "Asking Alexandria | Let Go (kodeblooded Remix) | REMIXER Kodeblooded", "Asking Alexandria | Nothing Left (Cass Dillon Remix) | REMIXER Cass Dillon", "Asking Alexandria | Where Do We Go From Here? (Fairlane Remix) | REMIXER Fairlane", "Asking Alexandria | Where Do We Go From Here", "Asking Alexandria | Dark Void (Sullivan King Remix) | REMIXER Sullivan King", "Asking Alexandria | Holding On To Something More"]
+
+[today."output-guests-in-title"]
+albumartist = "Asking Alexandria"
+tracks = ["Asking Alexandria | Bad Blood (Weird Genius Remix) | REMIXER Weird Genius", "Asking Alexandria | Let Go (kodeblooded Remix) | REMIXER Kodeblooded", "Asking Alexandria | Nothing Left (Cass Dillon Remix) | REMIXER Cass Dillon", "Asking Alexandria | Where Do We Go From Here? (Fairlane Remix) | REMIXER Fairlane", "Asking Alexandria | Where Do We Go From Here", "Asking Alexandria | Dark Void (Sullivan King Remix) | REMIXER Sullivan King", "Asking Alexandria | Holding On To Something More"]
+
+# The files' tags.
+# Constructed from Qobuz data (the case's own qobuz fixture), not copied from anyone's files: TITLE the track's
+# title, with its version when it has one, ARTIST the track's performer, the album artist in ALBUMARTIST, the full
+# release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Bad Blood (Weird Genius Remix)"]
+artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Let Go (kodeblooded Remix)"]
+artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Nothing Left (Cass Dillon Remix)"]
+artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Where Do We Go From Here? (Fairlane Remix)"]
+artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Where Do We Go From Here"]
+artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Dark Void (Sullivan King Remix)"]
+artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Holding On To Something More"]
+artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 631629531,
+ "title": "Where Do We Go From Here? The Remixes EP",
+ "upc": "846070079702",
+ "cover_xl": "https://e-cdns-images.dzcdn.net/images/cover/7f3ff77ee096eb8f450eae2f999f5be4/1000x1000-000000-100-0-0.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 152,
+    "name": "Rock"
+   },
+   {
+    "id": 155,
+    "name": "Hard Rock"
+   }
+  ]
+ },
+ "label": "Better Noise Music",
+ "release_date": "2024-10-18",
+ "tracklist": [
+  {
+   "SNG_ID": "2954164741",
+   "SNG_TITLE": "Bad Blood",
+   "VERSION": "(Weird Genius Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Asking Alexandria",
+     "Weird Genius"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USDPK2400099",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "2954164751",
+   "SNG_TITLE": "Let Go",
+   "VERSION": "(kodeblooded Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Asking Alexandria"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USDPK2400100",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2954164761",
+   "SNG_TITLE": "Nothing Left",
+   "VERSION": "(Cass Dillon Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Asking Alexandria"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USDPK2400101",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "2954164771",
+   "SNG_TITLE": "Where Do We Go From Here?",
+   "VERSION": "(Fairlane Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Asking Alexandria",
+     "Fairlane"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USDPK2400102",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2954164781",
+   "SNG_TITLE": "Where Do We Go From Here",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Asking Alexandria"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USDPK2300073",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "2954164791",
+   "SNG_TITLE": "Dark Void",
+   "VERSION": "(Sullivan King Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Asking Alexandria",
+     "Sullivan King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USDPK2300192",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "2954164801",
+   "SNG_TITLE": "Holding On To Something More",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Asking Alexandria"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USDPK2300072",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "tfw5m00ec42ab",
+ "upc": "0846070079702",
+ "title": "Where Do We Go From Here? The Remixes EP",
+ "version": null,
+ "tracks_count": 7,
+ "artist": {
+  "name": "Asking Alexandria"
+ },
+ "artists": [
+  {
+   "name": "Asking Alexandria",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Pop/Rock",
+  "Pop/Rock→Rock",
+  "Pop/Rock→Rock→Hard Rock"
+ ],
+ "image": {
+  "large": "https://static.qobuz.com/images/covers/ab/42/tfw5m00ec42ab_600.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Bad Blood",
+    "version": "Weird Genius Remix",
+    "track_number": 1,
+    "performer": {
+     "name": "Asking Alexandria"
+    },
+    "performers": "Matt Good, Composer, Producer, Mixer - Danny Worsnop, Composer - Asking Alexandria, MainArtist, AssociatedPerformer - James Cassells, Composer - Benjamin Bruce, Composer - Weird Genius, Remixer, MainArtist - Music For The Queen (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - The Snop Shop (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Auri Sounds (ASCAP), c/o BMG Gold Songs All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Paul Alexander Bartolome, Composer - Paul Alexander Bartolome (PRS), MusicPublisher"
+   },
+   {
+    "title": "Let Go",
+    "version": "kodeblooded Remix",
+    "track_number": 2,
+    "performer": {
+     "name": "Asking Alexandria"
+    },
+    "performers": "Matt Good, Composer, Producer, Mixer - Danny Worsnop, Composer - Asking Alexandria, MainArtist, AssociatedPerformer - James Cassells, Composer - Benjamin Bruce, Composer - Kodeblooded, Remixer - Music For The Queen (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - The Snop Shop (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Auri Sounds (ASCAP), c/o BMG Gold Songs All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Paul Alexander Bartolome, Composer - Paul Alexander Bartolome (PRS), MusicPublisher"
+   },
+   {
+    "title": "Nothing Left",
+    "version": "Cass Dillon Remix",
+    "track_number": 3,
+    "performer": {
+     "name": "Asking Alexandria"
+    },
+    "performers": "Matt Good, Composer, Producer, Mixer - Danny Worsnop, Composer - Asking Alexandria, MainArtist, AssociatedPerformer - James Cassells, Composer - Benjamin Bruce, Composer - Cass Dillon, Remixer - Music For The Queen (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - The Snop Shop (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Auri Sounds (ASCAP), c/o BMG Gold Songs All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Paul Alexander Bartolome, Composer - Paul Alexander Bartolome (PRS), MusicPublisher"
+   },
+   {
+    "title": "Where Do We Go From Here?",
+    "version": "Fairlane Remix",
+    "track_number": 4,
+    "performer": {
+     "name": "Asking Alexandria"
+    },
+    "performers": "Cory Williams, Composer - Matt Good, Producer, Mixer - Danny Worsnop, Composer - Asking Alexandria, MainArtist, AssociatedPerformer - Fairlane, Remixer, MainArtist - The Snop Shop (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Cory Williams (BMI), MusicPublisher"
+   },
+   {
+    "title": "Where Do We Go From Here",
+    "version": null,
+    "track_number": 5,
+    "performer": {
+     "name": "Asking Alexandria"
+    },
+    "performers": "Cory Williams, Composer - Howie Weinberg, MasteringEngineer - Matt Good, Producer, Mixer - Danny Worsnop, Composer - Asking Alexandria, MainArtist, AssociatedPerformer - Will Borza, MasteringEngineer - The Snop Shop (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Nick \"Squids\" Squillante, ImmersiveMasteringEngineer - Cory Williams (BMI), MusicPublisher"
+   },
+   {
+    "title": "Dark Void",
+    "version": "Sullivan King Remix",
+    "track_number": 6,
+    "performer": {
+     "name": "Asking Alexandria"
+    },
+    "performers": "Howie Weinberg, MasteringEngineer - Matt Good, Composer, Producer, Mixer - Danny Worsnop, Composer - Asking Alexandria, MainArtist, AssociatedPerformer - James Cassells, Composer - Jeff Huskins, ImmersiveMixingEngineer, ImmersiveMasteringEngineer - Benjamin Bruce, Composer - Sullivan King, Remixer, MainArtist - Will Borza, MasteringEngineer - Music For The Queen (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - The Snop Shop (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Auri Sounds (ASCAP), c/o BMG Gold Songs All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Paul Alexander Bartolome, Composer - Paul Alexander Bartolome (PRS), MusicPublisher"
+   },
+   {
+    "title": "Holding On To Something More",
+    "version": null,
+    "track_number": 7,
+    "performer": {
+     "name": "Asking Alexandria"
+    },
+    "performers": "Howie Weinberg, MasteringEngineer - Matt Good, Composer, Producer, Mixer - Danny Worsnop, Composer - Asking Alexandria, MainArtist, AssociatedPerformer - James Cassells, Composer - Benjamin Bruce, Composer - Will Borza, MasteringEngineer - Music For The Queen (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - The Snop Shop (ASCAP) All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Auri Sounds (ASCAP), c/o BMG Gold Songs All Rights Administered by BMG Rights Management (US), LLC. Used by Permission. All Rights Reserved, MusicPublisher - Paul Alexander Bartolome, Composer - Nick \"Squids\" Squillante, ImmersiveMasteringEngineer - Paul Alexander Bartolome (PRS), MusicPublisher"
+   }
+  ]
+ }
+}
+'''

@@ -202,6 +202,35 @@ def test_a_track_s_main_artist_the_album_does_not_list_is_an_assumed_guest() -> 
     assert first["assumed_artists"] == [("Bob", "guest")]
 
 
+@pytest.mark.parametrize("roles", ["Remixer, MainArtist", "MainArtist, Remixer"])
+def test_a_main_artist_the_line_states_as_remixer_is_only_its_remixer(roles: str) -> None:
+    data = album(track(f"Alice, MainArtist - Bob, {roles}"))
+
+    first = parsed(data)[0]
+
+    assert first["artists"] == [("Alice", "main"), ("Bob", "remixer")]
+    assert first["assumed_artists"] == []
+
+
+def test_a_performer_the_line_states_as_remixer_is_only_its_remixer() -> None:
+    data = album(track("Alice, MainArtist - Bob, Remixer", performer={"name": "Bob"}))
+
+    first = parsed(data)[0]
+
+    assert first["artists"] == [("Alice", "main"), ("Bob", "remixer")]
+    assert first["assumed_artists"] == []
+
+
+def test_a_remixer_who_is_the_track_s_only_main_artist_stays_its_lead() -> None:
+    """A remix by its own artist, on a compilation: the album's artist stays a guess."""
+    data = album(track("Bob, MainArtist, Remixer"), artist="Various Artists")
+
+    first = parsed(data)[0]
+
+    assert first["artists"] == [("Various Artists", "main"), ("Bob", "guest"), ("Bob", "remixer")]
+    assert first["assumed_artists"] == [("Various Artists", "main"), ("Bob", "guest")]
+
+
 def test_a_track_s_mains_are_the_album_s_main_artists_it_names() -> None:
     """The Graduate: Simon & Garfunkel and Dave Grusin are both main-artist, each on their own tracks."""
     data = album(

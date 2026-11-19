@@ -598,9 +598,10 @@ def _track_credits(
     and the track's composer. Guessed: a MainArtist the album doesn't list as main, a guest read from "feat." in a
     performer's name or in the title, both guests by salmon's reading, the album's featured artists on a track whose
     line doesn't name them, and the album's main artists on a track that names only others (unless it states one of
-    them as its guest: then its own MainArtists are its mains). Nothing is decided here: one name may hold two roles,
-    for the merge to weigh. The claims run the album's mains and featured artists first, then the line's, and a name
-    keeps the first spelling it is claimed under: the album's over the line's.
+    them as its guest: then its own MainArtists are its mains). On a track that names an album main, a performer or
+    MainArtist the line also states as Remixer is not guessed a guest. Nothing is decided here: one name may hold two
+    roles, for the merge to weigh. The claims run the album's mains and featured artists first, then the line's, and a
+    name keeps the first spelling it is claimed under: the album's over the line's.
     """
     album = {_key(name): name for name in album_mains}
     named: set[str] = set()
@@ -633,6 +634,14 @@ def _track_credits(
             read.append((name, role, False))
 
     mains = [name for key, name in album.items() if key in named]
+    if mains:
+        # A remix's line can give its remixer as MainArtist too ("Weird Genius, Remixer, MainArtist").
+        remixers = {_key(name) for name, role, _ in read if role == "remixer"}
+        read = [
+            (name, role, assumed)
+            for name, role, assumed in read
+            if not (assumed and name in leads and _key(name) in remixers)
+        ]
     features_album = any(role == "guest" and not assumed and _key(name) in album for name, role, assumed in read)
     claims: list[tuple[str, Role, bool]] = []
     if not mains and leads and features_album:
