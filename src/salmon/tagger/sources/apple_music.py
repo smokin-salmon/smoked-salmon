@@ -174,6 +174,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                     if rel.get("type") == "artists" and name and (name, "main") not in artists:
                         artists.append((name, "main"))
 
+                explicit_artists = bool(artists)
                 if not artists:
                     # Older/cached responses without the included artists: keep the display string whole.
                     artist_name = (attrs.get("artistName") or "").strip()
@@ -187,7 +188,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                         if (guest, "guest") not in artists:
                             artists.append((guest, "guest"))
 
-                tracks[str(disc_num)][track_num] = self.generate_track(
+                track = self.generate_track(
                     trackno=track_num,
                     discno=disc_num,
                     artists=artists,
@@ -195,6 +196,11 @@ class Scraper(AppleMusicBase, MetadataMixin):
                     isrc=attrs.get("isrc"),
                     explicit=attrs.get("contentRating") == "explicit",
                 )
+                if explicit_artists:
+                    # These credits are stated per artist by the store, not inferred from a joined string:
+                    # the split-repair must not join them back by name.
+                    track["explicit_artists"] = True
+                tracks[str(disc_num)][track_num] = track
 
             if not tracks:
                 raise ScrapeError("No valid song tracks found in Apple Music API response")
