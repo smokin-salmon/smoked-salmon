@@ -3,7 +3,6 @@
 import copy
 import hashlib
 import os
-import struct
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -25,6 +24,7 @@ import salmon.tagger.foldername
 import salmon.trackers
 import salmon.uploader
 import salmon.uploader.spectrals
+from helpers.album_files import write_flac
 from helpers.uploader_fakes import stub_uploader
 from salmon import cfg
 from salmon.config.validations import Seedbox
@@ -181,15 +181,9 @@ def _client(cls: type[BaseGazelleApi], tracker: FakeTracker, torrents: Path) -> 
     return site
 
 
-def _write_flac(path: Path, **tags: str) -> None:
+def _write_flac(path: Path, **tags: Any) -> None:
     """Write a FLAC file with no audio: a STREAMINFO block and the given tags."""
-    streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
-    streaminfo += ((44100 << 44) | (1 << 41) | (15 << 36)).to_bytes(8, "big") + bytes(16)
-    path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
-    tagged = FLAC(path)
-    for key, value in tags.items():
-        tagged[key] = value
-    tagged.save()
+    write_flac(path, **tags)
 
 
 def _album(folder: Path) -> Path:
@@ -287,6 +281,7 @@ def _run_up(
     multi_tracker_upload: bool = True,
     yes_all: bool = True,
     trackers: tuple[str, ...] | None = None,
+    renamed: str = RENAMED,
     **fakes: Any,
 ) -> Run:
     """Run `salmon up ALBUM` against the fake tracker: real staging, torrents and forms.
@@ -295,9 +290,10 @@ def _run_up(
     `trackers` are named with -t, each; `()` names none and leaves default_trackers as the test set it.
     The seams that need audio tools, a metadata source or a reviewer are stubbed, `fakes` replace more of them.
     `classes` gives the client class of each site code, RED and OPS by default. `yes_all=False` leaves out -yyy.
+    `renamed` is the folder name the metadata gives the album.
     """
     tracker, queued, logins = fake_upload_world(
-        monkeypatch, torrents, classes=classes, multi_tracker_upload=multi_tracker_upload, **fakes
+        monkeypatch, torrents, classes=classes, multi_tracker_upload=multi_tracker_upload, renamed=renamed, **fakes
     )
     if trackers is None:
         monkeypatch.setattr(cfg.tracker, "default_trackers", ["RED"])
@@ -350,9 +346,12 @@ def fake_upload_world(
     classes: dict[str, type[BaseGazelleApi]] | None = None,
     multi_tracker_upload: bool = True,
     tracker: "FakeTracker | None" = None,
+    renamed: str = RENAMED,
     **fakes: Any,
 ) -> tuple[FakeTracker, list[tuple[Any, ...]], list[str | None]]:
     """Stub what an upload needs besides the tracker, and send its tracker requests to `tracker`, else a new fake.
+
+    The metadata names the album folder `renamed`.
 
     Returns:
         The fake tracker (not serving yet), the seedbox tasks the run queues, and the torrent client logins.
@@ -380,7 +379,7 @@ def fake_upload_world(
             **fakes,
         },
     )
-    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
+    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(renamed))
     # A config with yes_all on would answer the questions the run is meant to ask.
     monkeypatch.setattr(cfg.upload, "yes_all", False)
     monkeypatch.setattr(cfg.upload, "multi_tracker_upload", multi_tracker_upload)

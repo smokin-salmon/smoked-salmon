@@ -1,7 +1,7 @@
 album = "Earth, Wind & Fire, That's the Way of the World"
 why = "One band whose name holds a comma and an ampersand: a split anywhere makes three artists out of one."
 edition = "Columbia, 8 tracks, as sold digitally (Deezer 1444091 = MusicBrainz 09652847 by barcode); Discogs 502117 is master 99532's main release (1975 LP); Qobuz has the same UPC"
-known_wrong = ["Deezer parse: the band split at its comma and ampersand into Earth, Wind and Fire, three main artists", "Qobuz parse and merge: Maurice White, the band's leader, a guest on the three tracks where Qobuz names him as the performer; written as '(feat. Maurice White)'"]
+known_wrong = ["Qobuz parse and merge: Maurice White, the band's leader, a guest on the three tracks where Qobuz names him as the performer; written as '(feat. Maurice White)'"]
 files_from = "deezer"
 output = true
 
@@ -9,7 +9,7 @@ output = true
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -17,7 +17,7 @@ release_main = ["Earth, Wind & Fire"]
 how_we_know = "Deezer's album artist, MusicBrainz, Discogs and Qobuz all credit the band as one artist"
 
 [today.deezer]
-release = ["Earth (main)", "Wind (main)", "Fire (main)"]
+release = ["Earth, Wind & Fire (main)"]
 tracks = 8
 
 [today.musicbrainz]
@@ -35,6 +35,7 @@ tracks = 8
 [today.merge]
 release = ["Earth, Wind & Fire (main)", "Larry Dunn (composer)", "Maurice White (composer)", "Philip Bailey (composer)", "Charles Stepney (composer)", "Verdine White (composer)", "Maurice White (guest)", "Al McKay (composer)", "Louise Anglin (composer)"]
 tracks = 8
+credits = ["1.1: Earth, Wind & Fire (main), Larry Dunn (composer), Maurice White (composer), Philip Bailey (composer)", "1.2: Earth, Wind & Fire (main), Charles Stepney (composer), Maurice White (composer), Verdine White (composer)", "1.3: Earth, Wind & Fire (main), Maurice White (guest), Al McKay (composer), Larry Dunn (composer), Maurice White (composer), Philip Bailey (composer), Verdine White (composer)", "1.4: Earth, Wind & Fire (main), Maurice White (guest), Larry Dunn (composer), Maurice White (composer)", "1.5: Earth, Wind & Fire (main), Charles Stepney (composer), Maurice White (composer), Philip Bailey (composer)", "1.6: Earth, Wind & Fire (main), Maurice White (guest), Charles Stepney (composer), Maurice White (composer), Philip Bailey (composer)", "1.7: Earth, Wind & Fire (main), Larry Dunn (composer), Maurice White (composer)", "1.8: Earth, Wind & Fire (main), Larry Dunn (composer), Louise Anglin (composer), Philip Bailey (composer)"]
 
 [today.output]
 albumartist = "Earth, Wind & Fire"
@@ -130,7 +131,7 @@ album = ["That's The Way Of The World"]
 albumartist = ["Earth, Wind & Fire"]
 date = ["1975-03-15"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -697,8 +698,17 @@ qobuz = '''
  "artist": {
   "name": "Earth, Wind & Fire"
  },
+ "artists": [
+  {
+   "name": "Earth, Wind & Fire",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "R&B"
+  "Soul/Funk/R&B",
+  "Soul/Funk/R&B→R&B"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -710,56 +720,64 @@ qobuz = '''
     "track_number": 1,
     "performer": {
      "name": "Earth, Wind & Fire"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Composer, Drums, Lyricist, Producer - Charles Stepney, Co-Producer - Verdine White, Bass, Percussion - Philip Bailey, Composer, Congas, Lyricist, Percussion - Lorenzo Dunn, Composer, Lyricist - Al McKay, Guitar, Percussion - Johnny Graham, Guitar, Percussion - Roland Bautista, Guitar - Ralph Johnson, Drums, Percussion - Andrew Woolfolk, Flute, Percussion, Soprano Saxophone, Tenor Saxophone - Fred White, Drums, Percussion - Larry Dunn, Organ, Piano"
    },
    {
     "title": "That's the Way of the World",
     "track_number": 2,
     "performer": {
      "name": "Earth, Wind & Fire"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Composer, Drums, Lyricist, Producer - Charles Stepney, Co-Producer, Composer, Lyricist - Verdine White, Bass, Composer, Lyricist, Percussion - Philip Bailey, Congas, Percussion - Al McKay, Guitar, Percussion - Johnny Graham, Guitar, Percussion - Roland Bautista, Guitar - Ralph Johnson, Drums, Percussion - Andrew Woolfolk, Flute, Percussion, Soprano Saxophone, Tenor Saxophone - Fred White, Drums, Percussion - Larry Dunn, Organ, Piano"
    },
    {
     "title": "Happy Feelin'",
     "track_number": 3,
     "performer": {
      "name": "Maurice White"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Composer, Lyricist, Producer - Charles Stepney, Co-Producer - Leo Sacks - Philip Bailey, Composer, Lyricist - Verdine White, Composer, Lyricist - George Massenburg, Engineer - L. Dunn, Composer, Lyricist - Al McKay, Composer, Lyricist - Mark Wilder, Mastering Engineer"
    },
    {
     "title": "All About Love (First Impression)",
     "track_number": 4,
     "performer": {
      "name": "Maurice White"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Composer, Drums, Lyricist, Producer - Charles Stepney, Co-Producer - Verdine White, Bass, Percussion - L. Dunn, Composer, Lyricist - Philip Bailey, Congas, Percussion - Al McKay, Guitar, Percussion - Johnny Graham, Guitar, Percussion - Roland Bautista, Guitar - Ralph Johnson, Drums, Percussion - Andrew Woolfolk, Flute, Percussion, Soprano Saxophone, Tenor Saxophone - Fred White, Drums, Percussion - Larry Dunn, Organ, Piano"
    },
    {
     "title": "Yearnin' Learnin'",
     "track_number": 5,
     "performer": {
      "name": "Earth, Wind & Fire"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Composer, Drums, Lyricist, Producer - Charles Stepney, Arranger, Co-Producer, Composer, Lyricist - Verdine White, Bass, Percussion - Philip Bailey, Composer, Congas, Lyricist, Percussion - Al McKay, Guitar, Percussion - Johnny Graham, Guitar, Percussion - Roland Bautista, Guitar - Earth Wind & Fire, Arranger - Ralph Johnson, Drums, Percussion - Andrew Woolfolk, Flute, Percussion, Soprano Saxophone, Tenor Saxophone - Fred White, Drums, Percussion - Larry Dunn, Organ, Piano"
    },
    {
     "title": "Reasons",
     "track_number": 6,
     "performer": {
      "name": "Maurice White"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Composer, Drums, Lyricist, Producer - Philip Bailey, Composer, Congas, Lyricist, Percussion - Charles Stepney, Co-Producer, Composer, Lyricist - Verdine White, Bass, Percussion - Al McKay, Guitar, Percussion - Johnny Graham, Guitar, Percussion - Roland Bautista, Guitar - Ralph Johnson, Drums, Percussion - Andrew Woolfolk, Flute, Percussion, Soprano Saxophone, Tenor Saxophone - Fred White, Drums, Percussion - Larry Dunn, Organ, Piano"
    },
    {
     "title": "Africano",
     "track_number": 7,
     "performer": {
      "name": "Earth, Wind & Fire"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Composer, Lyricist, Producer - Charles Stepney, Co-Producer - Lorenzo Dunn, Composer, Lyricist - Leo Sacks - George Massenburg, Engineer - Mark Wilder, Mastering Engineer"
    },
    {
     "title": "See the Light",
     "track_number": 8,
     "performer": {
      "name": "Earth, Wind & Fire"
-    }
+    },
+    "performers": "Earth, Wind & Fire, Associated Performer, Main Artist, Associated Performer - Maurice White, Producer - Philip Bailey, Composer, Lyricist - Lorenzo Dunn, Composer, Lyricist - Charles Stepney, Co-Producer - Louise Anglin, Composer, Lyricist - Leo Sacks - George Massenburg, Engineer - Mark Wilder, Mastering Engineer"
    }
   ]
  }

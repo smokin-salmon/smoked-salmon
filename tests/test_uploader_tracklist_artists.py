@@ -23,7 +23,7 @@ from salmon import cfg
 from salmon.commands import build_description
 from salmon.tagger.retagger import create_artist_str, create_track_changes, retag_files
 from salmon.tagger.tags import gather_tags
-from salmon.uploader.upload import generate_description
+from salmon.uploader.description import generate_description
 
 
 def _tracks(*tags: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -99,15 +99,15 @@ def test_a_one_artist_albums_tracklist_names_no_artist() -> None:
             "Sullivan Murphy - Song 1 (Remi Xer Remix)",
         ),
         (
-            # A remixer salmon reads from the title, which it writes to REMIXER only when a store credits them.
-            [("Sullivan Murphy", "main"), ("Remi Xer", "remixer")],
+            # A mix or an edit in the title names no remixer (#1061): only a remix, or REMIXER, does.
+            [("Sullivan Murphy", "main")],
             {"artist": ["Sullivan Murphy"], "title": "Song 1 (Remi Xer Mix)"},
-            "Sullivan Murphy - Song 1 (Remi Xer Mix)",
+            "Song 1 (Remi Xer Mix)",
         ),
         (
-            [("Sullivan Murphy", "main"), ("Remi Xer", "remixer")],
+            [("Sullivan Murphy", "main")],
             {"artist": ["Sullivan Murphy"], "title": "Song 1 (Remi Xer Edit)"},
-            "Sullivan Murphy - Song 1 (Remi Xer Edit)",
+            "Song 1 (Remi Xer Edit)",
         ),
         (
             [("Sullivan Murphy", "main"), ("Remi Xer", "remixer")],
@@ -192,8 +192,8 @@ def test_a_one_artist_albums_tracklist_names_no_artist() -> None:
         "a guest in the title",
         "a guest in the title alone",
         "a remix in the title alone",
-        "a remixer's mix in the title",
-        "a remixer's edit in the title",
+        "a mix in the title",
+        "an edit in the title",
         "a remix after a dash in the title",
         "remixed by in the title",
         "a guest with in the title",
@@ -273,6 +273,16 @@ def test_a_compilation_all_by_the_album_artist_names_no_artist(rls_type: str) ->
     description = generate_description(tracks, _album(("Sullivan Murphy", "main"), rls_type=rls_type))
 
     assert _lines(description) == ["[b]01.[/b] Song 1 [i](3:20)[/i]", "[b]02.[/b] Song 2 [i](3:20)[/i]"]
+
+
+@pytest.mark.parametrize("rls_type", COMPILATIONS)
+def test_a_mix_name_in_a_title_doesnt_keep_every_artist_on_a_compilation(rls_type: str) -> None:
+    # A mix's name credits no remixer (#1061), so it doesn't put the artist back on every line.
+    tracks = _tracks({"artist": ["Sullivan Murphy"]}, {"artist": ["Sullivan Murphy"], "title": "Song 2 (Disco Mix)"})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main"), rls_type=rls_type))
+
+    assert _lines(description) == ["[b]01.[/b] Song 1 [i](3:20)[/i]", "[b]02.[/b] Song 2 (Disco Mix) [i](3:20)[/i]"]
 
 
 def test_a_duos_compilation_names_no_artist() -> None:

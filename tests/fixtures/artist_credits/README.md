@@ -8,7 +8,8 @@ Each `<album>.toml` holds, in this order:
 
 - `why`: what the album tests. `edition`: which release each store's data is.
 - `today.<store>` (that store's parse) and `today.merge` (every store over the files, as `salmon up` merges them):
-  the release's artists as "name (role)" and the track count. **The test enforces these.**
+  the release's artists as "name (role)" and the track count, and for the merge also `credits`, each track's as
+  "disc.track: name (role), ...", so a change on one track is seen. **The test enforces these.**
   With `output = true`, also `today.output` and `today.output-guests-in-title`: what is written from the merge with
   `guests_in_track_title` off and on, as ALBUMARTIST and per track "ARTIST | TITLE" (and "| REMIXER ..." when one is
   written).
@@ -22,15 +23,17 @@ Each `<album>.toml` holds, in this order:
   `[[track]]`. A control for the tags' shape: `today.output-salmon-tags` is the output from those files.
 - `[stores]`: what each store sent (`deezer`, `musicbrainz`, `discogs`, `qobuz`, and `bandcamp` where the album is
   there), as the response's text, trimmed to the fields salmon's parser reads (the parse is the same as from the full
-  response).
+  response). Qobuz's also keeps the credits Qobuz sends beyond what the parser reads: the album's `artists[]`,
+  each track's `performer` and performers line, and `composer` on a classical release, with `genres_list` as Qobuz
+  sends it. `[sources]` says what each store's entry keeps.
 
 ## Add a case
 
 1. Make `<album>.toml` with `why`, `files_from` (the store the tags come from), `bandcamp_url` if there is
    Bandcamp data, and an empty `[right]` and `[today]` (the test needs both tables; `[right]` may hold only `open`).
 2. Add the `[[track]]` tags and each store's response under `[stores]` as a `'''` string, trimmed: take out what the
-   parser doesn't read and check the parse is unchanged. A full Discogs response can be tens of KB, so untrimmed
-   cases would grow the repo quickly.
+   parser doesn't read (Qobuz's keeps more: see `[stores]` above) and check the parse is unchanged. A full Discogs
+   response can be tens of KB, so untrimmed cases would grow the repo quickly.
 3. Run the test and paste each stage's value from its failure into `[today.<stage>]`.
 
 ## The scoreboard

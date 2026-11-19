@@ -21,6 +21,7 @@ import numpy as np
 from numpy.typing import NDArray
 from PIL import Image, ImageDraw
 
+from salmon.common.dsd import is_dsd_codec, pcm_rate
 from salmon.common.files import process_files
 
 FFT_SIZE = 8192
@@ -148,11 +149,14 @@ _NO_GATING = Gating(0.0, "", 0.0, 0.0)
 
 
 def decode_mono(path: str) -> tuple[NDArray[np.float32], int]:
-    """Decode up to MAX_SAMPLES of the track, downmixed to mono float32."""
+    """Decode up to MAX_SAMPLES of the track, downmixed to mono float32. DSD is decoded to PCM at pcm_rate: at its own
+    rate, MAX_SAMPLES would be a few seconds of it, and the plot would be of the band above the audio."""
     container = av.open(path)
     try:
         stream = container.streams.audio[0]
         sample_rate = stream.rate or 44100
+        if is_dsd_codec(stream.codec_context.name):
+            sample_rate = pcm_rate(sample_rate)
         # Downmix: a cutoff that exists in one channel only still shows here.
         resampler = av.AudioResampler(format="fltp", layout="mono", rate=sample_rate)
         chunks: list[NDArray[Any]] = []

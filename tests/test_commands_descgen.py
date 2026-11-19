@@ -17,7 +17,7 @@ from salmon.commands import build_description, descgen
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.beatport import Scraper as BeatportScraper
 from salmon.tagger.sources.discogs import Scraper as DiscogsScraper
-from salmon.uploader.upload import generate_source_links
+from salmon.uploader.description import generate_source_links
 
 METADATA = {
     "artists": [],

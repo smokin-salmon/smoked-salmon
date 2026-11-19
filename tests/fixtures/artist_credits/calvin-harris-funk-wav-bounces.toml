@@ -9,7 +9,7 @@ output = true
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -36,6 +36,7 @@ tracks = 10
 [today.merge]
 release = ["Calvin Harris (main)", "Frank Ocean (main)", "Migos (main)", "ScHoolboy Q (main)", "PARTYNEXTDOOR (main)", "D.R.A.M. (main)", "Young Thug (main)", "Pharrell Williams (main)", "Ariana Grande (main)", "Future (main)", "Khalid (main)", "Travis Scott (main)", "A-Trak (main)", "Snoop Dogg (main)", "John Legend (main)", "Takeoff (main)", "Nicki Minaj (main)", "Katy Perry (main)", "Big Sean (main)", "Kehlani (main)", "Lil Yachty (main)", "Jessie Reyez (main)"]
 tracks = 10
+credits = ["1.1: Calvin Harris (main), Frank Ocean (main), Migos (main)", "1.2: Calvin Harris (main), ScHoolboy Q (main), PARTYNEXTDOOR (main), D.R.A.M. (main)", "1.3: Calvin Harris (main), Young Thug (main), Pharrell Williams (main), Ariana Grande (main)", "1.4: Calvin Harris (main), Future (main), Khalid (main)", "1.5: Calvin Harris (main), Travis Scott (main), A-Trak (main)", "1.6: Calvin Harris (main), Snoop Dogg (main), John Legend (main), Takeoff (main)", "1.7: Calvin Harris (main), Nicki Minaj (main)", "1.8: Calvin Harris (main), Pharrell Williams (main), Katy Perry (main), Big Sean (main)", "1.9: Calvin Harris (main), Kehlani (main), Lil Yachty (main)", "1.10: Calvin Harris (main), Jessie Reyez (main)"]
 
 [today.output]
 albumartist = "Various"
@@ -161,7 +162,7 @@ album = ["Funk Wav Bounces Vol.1"]
 albumartist = ["Calvin Harris"]
 date = ["2017-06-30"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -618,8 +619,17 @@ qobuz = '''
  "artist": {
   "name": "Calvin Harris"
  },
+ "artists": [
+  {
+   "name": "Calvin Harris",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Dance"
+  "Électronique",
+  "Électronique→Dance"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -629,51 +639,81 @@ qobuz = '''
    {
     "title": "Slide",
     "track_number": 1,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Frank Ocean, AssociatedPerformer, FeaturedArtist, Vocal - Migos, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Frank Ocean & Migos, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Christopher Breaux, Composer, Lyricist - Quavious Marshall, Composer, Lyricist - Dave Kutch, Mastering Engineer - Kiari Cephus, Composer, Lyricist - Daryl McPherson, Recording Engineer - Kirsnick Ball, Composer, Lyricist - Marcos Tovar, Recording Engineer"
    },
    {
     "title": "Cash Out",
     "track_number": 2,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Schoolboy Q, AssociatedPerformer, FeaturedArtist, Vocal - PARTYNEXTDOOR, AssociatedPerformer, FeaturedArtist, Vocal - D.R.A.M., AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. ScHoolboy Q, PARTYNEXTDOOR & D.R.A.M., AssociatedPerformer - Adam Wiles, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Candice Pillay, Background Vocal - Quincey Hanley, Composer, Lyricist - Roget Chahayed, Organ, Composer, Lyricist - Shelley Massenburg-Smith, Composer, Lyricist - Marcos Tovar, Recording Engineer - David \"Prep\" Hughes, Recording Engineer - Dave Kutch, Mastering Engineer"
    },
    {
     "title": "Heatstroke",
     "track_number": 3,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Young Thug, AssociatedPerformer, FeaturedArtist, Vocal - Pharrell Williams, AssociatedPerformer, FeaturedArtist, Percussion, Vocal, Composer, Lyricist, Producer - Ariana Grande, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Young Thug, Pharrell Williams & Ariana Grande, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Jeffery Williams, Composer, Lyricist - Starrah, Background Vocal - Brittany Hazzard, Composer, Lyricist - Andrew Coleman, Recording Engineer - Matthew Desrameaux, Assistant Engineer - Dave Kutch, Mastering Engineer"
    },
    {
     "title": "Rollin",
     "track_number": 4,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Future, AssociatedPerformer, FeaturedArtist, Vocal - Khalid, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Future & Khalid, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Nayvadius Wilburn, Composer, Lyricist - Khalid Robinson, Composer, Lyricist - Seth Firkins, Recording Engineer - Dave Kutch, Mastering Engineer"
    },
    {
     "title": "Prayers Up",
     "track_number": 5,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Travis Scott, AssociatedPerformer, FeaturedArtist, Vocal - A-Trak, AssociatedPerformer, FeaturedArtist - Calvin Harris feat. Travis Scott & A-Trak, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Jacques Webster, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Blake Harden, Recording Engineer - Marcos Tovar, Recording Engineer - Dave Kutch, Mastering Engineer"
    },
    {
     "title": "Holiday",
     "track_number": 6,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Snoop Dogg, AssociatedPerformer, FeaturedArtist, Vocal - John Legend, AssociatedPerformer, FeaturedArtist, Vocal - Takeoff, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Snoop Dogg, John Legend & Takeoff, AssociatedPerformer - Adam Wiles, Composer, Lyricist - John Stephens, AssociatedPerformer, Composer, Lyricist - Calvin Broadus, Jr., Composer, Lyricist - Joe Vinyl, Background Vocal - Kirsnick Ball, Composer, Lyricist - Clyde Audio, Orchestra - Quavious Marshall, Composer, Lyricist - Daryl McPherson, Recording Engineer - Kiari Cephus, Composer, Lyricist - Dave Kutch, Mastering Engineer"
    },
    {
     "title": "Skrt On Me",
     "track_number": 7,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Nicki Minaj, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Nicki Minaj, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Onika Maraj, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Nick Cooper, Producer - Aubry Delaine, Recording Engineer - Nick Valentin, Assistant Engineer - Dave Kutch, Mastering Engineer"
    },
    {
     "title": "Feels",
     "track_number": 8,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Pharrell Williams, AssociatedPerformer, FeaturedArtist, Vocal, Composer, Lyricist - Katy Perry, AssociatedPerformer, FeaturedArtist, Vocal, Composer, Lyricist - Big Sean, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Pharrell Williams, Katy Perry & Big Sean, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Mike Larson, Recording Engineer - Marcos Tovar, Recording Engineer - Gregg Rominiecki, Recording Engineer - Sean Anderson, Composer, Lyricist - Jacob Dennis, Assistant Engineer - Iain Findlay, Assistant Engineer - Dave Kutch, Mastering Engineer"
    },
    {
     "title": "Faking It",
     "track_number": 9,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Kehlani, AssociatedPerformer, FeaturedArtist, Vocal - Lil Yachty, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Kehlani & Lil Yachty, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Jessie Reyez, Background Vocal, Composer, Lyricist - Miles McCollum, Composer, Lyricist - The Joe Vinyl String Orchestra, Strings - Marcos Tovar, Recording Engineer - Thomas Mann, Recording Engineer - Dave Kutch, Mastering Engineer - Louis Bell, Editor"
    },
    {
     "title": "Hard to Love",
     "track_number": 10,
+    "performer": {
+     "name": "Calvin Harris"
+    },
     "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Jessie Reyez, AssociatedPerformer, FeaturedArtist, Vocal, Composer, Lyricist - Calvin Harris feat. Jessie Reyez, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Dave Kutch, Mastering Engineer"
    }
   ]

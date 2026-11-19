@@ -77,25 +77,29 @@ class Scraper(DeezerBase, MetadataMixin):
         artist tuples.
         """
         result = []
-
-        feat = RE_FEAT.search(title)
-        if feat:
-            for artist in re_split(feat[1]):
-                result.append((unescape(artist), "guest"))
-
+        # Each contributor and album artist is one Deezer artist, so its name stays whole ("Earth, Wind & Fire").
         if artists:
-            for a in artists.get("mainartist", []) + artists.get("main_artist", []):
-                for b in re_split(a):
-                    if (b, "main") not in result:
-                        result.append((b, "main"))
-            for a in artists.get("featuredartist", []) + artists.get("featuring", []):
-                for b in re_split(a):
-                    if (b, "guest") not in result:
-                        result.append((b, "guest"))
+            mains = [name.strip() for name in artists.get("mainartist", []) + artists.get("main_artist", [])]
+            featured = [name.strip() for name in artists.get("featuredartist", []) + artists.get("featuring", [])]
         else:
-            for artist in default_artists:
-                for b in re_split(artist["ART_NAME"]):
-                    if (b, "main") not in result:
-                        result.append((b, "main"))
+            mains, featured = [artist["ART_NAME"].strip() for artist in default_artists], []
+
+        # The title's featured credit lists several names in one string, so it is split. When it names every part
+        # of a name a contributor gives whole ("feat. Earth, Wind & Fire"), those parts are that name, not guests.
+        feat = RE_FEAT.search(title)
+        guests = [unescape(artist) for artist in re_split(feat[1])] if feat else []
+        covered = set()
+        for name in mains + featured:
+            parts = [unescape(part) for part in re_split(name)]
+            if len(parts) > 1 and all(part in guests for part in parts):
+                covered.update(parts)
+        result += [(guest, "guest") for guest in guests if guest not in covered]
+
+        for a in mains:
+            if a and (a, "main") not in result:
+                result.append((a, "main"))
+        for a in featured:
+            if a and (a, "guest") not in result:
+                result.append((a, "guest"))
 
         return result

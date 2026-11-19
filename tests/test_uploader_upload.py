@@ -5,13 +5,8 @@ import anyio
 import pytest
 
 from salmon import cfg
-from salmon.uploader.upload import (
-    collect_logfiles,
-    compile_data_new_group,
-    generate_description,
-    generate_source_links,
-    generate_t_description,
-)
+from salmon.uploader.description import generate_description, generate_source_links, generate_t_description
+from salmon.uploader.upload import collect_logfiles, compile_data_new_group
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi

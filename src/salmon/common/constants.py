@@ -1,5 +1,7 @@
 import re
 
+from salmon.common.dsd import DSD_EXTENSIONS
+
 SPLIT_CHARS = (
     r" \ ",
     "/",
@@ -55,6 +57,6 @@ RE_USELESS_VERSION = re.compile(
 )
 _RE_SPLIT = re.compile("|".join(re.escape(s) for s in SPLIT_CHARS))
 
-AUDIO_EXTENSIONS = frozenset({".flac", ".mp3", ".m4a"})
+AUDIO_EXTENSIONS = frozenset({".flac", ".mp3", ".m4a"}) | DSD_EXTENSIONS
 LOSSY_EXTENSIONS = frozenset({".mp3", ".m4a", ".ogg", ".opus"})
 IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".pdf", ".gif"})

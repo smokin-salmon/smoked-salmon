@@ -10,9 +10,10 @@ from salmon import interaction
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.checks.logs import check_log_cambia
+from salmon.common.dsd import dsd_refusal
 from salmon.common.files import is_apple_double
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
-from salmon.uploader.spectrals import prompt_lossy_master
+from salmon.uploader.spectrals import SPECTRAL_FORMATS, prompt_lossy_master
 
 
 async def _check_logs(path: str) -> None:
@@ -95,6 +96,24 @@ def _sixteen_bit_refusal(tracker: str, audio_info: dict[str, Any]) -> bool:
     return False
 
 
+def _dsd_refusal(tracker: str, release: dict[str, Any]) -> bool:
+    """Whether the tracker refuses the release for its format, DSD, saying so. Nothing skips it, -yyy included."""
+    if release.get("format") != "DSD":
+        return False
+    site_class = salmon.trackers.tracker_classes.get(tracker)
+    reason = dsd_refusal(tracker, site_class.TAG_RULES.takes_dsd if site_class else None)
+    if reason is None:
+        return False
+    click.secho(f"\nNot uploading to {tracker}: {reason}", fg="red", bold=True)
+    return True
+
+
+def _files_refusal(tracker: str, release: dict[str, Any], audio_info: dict[str, Any]) -> bool:
+    """Whether the tracker refuses the release's files, saying why: DSD where it takes none (_dsd_refusal), or 16bit
+    files above 48 kHz (_sixteen_bit_refusal)."""
+    return _dsd_refusal(tracker, release) or _sixteen_bit_refusal(tracker, audio_info)
+
+
 def _warn_about_provenance(provenance: dict[str, Any]) -> None:
     """Print each ripper or store marker in the tags that the audio contradicts.
 
@@ -114,10 +133,10 @@ def _warn_about_provenance(provenance: dict[str, Any]) -> None:
 async def _lossy_master_without_spectrals(lossy: bool | None, format: str) -> bool:
     """Whether the release is lossy mastered, when its spectrals were given by URL: none are made to look at.
 
-    Asked as check_spectrals asks it, unless --lossy or --not-lossy said; only a FLAC is asked about.
+    Asked as check_spectrals asks it, unless --lossy or --not-lossy said; only a FLAC or DSD release is asked about.
     """
     click.secho("\nSpectrals given by URL (--spectral-url): none are made, shown or uploaded.", fg="cyan")
-    if lossy is not None or format != "FLAC":
+    if lossy is not None or format not in SPECTRAL_FORMATS:
         return bool(lossy)
     while (answer := await prompt_lossy_master()) is None:
         click.secho("There are no spectrals to reopen: they were given by URL.", fg="yellow")

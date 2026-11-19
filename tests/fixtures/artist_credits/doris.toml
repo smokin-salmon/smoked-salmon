@@ -1,0 +1,933 @@
+album = "Earl Sweatshirt, Doris"
+why = "One rapper's album with one-track guests, one of them a name holding a comma, 'Tyler, The Creator' (tracks 7 and 13): a title's '(feat. Tyler, The Creator)' splits into 'Tyler' and 'The Creator' beside the whole name from a store's credits, which the bad-split repair joins. Track 5's 'Vince Staples & Casey Veggies' is a true split."
+edition = "Columbia 2013, 15 tracks, UPC 886444062770: Deezer 6866562 = MusicBrainz 0dfef043 = Qobuz by the same UPC; Discogs 21413992 is the AAC digital release, the same 15 tracks in the same order."
+known_wrong = ["qobuz: each track's performer is a Qobuz artist named for the whole credit, 'Earl Sweatshirt feat. Vince Staples' and the like, read as one guest; on 7 and 13 the performer is 'Various Artists', a guest, and Tyler, The Creator is not credited", "merge: Qobuz's 'Earl Sweatshirt feat. ...' names hold Earl Sweatshirt and the guest inside them, so the fragment check drops the other stores' and the files' separate credits: on tracks 1, 2, 3, 4, 5, 8, 12 and 15 Earl Sweatshirt is not main and the guest is credited only inside the joined name; Mac Miller is main on 11 (the files' plain ARTIST; Qobuz names no guest there); ALBUMARTIST 'Earl Sweatshirt & Mac Miller'"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Earl Sweatshirt"]
+not_main = ["SK La' Flare", "Vince Staples", "Domo Genesis", "Frank Ocean", "Casey Veggies", "Tyler, The Creator", "Mac Miller", "RZA", "Various Artists"]
+how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz agree: Earl Sweatshirt the only main artist; Tyler, The Creator featured on tracks 7 and 13 only, Vince Staples and Casey Veggies on 5, and one guest each on 1, 2, 3, 4, 8, 11, 12 and 15"
+open = "Per track, not judged by the test yet: Tyler, The Creator a guest on 7 and 13 and nowhere else; 'Tyler' and 'The Creator' nowhere. Guests are not judged in a store's parse, so Qobuz's 'Earl Sweatshirt feat. ...' guests and Deezer's 'Tyler' and 'The Creator' pass there"
+
+[right.name_forms]
+"SK La' Flare" = ["SK La'Flare"]
+
+[today.deezer]
+release = ["SK La' Flare (guest)", "Earl Sweatshirt (main)", "Vince Staples (guest)", "Domo Genesis (guest)", "Frank Ocean (guest)", "Casey Veggies (guest)", "Tyler, The Creator (guest)", "Mac Miller (guest)", "RZA (guest)"]
+tracks = 15
+
+[today.musicbrainz]
+release = ["Earl Sweatshirt (main)", "SK La’Flare (guest)", "Vince Staples (guest)", "Domo Genesis (guest)", "Frank Ocean (guest)", "Casey Veggies (guest)", "Tyler, The Creator (guest)", "Mac Miller (guest)", "RZA (guest)"]
+tracks = 15
+
+[today.discogs]
+release = ["Earl Sweatshirt (main)", "SK La'Flare (guest)", "Vince Staples (guest)", "Domo Genesis (guest)", "Frank Ocean (guest)", "Casey Veggies (guest)", "Tyler, The Creator (guest)", "Mac Miller (guest)", "RZA (guest)", "RZA (producer)"]
+tracks = 15
+
+[today.qobuz]
+release = ["Earl Sweatshirt (main)", "Earl Sweatshirt feat. SK La' Flare (guest)", "Earl Sweatshirt feat. Vince Staples (guest)", "Earl Sweatshirt feat. Domo Genesis (guest)", "Earl Sweatshirt feat. Frank Ocean (guest)", "Earl Sweatshirt feat. Vince Staples & Casey Veggies (guest)", "Various Artists (guest)", "Earl Sweatshirt feat. RZA (guest)"]
+tracks = 15
+
+[today.merge]
+release = ["Earl Sweatshirt feat. SK La' Flare (guest)", "SK La’Flare (guest)", "Earl Sweatshirt feat. Vince Staples (guest)", "Earl Sweatshirt feat. Domo Genesis (guest)", "Earl Sweatshirt feat. Frank Ocean (guest)", "Earl Sweatshirt feat. Vince Staples & Casey Veggies (guest)", "Earl Sweatshirt (main)", "Tyler, The Creator (guest)", "Mac Miller (main)", "Earl Sweatshirt feat. RZA (guest)"]
+tracks = 15
+credits = ["1.1: Earl Sweatshirt feat. SK La' Flare (guest), SK La’Flare (guest)", "1.2: Earl Sweatshirt feat. Vince Staples (guest)", "1.3: Earl Sweatshirt feat. Domo Genesis (guest)", "1.4: Earl Sweatshirt feat. Frank Ocean (guest)", "1.5: Earl Sweatshirt feat. Vince Staples & Casey Veggies (guest)", "1.6: Earl Sweatshirt (main)", "1.7: Earl Sweatshirt (main), Tyler, The Creator (guest)", "1.8: Earl Sweatshirt feat. Vince Staples (guest)", "1.9: Earl Sweatshirt (main)", "1.10: Earl Sweatshirt (main)", "1.11: Earl Sweatshirt (main), Mac Miller (main)", "1.12: Earl Sweatshirt feat. RZA (guest)", "1.13: Earl Sweatshirt (main), Tyler, The Creator (guest)", "1.14: Earl Sweatshirt (main)", "1.15: Earl Sweatshirt feat. Domo Genesis (guest)"]
+
+[today.output]
+albumartist = "Earl Sweatshirt & Mac Miller"
+tracks = [" (feat. Earl Sweatshirt feat. SK La' Flare & SK La’Flare) | Pre", " (feat. Earl Sweatshirt feat. Vince Staples) | Burgundy", " (feat. Earl Sweatshirt feat. Domo Genesis) | 20 Wave Caps", " (feat. Earl Sweatshirt feat. Frank Ocean) | Sunday", " (feat. Earl Sweatshirt feat. Vince Staples & Casey Veggies) | Hive", "Earl Sweatshirt | Chum", "Earl Sweatshirt (feat. Tyler, The Creator) | Sasquatch", " (feat. Earl Sweatshirt feat. Vince Staples) | Centurion", "Earl Sweatshirt | 523", "Earl Sweatshirt | Uncle Al", "Earl Sweatshirt & Mac Miller | Guild", " (feat. Earl Sweatshirt feat. RZA) | Molasses", "Earl Sweatshirt (feat. Tyler, The Creator) | Whoa", "Earl Sweatshirt | Hoarse", " (feat. Earl Sweatshirt feat. Domo Genesis) | Knight"]
+
+[today."output-guests-in-title"]
+albumartist = "Earl Sweatshirt & Mac Miller"
+tracks = [" | Pre (feat. Earl Sweatshirt feat. SK La' Flare & SK La’Flare)", " | Burgundy (feat. Earl Sweatshirt feat. Vince Staples)", " | 20 Wave Caps (feat. Earl Sweatshirt feat. Domo Genesis)", " | Sunday (feat. Earl Sweatshirt feat. Frank Ocean)", " | Hive (feat. Earl Sweatshirt feat. Vince Staples & Casey Veggies)", "Earl Sweatshirt | Chum", "Earl Sweatshirt | Sasquatch (feat. Tyler, The Creator)", " | Centurion (feat. Earl Sweatshirt feat. Vince Staples)", "Earl Sweatshirt | 523", "Earl Sweatshirt | Uncle Al", "Earl Sweatshirt & Mac Miller | Guild", " | Molasses (feat. Earl Sweatshirt feat. RZA)", "Earl Sweatshirt | Whoa (feat. Tyler, The Creator)", "Earl Sweatshirt | Hoarse", " | Knight (feat. Earl Sweatshirt feat. Domo Genesis)"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
+# the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Pre (feat. SK La' Flare)"]
+artist = ["Earl Sweatshirt", "SK La' Flare"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Burgundy (feat. Vince Staples)"]
+artist = ["Earl Sweatshirt", "Vince Staples"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["20 Wave Caps (feat. Domo Genesis)"]
+artist = ["Earl Sweatshirt", "Domo Genesis"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Sunday (feat. Frank Ocean)"]
+artist = ["Earl Sweatshirt", "Frank Ocean"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Hive (feat. Vince Staples & Casey Veggies)"]
+artist = ["Earl Sweatshirt", "Vince Staples", "Casey Veggies"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Chum"]
+artist = ["Earl Sweatshirt"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Sasquatch (feat. Tyler, The Creator)"]
+artist = ["Earl Sweatshirt", "Tyler, The Creator"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Centurion (feat. Vince Staples)"]
+artist = ["Earl Sweatshirt", "Vince Staples"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["523"]
+artist = ["Earl Sweatshirt"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Uncle Al"]
+artist = ["Earl Sweatshirt"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Guild (feat. Mac Miller)"]
+artist = ["Earl Sweatshirt", "Mac Miller"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Molasses (feat. RZA)"]
+artist = ["Earl Sweatshirt", "RZA"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Whoa (feat. Tyler, The Creator)"]
+artist = ["Earl Sweatshirt", "Tyler, The Creator"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Hoarse"]
+artist = ["Earl Sweatshirt"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Knight (feat. Domo Genesis)"]
+artist = ["Earl Sweatshirt", "Domo Genesis"]
+album = ["Doris"]
+albumartist = ["Earl Sweatshirt"]
+date = ["2013-08-16"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 6866562,
+ "title": "Doris",
+ "upc": "886444062770",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 116,
+    "name": "Rap/Hip Hop"
+   }
+  ]
+ },
+ "label": "Tan Cressida/Columbia",
+ "release_date": "2013-08-16",
+ "tracklist": [
+  {
+   "SNG_ID": "70018661",
+   "SNG_TITLE": "Pre (feat. SK La' Flare)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "SK La' Flare"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USQX91301327",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "70018662",
+   "SNG_TITLE": "Burgundy (feat. Vince Staples)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Vince Staples"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USQX91301328",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "70018663",
+   "SNG_TITLE": "20 Wave Caps (feat. Domo Genesis)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Domo Genesis"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USQX91301329",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "70018664",
+   "SNG_TITLE": "Sunday (feat. Frank Ocean)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Frank Ocean"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USQX91301335",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "70018665",
+   "SNG_TITLE": "Hive (feat. Vince Staples & Casey Veggies)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Vince Staples",
+     "Casey Veggies"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USQX91301103",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "70018666",
+   "SNG_TITLE": "Chum",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USQX91202035",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "70018667",
+   "SNG_TITLE": "Sasquatch (feat. Tyler, The Creator)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Tyler, The Creator"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USQX91301332",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "70018668",
+   "SNG_TITLE": "Centurion (feat. Vince Staples)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Vince Staples"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USQX91301330",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "70018669",
+   "SNG_TITLE": "523",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USQX91301334",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "70018670",
+   "SNG_TITLE": "Uncle Al",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USQX91301382",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "70018671",
+   "SNG_TITLE": "Guild (feat. Mac Miller)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Mac Miller"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USQX91301285",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "70018672",
+   "SNG_TITLE": "Molasses (feat. RZA)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "RZA"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USQX91301331",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "70018673",
+   "SNG_TITLE": "Whoa (feat. Tyler, The Creator)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Tyler, The Creator"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "USQX91300249",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "70018674",
+   "SNG_TITLE": "Hoarse",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "USQX91301333",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "70018675",
+   "SNG_TITLE": "Knight (feat. Domo Genesis)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Domo Genesis"
+    ],
+    "main_artist": [
+     "Earl Sweatshirt"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "15",
+   "ISRC": "USQX91301336",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="0dfef043-6f1b-49d6-9a60-891c9f667e1e"><title>Doris</title><artist-credit><name-credit><artist><name>Earl Sweatshirt</name></artist></name-credit></artist-credit><date>2013-08-16</date><release-event-list><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event><release-event><date>2013-08-16</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Columbia</name></label></label-info><label-info><label><name>Tan Cressida</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Pre</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>SK La’Flare</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><recording><title>Burgundy</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Vince Staples</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><recording><title>20 Wave Caps</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Domo Genesis</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><recording><title>Sunday</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Frank Ocean</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>Hive</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Vince Staples</name></artist></name-credit><name-credit><artist><name>Casey Veggies</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><recording><title>Chum</title><artist-credit><name-credit><artist><name>Earl Sweatshirt</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>Sasquatch</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Tyler, The Creator</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Centurion</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Vince Staples</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><recording><title>523</title><artist-credit><name-credit><artist><name>Earl Sweatshirt</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><recording><title>Uncle Al</title><artist-credit><name-credit><artist><name>Earl Sweatshirt</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><recording><title>Guild</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Mac Miller</name></artist></name-credit></artist-credit></recording></track><track><position>12</position><number>12</number><recording><title>Molasses</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>RZA</name></artist></name-credit></artist-credit></recording></track><track><position>13</position><number>13</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Tyler, The Creator</name></artist></name-credit></artist-credit><recording><title>Whoa</title><artist-credit><name-credit><artist><name>Earl Sweatshirt</name></artist></name-credit></artist-credit></recording></track><track><position>14</position><number>14</number><recording><title>Hoarse</title><artist-credit><name-credit><artist><name>Earl Sweatshirt</name></artist></name-credit></artist-credit></recording></track><track><position>15</position><number>15</number><recording><title>Knight</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Earl Sweatshirt</name></artist></name-credit><name-credit><artist><name>Domo Genesis</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 21413992,
+ "year": 2013,
+ "artists": [
+  {
+   "name": "Earl Sweatshirt",
+   "role": "",
+   "id": 1967265
+  }
+ ],
+ "labels": [
+  {
+   "name": "Columbia",
+   "catno": "none",
+   "id": 1866
+  }
+ ],
+ "formats": [
+  {
+   "name": "File"
+  }
+ ],
+ "title": "Doris",
+ "released": "2013-08-19",
+ "genres": [
+  "Hip Hop"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Pre",
+   "extraartists": [
+    {
+     "name": "SK La'Flare",
+     "role": "Featuring",
+     "id": 3419870
+    }
+   ],
+   "duration": "2:52"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Burgundy",
+   "extraartists": [
+    {
+     "name": "Vince Staples",
+     "role": "Featuring",
+     "id": 1971480
+    }
+   ],
+   "duration": "2:07"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "20 Wave Caps",
+   "extraartists": [
+    {
+     "name": "Domo Genesis",
+     "role": "Featuring",
+     "id": 1967266
+    }
+   ],
+   "duration": "2:12"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Sunday",
+   "extraartists": [
+    {
+     "name": "Frank Ocean",
+     "role": "Featuring",
+     "id": 2013868
+    }
+   ],
+   "duration": "3:26"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Hive",
+   "extraartists": [
+    {
+     "name": "Casey Veggies",
+     "role": "Featuring",
+     "id": 1400324
+    },
+    {
+     "name": "Vince Staples",
+     "role": "Featuring",
+     "id": 1971480
+    }
+   ],
+   "duration": "4:37"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Chum",
+   "duration": "4:04"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Sasquatch",
+   "extraartists": [
+    {
+     "name": "Tyler, The Creator",
+     "role": "Featuring",
+     "id": 1967268
+    }
+   ],
+   "duration": "2:48"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Centurion",
+   "extraartists": [
+    {
+     "name": "Vince Staples",
+     "role": "Featuring",
+     "id": 1971480
+    }
+   ],
+   "duration": "3:04"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "523",
+   "duration": "1:32"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Uncle Al",
+   "duration": "0:53"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "title": "Guild",
+   "extraartists": [
+    {
+     "name": "Mac Miller",
+     "role": "Featuring",
+     "id": 2165577
+    }
+   ],
+   "duration": "3:54"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "title": "Molasses",
+   "extraartists": [
+    {
+     "name": "Christian Rich",
+     "role": "Co-producer",
+     "id": 1250799
+    },
+    {
+     "name": "RZA",
+     "role": "Featuring",
+     "id": 25495
+    },
+    {
+     "name": "Lennie Hibbert",
+     "role": "Performer [Rose Len]",
+     "id": 116682
+    },
+    {
+     "name": "RZA",
+     "role": "Producer",
+     "id": 25495
+    },
+    {
+     "name": "Clement Dodd Jr.",
+     "role": "Written-By",
+     "id": 2611665
+    },
+    {
+     "name": "Lennie Hibbert",
+     "role": "Written-By",
+     "id": 116682
+    },
+    {
+     "name": "Thebe Kgositsile",
+     "role": "Written-By",
+     "id": 2247560
+    }
+   ],
+   "duration": "2:16"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "title": "Whoa",
+   "extraartists": [
+    {
+     "name": "Tyler, The Creator",
+     "role": "Featuring",
+     "id": 1967268
+    }
+   ],
+   "duration": "3:16"
+  },
+  {
+   "position": "14",
+   "type_": "track",
+   "title": "Hoarse",
+   "duration": "3:52"
+  },
+  {
+   "position": "15",
+   "type_": "track",
+   "title": "Knight",
+   "extraartists": [
+    {
+     "name": "Domo Genesis",
+     "role": "Featuring",
+     "id": 1967266
+    }
+   ],
+   "duration": "3:14"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0886444062770",
+ "upc": "0886444062770",
+ "title": "Doris",
+ "version": null,
+ "tracks_count": 15,
+ "artist": {
+  "name": "Earl Sweatshirt"
+ },
+ "artists": [
+  {
+   "name": "Earl Sweatshirt",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Rap"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Pre",
+    "version": "Explicit Version",
+    "track_number": 1,
+    "performer": {
+     "name": "Earl Sweatshirt feat. SK La' Flare"
+    },
+    "performers": "Earl Sweatshirt feat. SK La' Flare, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Michael \"Uzi\" Uzowuru, Performer\r - Michael \"Uzi\" Uzowuru, Producer\r - Om'Mas Keith, Engineer\r - Om'Mas Keith, Performer\r - Shakeir Duarte, Composer\r - Shakeir Duarte, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Burgundy",
+    "version": "Explicit Version",
+    "track_number": 2,
+    "performer": {
+     "name": "Earl Sweatshirt feat. Vince Staples"
+    },
+    "performers": "Earl Sweatshirt feat. Vince Staples, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Vince Staples, Background Vocal\r - Pharrell Williams, Composer\r - Pharrell Williams, Lyricist\r - The Neptunes, Producer\r - Mike Larson, Recording Engineer\r - Cesar Loza, Assistant Engineer\r - Chad Hugo, Composer\r - Chad Hugo, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "20 Wave Caps",
+    "version": "Explicit Version",
+    "track_number": 3,
+    "performer": {
+     "name": "Earl Sweatshirt feat. Domo Genesis"
+    },
+    "performers": "Earl Sweatshirt feat. Domo Genesis, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Samiyam, Producer\r - Dominique Cole, Composer\r - Dominique Cole, Lyricist\r - randomblackdude, Producer\r - Alchemist, Recording Engineer\r - Jaycen Joshua, Mixing Engineer\r - Ryan Kaul, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Sunday",
+    "version": "Explicit Version",
+    "track_number": 4,
+    "performer": {
+     "name": "Earl Sweatshirt feat. Frank Ocean"
+    },
+    "performers": "Earl Sweatshirt feat. Frank Ocean, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Frank Ocean, Keyboards\r - Frank Ocean, Producer\r - Christopher Breaux, Composer\r - Christopher Breaux, Lyricist\r - randomblackdude, Producer\r - Jeff Ellis, Recording Engineer\r - Malay Ho, Recording Engineer\r - Jaycen Joshua, Mixing Engineer\r - Ryan Kaul, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Hive",
+    "version": "Explicit Version",
+    "track_number": 5,
+    "performer": {
+     "name": "Earl Sweatshirt feat. Vince Staples & Casey Veggies"
+    },
+    "performers": "Earl Sweatshirt feat. Vince Staples & Casey Veggies, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - randomblackdude, Producer\r - Matt Martians of The Super 3, Producer\r - Vince Staples, Composer\r - Vince Staples, Lyricist\r - Casey Jones, Composer\r - Casey Jones, Lyricist\r - Syd, Engineer\r - Jaycen Joshua, Mixing Engineer\r - Dave Kutch, Mastering Engineer\r - Trehy Harris, Assistant Engineer\r"
+   },
+   {
+    "title": "Chum",
+    "version": "Explicit Version",
+    "track_number": 6,
+    "performer": {
+     "name": "Earl Sweatshirt"
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Chad Hugo, Composer\r - Chad Hugo, Lyricist\r - Chad Hugo, Misc. Prod.\r - Chad Hugo, Trumpet\r - Taiwo Hassan, Composer\r - Taiwo Hassan, Lyricist\r - randomblackdude, Misc. Prod.\r - randomblackdude, Producer\r - Christian Rich, Misc. Prod.\r - Christian Rich, Producer\r - Julian Prindle, Recording Engineer\r - Kehinde Hassan, Composer\r - Kehinde Hassan, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Dave Kutch, Mastering Engineer\r - Trehy Harris, Assistant Engineer\r"
+   },
+   {
+    "title": "Sasquatch",
+    "version": "Explicit Version",
+    "track_number": 7,
+    "performer": {
+     "name": "Various Artists"
+    },
+    "performers": "Earl Sweatshirt feat. Tyler, The Creator, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Tyler, The Creator, Producer\r - Tyler Okonma, Composer\r - Tyler Okonma, Lyricist\r - Vic Wainstein, Recording Engineer\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Centurion",
+    "version": "Explicit Version",
+    "track_number": 8,
+    "performer": {
+     "name": "Earl Sweatshirt feat. Vince Staples"
+    },
+    "performers": "Earl Sweatshirt feat. Vince Staples, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Christian Rich, Producer\r - Jaycen Joshua, Mixing Engineer\r - Taiwo Hassan, Composer\r - Taiwo Hassan, Lyricist\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r - Kehinde Hassan, Composer\r - Kehinde Hassan, Lyricist\r - Vince Staples, Composer\r - Vince Staples, Lyricist\r - Holger Czukay, Composer\r - Holger Czukay, Lyricist\r - Irmin Schmidt, Composer\r - Irmin Schmidt, Lyricist\r - Jaki Liebezeit, Composer\r - Jaki Liebezeit, Lyricist\r - Michael Karoli, Composer\r - Michael Karoli, Lyricist\r - David Axelrod, Composer\r - David Axelrod, Lyricist\r"
+   },
+   {
+    "title": "523",
+    "version": "Explicit Version",
+    "track_number": 9,
+    "performer": {
+     "name": "Earl Sweatshirt"
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - randomblackdude, Producer\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Uncle Al",
+    "version": "Explicit Version",
+    "track_number": 10,
+    "performer": {
+     "name": "Earl Sweatshirt"
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - randomblackdude, Producer\r - Jaycen Joshua, Mixing Engineer\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Guild",
+    "version": "Explicit Version",
+    "track_number": 11,
+    "performer": {
+     "name": "Earl Sweatshirt"
+    },
+    "performers": "Earl Sweatshirt feat. Mac Miller, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - randomblackdude, Producer\r - Josh Berg, Engineer\r - Josh Berg, Mixing Engineer\r - Malcolm McCormick, Composer\r - Malcolm McCormick, Lyricist\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Molasses",
+    "version": "Explicit Version",
+    "track_number": 12,
+    "performer": {
+     "name": "Earl Sweatshirt feat. RZA"
+    },
+    "performers": "Earl Sweatshirt feat. RZA, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - RZA, Producer\r - Christian Rich, Co-Producer\r - Lennie Hibbert, Composer\r - Lennie Hibbert, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Clement Dodd, Composer\r - Clement Dodd, Lyricist\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Whoa",
+    "version": "Explicit Version",
+    "track_number": 13,
+    "performer": {
+     "name": "Various Artists"
+    },
+    "performers": "Earl Sweatshirt feat. Tyler, The Creator, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Jaycen Joshua, Mixing Engineer\r - Tyler, The Creator, Producer\r - Trehy Harris, Assistant Engineer\r - Tyler Okonma, Composer\r - Tyler Okonma, Lyricist\r - Vic Wainstein, Recording Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Hoarse",
+    "version": "Explicit Version",
+    "track_number": 14,
+    "performer": {
+     "name": "Earl Sweatshirt"
+    },
+    "performers": "Earl Sweatshirt, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Frank Ocean, Vocal\r - BADBADNOTGOOD, Mixing Engineer\r - BADBADNOTGOOD, Producer\r - Christopher Breaux, Composer\r - Christopher Breaux, Lyricist\r - Vic Wainstein, Recording Engineer\r - Dave Kutch, Mastering Engineer\r"
+   },
+   {
+    "title": "Knight",
+    "version": "Explicit Version",
+    "track_number": 15,
+    "performer": {
+     "name": "Earl Sweatshirt feat. Domo Genesis"
+    },
+    "performers": "Earl Sweatshirt feat. Domo Genesis, Performer\r - Thebe Kgositsile, Composer\r - Thebe Kgositsile, Lyricist\r - Chad Hugo, Keyboards\r - Dominique Cole, Composer\r - Dominique Cole, Lyricist\r - Ron Gilmore, Keyboards\r - Christian Rich, Producer\r - Jaycen Joshua, Mixing Engineer\r - Paul Willis, Composer\r - Paul Willis, Lyricist\r - Trehy Harris, Assistant Engineer\r - Dave Kutch, Mastering Engineer\r - Tyrone Douglas, Composer\r - Tyrone Douglas, Lyricist\r"
+   }
+  ]
+ }
+}
+'''

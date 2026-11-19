@@ -29,6 +29,7 @@ from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import find_tag_issues, in_torrent_path
 from salmon.checks.upconverts import check_upconvert
 from salmon.checks.verdicts import Row
+from salmon.common.dsd import is_dsd, release_dsd_encoding
 from salmon.common.files import album_files, get_audio_files, process_files
 from salmon.errors import (
     CRCMismatchError,
@@ -37,6 +38,7 @@ from salmon.errors import (
     UpconvertCheckError,
     UpconvertCheckNotApplicable,
 )
+from salmon.tagger.audio_info import bit_rate
 from salmon.tagger.pre_data import construct_artists_li, parse_format, parse_title
 from salmon.tagger.tagfile import TagFile
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs, get_search_results
@@ -78,7 +80,7 @@ def _audio_info(path: str, files: list[str]) -> dict[str, dict[str, Any]]:
         info[filename] = {
             "channels": stream.channels,
             "sample rate": stream.sample_rate,
-            "bit rate": stream.bitrate,
+            "bit rate": bit_rate(stream),
             "precision": lossless_depth(stream),
         }
     return info
@@ -222,6 +224,8 @@ def _release(path: str, audio_info: dict[str, dict[str, Any]], source: str | Non
     encoding = None
     if release_format == "FLAC":
         encoding = "24bit Lossless" if 24 in precisions else "Lossless" if 16 in precisions else None
+    elif release_format == "DSD":
+        encoding = release_dsd_encoding(audio_info)
     return {
         "artists": construct_artists_li(tags),
         "title": title,
@@ -292,7 +296,7 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     try:
         rows.append(verdicts.integrity_row(await check_integrity(path, files=audio_files)))
     except click.Abort:
-        rows.append(Row("INFO", "Integrity", "No FLAC or MP3 file to check."))
+        rows.append(Row("INFO", "Integrity", "No FLAC, MP3 or DSD file to check."))
     rows.append(verdicts.mqa_row(await _mqa(path, flacs)))
     rows.append(verdicts.upconvert_row(await _upconverts(path, flacs)))
     log_paths = album_files(path, [".log"], skip_unreadable=True) if source in (None, "CD") else []
@@ -303,6 +307,7 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     rule_trackers = trackers or list(DEFAULT_TRACKERS)
     rules = {code: salmon.trackers.tracker_classes[code].TAG_RULES for code in rule_trackers}
     rows += verdicts.sixteen_bit_rows(audio_info, {code: rule.sixteen_bit_above_48khz for code, rule in rules.items()})
+    rows += verdicts.dsd_rows([name for name in audio_info if is_dsd(name)], {c: r.takes_dsd for c, r in rules.items()})
     rows += verdicts.path_rows(_in_torrent_paths(path), {code: rule.max_path_length for code, rule in rules.items()})
 
     provenance = await anyio.to_thread.run_sync(gather_provenance, path, audio_files)

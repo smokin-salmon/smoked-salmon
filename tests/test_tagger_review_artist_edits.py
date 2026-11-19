@@ -1,5 +1,7 @@
 """[a]rtists carries its edit to the tracks (#854, #868), and trac[k]s keeps the release's order (#868)."""
 
+from typing import Any
+
 import anyio
 
 import salmon.tagger.review as review_module
@@ -10,7 +12,7 @@ GARY, JAN, PER = "Gary Novak", "Jan Gunnar Hoff", "Per Mathisen"
 
 def _metadata(*tracks: list[tuple[str, str]]) -> dict:
     """A release whose tracks credit these artists, its own artists built from them as the combine step does."""
-    metadata = {
+    metadata: dict[str, Any] = {
         "tracks": {
             "1": {
                 str(n): {"title": f"Song {n}", "artists": list(artists), "disc#": "1", "track#": str(n)}

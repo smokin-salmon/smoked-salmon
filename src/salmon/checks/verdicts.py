@@ -16,6 +16,7 @@ import asyncclick as click
 from salmon.checks.high_rate import sixteen_bit_above_48khz
 from salmon.checks.integrity import IntegrityResult, md5_unset_summary
 from salmon.checks.source import DetectedSource
+from salmon.common.dsd import dsd_refusal, track_dsd_encoding
 from salmon.uploader.dupe_checker import describe_torrent, held_in_group
 from salmon.uploader.spectrals import FREQUENCY_HEADINGS
 
@@ -202,7 +203,7 @@ def sample_rate_row(audio_info: Mapping[str, dict[str, Any]]) -> Row:
     odd = {
         name: info["sample rate"]
         for name, info in audio_info.items()
-        if info.get("sample rate") not in STANDARD_SAMPLE_RATES
+        if info.get("sample rate") not in STANDARD_SAMPLE_RATES and not track_dsd_encoding(info)
     }
     if odd:
         rates = ", ".join(_khz(rate) if rate else "unknown" for rate in sorted(set(odd.values()), key=lambda r: r or 0))
@@ -212,7 +213,11 @@ def sample_rate_row(audio_info: Mapping[str, dict[str, Any]]) -> Row:
             f"Non-standard sample rate ({rates}) in {len(odd)} file(s), which may be rejected.",
             _notes(odd),
         )
-    rates = ", ".join(_khz(rate) for rate in sorted({info["sample rate"] for info in audio_info.values()}))
+    # A DSD rate by its name: DSD64, not 2822.4 kHz.
+    labels = {
+        track_dsd_encoding(info) or _khz(info["sample rate"]): info["sample rate"] for info in audio_info.values()
+    }
+    rates = ", ".join(sorted(labels, key=labels.__getitem__))
     if not rates:
         return Row("INFO", "Sample rate", "No file read.")
     return Row("OK", "Sample rate", f"Standard: {rates}.")
@@ -233,6 +238,20 @@ def sixteen_bit_rows(audio_info: Mapping[str, dict[str, Any]], rules: Mapping[st
         elif rule == "trumpable":
             rows.append(Row("WARN", f"{check} ({code})", f"{found}: {code} can trump them.", notes))
     return rows or [Row("INFO", check, f"{found}; no rule known for {', '.join(rules) or 'these trackers'}.", notes)]
+
+
+def dsd_rows(dsd_files: list[str], takes_dsd: Mapping[str, bool | None]) -> list[Row]:
+    """dsd_files: the album's DSD files. takes_dsd: each tracker's TagRules.takes_dsd, by site code."""
+    if not dsd_files:
+        return []
+    found = f"{len(dsd_files)} DSD file(s)"
+    rows = []
+    for code, takes in takes_dsd.items():
+        if reason := dsd_refusal(code, takes):
+            rows.append(Row("BLOCK", f"DSD ({code})", f"{found}: {reason}", _notes(dsd_files)))
+        else:
+            rows.append(Row("OK", f"DSD ({code})", f"{found}: {code} takes DSD."))
+    return rows
 
 
 def path_rows(paths: list[str], limits: Mapping[str, int]) -> list[Row]:

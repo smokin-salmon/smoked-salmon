@@ -374,6 +374,7 @@ class UploadFormatting(BaseStruct):
     add_edition_title_to_album_tag: bool = True
     review_as_comment_tag: bool = True
     fullwidth_replacements: bool = False
+    colon_as_dash: bool = True
     empty_track_comment_tag: bool = True
 
 

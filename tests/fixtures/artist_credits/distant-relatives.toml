@@ -1,0 +1,1061 @@
+album = "Nas and Damian Marley, Distant Relatives"
+why = "A joint album by two artists: Deezer credits every track to one Deezer artist, 'Nas & Damian \"Jr. Gong\" Marley', while its own album contributors, MusicBrainz and Discogs credit Nas and Damian Marley apart, with guests as featured."
+edition = "Universal Republic / Island 2010, 13 tracks. MusicBrainz afb1c604 and Discogs 2285257 are the US CD, barcode 602527354019; Deezer 138824232 states UPC 602567951605 (the digital edition) and its API's upc lookup resolves 602527354019 to the same album. The same 13 tracks in the same order in all three."
+known_wrong = ["deezer: one main artist on every track, 'Nas & Damian \"Jr. Gong\" Marley', the joint credit Deezer holds as one artist, kept whole; Nas and Damian Marley are not credited apart", "qobuz: the album's first main-artist, Damian Marley, is main on every track and each track's own MainArtist, the joint 'Nas & Damian \"Jr. Gong\" Marley', a guest; Nas, also a main-artist of the album, is credited nowhere", "merge: the files' ARTIST splits the joint name into Nas and 'Damian \"Jr. Gong\" Marley', and the bad-split repair joins them back into Deezer's joint name, so Nas is not credited apart on any track; Damian Marley is main twice, inside the joint name and as 'Damian Marley' (Discogs)", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so every guest (K'NAAN, Stephen Marley, Dennis Brown, Lil Wayne, Joss Stone) is made main, listed before the joint name on their tracks, and ALBUMARTIST is 'Various'"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Nas", "Damian Marley"]
+not_main = ["Nas & Damian \"Jr. Gong\" Marley", "K'naan", "Stephen Marley", "Dennis Brown", "Lil Wayne", "Joss Stone"]
+how_we_know = "MusicBrainz (Nas & Damian Marley on the release and on every track, guests feat.), Discogs (Nas & Damian Marley, guests Featuring) and Deezer's own album contributors (Nas and Damian Marley, each Main) agree on two main artists and the same five guests"
+open = "Damian Marley's name form: MusicBrainz's artist is named 'Damian “Jr. Gong” Marley' (credited here as 'Damian Marley'), and Deezer's joint artist holds the same nickname; Discogs and his own Deezer artist have 'Damian Marley'. The two are taken as one name, so a track crediting both is not judged"
+
+[right.name_forms]
+"Damian Marley" = ["Damian \"Jr. Gong\" Marley", "Damian “Jr. Gong” Marley"]
+"K'naan" = ["K'NAAN", "K’naan", "K'Naan"]
+
+[today.deezer]
+release = ["Nas & Damian \"Jr. Gong\" Marley (main)", "K'NAAN (guest)", "Stephen Marley (guest)", "Dennis Brown (guest)", "Lil Wayne (guest)", "Joss Stone (guest)"]
+tracks = 13
+
+[today.musicbrainz]
+release = ["Nas (main)", "Damian “Jr. Gong” Marley (main)", "K’naan (guest)", "Stephen Marley (guest)", "Dennis Brown (guest)", "Lil Wayne (guest)", "Joss Stone (guest)"]
+tracks = 13
+
+[today.discogs]
+release = ["Nas (main)", "Damian Marley (main)", "K'Naan (guest)", "Stephen Marley (guest)", "Dennis Brown (guest)", "Joss Stone (guest)", "Lil Wayne (guest)"]
+tracks = 13
+
+[today.qobuz]
+release = ["Damian Marley (main)", "Nas & Damian \"Jr. Gong\" Marley (guest)", "K'Naan (guest)", "Stephen Marley (guest)", "Dennis Brown (guest)", "Lil Wayne (guest)", "Joss Stone (guest)"]
+tracks = 13
+
+[today.merge]
+release = ["Nas & Damian \"Jr. Gong\" Marley (main)", "Damian Marley (main)", "K'NAAN (main)", "Stephen Marley (main)", "Dennis Brown (main)", "Lil Wayne (main)", "Joss Stone (main)"]
+tracks = 13
+credits = ["1.1: Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.2: K'NAAN (main), Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.3: Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.4: Stephen Marley (main), Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.5: Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.6: Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.7: Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.8: Dennis Brown (main), Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.9: Stephen Marley (main), Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.10: Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.11: Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.12: Lil Wayne (main), Joss Stone (main), Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)", "1.13: K'NAAN (main), Nas & Damian \"Jr. Gong\" Marley (main), Damian Marley (main)"]
+
+[today.output]
+albumartist = "Various"
+tracks = ["Nas & Damian \"Jr. Gong\" Marley, Damian Marley | As We Enter", "K'NAAN, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Tribes At War", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Strong Will Continue", "Stephen Marley, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Leaders", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Friends", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Count Your Blessings", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Dispear", "Dennis Brown, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Land Of Promise", "Stephen Marley, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | In His Own Words", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Nah Mean", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Patience", "Lil Wayne, Joss Stone, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | My Generation", "K'NAAN, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Africa Must Wake Up"]
+
+[today."output-guests-in-title"]
+albumartist = "Various"
+tracks = ["Nas & Damian \"Jr. Gong\" Marley, Damian Marley | As We Enter", "K'NAAN, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Tribes At War", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Strong Will Continue", "Stephen Marley, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Leaders", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Friends", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Count Your Blessings", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Dispear", "Dennis Brown, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Land Of Promise", "Stephen Marley, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | In His Own Words", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Nah Mean", "Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Patience", "Lil Wayne, Joss Stone, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | My Generation", "K'NAAN, Nas & Damian \"Jr. Gong\" Marley, Damian Marley | Africa Must Wake Up"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
+# the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["As We Enter"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Tribes At War"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley", "K'NAAN"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Strong Will Continue"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Leaders"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley", "Stephen Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Friends"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Count Your Blessings"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Dispear"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Land Of Promise"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley", "Dennis Brown"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["In His Own Words"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley", "Stephen Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Nah Mean"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Patience"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["My Generation"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley", "Lil Wayne", "Joss Stone"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Africa Must Wake Up"]
+artist = ["Nas & Damian \"Jr. Gong\" Marley", "K'NAAN"]
+album = ["Distant Relatives"]
+albumartist = ["Damian Marley"]
+date = ["2010-05-18"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 138824232,
+ "title": "Distant Relatives",
+ "upc": "602567951605",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 144,
+    "name": "Reggae"
+   }
+  ]
+ },
+ "label": "Universal Republic Records",
+ "release_date": "2010-05-18",
+ "tracklist": [
+  {
+   "SNG_ID": "916387672",
+   "SNG_TITLE": "As We Enter",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USUM71003977",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "916387682",
+   "SNG_TITLE": "Tribes At War",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "K'NAAN"
+    ],
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USUM71010797",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387692",
+   "SNG_TITLE": "Strong Will Continue",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USUM71008989",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387702",
+   "SNG_TITLE": "Leaders",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Stephen Marley"
+    ],
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USUM71010798",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387712",
+   "SNG_TITLE": "Friends",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USUM71010808",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387722",
+   "SNG_TITLE": "Count Your Blessings",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USUM71010809",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387732",
+   "SNG_TITLE": "Dispear",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USUM71010810",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387742",
+   "SNG_TITLE": "Land Of Promise",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Dennis Brown"
+    ],
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USUM71010811",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387752",
+   "SNG_TITLE": "In His Own Words",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Stephen Marley"
+    ],
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USUM71010812",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387762",
+   "SNG_TITLE": "Nah Mean",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USUM71010813",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387772",
+   "SNG_TITLE": "Patience",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USUM71010817",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387782",
+   "SNG_TITLE": "My Generation",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Lil Wayne",
+     "Joss Stone"
+    ],
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USUM71010818",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "916387792",
+   "SNG_TITLE": "Africa Must Wake Up",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "K'NAAN"
+    ],
+    "main_artist": [
+     "Nas & Damian \"Jr. Gong\" Marley"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "USUM71010819",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="afb1c604-79da-4470-90b1-940cc2caeee3"><title>Distant Relatives</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit><date>2010-05-18</date><release-event-list><release-event><date>2010-05-18</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>B0014136</catalog-number><label><name>Def Jam Recordings</name></label></label-info><label-info><catalog-number>B0014136</catalog-number><label><name>Universal Republic Records</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>As We Enter</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><recording><title>Tribes at War</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit joinphrase=" feat. "><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit><name-credit><artist><name>K’naan</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><recording><title>Strong Will Continue</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><recording><title>Leaders</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit joinphrase=" feat. "><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit><name-credit><artist><name>Stephen Marley</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>Friends</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><recording><title>Count Your Blessings</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>Dispear</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Land of Promise</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit joinphrase=" feat. "><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit><name-credit><artist><name>Dennis Brown</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><recording><title>In His Own Words</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit joinphrase=" feat. "><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit><name-credit><artist><name>Stephen Marley</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><recording><title>Nah Mean</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><recording><title>Patience</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit></artist-credit></recording></track><track><position>12</position><number>12</number><recording><title>My Generation</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit joinphrase=" feat. "><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Lil Wayne</name></artist></name-credit><name-credit><artist><name>Joss Stone</name></artist></name-credit></artist-credit></recording></track><track><position>13</position><number>13</number><recording><title>Africa Must Wake Up</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Nas</name></artist></name-credit><name-credit joinphrase=" feat. "><name>Damian Marley</name><artist><name>Damian “Jr. Gong” Marley</name></artist></name-credit><name-credit><artist><name>K’naan</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 2285257,
+ "year": 2010,
+ "artists": [
+  {
+   "name": "Nas",
+   "role": "",
+   "id": 50997
+  },
+  {
+   "name": "Damian Marley",
+   "role": "",
+   "id": 108897
+  }
+ ],
+ "labels": [
+  {
+   "name": "Ghetto Youths United",
+   "catno": "B0014136-02",
+   "id": 44062
+  },
+  {
+   "name": "Def Jam Recordings",
+   "catno": "B0014136-02",
+   "id": 4241
+  },
+  {
+   "name": "Universal Republic Records",
+   "catno": "B0014136-02",
+   "id": 81846
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "Distant Relatives",
+ "released": "2010-05-18",
+ "genres": [
+  "Hip Hop",
+  "Reggae"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "As We Enter",
+   "duration": "2:28"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Tribes At War",
+   "extraartists": [
+    {
+     "name": "K'Naan",
+     "role": "Featuring",
+     "id": 727655
+    }
+   ],
+   "duration": "4:30"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Strong Will Continue",
+   "duration": "6:01"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Leaders",
+   "extraartists": [
+    {
+     "name": "Stephen Marley",
+     "role": "Featuring",
+     "id": 122792
+    }
+   ],
+   "duration": "4:19"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Friends",
+   "duration": "4:49"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Count Your Blessings",
+   "duration": "4:24"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Dispear",
+   "duration": "5:53"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Land Of Promise",
+   "extraartists": [
+    {
+     "name": "Dennis Brown",
+     "role": "Featuring",
+     "id": 77811
+    }
+   ],
+   "duration": "3:53"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "In His Own Words",
+   "extraartists": [
+    {
+     "name": "Stephen Marley",
+     "role": "Featuring",
+     "id": 122792
+    }
+   ],
+   "duration": "4:59"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Nah Mean",
+   "duration": "4:07"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "title": "Patience",
+   "duration": "5:45"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "title": "My Generation",
+   "extraartists": [
+    {
+     "name": "Joss Stone",
+     "role": "Featuring",
+     "id": 203749
+    },
+    {
+     "name": "Lil Wayne",
+     "role": "Featuring",
+     "id": 1065010
+    }
+   ],
+   "duration": "4:00"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "title": "Africa Must Wake Up",
+   "extraartists": [
+    {
+     "name": "K'Naan",
+     "role": "Featuring",
+     "id": 727655
+    }
+   ],
+   "duration": "6:41"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Betty Wright",
+   "role": "Backing Vocals",
+   "id": 97072
+  },
+  {
+   "name": "Dennis Brown",
+   "role": "Backing Vocals",
+   "id": 77811
+  },
+  {
+   "name": "Noelle Scaggs",
+   "role": "Backing Vocals",
+   "id": 346732
+  },
+  {
+   "name": "Christopher Merridth",
+   "role": "Bass",
+   "id": 1920051
+  },
+  {
+   "name": "Paul Fakhourie",
+   "role": "Bass",
+   "id": 437673
+  },
+  {
+   "name": "Shiah Coore",
+   "role": "Bass",
+   "id": 387016
+  },
+  {
+   "name": "Miles Tackett",
+   "role": "Cello",
+   "id": 158576
+  },
+  {
+   "name": "Courtney Diedrick",
+   "role": "Drums",
+   "id": 1920059
+  },
+  {
+   "name": "Shiah Coore",
+   "role": "Drums",
+   "id": 387016
+  },
+  {
+   "name": "Wilburn \"Squidly\" Cole",
+   "role": "Drums",
+   "id": 4841963
+  },
+  {
+   "name": "Damian Marley",
+   "role": "Executive-Producer",
+   "id": 108897
+  },
+  {
+   "name": "Nasir Jones",
+   "role": "Executive-Producer",
+   "id": 664446
+  },
+  {
+   "name": "Andrea Carter",
+   "role": "Guitar",
+   "id": 1920049
+  },
+  {
+   "name": "George Pajon Jr.",
+   "role": "Guitar",
+   "id": 111185
+  },
+  {
+   "name": "Luke Aiono",
+   "role": "Guitar",
+   "id": 1920053
+  },
+  {
+   "name": "Ronnoy Gordon",
+   "role": "Guitar",
+   "id": 1920050
+  },
+  {
+   "name": "Christopher Merridth",
+   "role": "Keyboards",
+   "id": 1920051
+  },
+  {
+   "name": "Llamar Brown",
+   "role": "Keyboards",
+   "id": 1920054
+  },
+  {
+   "name": "Mike Rowe",
+   "role": "Keyboards",
+   "id": 115688
+  },
+  {
+   "name": "Paul Fakhourie",
+   "role": "Keyboards",
+   "id": 437673
+  },
+  {
+   "name": "Phillip \"Winta\" James",
+   "role": "Keyboards",
+   "id": 3786202
+  },
+  {
+   "name": "Sean Diedrick",
+   "role": "Keyboards",
+   "id": 854467
+  },
+  {
+   "name": "Stephen Marley",
+   "role": "Keyboards",
+   "id": 122792
+  },
+  {
+   "name": "Wilburn \"Squidly\" Cole",
+   "role": "Keyboards",
+   "id": 4841963
+  },
+  {
+   "name": "Chris Athens",
+   "role": "Mastered By",
+   "id": 237914
+  },
+  {
+   "name": "Jim \"Bonzai\" Caruso",
+   "role": "Mixed By",
+   "id": 49083
+  },
+  {
+   "name": "Benjamin Reid",
+   "role": "Mixed By [Assisted]",
+   "id": 1920055
+  },
+  {
+   "name": "Charles Wakeman",
+   "role": "Mixed By [Assisted]",
+   "id": 1920060
+  },
+  {
+   "name": "Eric \"Twizted\" Young",
+   "role": "Mixed By [Assisted]",
+   "id": 1920052
+  },
+  {
+   "name": "Steve Nowa",
+   "role": "Mixed By [Assisted]",
+   "id": 1920056
+  },
+  {
+   "name": "Leon Mobley",
+   "role": "Percussion",
+   "id": 256494
+  },
+  {
+   "name": "Wilburn \"Squidly\" Cole",
+   "role": "Percussion",
+   "id": 4841963
+  },
+  {
+   "name": "Damian Marley",
+   "role": "Producer",
+   "id": 108897
+  },
+  {
+   "name": "Stephen Marley",
+   "role": "Producer",
+   "id": 122792
+  },
+  {
+   "name": "Andrew Green (14)",
+   "role": "Recorded By",
+   "id": 6886551
+  },
+  {
+   "name": "Benjamin Reid",
+   "role": "Recorded By",
+   "id": 1920055
+  },
+  {
+   "name": "Casey Lewis",
+   "role": "Recorded By",
+   "id": 723953
+  },
+  {
+   "name": "Charles Wakeman",
+   "role": "Recorded By",
+   "id": 1920060
+  },
+  {
+   "name": "George Massa",
+   "role": "Recorded By",
+   "id": 1820294
+  },
+  {
+   "name": "Josh Newell",
+   "role": "Recorded By",
+   "id": 907611
+  },
+  {
+   "name": "Marc Lee",
+   "role": "Recorded By",
+   "id": 506704
+  },
+  {
+   "name": "Tim Harkins",
+   "role": "Recorded By",
+   "id": 514449
+  },
+  {
+   "name": "Vernon Mungo",
+   "role": "Recorded By",
+   "id": 518924
+  },
+  {
+   "name": "Bobby Newland",
+   "role": "Recorded By [Assisted]",
+   "id": 1920058
+  },
+  {
+   "name": "Greg DePante",
+   "role": "Recorded By [Assisted]",
+   "id": 1714954
+  },
+  {
+   "name": "James Rudder",
+   "role": "Recorded By [Assisted]",
+   "id": 1116515
+  },
+  {
+   "name": "Jose Quintero",
+   "role": "Recorded By [Assisted]",
+   "id": 1920057
+  },
+  {
+   "name": "Miguel Bermudez",
+   "role": "Recorded By [Assisted]",
+   "id": 1669782
+  },
+  {
+   "name": "Ann Marie Calhoun",
+   "role": "Violin",
+   "id": 1818550
+  },
+  {
+   "name": "Amadou Bagayoko",
+   "role": "Written-By",
+   "id": 478637
+  },
+  {
+   "name": "Damian Marley",
+   "role": "Written-By",
+   "id": 108897
+  },
+  {
+   "name": "Dennis Brown",
+   "role": "Written-By",
+   "id": 77811
+  },
+  {
+   "name": "Dwayne Carter",
+   "role": "Written-By",
+   "id": 689691
+  },
+  {
+   "name": "Keinan Warsame",
+   "role": "Written-By",
+   "id": 1254507
+  },
+  {
+   "name": "Mariam Doumbia",
+   "role": "Written-By",
+   "id": 478636
+  },
+  {
+   "name": "Nasir Jones",
+   "role": "Written-By",
+   "id": 664446
+  },
+  {
+   "name": "Stephen Marley",
+   "role": "Written-By",
+   "id": 122792
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "enstr8gvb87ob",
+ "upc": "0602567951605",
+ "title": "Distant Relatives",
+ "tracks_count": 13,
+ "artist": {
+  "name": "Damian Marley"
+ },
+ "artists": [
+  {
+   "name": "Damian Marley",
+   "roles": [
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Nas",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Musiques du monde",
+  "Musiques du monde→Reggae"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "As We Enter",
+    "track_number": 1,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Mulatu Astatke, ComposerLyricist - Nasir Jones, ComposerLyricist - Damian Marley, ComposerLyricist - Jamaal Sublett, ComposerLyricist"
+   },
+   {
+    "title": "Tribes At War",
+    "track_number": 2,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - K'Naan, FeaturedArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Keinan Abdi Warsame, ComposerLyricist"
+   },
+   {
+    "title": "Strong Will Continue",
+    "track_number": 3,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Benjamin Reid, MixingSecondEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
+   },
+   {
+    "title": "Leaders",
+    "track_number": 4,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Stephen Marley, FeaturedArtist, Producer, ComposerLyricist - Marc Lee, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
+   },
+   {
+    "title": "Friends",
+    "track_number": 5,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer, ComposerLyricist - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Charles Wakeman, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Chris Athens, MasteringEngineer - Nasir Jones, ComposerLyricist"
+   },
+   {
+    "title": "Count Your Blessings",
+    "track_number": 6,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Steve Nowa, MixingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
+   },
+   {
+    "title": "Dispear",
+    "track_number": 7,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Benjamin Reid, RecordingEngineer - Miguel Bermudez, RecordingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
+   },
+   {
+    "title": "Land Of Promise",
+    "track_number": 8,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Dennis Brown, FeaturedArtist, ComposerLyricist - Damian \"Jr. Gong\" Marley, Producer - Charles Wakeman, RecordingEngineer - Marc Lee, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Andre “Illestr8” Forrest, ComposerLyricist"
+   },
+   {
+    "title": "In His Own Words",
+    "track_number": 9,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Stephen Marley, FeaturedArtist, Producer, ComposerLyricist - George Massa, RecordingEngineer - Marc Lee, RecordingEngineer - Charles Wakeman, RecordingEngineer - Josh Newell, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Steve Nowa, MixingSecondEngineer - Casey Lewis, RecordingEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
+   },
+   {
+    "title": "Nah Mean",
+    "track_number": 10,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Vernon Mungo, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Charles Wakeman, MixingSecondEngineer, RecordingSecondEngineer - Chris Athens, MasteringEngineer - Jose Quintero, RecordingSecondEngineer - Bobby Newland, RecordingSecondEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist"
+   },
+   {
+    "title": "Patience",
+    "track_number": 11,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Stephen Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Chris Athens, MasteringEngineer - Andrew Green, RecordingEngineer - George Massa, RecordingEngineer - Charles Wakeman, RecordingEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Amadou Bagayoko, ComposerLyricist - Mariam Doumbia, ComposerLyricist"
+   },
+   {
+    "title": "My Generation",
+    "track_number": 12,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - Lil Wayne, FeaturedArtist - Joss Stone, FeaturedArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Greg DePante, RecordingSecondEngineer - James Rudder, RecordingSecondEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Charles Wakeman, MixingSecondEngineer, RecordingEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Dwayne Carter, ComposerLyricist"
+   },
+   {
+    "title": "Africa Must Wake Up",
+    "track_number": 13,
+    "performer": {
+     "name": "Nas & Damian \"Jr. Gong\" Marley"
+    },
+    "performers": "Nas & Damian \"Jr. Gong\" Marley, MainArtist - K'Naan, FeaturedArtist - Damian \"Jr. Gong\" Marley, Producer - Tim Harkins, RecordingEngineer - Marc Lee, RecordingEngineer - Josh Newell, RecordingEngineer - Casey Lewis, RecordingEngineer - James \"Bonzai\" Caruso, MixingEngineer - Eric “Twizted” Young, MixingSecondEngineer - Charles Wakeman, MixingSecondEngineer - Chris Athens, MasteringEngineer - Damian Marley, ComposerLyricist - Nasir Jones, ComposerLyricist - Keinan Abdi Warsame, ComposerLyricist"
+   }
+  ]
+ }
+}
+'''

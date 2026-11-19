@@ -111,7 +111,8 @@ def _parse_upload_form(data: dict, soup: BeautifulSoup) -> None:
 
 
 class RedApi(BaseGazelleApi):
-    TAG_RULES = TagRules(max_path_length=180, sixteen_bit_above_48khz="trumpable")
+    # Its upload form has the format DSD, with the bitrates DSD64 to DSD512.
+    TAG_RULES = TagRules(max_path_length=180, sixteen_bit_above_48khz="trumpable", takes_dsd=True)
     # RED's image host (/i/) serves an image only on a URL carrying the key, expiry and user id that
     # ajax.php?action=imgauth gives. Neither the API key nor the session cookie alone gets one (#695).
     SIGNED_IMAGES = True

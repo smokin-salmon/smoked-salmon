@@ -25,6 +25,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 - **Description generation** – Edition description generation (tracklist, sources, available streaming platforms, encoding details...).
 - **Down-convert and Transcode** – Can downconvert 24-bit flac files to 16-bit, and transcode to mp3.
 - **Multi-Format Upload** – Automatically transcodes and uploads multiple formats (FLAC 16-bit, MP3, etc.) in a single workflow.
+- **DSD** – Reads, tags, renames and checks DSD albums (`.dsf` and `.dff`), and makes their spectrals from their audio decoded to PCM. `salmon up` uploads them as they are, as DSD64 to DSD512, to RED only: OPS takes no DSD, and DIC is not known to, so salmon refuses DSD for them, `cross-upload` included. A DSD album gets no transcodes.
 - **Torrent Client Injection** – Can inject generated torrent files into torrent clients (qBittorrent, Transmission, Deluge, ruTorrent).
 - **Remote Seeding** – Can transfer files to multiple remote locations via rclone and inject torrents into remote torrent clients for automatic seeding.
 - **Update Notifications** – Informs users when a new version is available.
@@ -36,7 +37,10 @@ Manual installation instructions can be found on the [Wiki](https://github.com/s
 ### 🔹  Install smoked-salmon 
 These steps use [`uv`](https://github.com/astral-sh/uv) for installing the *smoked-salmon* package. [`pipx`](https://github.com/pypa/pipx) also works.
 Installing with pip is not recommended because uv (and pipx) manage python versions and isolate the *smoked-salmon* installation from the system python installation.
-If smoked-salmon runs on Python 3.14 or later (uv may pick it on a fresh install), spectral images are uploaded uncompressed because oxipng is not available for it yet; to have them compressed, install with `uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon` instead, or install the oxipng program (winget, scoop, brew, apt, or its [GitHub releases](https://github.com/oxipng/oxipng/releases)), which salmon uses when it finds it.
+
+The install lines below follow the `stable` branch, which moves only when a version is released. Without `@stable`, uv installs the development version, `master`, like the `:alpha` Docker image. To see which one you have, run `uv tool list --show-version-specifiers`: an install that shows salmon without `@stable` follows `master`. To switch it, run once: `uv tool install --force git+https://github.com/smokin-salmon/smoked-salmon@stable`. This takes you back to the latest release. Fixes merged since then come with the next one.
+
+If smoked-salmon runs on Python 3.14 or later (uv may pick it on a fresh install), spectral images are uploaded uncompressed because oxipng is not available for it yet; to have them compressed, install with `uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon@stable` instead, or install the oxipng program (winget, scoop, brew, apt, or its [GitHub releases](https://github.com/oxipng/oxipng/releases)), which salmon uses when it finds it.
 
 #### Linux
 1. Install system packages:
@@ -52,7 +56,7 @@ If smoked-salmon runs on Python 3.14 or later (uv may pick it on a fresh install
 
 3. Install smoked-salmon package from github:
 	```bash
-	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	uv tool install git+https://github.com/smokin-salmon/smoked-salmon@stable
 	```
 
 #### Windows
@@ -82,7 +86,7 @@ Run these commands in **PowerShell** (Start menu, "Windows PowerShell"), not in 
 
 4. Install smoked-salmon package from github:
 	```powershell
-	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	uv tool install git+https://github.com/smokin-salmon/smoked-salmon@stable
 	```
     smoked-salmon has no window or Start menu entry: you type `salmon` in PowerShell (see Initial Setup below).
     If PowerShell says `salmon` is not recognized, run `uv tool update-shell`, then open a new PowerShell window.
@@ -105,7 +109,7 @@ Run these commands in **PowerShell** (Start menu, "Windows PowerShell"), not in 
 
 4. Install smoked-salmon package from github:
 	```bash
-	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	uv tool install git+https://github.com/smokin-salmon/smoked-salmon@stable
 	```
 
 ### 🔹  Initial Setup
@@ -145,10 +149,10 @@ Feedback on this guide is welcome.
 1. Pull the image:
 
    ```bash
-   # Stable release
+   # Stable release (equivalent to `uv tool install git+...@stable`)
    docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
 
-   # Alpha (built on every push to master, equivalent to `uv tool install git+...`)
+   # Alpha (built on every push to master, equivalent to `uv tool install git+...` with no `@stable`)
    docker pull ghcr.io/smokin-salmon/smoked-salmon:alpha
    ```
 
@@ -544,6 +548,7 @@ For **normal installs**:
 ```bash
 uv tool upgrade salmon
 ```
+It keeps what you installed: an install made with `@stable` gets the latest release, one made without it gets the latest `master` (see Install smoked-salmon to switch).
 
 If it says the current Python version does not satisfy `Python>=3.13` (an install made on Python 3.11 or 3.12),
 run this once; uv downloads Python 3.13 if it's missing:

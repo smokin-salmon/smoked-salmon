@@ -9,11 +9,15 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg, interaction, prepared
+from salmon.checks.dsd import dsd_damage
+from salmon.common.dsd import DSD_EXTENSIONS, is_dsd
 from salmon.common.files import album_files, process_files, rewrite_refusal
 from salmon.errors import UploadError
 
-# What the integrity check decodes, with flac and mp3val.
+# What the integrity check decodes, with flac and mp3val, and what sanitizing re-encodes.
 _INTEGRITY_EXTENSIONS = (".mp3", ".flac")
+# What it checks: those, and DSD files, whose headers it checks against their size (salmon.checks.dsd).
+_CHECKED_EXTENSIONS = (*_INTEGRITY_EXTENSIONS, *sorted(DSD_EXTENSIONS))
 
 FLAC_IMPORTANT_REGEXES = [
     # A warning, then flac's "ok" for the decode.
@@ -171,8 +175,8 @@ async def handle_integrity_check(path: str) -> None:
     # Sanitizing rewrites the files in place.
     refusal = rewrite_refusal(path)
     if os.path.isfile(path):
-        if not any(path.lower().endswith(ext) for ext in [".flac", ".mp3"]):
-            click.secho(f"File '{path}' is not a FLAC or MP3 file.", fg="red", bold=True)
+        if not path.lower().endswith(_CHECKED_EXTENSIONS):
+            click.secho(f"File '{path}' is not a FLAC, MP3 or DSD file.", fg="red", bold=True)
             return
 
         result = await check_integrity(path)
@@ -192,10 +196,21 @@ async def handle_integrity_check(path: str) -> None:
 
         if not result.passed and refusal is not None:
             _no_sanitize(path, refusal)
+        elif damaged_dsd := _damaged_dsd(result):
+            click.secho(_DSD_NOT_SANITIZED.format(files=", ".join(damaged_dsd)), fg="yellow")
         elif not result.passed and await interaction.confirm(click.style(f"\n{sanitize_prompt(result)}", fg="magenta")):
             await sanitize_and_verify(path)
     else:
         raise click.Abort
+
+
+# Sanitizing re-encodes FLAC and MP3 files: a DSD file the check fails is short of data no re-encode gives back.
+_DSD_NOT_SANITIZED = "\nNot offering to sanitize: it cannot repair a damaged DSD file ({files})."
+
+
+def _damaged_dsd(result: IntegrityResult) -> list[str]:
+    """The DSD files the check found damaged."""
+    return [name for name in result.decode_failures if is_dsd(name)]
 
 
 def _no_sanitize(path: str, refusal: str) -> None:
@@ -224,6 +239,9 @@ async def resolve_integrity_for_upload(path: str, *, scene: bool, assume_yes: bo
     click.echo(format_integrity(result))
     if result.passed:
         return result
+    if damaged_dsd := _damaged_dsd(result):
+        click.secho(f"{_DSD_NOT_SANITIZED.format(files=', '.join(damaged_dsd)).strip()} Aborting.", fg="red", bold=True)
+        raise click.Abort()
 
     if scene:
         click.secho(
@@ -278,7 +296,7 @@ async def check_integrity(path: str, _: int | None = None, *, files: list[str] |
     """Check the integrity of audio files at the given path.
 
     Args:
-        path: Path to a FLAC/MP3 file or a directory containing audio files.
+        path: Path to a FLAC, MP3 or DSD file or a directory containing audio files.
         _: Unused index parameter for process_files compatibility.
         files: The directory's audio files, named from it, as get_audio_files lists them; None lists them.
 
@@ -292,13 +310,15 @@ async def check_integrity(path: str, _: int | None = None, *, files: list[str] |
         return await _check_flac_integrity(path)
     elif path.lower().endswith(".mp3"):
         return await _check_mp3_integrity(path)
+    elif is_dsd(path) and not os.path.isdir(path):
+        return await anyio.to_thread.run_sync(_check_dsd_integrity, path)
     elif os.path.isdir(path):
         integrities_out: list[str] = []
         integrities = True
         if files is None:
-            audio_files = album_files(path, _INTEGRITY_EXTENSIONS)
+            audio_files = album_files(path, _CHECKED_EXTENSIONS)
         else:
-            audio_files = [os.path.join(path, f) for f in files if f.lower().endswith(_INTEGRITY_EXTENSIONS)]
+            audio_files = [os.path.join(path, f) for f in files if f.lower().endswith(_CHECKED_EXTENSIONS)]
         if not audio_files:
             click.secho("No audio files found in directory", fg="red", bold=True)
             raise click.Abort
@@ -322,6 +342,21 @@ async def check_integrity(path: str, _: int | None = None, *, files: list[str] |
             checked=sum(result.checked for result in results),
         )
     raise click.Abort
+
+
+def _check_dsd_integrity(path: str) -> IntegrityResult:
+    """Check a DSF or DSDIFF file's headers against its size (salmon.checks.dsd): DSD holds no checksum to verify.
+
+    A damaged file is a decode failure: sanitizing does not repair it, and the upload stops.
+    """
+    name = os.path.basename(path)
+    try:
+        damage = dsd_damage(path)
+    except OSError as error:
+        damage = f"it cannot be read ({error.strerror or error})"
+    if damage is None:
+        return IntegrityResult(True, checked=1)
+    return IntegrityResult(False, f"{name}: {damage}", decode_failures=(name,), checked=1)
 
 
 async def _check_flac_integrity(path: str) -> IntegrityResult:

@@ -10,7 +10,7 @@ from test_uploader_dry_run import (
 )
 
 from salmon import cfg
-from salmon.uploader.upload import generate_source_links
+from salmon.uploader.description import generate_source_links
 
 # Covers and spectrals go to the fake image host.
 pytestmark = pytest.mark.usefixtures("image_uploads")

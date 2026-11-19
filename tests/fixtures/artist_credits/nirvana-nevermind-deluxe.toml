@@ -1,14 +1,14 @@
 album = "Nirvana, Nevermind (Super Deluxe Edition)"
 why = "A deluxe edition full of versions (demos, rough mixes, live, BBC sessions): no remixer may be read from a version."
 edition = "Qobuz has no Super Deluxe Edition under this UPC: 0060253749865 is the 13-track standard Nevermind, another edition. Discogs 8199204 is the 2011 2-CD Deluxe Edition, 41 tracks. Their tracks merge with their matches among the 70."
-known_wrong = ["merge: 'Devonshire' read as a remixer from the 'Devonshire Mixes' versions"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
-qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
@@ -33,8 +33,9 @@ release = ["Nirvana (main)"]
 tracks = 13
 
 [today.merge]
-release = ["Nirvana (main)", "Devonshire (remixer)"]
+release = ["Nirvana (main)"]
 tracks = 70
+credits = ["1.1: Nirvana (main)", "1.2: Nirvana (main)", "1.3: Nirvana (main)", "1.4: Nirvana (main)", "1.5: Nirvana (main)", "1.6: Nirvana (main)", "1.7: Nirvana (main)", "1.8: Nirvana (main)", "1.9: Nirvana (main)", "1.10: Nirvana (main)", "1.11: Nirvana (main)", "1.12: Nirvana (main)", "1.13: Nirvana (main)", "1.14: Nirvana (main)", "1.15: Nirvana (main)", "1.16: Nirvana (main)", "1.17: Nirvana (main)", "1.18: Nirvana (main)", "1.19: Nirvana (main)", "1.20: Nirvana (main)", "1.21: Nirvana (main)", "1.22: Nirvana (main)", "2.1: Nirvana (main)", "2.2: Nirvana (main)", "2.3: Nirvana (main)", "2.4: Nirvana (main)", "2.5: Nirvana (main)", "2.6: Nirvana (main)", "2.7: Nirvana (main)", "2.8: Nirvana (main)", "2.9: Nirvana (main)", "2.10: Nirvana (main)", "2.11: Nirvana (main)", "2.12: Nirvana (main)", "2.13: Nirvana (main)", "2.14: Nirvana (main)", "2.15: Nirvana (main)", "2.16: Nirvana (main)", "2.17: Nirvana (main)", "2.18: Nirvana (main)", "3.1: Nirvana (main)", "3.2: Nirvana (main)", "3.3: Nirvana (main)", "3.4: Nirvana (main)", "3.5: Nirvana (main)", "3.6: Nirvana (main)", "3.7: Nirvana (main)", "3.8: Nirvana (main)", "3.9: Nirvana (main)", "3.10: Nirvana (main)", "3.11: Nirvana (main)", "4.1: Nirvana (main)", "4.2: Nirvana (main)", "4.3: Nirvana (main)", "4.4: Nirvana (main)", "4.5: Nirvana (main)", "4.6: Nirvana (main)", "4.7: Nirvana (main)", "4.8: Nirvana (main)", "4.9: Nirvana (main)", "4.10: Nirvana (main)", "4.11: Nirvana (main)", "4.12: Nirvana (main)", "4.13: Nirvana (main)", "4.14: Nirvana (main)", "4.15: Nirvana (main)", "4.16: Nirvana (main)", "4.17: Nirvana (main)", "4.18: Nirvana (main)", "4.19: Nirvana (main)"]
 
 
 # The files' tags.
@@ -742,7 +743,7 @@ album = ["Nevermind (Super Deluxe Edition)"]
 albumartist = ["Nirvana"]
 date = ["2011-09-27"]
 
-# What each store sent, trimmed to what salmon's parser reads.
+# What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
 {
@@ -2361,8 +2362,17 @@ qobuz = '''
  "artist": {
   "name": "Nirvana"
  },
+ "artists": [
+  {
+   "name": "Nirvana",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
  "genres_list": [
-  "Rock"
+  "Pop/Rock",
+  "Pop/Rock→Rock"
  ],
  "image": {
   "large": "https://example.invalid/cover.jpg"
@@ -2372,67 +2382,119 @@ qobuz = '''
    {
     "title": "Smells Like Teen Spirit",
     "version": "Album Version",
-    "track_number": 1
+    "track_number": 1,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    },
    {
     "title": "In Bloom",
     "version": "Nevermind Version",
-    "track_number": 2
+    "track_number": 2,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Come As You Are",
     "version": "Album Version",
-    "track_number": 3
+    "track_number": 3,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Breed",
     "version": "Album Version",
-    "track_number": 4
+    "track_number": 4,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Lithium",
     "version": "Album Version",
-    "track_number": 5
+    "track_number": 5,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist - Butch Vig, Producer, RecordingEngineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Polly",
     "version": "Album Version",
-    "track_number": 6
+    "track_number": 6,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Territorial Pissings",
     "version": "Album Version",
-    "track_number": 7
+    "track_number": 7,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Chet Powers, ComposerLyricist"
    },
    {
     "title": "Drain You",
     "version": "Album Version",
-    "track_number": 8
+    "track_number": 8,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Lounge Act",
     "version": "Album Version",
-    "track_number": 9
+    "track_number": 9,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    },
    {
     "title": "Stay Away",
     "version": "Album Version",
-    "track_number": 10
+    "track_number": 10,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    },
    {
     "title": "On A Plain",
     "version": "Album Version",
-    "track_number": 11
+    "track_number": 11,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, Vocalist, ComposerLyricist"
    },
    {
     "title": "Something In The Way",
     "version": "Album Version",
-    "track_number": 12
+    "track_number": 12,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, ComposerLyricist - Dave Grohl, ComposerLyricist - Krist Novoselic, ComposerLyricist"
    },
    {
     "title": "Endless, Nameless",
     "version": "Album Version",
-    "track_number": 13
+    "track_number": 13,
+    "performer": {
+     "name": "Nirvana"
+    },
+    "performers": "Nirvana, MainArtist, Producer, Engineer - Butch Vig, Producer, Engineer - ANDY WALLACE, MixingEngineer - Craig Doubet, MixingSecondEngineer - Kurt Cobain, ComposerLyricist - Krist Novoselic, ComposerLyricist - Dave Grohl, ComposerLyricist"
    }
   ]
  }

@@ -12,16 +12,8 @@ from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError, PickOtherResults
 from salmon.tagger.metadata import _print_metadata
 from salmon.tagger.sources.base import generate_artists, standardize_genres
+from salmon.tagger.tags import is_classical_genre
 
-_CLASSICAL_GENRES = {
-    "classical",
-    "baroque",
-    "chambermusic",
-    "choral",
-    "modernclassical",
-    "orchestral",
-    "opera",
-}
 _DEFERRED_PRE_AI_METADATA_ERRORS = {
     "Invalid release type.",
     "You must specify at least one genre.",
@@ -161,7 +153,7 @@ def _warn_classical_genre(metadata: dict) -> None:
     Args:
         metadata: The release metadata dictionary.
     """
-    detected = {g for g in metadata["genres"] if g.lower() in _CLASSICAL_GENRES}
+    detected = {g for g in metadata["genres"] if is_classical_genre(g)}
     if not detected:
         return
 
@@ -381,7 +373,7 @@ def _track_list(on: list[tuple[str, str]]) -> str:
 
 
 def _artist_key(name: str) -> str:
-    """An artist's name as generate_artists matches it (_generate_artist_pool_lower_case), in any case and with any
+    """An artist's name as generate_artists matches it (artist_spellings), in any case and with any
     accents: trac[k]s respells a name by this key, so a match by any other key would miss or merge names."""
     return cast("str", normalize_accents(name.lower()))  # One string in, one out.
 
