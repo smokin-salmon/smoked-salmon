@@ -21,7 +21,7 @@ from salmon.constants import (
 from salmon.errors import InvalidMetadataError, ScrapeError
 from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import gather_audio_info
-from salmon.tagger.cover import download_cover_if_nonexistent
+from salmon.tagger.cover import download_cover_if_nonexistent, offer_cover_rename
 from salmon.tagger.foldername import remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
@@ -196,6 +196,7 @@ async def run_tag(options: TagOptions) -> str:
         )
         tracks_by_file = await tag_files(path, tags, metadata, options.auto_rename)
 
+        await offer_cover_rename(path)
         await download_cover_if_nonexistent(path, metadata["cover"])
         tags = await check_tags(path)
         path = await rename_folder(

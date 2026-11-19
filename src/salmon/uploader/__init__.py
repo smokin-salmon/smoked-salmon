@@ -41,6 +41,7 @@ from salmon.tagger.cover import (
     embed_missing_cover,
     get_cover_from_path,
     has_flac_without_picture,
+    offer_cover_rename,
 )
 from salmon.tagger.foldername import files_only_in, remove_source_folder
 from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
@@ -1290,6 +1291,7 @@ async def _review_until_confirmed(
 async def _prepare_pictures(path: str, metadata: dict[str, Any], remove_downloaded_cover_image: bool) -> None:
     """Check the files' embedded pictures, and embed a missing cover when configured to."""
     # Before any torrent or transcode is made from the folder, so they all get the same files.
+    await offer_cover_rename(path)
     check_embedded_pictures(path)
     if cfg.image.embed_missing_cover:
         # A missing cover is downloaded from the metadata first, as the per-tracker step used to.

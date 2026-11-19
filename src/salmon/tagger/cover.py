@@ -4,7 +4,8 @@ import os
 import re
 import uuid
 from collections.abc import Iterable
-from typing import IO, cast
+from os.path import join
+from typing import IO, NamedTuple, cast
 
 import aiohttp
 import asyncclick as click
@@ -14,8 +15,10 @@ from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
 from PIL import Image
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import get_audio_files
+from salmon.common.strings import substitute_forbidden_characters
+from salmon.constants import BLACKLISTED_CHARS, BLACKLISTED_FULLWIDTH_REPLACEMENTS
 from salmon.images.files import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
 from salmon.proxy import session_kwargs
 from salmon.ssrf import NonPublicAddressError
@@ -24,22 +27,162 @@ from salmon.ssrf import NonPublicAddressError
 MAX_PICTURES_AND_PADDING = humanfriendly.parse_size("1MiB")
 
 
-def get_cover_from_path(path):
+def get_cover_from_path(path, *, lone_image: bool = True):
     """
     Search a folder for a cover image, return its path.
+
+    The lookup is `find_cover`'s; `lone_image` is its parameter of that name.
     """
-    cover = _existing_cover(path)
+    cover = _existing_cover(path, lone_image=lone_image)
     if cover is None:
         click.secho(f"Did not find a cover in path {path}", fg="red")
     return cover
 
 
-def _existing_cover(path: str) -> str | None:
-    """The folder's cover image file, as get_cover_from_path finds it, without saying when there is none."""
-    for filename in os.listdir(path):
-        if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE):
-            return os.path.join(path, filename)
+# The words that mark an image as something other than the front cover.
+_NOT_A_FRONT_COVER = frozenset({"back", "disc", "cd", "inlay", "tray", "booklet", "inside", "spine", "matrix"})
+_IMAGE_NAME = re.compile(r"\.(jpe?g|png)$", flags=re.IGNORECASE)
+_NAMED_COVER = re.compile(r"^(cover|folder)\.(jpe?g|png)$", flags=re.IGNORECASE)
+_STAND_IN = "_"
+
+
+class CoverMatch(NamedTuple):
+    """The folder's cover file, and how it was recognised: "named" (cover.* or folder.*), "title" (named after the
+    album) or "lone" (the only image in the folder)."""
+
+    path: str
+    kind: str
+
+
+def _root_images(path: str) -> list[str]:
+    """The names of the jpg, jpeg and png entries in the folder's root, sorted; a hidden file is not one."""
+    try:
+        names = sorted(os.listdir(path))
+    except OSError:
+        return []
+    return [n for n in names if not n.startswith(".") and _IMAGE_NAME.search(n)]
+
+
+def _comparable(name: str) -> str:
+    """A name as compared with a file's stem: case-folded, with a forbidden character, its full-width form, the
+    configured substitution and `_` all one character."""
+    substitution = cfg.upload.formatting.blacklisted_substitution
+    if substitution:
+        name = name.replace(substitution, _STAND_IN)
+    for sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.values():
+        name = name.replace(sub, _STAND_IN)
+    return " ".join(re.sub(BLACKLISTED_CHARS, _STAND_IN, name).casefold().split())
+
+
+def _tagged_album(path: str) -> tuple[str, list[str]] | None:
+    """The album title, and the artist names that go with it, from the first audio file that has an album tag.
+
+    An audio file mutagen cannot read is skipped.
+    """
+    # Imported here: the tagger package imports this module.
+    from salmon.tagger.tagfile import TagFile
+
+    try:
+        filenames = get_audio_files(path, skip_unreadable=True)
+    except OSError:
+        return None
+    for filename in filenames:
+        try:
+            tags = TagFile(join(path, filename))
+            title = tags.album
+            artist = tags.albumartist or tags.artist
+        except Exception:
+            continue
+        if not title or not isinstance(title, str):
+            continue
+        values = [artist] if isinstance(artist, str) else list(artist or [])
+        names = [name for value in values for name in value.split("; ") if name.strip()]
+        return title, names
     return None
+
+
+def _album_names(path: str) -> set[str]:
+    """The comparable names a file named after the album can carry: the title, and "artist - title" for each artist
+    name and for all of them joined; each as it is and as `substitute_forbidden_characters` writes it."""
+    album = _tagged_album(path)
+    if album is None:
+        return set()
+    title, artists = album
+    names = [title]
+    for artist in [*artists, *(sep.join(artists) for sep in (" & ", ", ") if len(artists) > 1)]:
+        names.append(f"{artist} - {title}")
+    return {_comparable(form) for name in names for form in (name, substitute_forbidden_characters(name))}
+
+
+def _is_front_cover_candidate(filename: str) -> bool:
+    """Whether no word of the file's stem marks it as a back, disc or booklet image."""
+    words = re.findall(r"[^\W_]+", os.path.splitext(filename)[0].casefold())
+    return not _NOT_A_FRONT_COVER.intersection(words)
+
+
+def find_cover(path: str, *, lone_image: bool = True) -> CoverMatch | None:
+    """The image in the folder's root that is its cover; the first of these that matches wins.
+
+    1. A named cover: cover.* or folder.* (jpg, jpeg, png, in any case).
+    2. A title match: a file whose stem is the album's title, or "artist - title", as its audio files' tags give it
+       (case does not matter; a forbidden character, its full-width form, `_` and the configured substitution are
+       one; so is the name `substitute_forbidden_characters` writes).
+    3. The lone image: the folder's only image, unless a word of its name says it is a back, disc or booklet image.
+
+    Args:
+        path: The album folder.
+        lone_image: Whether rule 3 applies. It is a guess: a caller that discards the artwork embedded in the
+            files because the folder holds a copy turns it off.
+    """
+    images = _root_images(path)
+    for name in images:
+        if _NAMED_COVER.match(name):
+            return CoverMatch(join(path, name), "named")
+    # A folder is no image of the album, whatever its name.
+    images = [name for name in images if os.path.isfile(join(path, name))]
+    if not images:
+        return None
+    if names := _album_names(path):
+        for name in images:
+            if _comparable(os.path.splitext(name)[0]) in names:
+                return CoverMatch(join(path, name), "title")
+    if lone_image and len(images) == 1 and _is_front_cover_candidate(images[0]):
+        return CoverMatch(join(path, images[0]), "lone")
+    return None
+
+
+def _existing_cover(path: str, *, lone_image: bool = True) -> str | None:
+    """The folder's cover image file, as get_cover_from_path finds it, without saying when there is none."""
+    match = find_cover(path, lone_image=lone_image)
+    return match.path if match else None
+
+
+async def offer_cover_rename(path: str) -> None:
+    """Offer to rename the image that is the folder's cover, but not named for it, to cover.<extension>.
+
+    Does nothing when the folder's cover is a named one, or it has none. A folder that may hold a library album is
+    left as it is, without asking. A no leaves the file under its own name, and it is used as it is; an error from
+    the rename is said, and the file is left too.
+
+    Only a step that runs before any torrent is made from the folder may call this: a rename later would change a
+    folder a torrent was made from.
+    """
+    match = find_cover(path)
+    if match is None or match.kind == "named" or cfg.directory.protects(path):
+        return
+    filename = os.path.basename(match.path)
+    new_name = ("c" if cfg.upload.formatting.lowercase_cover else "C") + "over" + os.path.splitext(filename)[1]
+    if not (
+        await interaction.assume_defaults()
+        or await interaction.confirm(f"Rename {filename} to {new_name}, so it is the cover?", default=True)
+    ):
+        return
+    try:
+        os.rename(match.path, join(path, new_name))
+    except OSError as e:
+        click.secho(f"Could not rename {filename} to {new_name} ({e}); using it under its own name.", fg="red")
+        return
+    click.secho(f"Renamed {filename} to {new_name}", fg="green")
 
 
 def extract_embedded_cover(path: str, only: str | None = None) -> str | None:
@@ -47,7 +190,9 @@ def extract_embedded_cover(path: str, only: str | None = None) -> str | None:
 
     With `only`, a file name in the folder, that file alone is looked at for an embedded cover.
     """
-    if existing := _existing_cover(path):
+    # No lone image: an embedded cover is saved so that stripping or re-encoding the files does not lose the artwork,
+    # and a lone image is a guess that may not be the front cover.
+    if existing := _existing_cover(path, lone_image=False):
         return existing
     embedded = _find_embedded_front_cover(path, only)
     if not embedded:
@@ -391,7 +536,9 @@ def check_embedded_pictures(path: str) -> None:
         click.secho("Leaving them as they are: strip_oversized_pictures is off.", fg="yellow")
         return
 
-    cover_file = get_cover_from_path(path)
+    # No lone image: the artwork is discarded because the folder holds a copy, and a lone image is a guess that may
+    # not be the front cover.
+    cover_file = get_cover_from_path(path, lone_image=False)
     if cover_file and not _is_valid_cover(cover_file):
         # Not a copy of the artwork: the embedded pictures may be the only one.
         click.secho(f"Leaving them as they are: {cover_file} could not be read as a JPEG or PNG image.", fg="red")
