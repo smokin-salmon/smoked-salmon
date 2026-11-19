@@ -140,7 +140,11 @@ class Scraper(AppleMusicBase, MetadataMixin):
 
         Each entry in ``soup["tracks"]`` is a catalog song object with an
         ``attributes`` dict containing name, artistName, trackNumber,
-        discNumber, isrc, etc.
+        discNumber, isrc, etc. When the response includes the songs' artists,
+        ``relationships.artists.data`` holds them one by one, in Apple's order,
+        each with its own ``attributes.name``. The ``artistName`` display string
+        is only a fallback: splitting it would break names like "Simon &
+        Garfunkel" that hold a separator.
         """
         tracks: dict[str, dict] = defaultdict(dict)
 
@@ -165,9 +169,17 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 title = RE_FEAT.sub("", raw_title)
 
                 artists: list[tuple[str, str]] = []
-                artist_name = attrs.get("artistName", "")
-                if artist_name:
-                    artists.append((artist_name, "main"))
+                artist_rels = (item.get("relationships") or {}).get("artists") or {}
+                for rel in artist_rels.get("data") or []:
+                    name = (rel.get("attributes") or {}).get("name", "")
+                    if rel.get("type") == "artists" and name and (name, "main") not in artists:
+                        artists.append((name, "main"))
+
+                if not artists:
+                    # Older/cached responses without the included artists: keep the display string whole.
+                    artist_name = (attrs.get("artistName") or "").strip()
+                    if artist_name:
+                        artists.append((artist_name, "main"))
 
                 # Extract featured artists embedded in track title
                 feat_match = RE_FEAT.search(raw_title)
