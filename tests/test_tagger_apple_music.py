@@ -77,7 +77,22 @@ def test_a_whole_name_on_another_track_does_not_join_two_explicit_artists() -> N
 
     assert artists == [("A", "main"), ("B", "main"), ("AB", "main")]
     assert tracks["1"][1]["artists"] == [("A", "main"), ("B", "main")]
-    assert "explicit_main_artists" not in tracks["1"][1]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
+def test_exemption_survives_repeated_generate_artists_passes() -> None:
+    # combine.py, metadata.py and review.py run generate_artists again on the same tracks.
+    first = soup(["A", "B"], title="First")
+    second = soup(["AB"], title="Second")
+    second["tracks"][0]["attributes"]["trackNumber"] = 2
+    tracks = asyncio.run(Scraper().parse_tracks({"tracks": first["tracks"] + second["tracks"]}))
+
+    artists, tracks = generate_artists(tracks)
+    for _ in range(2):
+        artists, tracks = generate_artists(tracks)
+
+    assert artists == [("A", "main"), ("B", "main"), ("AB", "main")]
+    assert tracks["1"][1]["artists"] == [("A", "main"), ("B", "main")]
 
 
 def test_title_guests_are_repaired_even_when_mains_are_explicit() -> None:

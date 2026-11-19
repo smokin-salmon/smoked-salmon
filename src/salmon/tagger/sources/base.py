@@ -468,7 +468,7 @@ def filter_artists(artists, tracks=None):
                 credits = list(
                     dict.fromkeys((artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"])
                 )
-                if track.pop("explicit_main_artists", False):
+                if track.get("explicit_main_artists", False):
                     # The store states these main credits artist by artist, so joined-name matching must not
                     # merge them. Guests read from a title are still one string that may be badly split.
                     mains = [credit for credit in credits if credit[1] == "main"]
