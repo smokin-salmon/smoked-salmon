@@ -1,7 +1,7 @@
 album = "Fritz Reiner, Chicago Symphony Orchestra, Vienna (Strauss, Weber)"
 why = "One conductor and orchestra, four composers on one album (COMPOSER per track). Qobuz lists only Reiner, as main-artist and conductor, and no orchestra."
 edition = "RCA Living Stereo hybrid SACD (Deezer 8298628, MusicBrainz 4d9f6650 with its three layers, Discogs 5831655); Qobuz w6xss4wpaqt9a, UPC 0886445157598, a later issue"
-known_wrong = ["MusicBrainz parse: 30 tracks, the hybrid SACD's three layers counted as three discs", "Qobuz parse: the album lists only Reiner (main-artist, conductor); the orchestra, a main-artist on some tracks only, becomes a guest; Reiner main, not conductor"]
+known_wrong = ["MusicBrainz parse: 30 tracks, the hybrid SACD's three layers counted as three discs", "Qobuz parse: the album lists only Reiner (main-artist, conductor); the orchestra, a main-artist on some tracks only, becomes a guest; Reiner main beside conductor", "merge: Johann Strauss composer twice on his tracks, Qobuz's 'Johann Strauss II' beside Discogs' 'Johann Strauss Jr.'"]
 files_from = "deezer"
 
 [sources]
@@ -28,13 +28,13 @@ release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (main)", "Johann S
 tracks = 10
 
 [today.qobuz]
-release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (guest)"]
+release = ["Fritz Reiner (main)", "Fritz Reiner (conductor)", "Johann Strauss II (composer)", "Chicago Symphony Orchestra (guest)", "Carl Maria von Weber (composer)", "Josef Strauss (composer)", "Richard Strauss (composer)"]
 tracks = 10
 
 [today.merge]
-release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (main)", "Johann Strauss Jr. (composer)", "Carl Maria von Weber (composer)", "Josef Strauß (composer)", "Fritz Reiner (arranger)", "Richard Strauss (composer)"]
+release = ["Fritz Reiner (main)", "Fritz Reiner (conductor)", "Johann Strauss II (composer)", "Chicago Symphony Orchestra (main)", "Johann Strauss Jr. (composer)", "Carl Maria von Weber (composer)", "Josef Strauss (composer)", "Richard Strauss (composer)", "Fritz Reiner (arranger)"]
 tracks = 10
-credits = ["1.1: Fritz Reiner (main), Chicago Symphony Orchestra (main), Johann Strauss Jr. (composer)", "1.2: Fritz Reiner (main), Chicago Symphony Orchestra (main), Johann Strauss Jr. (composer)", "1.3: Fritz Reiner (main), Chicago Symphony Orchestra (main), Johann Strauss Jr. (composer)", "1.4: Fritz Reiner (main), Chicago Symphony Orchestra (main), Carl Maria von Weber (composer)", "1.5: Fritz Reiner (main), Chicago Symphony Orchestra (main), Josef Strauß (composer)", "1.6: Fritz Reiner (main), Chicago Symphony Orchestra (main), Fritz Reiner (arranger), Richard Strauss (composer)", "1.7: Fritz Reiner (main), Chicago Symphony Orchestra (main)", "1.8: Fritz Reiner (main), Chicago Symphony Orchestra (main)", "1.9: Fritz Reiner (main), Chicago Symphony Orchestra (main)", "1.10: Fritz Reiner (main), Chicago Symphony Orchestra (main)"]
+credits = ["1.1: Fritz Reiner (main), Fritz Reiner (conductor), Johann Strauss II (composer), Chicago Symphony Orchestra (main), Johann Strauss Jr. (composer)", "1.2: Fritz Reiner (main), Chicago Symphony Orchestra (main), Fritz Reiner (conductor), Johann Strauss II (composer), Johann Strauss Jr. (composer)", "1.3: Fritz Reiner (main), Fritz Reiner (conductor), Johann Strauss II (composer), Chicago Symphony Orchestra (main), Johann Strauss Jr. (composer)", "1.4: Fritz Reiner (main), Fritz Reiner (conductor), Carl Maria von Weber (composer), Chicago Symphony Orchestra (main)", "1.5: Fritz Reiner (main), Fritz Reiner (conductor), Josef Strauss (composer), Chicago Symphony Orchestra (main)", "1.6: Fritz Reiner (main), Fritz Reiner (conductor), Richard Strauss (composer), Chicago Symphony Orchestra (main), Fritz Reiner (arranger)", "1.7: Fritz Reiner (main), Chicago Symphony Orchestra (main), Fritz Reiner (conductor), Johann Strauss II (composer)", "1.8: Fritz Reiner (main), Chicago Symphony Orchestra (main), Fritz Reiner (conductor), Johann Strauss II (composer)", "1.9: Fritz Reiner (main), Chicago Symphony Orchestra (main), Fritz Reiner (conductor), Johann Strauss II (composer)", "1.10: Fritz Reiner (main), Chicago Symphony Orchestra (main), Fritz Reiner (conductor), Johann Strauss II (composer)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

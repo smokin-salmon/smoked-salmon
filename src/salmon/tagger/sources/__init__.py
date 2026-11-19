@@ -52,27 +52,33 @@ def without_tracking(url: str) -> str:
     return bare if matching_source(bare) == source else url
 
 
-def _without_artist_variations(metadata: dict[str, Any]) -> dict[str, Any]:
-    """Drop what a scraper keeps beside each track for the merge with file tags (Discogs ANVs).
+# What a scraper keeps beside each track for the merge alone: Discogs' credited names (ANVs), and a stating store's
+# guesses. The merge drops them once it has decided, and a scrape shown on its own never holds them.
+MERGE_ONLY_KEYS = ("artist_variations", "assumed_artists")
 
-    Whoever shows or uses a scrape on its own has no tags to match, so it should not see it either."""
+
+def without_merge_only_keys(metadata: dict[str, Any]) -> None:
+    """Drop MERGE_ONLY_KEYS from each track."""
     for disc in metadata["tracks"].values():
         for track in disc.values():
-            track.pop("artist_variations", None)
-    return metadata
+            for key in MERGE_ONLY_KEYS:
+                track.pop(key, None)
 
 
 async def run_metadata(
     url: str,
     sources: dict[str, Any] | None = None,
     return_source_name: bool = False,
+    for_merge: bool = False,
 ) -> dict[str, Any] | tuple[dict[str, Any], str]:
-    """Run a scrape for the metadata of a URL.
+    """Run a scrape for the metadata of a URL: used on its own, its credits decided as a merge of one source decides
+    them and MERGE_ONLY_KEYS dropped.
 
     Args:
         url: The URL to scrape metadata from.
         sources: Optional dict of sources to use, defaults to all.
         return_source_name: If True, return tuple of (metadata, source_name).
+        for_merge: If True, the scrape is left undecided and keeps MERGE_ONLY_KEYS, for combine_metadatas.
 
     Returns:
         Metadata dict, or tuple of (metadata, source_name) if return_source_name is True.
@@ -84,6 +90,11 @@ async def run_metadata(
     for name, source in sources.items():
         if source.Scraper.regex.match(url):
             click.secho(f"Getting metadata from {name}.", fg="cyan")
-            metadata = _without_artist_variations(await source.Scraper().scrape_release(url))
+            metadata = await source.Scraper().scrape_release(url)
+            if not for_merge:
+                from salmon.tagger.combine import decide_alone  # combine imports this module
+
+                decide_alone(metadata, name)
+                without_merge_only_keys(metadata)
             return (metadata, name) if return_source_name else metadata
     raise ScrapeError("URL did not match a scraper.")

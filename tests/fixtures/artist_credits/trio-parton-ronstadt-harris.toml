@@ -1,7 +1,7 @@
 album = "Dolly Parton, Linda Ronstadt, Emmylou Harris, Trio"
 why = "Three co-leaders, all main on every track (the shape of #869's Gladiator)."
 edition = "Qobuz 0603497870400 is the 2016 Remaster under another UPC, another edition with the same 11 tracks. Discogs 1832388 is master 14721's main release (1987 LP)."
-known_wrong = ["Qobuz parse: Linda Ronstadt and Emmylou Harris made guests. Qobuz names all three main-artist on the album and MainArtist on every track; the parser takes the album's one `artist` as main and reads every other MainArtist as a guest (the Gladiator shape, #869)"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]
@@ -28,7 +28,7 @@ release = ["Dolly Parton (main)", "Linda Ronstadt (main)", "Emmylou Harris (main
 tracks = 11
 
 [today.qobuz]
-release = ["Dolly Parton (main)", "Linda Ronstadt (guest)", "Emmylou Harris (guest)"]
+release = ["Dolly Parton (main)", "Linda Ronstadt (main)", "Emmylou Harris (main)"]
 tracks = 11
 
 [today.merge]

@@ -5,10 +5,12 @@ No source is contacted.
 """
 
 import re
+from copy import deepcopy
 
 import anyio
 import pytest
 from asyncclick.testing import CliRunner
+from helpers.tagger_combine import stating, stores_stating
 from helpers.tagger_metadata_corrections import _scraped
 
 import salmon.commands
@@ -33,7 +35,7 @@ METADATA = {
 
 
 def test_descgen_closes_the_tracklist_heading_size(monkeypatch, capsys) -> None:
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return METADATA, "Qobuz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
@@ -50,7 +52,7 @@ def test_descgen_closes_the_tracklist_heading_size(monkeypatch, capsys) -> None:
 
 
 def _run_descgen(monkeypatch, *args: str):
-    async def no_scrape(url, return_source_name=False):
+    async def no_scrape(url, return_source_name=False, for_merge=False):
         raise AssertionError(f"descgen scraped {url}")
 
     monkeypatch.setattr(salmon.commands, "run_metadata", no_scrape)
@@ -130,7 +132,7 @@ def _release(*discs: list[tuple[list[tuple[str, str]], str]], rls_type: str = "A
 
 
 def _description(monkeypatch, metadata: dict, guests_in_track_title: bool) -> str:
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return metadata, "Qobuz"
 
     monkeypatch.setattr(cfg.upload.formatting, "guests_in_track_title", guests_in_track_title)
@@ -337,7 +339,7 @@ def _through_descgen(monkeypatch, tracks: dict, source: str) -> str:
     """The description of a store's parsed tracks, through the real merge and clean."""
     release = {**_scraped([("Sullivan Murphy", "main")]), "tracks": tracks}
 
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return release, source
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
@@ -427,3 +429,46 @@ def test_as_before_the_comment_and_links_close_the_description(monkeypatch) -> N
     description = _description(monkeypatch, release, guests_in_track_title=False)
 
     assert description.endswith(f"[b]01.[/b] Song 1\n\nA note\n\n[b]More info:[/b] {generate_source_links([url])}")
+
+
+DEEZER_URL = "https://www.deezer.com/album/123"
+QOBUZ_URL = "https://www.qobuz.com/us-en/album/album/abc123"
+
+
+def _from_stores(monkeypatch, deezer: list[tuple[str, str]], qobuz: list[tuple[str, str]], guessed=()) -> list[str]:
+    """Deezer and Qobuz answering with one track each (and a second, by Alice alone), Qobuz stating its credits and
+    Deezer assuming its: run_metadata, the merge and the clean are the real ones."""
+    scraped = {
+        "Deezer": {**_scraped(deezer, [("Alice", "main")]), "url": DEEZER_URL, "urls": [DEEZER_URL]},
+        "Qobuz": stating(_scraped(qobuz, [("Alice", "main")]), *guessed),
+    }
+    for name, release in scraped.items():
+
+        async def scrape_release(self, url, rls_id=None, release=release):
+            return deepcopy(release)
+
+        monkeypatch.setattr(METASOURCES[name].Scraper, "scrape_release", scrape_release)
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Deezer",))
+    return [DEEZER_URL, QOBUZ_URL]
+
+
+def test_descgen_weighs_a_store_s_stated_credit_as_salmon_up_does(monkeypatch) -> None:
+    urls = _from_stores(monkeypatch, [("Alice", "main"), ("Bob", "guest")], [("Alice", "main"), ("Bob", "main")])
+
+    description = anyio.run(build_description, urls)
+
+    # Bob is a main artist of the album, and the first track, by its main artists alone, is listed without them.
+    assert "[b]01.[/b] Song 1\n[b]02.[/b] Alice - Song 2\n" in description
+
+
+def test_as_before_descgen_weighs_a_stating_store_s_guess_as_a_guess(monkeypatch) -> None:
+    urls = _from_stores(
+        monkeypatch, [("Alice", "main"), ("Bob", "guest")], [("Alice", "main"), ("Bob", "main")], [("Bob", "main")]
+    )
+
+    description = anyio.run(build_description, urls)
+
+    # Bob stays a guest, however the line is laid out.
+    first = description.splitlines()[1]
+    assert "Song 1" in first
+    assert "(feat. Bob)" in first

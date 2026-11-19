@@ -1,7 +1,7 @@
 album = "Simon & Garfunkel and Dave Grusin, The Graduate (soundtrack)"
 why = "A soundtrack shared by a duo with '&' in its name and the film's composer: every store credits 'Simon & Garfunkel' as one artist on its own tracks, and Dave Grusin on his. A name with '&' that must not be split, beside another act's tracks."
 edition = "Columbia/Legacy 2019 digital, 14 tracks (Deezer 96900992 = MusicBrainz a0f4c5d7 by barcode 886447698648; Deezer's upc lookup also resolves the CD's 074640318023); Discogs 449586 is the 1990 CD (barcodes 886977066429 and 07464031802), the same 14 tracks in the same order."
-known_wrong = ["qobuz: the album's first main-artist, Simon & Garfunkel, is main on every track and each track's own MainArtist is a guest, so Dave Grusin is a guest on his own six tracks", "merge: Simon & Garfunkel main on Dave Grusin's six tracks too, beside him (from Qobuz's parse)"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]
@@ -32,13 +32,13 @@ release = ["Simon & Garfunkel (main)", "Dave Grusin (main)"]
 tracks = 14
 
 [today.qobuz]
-release = ["Simon & Garfunkel (main)", "Dave Grusin (guest)"]
+release = ["Simon & Garfunkel (main)", "Dave Grusin (main)"]
 tracks = 14
 
 [today.merge]
 release = ["Simon & Garfunkel (main)", "Dave Grusin (main)"]
 tracks = 14
-credits = ["1.1: Simon & Garfunkel (main)", "1.2: Dave Grusin (main), Simon & Garfunkel (main)", "1.3: Simon & Garfunkel (main)", "1.4: Dave Grusin (main), Simon & Garfunkel (main)", "1.5: Simon & Garfunkel (main)", "1.6: Dave Grusin (main), Simon & Garfunkel (main)", "1.7: Simon & Garfunkel (main)", "1.8: Dave Grusin (main), Simon & Garfunkel (main)", "1.9: Simon & Garfunkel (main)", "1.10: Dave Grusin (main), Simon & Garfunkel (main)", "1.11: Simon & Garfunkel (main)", "1.12: Dave Grusin (main), Simon & Garfunkel (main)", "1.13: Simon & Garfunkel (main)", "1.14: Simon & Garfunkel (main)"]
+credits = ["1.1: Simon & Garfunkel (main)", "1.2: Dave Grusin (main)", "1.3: Simon & Garfunkel (main)", "1.4: Dave Grusin (main)", "1.5: Simon & Garfunkel (main)", "1.6: Dave Grusin (main)", "1.7: Simon & Garfunkel (main)", "1.8: Dave Grusin (main)", "1.9: Simon & Garfunkel (main)", "1.10: Dave Grusin (main)", "1.11: Simon & Garfunkel (main)", "1.12: Dave Grusin (main)", "1.13: Simon & Garfunkel (main)", "1.14: Simon & Garfunkel (main)"]
 
 # The files' tags.
 # Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied

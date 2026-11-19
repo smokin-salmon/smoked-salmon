@@ -29,7 +29,7 @@ release = ["Stan Getz (main)", "João Gilberto (main)", "Astrud Gilberto (guest)
 tracks = 8
 
 [today.qobuz]
-release = ["Stan Getz (main)", "Joao Gilberto (guest)", "António Carlos Jobim (guest)", "Astrud Gilberto (guest)", "João Gilberto Quintet (guest)"]
+release = ["Stan Getz (main)", "João Gilberto (main)", "António Carlos Jobim (guest)", "Astrud Gilberto (guest)", "João Gilberto Quintet (guest)"]
 tracks = 18
 
 [today.merge]

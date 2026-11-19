@@ -57,7 +57,7 @@ def test_descgen_leaves_a_various_credit_out(monkeypatch) -> None:
     # artists is listed without them (#895).
     scraped = _scraped([("Dree Low", "main"), ("Various", "guest")], [("Einár", "main")])
 
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return scraped, "Qobuz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)

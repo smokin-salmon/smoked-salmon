@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -7,7 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from helpers.tagger_combine import make_tracks, one_track
+from helpers.tagger_combine import make_tracks, one_track, stating
 
 from salmon.common.numbers import natural_key
 from salmon.errors import TrackCombineError
@@ -391,6 +392,22 @@ def test_combine_metadatas_from_discogs_alone_leaves_the_anv_out_too():
     combined = combine_metadatas(("Discogs", discogs))
 
     assert "artist_variations" not in combined["tracks"]["1"]["1"]
+
+
+def guessing_bob() -> dict:
+    meta = make_metadata("Album")
+    meta["tracks"]["1"]["1"]["artists"] = [("Marius Acke", "main"), ("Bob", "guest")]
+    return stating(meta, ("Bob", "guest"))
+
+
+def test_as_before_combine_metadatas_leaves_a_store_s_guesses_out_of_the_final_metadata():
+    base = make_metadata("Album")
+    qobuz = guessing_bob()
+
+    combined = combine_metadatas(("Qobuz", qobuz), base=deepcopy(base))
+
+    assert "assumed_artists" not in combined["tracks"]["1"]["1"]
+    json.dumps(combined)
 
 
 def remix_title(title: str, remixers: tuple[str, ...] = ("X",)) -> str:

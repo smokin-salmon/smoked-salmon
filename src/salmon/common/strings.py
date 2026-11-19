@@ -3,6 +3,7 @@ import re
 import unicodedata
 
 from salmon import cfg
+from salmon.common.constants import RE_FEAT
 from salmon.common.regexes import re_split, re_strip
 from salmon.constants import BLACKLISTED_CHARS, BLACKLISTED_FULLWIDTH_REPLACEMENTS, GENRE_LIST
 from salmon.errors import GenreNotInWhitelist
@@ -143,6 +144,15 @@ def reaches_various_threshold(names) -> bool:
 def names_no_artist(name: str) -> bool:
     """Whether a credit is "Various Artists" or "Various", by its whole name in any case: it names no artist."""
     return name.strip().casefold() in {"various artists", "various"}
+
+
+def guests_from_title(title: str) -> list[str]:
+    """The guests a title's featured credit names, unescaped ("Song (feat. A & B)": A and B).
+
+    Salmon's reading of the title, not a store's credit: a guess.
+    """
+    feat = RE_FEAT.search(title)
+    return [html.unescape(name) for name in re_split(feat[1])] if feat else []
 
 
 def credit_in_title(title: str, guests=()) -> bool:

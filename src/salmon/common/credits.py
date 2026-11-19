@@ -18,6 +18,10 @@ Role = Literal["main", "guest", "remixer", "composer", "conductor", "djcompiler"
 # A credit as the metadata holds it: a name and a role.
 Credit = tuple[str, Role]
 
+# The roles a store's parser reads only on a release of the genre, beside its main, guest and remixer credits: RED's
+# convention today.
+EXTRA_ROLES: dict[str, frozenset[Role]] = {"classical": frozenset({"composer", "conductor"})}
+
 # Who said it: a METASOURCES name, or the files' own tags.
 Source = Literal["files", "MusicBrainz", "Apple Music", "Deezer", "Discogs", "Beatport", "Qobuz", "Tidal", "Bandcamp"]
 
@@ -51,6 +55,7 @@ TrackMetadata = TypedDict(
         "mp3_320": NotRequired[bool | None],
         "credited_remixers": NotRequired[list[str]],
         "artist_variations": NotRequired[list[dict[str, str]]],
+        "assumed_artists": NotRequired[list[Credit]],  # a stating store's guesses, among its artists
         # The files' only.
         "numbered": NotRequired[bool],
     },

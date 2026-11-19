@@ -8,13 +8,31 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 
 from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
+from salmon.common.credits import EXTRA_ROLES, Credit, Role
+from salmon.common.strings import comparable, guests_from_title
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, strip_ep_suffix
+from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, standardize_genres, strip_ep_suffix
+from salmon.tagger.tags import is_classical_genre
 
 # ------------------------------------------------------------------------------
 # Constants and Regular Expressions
 # ------------------------------------------------------------------------------
+
+# Qobuz's words for the roles salmon maps, in a track's performers line ("Name, Role, Role - Name, Role"), by
+# comparable: "Main Artist" is "MainArtist". Any other word is a role salmon doesn't map.
+ROLE_WORDS: dict[str, Role] = {
+    "mainartist": "main",
+    "featuredartist": "guest",
+    "remixer": "remixer",
+    "conductor": "conductor",
+    "composer": "composer",
+    "composerlyricist": "composer",
+}
+# The roles salmon reads from Qobuz on any release, and a genre's EXTRA_ROLES on a release of it (#869).
+READ_ROLES: frozenset[Role] = frozenset({"main", "guest", "remixer"})
+# The parts after a comma that are still a name's, by comparable: "Sammy Davis, Jr.", "Johann Strauss, II".
+NAME_SUFFIXES = frozenset({"jr", "sr", "ii", "iii", "iv"})
 
 # Pre-compiled regular expressions for better performance
 RE_YEAR = re.compile(r"(\d{4})")
@@ -218,6 +236,8 @@ class Scraper(QobuzBase, MetadataMixin):
     and uses QobuzBase for authentication and API access.
     """
 
+    states_credits = True
+
     # --------------------------------------------------------------------------
     # Core API and Connection Methods
     # --------------------------------------------------------------------------
@@ -354,20 +374,10 @@ class Scraper(QobuzBase, MetadataMixin):
     async def parse_tracks(self, soup):
         """Parse track information from the API response."""
         tracks = defaultdict(dict)
-
-        # Get main artist from release
-        main_artist = safe_get(soup, ["artist", "name"])
-
-        # Get any featured artists at the release level
-        featured_artists = []
-        artist_list = soup.get("artists", [])
-        if isinstance(artist_list, list):
-            for artist_data in artist_list:
-                artist_name = artist_data.get("name")
-                roles = artist_data.get("roles", [])
-                # Check for any variation of featured artist role
-                if artist_name and artist_name != main_artist and any("feat" in role.lower() for role in roles):
-                    featured_artists.append(artist_name)
+        album_mains = _album_mains(soup)
+        featured = _album_featured(soup, album_mains)
+        album_names = {_key(name) for name in [*album_mains, *(name for name, _ in _album_artists(soup))]}
+        extra = EXTRA_ROLES["classical"] if _is_classical(soup) else frozenset()
 
         track_items = safe_get(soup, ["tracks", "items"], [])
         if not isinstance(track_items, list):
@@ -376,9 +386,7 @@ class Scraper(QobuzBase, MetadataMixin):
         for track in track_items:
             disc_number = str(track.get("media_number", 1))
             track_number = str(track.get("track_number", 1))
-
-            # Collect artists with their roles
-            artists = self._collect_track_artists(track, main_artist, featured_artists)
+            artists, guessed = _track_credits(track, album_mains, featured, album_names, extra)
 
             # Parse track title with version
             title = track.get("title", "")
@@ -389,11 +397,13 @@ class Scraper(QobuzBase, MetadataMixin):
             tracks[disc_number][track_number] = self.generate_track(
                 trackno=track_number,
                 discno=disc_number,
-                artists=artists,
+                artists=list(artists),
+                credited_remixers=[name for name, role in artists if role == "remixer"],
                 title=title,
                 isrc=track.get("isrc"),
                 explicit=track.get("parental_warning", False),
             )
+            tracks[disc_number][track_number]["assumed_artists"] = guessed
 
         return dict(tracks)
 
@@ -506,78 +516,156 @@ class Scraper(QobuzBase, MetadataMixin):
         # Otherwise, fall back to the base class's heuristics
         return super().determine_rls_type(data)
 
-    # --------------------------------------------------------------------------
-    # Helper Methods
-    # --------------------------------------------------------------------------
 
-    def _collect_track_artists(self, track, main_artist, featured_artists):
-        """
-        Helper method to collect artists with their roles for a track.
+# ------------------------------------------------------------------------------
+# Credits (#869): read as Qobuz states them, for the merge to decide (ADR 0007)
+# ------------------------------------------------------------------------------
 
-        This method applies several strategies to identify and categorize artists:
-        1. Uses the track's performer as main artist when available
-        2. Falls back to the release's main artist if no track performer
-        3. Parses the performers string for additional artists and their roles
-        4. Adds any release-level featured artists not already present
-        5. Extracts featured artists from the track title using RE_FEAT
 
-        Args:
-            track (dict): Track data from Qobuz API
-            main_artist (str): Main artist name from the release
-            featured_artists (list): Featured artists identified at release level
+def _key(name: str) -> str:
+    """One key for the spellings of a name within Qobuz's own credits ("Sigur Ros " is "Sigur Rós")."""
+    return comparable(name) or name.strip()
 
-        Returns:
-            list: List of tuples (artist_name, role) where role is 'main' or 'guest'
-        """
-        artists = []
-        seen_artists = set()
-        # Track artists we've already processed
 
-        # 1. Add release's main artist if available
-        artists.append((main_artist, "main"))
-        seen_artists.add(main_artist)
+def _album_mains(album: dict[str, Any]) -> list[str]:
+    """The album's main artists: its `artist`, then each other `artists[]` main-artist, in the spelling `artists[]`
+    gives them (Getz/Gilberto's "João Gilberto", which the performers line writes "Joao")."""
+    listed = [name for name, roles in _album_artists(album) if "main-artist" in roles]
+    first = str(safe_get(album, ["artist", "name"]) or "").strip()
+    spelled = {_key(name): name for name in [first, *reversed(listed)] if name}
+    return [spelled[key] for key in dict.fromkeys(_key(name) for name in [first, *listed] if name)]
 
-        # 2. Add track's performer as guest artist if different from main artist
-        performer = safe_get(track, ["performer", "name"])
-        if performer and performer != main_artist:
-            artists.append((performer, "guest"))
-            seen_artists.add(performer)
 
-        # 3. Parse the performers string for additional artists
-        if "performers" in track:
-            performers_str = track["performers"]
+def _album_featured(album: dict[str, Any], album_mains: list[str]) -> list[str]:
+    """The album's featured artists (any `artists[]` role holding "feat"), guests on every track."""
+    mains = {_key(name) for name in album_mains}
+    return [
+        name
+        for name, roles in _album_artists(album)
+        if _key(name) not in mains and any("feat" in role.lower() for role in roles)
+    ]
 
-            # Split by segments first
-            for artist_segment in performers_str.split(" - "):
-                parts = artist_segment.split(", ")
-                if len(parts) >= 2:
-                    artist_name = parts[0].strip()
-                    roles = parts[1:]
 
-                    # Skip artists we already have
-                    if artist_name in seen_artists:
-                        continue
+def _album_artists(album: dict[str, Any]) -> list[tuple[str, list[str]]]:
+    """Each name `artists[]` lists, whatever its role (an orchestra, a conductor), with its roles."""
+    return [
+        (name, entry.get("roles") or [])
+        for entry in album.get("artists") or []
+        if isinstance(entry, dict) and (name := (entry.get("name") or "").strip())
+    ]
 
-                    # Check roles: prioritize FeaturedArtist over other roles
-                    # MainArtists here are actually guests ones (real mains are release ones, or
-                    # if none, performers ones)
-                    if any(role in roles for role in ["FeaturedArtist", "MainArtist"]):
-                        artists.append((artist_name, "guest"))
-                        seen_artists.add(artist_name)
 
-        # 4. Add any release-level featured artists not already added
-        for guest in featured_artists:
-            if guest not in seen_artists:
-                artists.append((guest, "guest"))
-                seen_artists.add(guest)
+def _is_classical(album: dict[str, Any]) -> bool:
+    """Whether Qobuz files the release under a classical genre: its own genres_list, read whatever
+    no_genres_from_qobuz says, through salmon's genre table ("Classique→Opéra" is Classical and Opera)."""
+    genres = [genre for genre in album.get("genres_list") or [] if genre]
+    return any(is_classical_genre(genre) for genre in standardize_genres(genres))
 
-        # 5. Check for "feat." in title and add those artists as guests
-        title = track.get("title", "")
-        if feat := RE_FEAT.search(title):
-            for artist in re_split(feat[1]):
-                guest_name = unescape(artist)
-                if guest_name not in seen_artists:
-                    artists.append((guest_name, "guest"))
-                    seen_artists.add(guest_name)
 
-        return artists
+def _performers(line: str, known: set[str]) -> list[tuple[str, Role | None]]:
+    """Each credit a performers line ("A, Role, Role - B, Role") gives in a role salmon maps, in order, and once with
+    no role a name it gives in no such role ("B, Vocals"): Qobuz's word that they are on the track.
+
+    A name is the entry's first part: Qobuz's other words are an open list ("Harpsichord", "Guitar (acoustic)"). It
+    runs on over commas only to a name Qobuz gives elsewhere as a name (`known`: the album's artists and the track's
+    performer), as "Earth, Wind & Fire", or over suffixes, as "Sammy Davis, Jr.".
+    """
+    credits: list[tuple[str, Role | None]] = []
+    for entry in line.split(" - "):
+        parts = entry.split(",")
+        size = next(
+            (
+                k
+                for k in range(len(parts), 1, -1)
+                if _key(",".join(parts[:k])) in known or all(comparable(part) in NAME_SUFFIXES for part in parts[1:k])
+            ),
+            1,
+        )
+        if name := ",".join(parts[:size]).strip(" ,"):
+            roles: list[Role | None] = [role for part in parts[size:] if (role := ROLE_WORDS.get(comparable(part)))]
+            credits.extend((name, role) for role in roles or [None])
+    return credits
+
+
+def _track_credits(
+    track: dict[str, Any], album_mains: list[str], featured: list[str], album_names: set[str], extra: frozenset[Role]
+) -> tuple[list[Credit], list[Credit]]:
+    """A track's credits as Qobuz states them, and those of them that are salmon's guesses (ADR 0007).
+
+    Stated: the album's main artists the track names, as its performer or a MainArtist in its performers line, or
+    every one of them when it names no one; the line's guests and remixers; the album's featured artists the line
+    names; and on a release whose genre has them (`extra`, a classical release's EXTRA_ROLES), the line's conductors
+    and the track's composer. Guessed: a MainArtist the album doesn't list as main, a guest read from "feat." in a
+    performer's name or in the title, both guests by salmon's reading, the album's featured artists on a track whose
+    line doesn't name them, and the album's main artists on a track that names only others (unless it states one of
+    them as its guest: then its own MainArtists are its mains). On a track that names an album main, a performer or
+    MainArtist the line also states as Remixer is not guessed a guest. Nothing is decided here: one name may hold two
+    roles, for the merge to weigh. The claims run the album's mains and featured artists first, then the line's, and a
+    name keeps the first spelling it is claimed under: the album's over the line's.
+    """
+    album = {_key(name): name for name in album_mains}
+    named: set[str] = set()
+    leads: list[str] = []  # the track's main artists the album doesn't list as main
+    read: list[tuple[str, Role, bool]] = []  # (name, role, assumed), in the order Qobuz gives them
+
+    def as_main(name: str) -> None:
+        lead = RE_FEAT.sub("", name).strip()
+        if _key(lead) in album:
+            named.add(_key(lead))
+        elif not any(_key(part) in album for part in re_split(lead)):
+            # A joint name holding an album main ("Nas & Damian Marley") is the album's credit: it names no one else.
+            read.append((lead, "guest", True))
+            leads.append(lead)
+        read.extend((guest, "guest", True) for guest in guests_from_title(name))
+
+    performer = str(safe_get(track, ["performer", "name"]) or "").strip()
+    known = album_names | ({_key(performer)} if performer else set())
+    if performer:
+        as_main(performer)
+    line_composers: list[str] = []
+    on_line: set[str] = set()  # the names the performers line gives, in any words, by _key
+    for name, role in _performers(track.get("performers") or "", known):
+        on_line.add(_key(name))
+        if role == "main":
+            as_main(name)
+        elif role == "composer":
+            line_composers.append(name)
+        elif role in READ_ROLES or role in extra:
+            read.append((name, role, False))
+
+    mains = [name for key, name in album.items() if key in named]
+    if mains:
+        # A remix's line can give its remixer as MainArtist too ("Weird Genius, Remixer, MainArtist").
+        remixers = {_key(name) for name, role, _ in read if role == "remixer"}
+        read = [
+            (name, role, assumed)
+            for name, role, assumed in read
+            if not (assumed and name in leads and _key(name) in remixers)
+        ]
+    features_album = any(role == "guest" and not assumed and _key(name) in album for name, role, assumed in read)
+    claims: list[tuple[str, Role, bool]] = []
+    if not mains and leads and features_album:
+        # Another artist's track stating an album main as its guest (a bonus track): its leads are its mains, as a
+        # guess, and the album's mains are not.
+        read = [(name, "main" if assumed and name in leads else role, assumed) for name, role, assumed in read]
+    else:
+        # A track naming none of the album's mains gets them all: as Qobuz's word if it names no one, else as a guess.
+        claims = [(name, "main", False) for name in mains] or [(name, "main", bool(leads)) for name in album_mains]
+    claims.extend((guest, "guest", _key(guest) not in on_line) for guest in featured)
+    claims.extend(read)
+    claims.extend((guest, "guest", True) for guest in guests_from_title(track.get("title") or ""))
+    if "composer" in extra:
+        # The composer field's spelling ("Béla Bartók") over the line's ("Bela Bartok"); the line's when it has none.
+        composer = str(safe_get(track, ["composer", "name"]) or "").strip()
+        claims.extend((name, "composer", False) for name in ([composer] if composer else line_composers))
+    return _credits_and_guesses(claims)
+
+
+def _credits_and_guesses(claims: list[tuple[str, Role, bool]]) -> tuple[list[Credit], list[Credit]]:
+    """Each credit once, every artist under the first spelling of their name, and the credits only guessed."""
+    spelling: dict[str, str] = {}
+    credits: dict[Credit, bool] = {}  # each credit: whether only guessed
+    for name, role, assumed in claims:
+        credit = (spelling.setdefault(_key(name), name), role)
+        credits[credit] = credits.get(credit, True) and assumed
+    return list(credits), [credit for credit, guessed in credits.items() if guessed]

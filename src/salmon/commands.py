@@ -129,7 +129,8 @@ def descgen_refusals(urls: Sequence[str], folders: bool = True) -> list[str]:
 async def build_description(urls: Sequence[str]) -> str:
     """What ``salmon descgen`` makes, and so does the web interface: the BBCode description of the releases at these
     URLs, their metadata combined. Fetches each URL once; the URLs are ones ``descgen_refusals`` accepts."""
-    tasks = [run_metadata(url, return_source_name=True) for url in urls]
+    # Kept for the merge, so it weighs the stores' credits as salmon up's does.
+    tasks = [run_metadata(url, return_source_name=True, for_merge=True) for url in urls]
     metadatas = await asyncio.gather(*tasks)
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
     # As salmon up does: the album's artists from the tracks' cleaned credits.

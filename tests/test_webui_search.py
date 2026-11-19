@@ -19,6 +19,7 @@ from helpers.tagger_run_metadata import (
     RELEASE_URL,
     FakeDiscogs,
     pointed_at,
+    stating_credits,
 )
 from helpers.uploader_dry_run import (
     _album,
@@ -209,10 +210,12 @@ def test_a_lookup_gives_what_salmon_meta_prints(monkeypatch: pytest.MonkeyPatch)
     _lookup_run(test)
 
 
-def test_a_discogs_lookup_with_a_credited_name_answers_without_artist_variations(
+def test_a_discogs_lookup_with_a_credited_name_and_a_guess_answers_without_either(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """msgspec.to_builtins would answer with the keys, not fail on them: the answer itself has to lack them."""
     store = FakeDiscogs()
+    stating_credits(monkeypatch)
 
     async def test(client: TestClient, store: FakeStore) -> None:
         pointed_at(monkeypatch, store)
@@ -220,6 +223,7 @@ def test_a_discogs_lookup_with_a_credited_name_answers_without_artist_variations
         assert response.status == 200, await response.text()
         track = (await response.json())["metadata"]["tracks"]["3"]["3"]
         assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
+        assert "assumed_artists" not in track
         assert "artist_variations" not in track
         assert store.requests == ["/releases/2520452"]
 

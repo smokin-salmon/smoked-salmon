@@ -9,7 +9,8 @@ Each `<album>.toml` holds, in this order:
 - `why`: what the album tests. `edition`: which release each store's data is.
 - `today.<store>` (that store's parse) and `today.merge` (every store over the files, as `salmon up` merges them):
   the release's artists as "name (role)" and the track count, and for the merge also `credits`, each track's as
-  "disc.track: name (role), ...", so a change on one track is seen. **The test enforces these.**
+  "disc.track: name (role), ...", so a change on one track is seen. **The test enforces these.** For a store that
+  states its credits (`states_credits`), `today.<store>` is the undecided scrape the merge receives.
   With `output = true`, also `today.output` and `today.output-guests-in-title`: what is written from the merge with
   `guests_in_track_title` off and on, as ALBUMARTIST and per track "ARTIST | TITLE" (and "| REMIXER ..." when one is
   written).

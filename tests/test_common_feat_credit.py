@@ -1,8 +1,10 @@
-"""RE_FEAT, the featured credit five store parsers read from a title (#910)."""
+"""RE_FEAT, the featured credit five store parsers read from a title (#910), and guests_from_title, which reads it for
+Qobuz and Deezer."""
 
 import pytest
 
 from salmon.common import RE_FEAT
+from salmon.common.strings import guests_from_title
 
 
 @pytest.mark.parametrize(
@@ -58,3 +60,15 @@ def test_a_featured_credit_is_read_as_before(title, guests, plain) -> None:
 
 def test_a_title_without_a_featured_credit_has_none() -> None:
     assert RE_FEAT.search("Song (Live) [Remastered]") is None
+
+
+@pytest.mark.parametrize(
+    ("title", "guests"),
+    [
+        pytest.param("Song (feat. A & B)", ["A", "B"], id="split"),
+        pytest.param("Song (feat. Beyonc&eacute;)", ["Beyoncé"], id="unescaped"),
+        pytest.param("Song (Live)", [], id="no featured credit"),
+    ],
+)
+def test_a_title_s_guests(title: str, guests: list[str]) -> None:
+    assert guests_from_title(title) == guests

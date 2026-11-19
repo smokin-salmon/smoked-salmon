@@ -321,7 +321,7 @@ def test_a_superscript_in_a_tracklist_stays_as_written(monkeypatch) -> None:
     scraped = _scraped([("Dree Low", "main")], [("Einár", "main")])
     scraped["tracks"]["1"]["1²"] = {**scraped["tracks"]["1"].pop("2"), "track#": "1²"}
 
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return scraped, "MusicBrainz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
@@ -335,7 +335,7 @@ def test_a_multi_disc_tracklist_pads_both_numbers_as_before(monkeypatch) -> None
     scraped = _scraped([("Dree Low", "main")], [("Einár", "main")])
     scraped["tracks"]["2"] = {"1": {**scraped["tracks"]["1"].pop("2"), "disc#": "2", "track#": "1"}}
 
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return scraped, "Qobuz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)

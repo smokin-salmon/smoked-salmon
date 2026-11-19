@@ -22,9 +22,9 @@ the first store becomes the base.
 Three root causes show up in the casebook:
 
 - **Strings parsed back.** Sources are reduced to names and roles early, and later stages guess at the
-  text again. A track's title is still read for a remixer whenever its store credits none (#1079
-  narrowed the guess to "(X Remix)"), and a store's version is folded into its title, so the merge
-  can't tell "Dark Fantasy" from "Dark Fantasy (Album Version (Explicit))" (#1077).
+  text again. A track's title is still read for a remixer unless its store credits one anywhere on the
+  release (#1079 narrowed the guess to "(X Remix)"), and a store's version is folded into its title, so
+  the merge can't tell "Dark Fantasy" from "Dark Fantasy (Album Version (Explicit))" (#1077).
 - **Decisions without sources.** On *Getz/Gilberto* the files make Jobim main and Qobuz makes him a
   guest. The files win because they come first, and nothing says the two disagreed.
 - **Identity by spelling.** On *Ágætis byrjun*, Qobuz writes "Sigur Rós" on the album and "Sigur Ros" in
@@ -160,6 +160,11 @@ same place, from the guests `resolve_credits` gives.
 - **Step 3**, one store per PR: each reads its store's credits as stated claims, and `scrape_release`
   stops running `filter_artists` for that store. The title reading for remixers leaves each store as
   its version is kept apart. `parse_credits` leaves with the Discogs PR.
+  *Amended 2026-11-16 (#869 step 3a): `scrape_release` leaves a stating store's track credits as read,
+  skipping all of `generate_artists` on them, not only `filter_artists`, leaves its titles as the store
+  gives them, and the parser lists the credits it guessed. The merge reads a stating store's title for
+  a remixer unless that track credits one. A scrape used alone (`salmon meta`, salmon web's lookup) is
+  decided too, as a merge of that one source. Parsers never decide.*
 - **Step 4:** the files' plain ARTIST becomes assumed, ALBUMARTIST gives the order, and the classical
   rule becomes part of the files' claims.
 - **What stays, on purpose:** a review edit has no sources to weigh, so it doesn't go through

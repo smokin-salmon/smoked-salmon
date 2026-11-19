@@ -4,12 +4,12 @@ that builds the metadata they describe."""
 from typing import get_args
 
 import pytest
-from test_artist_credit_casebook import CASES, _record, files, parse
+from test_artist_credit_casebook import CASES, STORES, _cases, _record, _stores, files, parse
 
 from salmon.common.credits import Claim, ReleaseMetadata, Role, Source, TrackMetadata, resolve_credits
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.tagger.pre_data import EMPTY_METADATA
-from salmon.tagger.sources import METASOURCES
+from salmon.tagger.sources import MERGE_ONLY_KEYS, METASOURCES
 
 
 def files_claim(name: str, role: Role | None = "main") -> Claim:
@@ -109,9 +109,28 @@ def test_the_types_name_the_keys_salmon_builds(monkeypatch: pytest.MonkeyPatch) 
     tracks = [track for release in releases for disc in release["tracks"].values() for track in disc.values()]
 
     track_keys = TrackMetadata.__required_keys__ | TrackMetadata.__optional_keys__
-    assert track_keys == {key for track in tracks for key in track} | {"artist_variations"}
+    # What only the merge reads: Discogs' credited names, and a stating store's guesses.
+    assert track_keys == {key for track in tracks for key in track} | set(MERGE_ONLY_KEYS)
     assert TrackMetadata.__required_keys__ == set.intersection(*(set(track) for track in tracks))
 
     release_keys = ReleaseMetadata.__required_keys__ | ReleaseMetadata.__optional_keys__
     assert release_keys == {key for release in releases for key in release} | {*EMPTY_METADATA, "tags"}
     assert ReleaseMetadata.__required_keys__ == set.intersection(*(set(release) for release in releases))
+
+
+@pytest.mark.parametrize("store", [store for store, name in STORES.items() if METASOURCES[name].Scraper.states_credits])
+def test_a_stating_store_s_scrape_does_what_states_credits_asks(store: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """On every case the store has: each track marks its guesses, each guess is one of the track's credits as
+    written, and no credit is given twice."""
+    records = [record for record in map(_record, _cases()) if store in _stores(record)]
+    tracks = [
+        (record["album"], track)
+        for record in records
+        for disc in parse(record, store, monkeypatch)["tracks"].values()
+        for track in disc.values()
+    ]
+
+    assert records
+    for album, track in tracks:
+        assert set(track["assumed_artists"]) <= set(track["artists"]), album
+        assert len(set(track["artists"])) == len(track["artists"]), album

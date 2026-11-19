@@ -17,6 +17,12 @@ class MetadataMixin(ABC):
     fetch_page: Callable  # HTML path: BaseScraper.fetch_page
     fetch_data: Callable  # JSON path: defined on JSON source bases
 
+    # Whether the parser reads the store's credits as it states them (ADR 0007, step 3). Its tracks' credits are then
+    # left as read, for the merge to decide, and any credit not marked a guess counts as the store's word. So the
+    # parser marks every credit it guessed in the track's "assumed_artists", gives each name and role once on a track,
+    # and writes each name as the store gives it, its guess marked under the same spelling.
+    states_credits: bool = False
+
     async def scrape_release_from_id(self, rls_id: str) -> dict[str, Any]:
         """Run a scrape from the release ID."""
         return await self.scrape_release(self.format_url(rls_id=rls_id), rls_id=rls_id)
@@ -65,8 +71,18 @@ class MetadataMixin(ABC):
         if rls_id:
             data["url"] = self.format_url(rls_id=rls_id, rls_name=data["title"])
         data["urls"] = [data["url"]]
-        data["artists"], data["tracks"] = generate_artists(data["tracks"])
-        data["tracks"] = append_remixers_to_track_titles(data["tracks"])
+        if self.states_credits:
+            # The tracks' credits stay as read, for the merge to decide, and their titles as the store gives them,
+            # remixes included; the release's credits, which the type and label are read from below, are built as for
+            # any other store. generate_artists replaces each track's credits: on a copy of each track, the tracks
+            # keep theirs.
+            copied = {
+                disc: {num: dict(track) for num, track in tracks.items()} for disc, tracks in data["tracks"].items()
+            }
+            data["artists"] = generate_artists(copied)[0]
+        else:
+            data["artists"], data["tracks"] = generate_artists(data["tracks"])
+            data["tracks"] = append_remixers_to_track_titles(data["tracks"])
         data["tracks"] = assign_track_totals(data["tracks"])
         data["title"], data["rls_type"] = self.determine_rls_type(data)
         data["label"] = self.process_label(data)

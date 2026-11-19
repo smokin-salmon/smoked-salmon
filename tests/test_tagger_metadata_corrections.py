@@ -92,7 +92,7 @@ def test_descgen_writes_the_corrected_names_and_credits_a_main_artist_who_is_als
         [("Ryuichi Sakamoto", "main"), ("Alva Noto", "main"), ("坂本龍一", "guest")], [("Ryoji Ikeda", "main")]
     )
 
-    async def fake_run_metadata(url, return_source_name=False):
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
         return scraped, "Qobuz"
 
     monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
