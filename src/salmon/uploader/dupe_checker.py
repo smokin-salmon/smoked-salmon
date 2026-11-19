@@ -775,7 +775,7 @@ async def recheck_edition(
 
     Returns:
         The group to upload to, or None for a new group; and that group as fetched, for the upload to read its
-        editions from (None when the fetch failed or a new group was chosen).
+        editions from: {} when the fetch failed, so it is not fetched again, and None for a new group.
 
     Raises:
         click.Abort: If the user aborts.
@@ -786,11 +786,12 @@ async def recheck_edition(
     except RequestError as err:
         click.secho(
             f"\nCould not re-check group {group_id} on {gazelle_site.site_string} against the reviewed edition "
-            f"({err}): check it holds no torrent like this one.",
+            f"({err}): check it holds no torrent like this one, and that the upload is not filed as a second "
+            "edition.",
             fg="red",
             bold=True,
         )
-        return group_id, None
+        return group_id, {}
     named = {torrent.get("id") for torrent in held_in_group(group, weighed_against)}
     if all(torrent.get("id") in named for torrent in held_in_group(group, release)):
         return group_id, group
@@ -893,6 +894,17 @@ def _is_remaster(torrent: dict) -> bool:
     )
 
 
+def remaster_text(torrent: dict) -> tuple[str, str, str, str] | None:
+    """A remaster's year, title, label and catalogue number as the site sent them; None for an original release."""
+    if not _is_remaster(torrent):
+        return None
+    year, title, label, catno = (
+        str(torrent.get(key) or "")
+        for key in ("remasterYear", "remasterTitle", "remasterRecordLabel", "remasterCatalogueNumber")
+    )
+    return year, title, label, catno
+
+
 def _edition_catno(torrent: dict, group: dict) -> str:
     """Catalogue number of the torrent's edition; only an original release falls back to the group's."""
     if _is_remaster(torrent):
@@ -905,14 +917,8 @@ def _site_edition(torrent: dict, group: dict) -> tuple[str, str, str, str]:
 
     An original release has no edition fields of its own and takes the group's year, label and catalogue number.
     """
-    if _is_remaster(torrent):
-        fields = (
-            torrent.get("remasterYear"),
-            torrent.get("remasterTitle"),
-            torrent.get("remasterRecordLabel"),
-            torrent.get("remasterCatalogueNumber"),
-        )
-    else:
+    fields = remaster_text(torrent)
+    if fields is None:
         info = group.get("group") or {}
         fields = (info.get("year"), "", info.get("recordLabel"), info.get("catalogueNumber"))
     # comparable(): "CAT-2" and "CAT2" name one release, however each was typed.

@@ -331,6 +331,6 @@ def test_a_failed_recheck_keeps_the_group_and_says_so(monkeypatch, capsys) -> No
 
     result = anyio.run(dupe_checker.recheck_edition, _site(RequestFailedError("down")), 555, REVIEWED, None)
 
-    assert result == (555, None)
+    assert result == (555, {})
     assert defaults == []
     assert "Could not re-check group 555 on TRK against the reviewed edition (down)" in capsys.readouterr().out

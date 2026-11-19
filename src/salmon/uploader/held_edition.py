@@ -8,35 +8,30 @@ import asyncclick as click
 from salmon import interaction
 from salmon.common.strings import comparable
 from salmon.errors import RequestError
-from salmon.uploader.dupe_checker import _is_remaster
+from salmon.uploader.dupe_checker import remaster_text
 from salmon.uploader.upload import generate_catno
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
 
-# The fields a site files an edition by: the metadata's name, then the torrentgroup API's.
-_FIELDS = (
-    ("year", "remasterYear"),
-    ("edition_title", "remasterTitle"),
-    ("label", "remasterRecordLabel"),
-    ("catno", "remasterCatalogueNumber"),
-)
-# What adopting an edition changes. The year stays ours: a held edition names ours only in our year, and the
-# source FLAC is chosen in it unless one side has none (matching_torrents).
+# The fields a site files an edition by, as the metadata names them, in remaster_text's order.
+_FIELDS = ("year", "edition_title", "label", "catno")
+# What adopting an edition changes. The year stays ours: an edition is adopted only in our year.
 _ADOPTED = ("edition_title", "label", "catno")
 
 
 def _ours(metadata: dict[str, Any]) -> dict[str, str]:
     """Our edition as the upload form sends it."""
     sent = {**metadata, "catno": generate_catno(metadata)}
-    return {field: str(sent.get(field) or "").strip() for field, _ in _FIELDS}
+    return {field: str(sent.get(field) or "").strip() for field in _FIELDS}
 
 
 def site_edition(torrent: Any) -> dict[str, str] | None:
     """A torrent's edition in the site's words, unescaped; None for an original release or a value not a dict."""
-    if not isinstance(torrent, dict) or not _is_remaster(torrent):
+    text = remaster_text(torrent) if isinstance(torrent, dict) else None
+    if text is None:
         return None
-    return {field: html.unescape(str(torrent.get(key) or "")).strip() for field, key in _FIELDS}
+    return {field: html.unescape(value).strip() for field, value in zip(_FIELDS, text, strict=True)}
 
 
 def in_edition_of(torrent: Any, metadata: dict[str, Any]) -> bool:
@@ -51,10 +46,17 @@ def _catno_key(catno: str) -> str:
     return (key.lstrip("0") or "0") if key.isdecimal() else key
 
 
+def _is_barcode(catno: str) -> bool:
+    """Whether a catalogue number is a barcode (a UPC or EAN: 12 digits or more), which names one product."""
+    key = comparable(catno)
+    return key.isdecimal() and len(key) >= 12
+
+
 def names_ours(held: dict[str, str], ours: dict[str, str]) -> bool:
     """Whether a held edition is ours: year, label and catno agree, and the title too unless only the site has one.
 
-    A title only the site has ("feat. X") is accepted when both catalogue numbers are set and agree.
+    A title only the site has ("feat. X") is accepted when the catno is a barcode: a label's number may name several
+    editions of a release.
     """
     if comparable(held["year"]) != comparable(ours["year"]) or comparable(held["label"]) != comparable(ours["label"]):
         return False
@@ -62,7 +64,9 @@ def names_ours(held: dict[str, str], ours: dict[str, str]) -> bool:
     if _catno_key(held["catno"]) != catno:
         return False
     title = comparable(ours["edition_title"])
-    return comparable(held["edition_title"]) == title or (not title and bool(catno))
+    return comparable(held["edition_title"]) == title or (
+        not title and (_is_barcode(held["catno"]) or _is_barcode(ours["catno"]))
+    )
 
 
 def held_editions(group: Any, metadata: dict[str, Any]) -> list[dict[str, str]]:
@@ -80,7 +84,7 @@ def held_editions(group: Any, metadata: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def _line(edition: dict[str, str]) -> str:
-    return " / ".join(edition[field] for field, _ in _FIELDS if edition[field]) or "no edition fields"
+    return " / ".join(edition[field] for field in _FIELDS if edition[field]) or "no edition fields"
 
 
 async def adopt_edition(
@@ -117,7 +121,8 @@ async def edition_in_group(
 ) -> dict[str, Any]:
     """metadata for an upload into group_id (None: a new group): see adopt_edition.
 
-    group is group_id's group as already fetched; without it, it is fetched once.
+    group is group_id's group as already fetched, or {} when that fetch failed: it is not fetched again. Without it,
+    it is fetched once.
     """
     if not group_id:
         return metadata
@@ -136,6 +141,7 @@ async def edition_in_group(
 async def edition_of_source(
     gazelle_site: "BaseGazelleApi", source_flac: dict[str, Any] | None, metadata: dict[str, Any]
 ) -> dict[str, Any]:
-    """metadata for transcodes of a FLAC on the site, filed with it: see adopt_edition."""
+    """metadata for transcodes of a FLAC on the site, filed with it if it is in our year: see adopt_edition."""
     held = site_edition(source_flac)
-    return await adopt_edition(gazelle_site, metadata, [held] if held is not None else [])
+    in_our_year = held is not None and comparable(held["year"]) == comparable(_ours(metadata)["year"])
+    return await adopt_edition(gazelle_site, metadata, [held] if held is not None and in_our_year else [])

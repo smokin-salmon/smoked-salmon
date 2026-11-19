@@ -201,8 +201,8 @@ def test_a_red_upload_with_a_log_goes_through_the_api_and_the_budget_counts_no_u
     (post,) = run.target.posts()
     assert post.authorization
     assert [unquote(log) for log in post.fields["logfiles[]"]] == ["Example Artist - Example Album.log"]
-    # The search, a group pasted at its prompt, a lost upload.
-    assert "at most 4 GET and 1 POST to RED" in run.output
+    # The search, a group pasted at its prompt, its editions, a lost upload.
+    assert "at most 5 GET and 1 POST to RED" in run.output
     assert _within_the_plans_bound(run)
 
 
@@ -224,22 +224,22 @@ def test_a_red_upload_with_a_log_and_a_session_cookie_only_goes_through_its_uplo
     (post,) = run.target.posts()
     assert (post.authorization, post.cookie) == (False, True)
     assert [unquote(log) for log in post.fields["logfiles[]"]] == ["Example Artist - Example Album.log"]
-    # The search, a group pasted at its prompt, the site log, RED's upload page for an existing group, the redirect,
-    # a lost upload.
-    assert f"at most {1 + 1 + LOG_MAX_PAGES + 1 + 1 + 2} GET and 1 POST to RED" in run.output
+    # The search, a group pasted at its prompt, the site log, its editions, RED's upload page for an existing group,
+    # the redirect, a lost upload.
+    assert f"at most {1 + 1 + LOG_MAX_PAGES + 1 + 1 + 1 + 2} GET and 1 POST to RED" in run.output
     assert _within_the_plans_bound(run)
 
 
 @pytest.mark.parametrize(
     ("api_key", "group_id", "gets"),
     [
-        # The group given, to confirm it, and a lost upload.
-        ("red-api-key", TARGET_GROUP_ID, 1 + 2),
-        # The search, a group pasted at its prompt, the site log, and a lost upload.
-        ("red-api-key", None, 1 + 1 + LOG_MAX_PAGES + 2),
+        # The group given, to confirm it, its editions, and a lost upload.
+        ("red-api-key", TARGET_GROUP_ID, 1 + 1 + 2),
+        # The search, a group pasted at its prompt, the site log, its editions, and a lost upload.
+        ("red-api-key", None, 1 + 1 + LOG_MAX_PAGES + 1 + 2),
         # Through the upload page: RED's upload page for an existing group's fields, and the redirect to the torrent.
-        ("", TARGET_GROUP_ID, 1 + 2 + 1 + 1),
-        ("", None, 1 + 1 + LOG_MAX_PAGES + 2 + 1 + 1),
+        ("", TARGET_GROUP_ID, 1 + 1 + 2 + 1 + 1),
+        ("", None, 1 + 1 + LOG_MAX_PAGES + 1 + 2 + 1 + 1),
     ],
     ids=["api-key-group-given", "api-key-searched", "cookie-only-group-given", "cookie-only-searched"],
 )
@@ -297,7 +297,8 @@ def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> 
     assert run.target.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=browse": len(_searchstrs()),
-        "GET ajax.php?action=torrentgroup": 1,  # The formats the group already has, once the FLAC is up
+        # Its editions before the FLAC goes up, and the formats it has once it is up.
+        "GET ajax.php?action=torrentgroup": 2,
         "POST ajax.php?action=upload": 3,
     }
     assert _within_the_plans_bound(run)
@@ -308,6 +309,45 @@ def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> 
     assert sorted(path.name for path in dirs.downloads.iterdir()) == [FOLDER, f"{FOLDER} [320]", f"{FOLDER} [V0]"]
     flac_url = f"{run.target.url}/torrents.php?torrentid=700001"
     assert run.target.posts()[1].fields["release_desc"][0].startswith(f"[b]Source:[/b] {flac_url}\n")
+
+
+def test_a_flac_and_its_transcode_go_into_the_edition_the_group_words_otherwise(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    # SOURCE files the release as 2023 / SAMPLE GARDEN / 000000000002.
+    held = {
+        "id": 700009,
+        "media": "CD",
+        "format": "FLAC",
+        "encoding": "Lossless",
+        "remastered": True,
+        "remasterYear": 2023,
+        "remasterTitle": "",
+        "remasterRecordLabel": "©SAMPLE GARDEN",
+        "remasterCatalogueNumber": "0000000000002",
+    }
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.results = [_result([])]
+        target.groups[TARGET_GROUP_ID] = {"group": {"id": TARGET_GROUP_ID, "year": 2018}, "torrents": [held]}
+
+    run = _cross_upload(
+        monkeypatch,
+        dirs,
+        [str(TORRENT_ID), "-yyy", "--transcode", "V0"],
+        input="1\n\n",
+        prepare=prepare,
+        transcode=_transcode,
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert "RED files this release as: 2023 / ©SAMPLE GARDEN / 0000000000002" in run.output
+    sent = [
+        (post.fields["format"][0], post.fields["remaster_record_label"][0], post.fields["remaster_catalogue_number"][0])
+        for post in run.target.posts()
+    ]
+    assert sent == [("FLAC", "©SAMPLE GARDEN", "0000000000002"), ("MP3", "©SAMPLE GARDEN", "0000000000002")]
+    assert _within_the_plans_bound(run)
 
 
 def test_conversions_give_the_two_transcodes_as_transcode_does(monkeypatch, dirs) -> None:
@@ -469,8 +509,8 @@ def test_a_transcode_held_only_under_another_catalogue_number_is_uploaded(monkey
     assert "Not uploading MP3 V0" not in run.output
     formats = [(post.fields["format"][0], post.fields["bitrate"][0]) for post in run.target.posts()]
     assert formats == [("FLAC", "Lossless"), ("MP3", "V0 (VBR)")]
-    # The group was read once, as before: no request of its own.
-    assert run.target.steps()["GET ajax.php?action=torrentgroup"] == 1
+    # Read for its editions, then for its formats once the FLAC is up: the catalogue number costs no request.
+    assert run.target.steps()["GET ajax.php?action=torrentgroup"] == 2
 
 
 def test_a_transcode_held_in_the_edition_the_flac_was_filed_under_is_left_out(monkeypatch, dirs) -> None:
@@ -481,7 +521,7 @@ def test_a_transcode_held_in_the_edition_the_flac_was_filed_under_is_left_out(mo
     assert run.result.exit_code == 0, run.output
     assert "Not uploading MP3 V0: the group already has it in this edition." in run.output
     assert [post.fields["format"][0] for post in run.target.posts()] == ["FLAC"]
-    assert run.target.steps()["GET ajax.php?action=torrentgroup"] == 1
+    assert run.target.steps()["GET ajax.php?action=torrentgroup"] == 2
 
 
 def test_a_conversion_the_group_holds_is_left_out_of_conversions_too(monkeypatch, dirs) -> None:
@@ -2086,9 +2126,9 @@ def test_an_upload_to_dic_goes_through_its_upload_page_with_its_session_and_no_m
         "GET torrents.php": 1,
     }
     assert all(sent.cookie and not sent.authorization for sent in run.target.sent)
-    # The bound counts each: the search, a group pasted at its prompt, the site log, the page the upload redirects
-    # to, and looking up an upload whose answer was lost.
-    assert f"at most {len(_searchstrs()) + 1 + 3 + 1 + 2} GET and 1 POST to DICMusic" in run.output
+    # The bound counts each: the search, a group pasted at its prompt, the site log, its editions, the page the
+    # upload redirects to, and looking up an upload whose answer was lost.
+    assert f"at most {len(_searchstrs()) + 1 + 3 + 1 + 1 + 2} GET and 1 POST to DICMusic" in run.output
     assert _within_the_plans_bound(run, "DICMusic")
     (post,) = _site_uploads(run)
     assert not set(DIC_MARKS) & set(post.fields)
@@ -2234,7 +2274,7 @@ def test_a_24bit_torrent_to_dic_and_its_downconversions_each_send_their_own_samp
     assert not any(set(DIC_MARKS) & set(post.fields) for post in uploads)
     assert run.target.steps()["GET torrents.php"] == 3
     # As for one upload, with the group read for the formats it has, and a redirect per upload.
-    assert f"at most {len(_searchstrs()) + 1 + 3 + 1 + 3 + 2} GET and 3 POST to DICMusic" in run.output
+    assert f"at most {len(_searchstrs()) + 1 + 3 + 1 + 1 + 3 + 2} GET and 3 POST to DICMusic" in run.output
     assert _within_the_plans_bound(run, "DICMusic")
 
 

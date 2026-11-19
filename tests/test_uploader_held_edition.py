@@ -74,6 +74,7 @@ def _upc_as_catno(monkeypatch) -> None:
                 }
             ],
         ),
+        ([_held(2026, "Extended Mixes", catno="LBL001")], {"year": 2026, "catno": "LBL001", "upc": ""}, []),
         ([_held(year=2024)], {}, []),
         ([_held(catno="199538185516")], {}, []),
         ([_held(label="Armada")], {}, []),
@@ -87,6 +88,7 @@ def _upc_as_catno(monkeypatch) -> None:
     ids=[
         "copyright sign and UPC-A for EAN-13",
         "a title only the site has, tied by the catno, unescaped",
+        "a title only the site has, tied by a label's catno",
         "another year",
         "another catno",
         "another label",
@@ -198,6 +200,15 @@ def test_the_group_is_fetched_when_not_given(monkeypatch) -> None:
     assert joined["label"] == "©SNK"
 
 
+def test_a_group_that_could_not_be_read_is_not_read_again(monkeypatch, capsys) -> None:
+    _answer(monkeypatch, None)
+    site = _site()
+
+    assert _join(site, OURS, {}) is OURS
+    assert site.calls == []
+    assert capsys.readouterr().out == ""
+
+
 def test_a_new_group_fetches_nothing(monkeypatch) -> None:
     _answer(monkeypatch, None)
     site = _site()
@@ -214,6 +225,13 @@ def test_a_failed_fetch_sends_ours_and_says_so(monkeypatch, capsys) -> None:
         "Could not read the editions of group 555 on RED (down): sending ours (2025 / SNK / 0199538185515). "
         "Check the upload is not filed as a second edition."
     ) in capsys.readouterr().out
+
+
+def test_transcodes_keep_our_edition_beside_a_flac_of_another_year(monkeypatch, capsys) -> None:
+    _answer(monkeypatch, None)
+
+    assert anyio.run(edition_of_source, _site(), _held(year=0, catno="CAT-2"), OURS) is OURS
+    assert capsys.readouterr().out == ""
 
 
 def test_transcodes_of_a_flac_without_a_catno_go_up_without_one(monkeypatch) -> None:

@@ -108,8 +108,8 @@ async def upload_to_tracker(
 ) -> Turn:
     """Upload the release to one tracker: its cover, spectrals, request, torrent and conversions.
 
-    fetched_group is group_id's group as already fetched after the review, if it was: its editions are not fetched
-    again.
+    fetched_group is group_id's group as already fetched after the review, if it was ({} when that fetch failed): it
+    is not fetched again.
 
     A tracker's error ends its turn, recorded in run.failed_trackers. An abort goes up to the loop, with run as it
     stood.
