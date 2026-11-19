@@ -77,7 +77,21 @@ def test_a_whole_name_on_another_track_does_not_join_two_explicit_artists() -> N
 
     assert artists == [("A", "main"), ("B", "main"), ("AB", "main")]
     assert tracks["1"][1]["artists"] == [("A", "main"), ("B", "main")]
-    assert "explicit_artists" not in tracks["1"][1]
+    assert "explicit_main_artists" not in tracks["1"][1]
+
+
+def test_title_guests_are_repaired_even_when_mains_are_explicit() -> None:
+    # Only relationship-derived mains are exempt. A title's "feat. Simon & Garfunkel" is free text and
+    # must rejoin when another track credits that whole name.
+    first = soup(["X"], title="Song (feat. Simon & Garfunkel)")
+    second = soup(["Simon & Garfunkel"], title="Other")
+    second["tracks"][0]["attributes"]["trackNumber"] = 2
+
+    tracks = asyncio.run(Scraper().parse_tracks({"tracks": first["tracks"] + second["tracks"]}))
+    _artists, tracks = generate_artists(tracks)
+
+    assert tracks["1"][1]["artists"] == [("X", "main"), ("Simon & Garfunkel", "guest")]
+    assert tracks["1"][2]["artists"] == [("Simon & Garfunkel", "main")]
 
 
 def test_featured_guests_from_the_title_are_still_split() -> None:
