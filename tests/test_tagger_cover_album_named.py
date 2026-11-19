@@ -101,7 +101,8 @@ def _two_images(folder: Path, name: str) -> None:
 def test_an_image_named_after_the_album_is_its_cover(album, downloads, name) -> None:
     _two_images(album, name)
 
-    assert _use(album) == (str(album / name), False)
+    found = _use(album)
+    assert found == (str(album / name), False)
     assert downloads == []
 
 
@@ -111,7 +112,8 @@ def test_a_forbidden_character_its_fullwidth_form_and_underscore_compare_equal(t
     name = f"Tin Cup{stand_in} The Movie.jpg"
     _two_images(tmp_path, name)
 
-    assert _use(tmp_path) == (str(tmp_path / name), False)
+    found = _use(tmp_path)
+    assert found == (str(tmp_path / name), False)
     assert downloads == []
 
 
@@ -120,7 +122,8 @@ def test_the_configured_substitution_compares_equal(tmp_path, downloads, monkeyp
     _write_flac(tmp_path / "01.flac", album="Tin Cup: The Movie", albumartist="Artist")
     _two_images(tmp_path, "Tin Cup~ The Movie.jpg")
 
-    assert _use(tmp_path) == (str(tmp_path / "Tin Cup~ The Movie.jpg"), False)
+    found = _use(tmp_path)
+    assert found == (str(tmp_path / "Tin Cup~ The Movie.jpg"), False)
 
 
 def test_colon_as_dash_names_the_subtitle_with_a_dash(tmp_path, downloads, monkeypatch) -> None:
@@ -129,14 +132,16 @@ def test_colon_as_dash_names_the_subtitle_with_a_dash(tmp_path, downloads, monke
     _write_flac(tmp_path / "01.flac", album="Tin Cup: The Movie", albumartist="Artist")
     _two_images(tmp_path, "Tin Cup - The Movie.jpg")
 
-    assert _use(tmp_path) == (str(tmp_path / "Tin Cup - The Movie.jpg"), False)
+    found = _use(tmp_path)
+    assert found == (str(tmp_path / "Tin Cup - The Movie.jpg"), False)
 
 
 def test_the_artist_comes_from_the_artist_tag_without_an_album_artist(tmp_path, downloads) -> None:
     _write_flac(tmp_path / "01.flac", album="Tin Cup", artist="Solo")
     _two_images(tmp_path, "Solo - Tin Cup.jpg")
 
-    assert _use(tmp_path) == (str(tmp_path / "Solo - Tin Cup.jpg"), False)
+    found = _use(tmp_path)
+    assert found == (str(tmp_path / "Solo - Tin Cup.jpg"), False)
 
 
 def test_the_artist_names_can_be_joined(tmp_path, downloads) -> None:
@@ -146,13 +151,15 @@ def test_the_artist_names_can_be_joined(tmp_path, downloads) -> None:
     audio.save()
     _two_images(tmp_path, "One & Two - Tin Cup.jpg")
 
-    assert _use(tmp_path) == (str(tmp_path / "One & Two - Tin Cup.jpg"), False)
+    found = _use(tmp_path)
+    assert found == (str(tmp_path / "One & Two - Tin Cup.jpg"), False)
 
 
 def test_a_lone_image_is_the_cover(album, downloads) -> None:
     (album / "scan0001.jpg").write_bytes(JPEG)
 
-    assert _use(album) == (str(album / "scan0001.jpg"), False)
+    found = _use(album)
+    assert found == (str(album / "scan0001.jpg"), False)
     assert downloads == []
 
 
@@ -160,21 +167,24 @@ def test_a_lone_image_is_the_cover_of_a_folder_with_no_readable_tag(tmp_path, do
     (tmp_path / "01.flac").write_bytes(b"not a flac")
     (tmp_path / "Whatever.png").write_bytes(JPEG)
 
-    assert _use(tmp_path) == (str(tmp_path / "Whatever.png"), False)
+    found = _use(tmp_path)
+    assert found == (str(tmp_path / "Whatever.png"), False)
 
 
 @pytest.mark.parametrize("name", ["back.jpg", "Tin Cup (back).jpg", "Disc 1.png", "inlay-tray.jpg", "CD.JPG"])
 def test_a_lone_back_or_disc_image_is_not_a_cover(album, downloads, name) -> None:
     (album / name).write_bytes(JPEG)
 
-    assert _use(album) == (str(album / "Cover.jpg"), True)
+    found = _use(album)
+    assert found == (str(album / "Cover.jpg"), True)
     assert downloads == [STORE]
 
 
 def test_a_word_that_only_starts_with_a_marker_word_does_not_count(album, downloads) -> None:
     (album / "Backstreet.jpg").write_bytes(JPEG)
 
-    assert _use(album) == (str(album / "Backstreet.jpg"), False)
+    found = _use(album)
+    assert found == (str(album / "Backstreet.jpg"), False)
     assert downloads == []
 
 
@@ -182,7 +192,8 @@ def test_two_images_that_are_not_named_after_the_album_are_no_cover(album, downl
     (album / "a.jpg").write_bytes(JPEG)
     (album / "b.png").write_bytes(JPEG)
 
-    assert _use(album) == (str(album / "Cover.jpg"), True)
+    found = _use(album)
+    assert found == (str(album / "Cover.jpg"), True)
     assert downloads == [STORE]
 
 
@@ -190,7 +201,8 @@ def test_two_images_one_named_after_the_album_is_that_one(album, downloads) -> N
     (album / "a.jpg").write_bytes(JPEG)
     (album / "Tin Cup.png").write_bytes(JPEG)
 
-    assert _use(album) == (str(album / "Tin Cup.png"), False)
+    found = _use(album)
+    assert found == (str(album / "Tin Cup.png"), False)
     assert downloads == []
 
 
@@ -198,7 +210,8 @@ def test_a_named_cover_wins_over_the_albums_name_and_nothing_is_asked(album, dow
     (album / "Tin Cup.jpg").write_bytes(JPEG)
     (album / "cover.jpg").write_bytes(JPEG)
 
-    assert _use(album) == (str(album / "cover.jpg"), False)
+    found = _use(album)
+    assert found == (str(album / "cover.jpg"), False)
     anyio.run(cover.offer_cover_rename, str(album))
     assert asked == []
     assert (album / "Tin Cup.jpg").exists()
@@ -208,7 +221,8 @@ def test_an_image_in_a_subfolder_does_not_count(album, downloads) -> None:
     (album / "Scans").mkdir()
     (album / "Scans" / "Tin Cup.jpg").write_bytes(JPEG)
 
-    assert _use(album) == (str(album / "Cover.jpg"), True)
+    found = _use(album)
+    assert found == (str(album / "Cover.jpg"), True)
 
 
 def test_an_unreadable_audio_file_is_skipped(tmp_path, downloads) -> None:
@@ -216,7 +230,8 @@ def test_an_unreadable_audio_file_is_skipped(tmp_path, downloads) -> None:
     _write_flac(tmp_path / "01.flac", album="Tin Cup")
     _two_images(tmp_path, "Tin Cup.jpg")
 
-    assert _use(tmp_path) == (str(tmp_path / "Tin Cup.jpg"), False)
+    found = _use(tmp_path)
+    assert found == (str(tmp_path / "Tin Cup.jpg"), False)
 
 
 # --- The rename offer -----------------------------------------------------------------------------------
@@ -233,7 +248,8 @@ def test_yes_renames_the_image_to_cover(album, downloads, asked, name) -> None:
     assert name in asked[0]
     assert (album / f"cover{extension}").read_bytes() == JPEG
     assert not (album / name).exists()
-    assert _use(album) == (str(album / f"cover{extension}"), False)
+    found = _use(album)
+    assert found == (str(album / f"cover{extension}"), False)
     assert downloads == []
 
 
@@ -266,7 +282,8 @@ def test_no_keeps_the_name_and_the_file_is_used(album, downloads, monkeypatch) -
     assert len(questions) == 1
     assert (album / "Tin Cup.jpg").exists()
     assert not (album / "cover.jpg").exists()
-    assert _use(album) == (str(album / "Tin Cup.jpg"), False)
+    found = _use(album)
+    assert found == (str(album / "Tin Cup.jpg"), False)
     assert downloads == []
 
 
@@ -290,7 +307,8 @@ def test_a_failed_rename_is_said_and_the_file_is_used(album, asked, monkeypatch,
     anyio.run(cover.offer_cover_rename, str(album))
 
     assert "Could not rename Tin Cup.jpg to cover.jpg" in capsys.readouterr().out
-    assert _use(album, None) == (str(album / "Tin Cup.jpg"), False)
+    found = _use(album, None)
+    assert found == (str(album / "Tin Cup.jpg"), False)
 
 
 def test_a_folder_that_may_hold_a_library_album_is_left_as_it_is(album, downloads, asked, monkeypatch) -> None:
@@ -301,7 +319,8 @@ def test_a_folder_that_may_hold_a_library_album_is_left_as_it_is(album, download
 
     assert asked == []
     assert (album / "Tin Cup.jpg").exists()
-    assert _use(album) == (str(album / "Tin Cup.jpg"), False)
+    found = _use(album)
+    assert found == (str(album / "Tin Cup.jpg"), False)
     assert downloads == []
 
 
@@ -387,14 +406,16 @@ def test_a_lone_image_does_not_stop_the_embedded_cover_being_extracted(tmp_path)
     _write_flac(tmp_path / "01.flac", pictures=(_image(),), album="Tin Cup")
     (tmp_path / "photo.jpg").write_bytes(JPEG)
 
-    assert cover.extract_embedded_cover(str(tmp_path)) == str(tmp_path / "cover.jpg")
+    extracted = cover.extract_embedded_cover(str(tmp_path))
+    assert extracted == str(tmp_path / "cover.jpg")
 
 
 def test_a_title_match_is_the_cover_extract_embedded_cover_returns(tmp_path) -> None:
     _write_flac(tmp_path / "01.flac", pictures=(_image(),), album="Tin Cup")
     _two_images(tmp_path, "Tin Cup.jpg")
 
-    assert cover.extract_embedded_cover(str(tmp_path)) == str(tmp_path / "Tin Cup.jpg")
+    extracted = cover.extract_embedded_cover(str(tmp_path))
+    assert extracted == str(tmp_path / "Tin Cup.jpg")
     assert not (tmp_path / "cover.jpg").exists()
 
 
