@@ -104,7 +104,7 @@ async def upload_to_tracker(
     gazelle_site: "BaseGazelleApi",
     group_id: int | None,
     run: TrackerRun,
-    fetched_group: dict[str, Any] | None = None,  # As fetched after the review ({} if that failed): not fetched again
+    fetched_group: dict[str, Any] | None = None,  # {} = the fetch failed: do not fetch again
 ) -> Turn:
     """Upload the release to one tracker: its cover, spectrals, request, torrent and conversions.
 

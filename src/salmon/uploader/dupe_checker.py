@@ -773,8 +773,7 @@ async def recheck_edition(
             --group-id, which nothing weighed.
 
     Returns:
-        The group to upload to, or None for a new group; and that group as fetched, for the upload to read its
-        editions from: {} when the fetch failed, so it is not fetched again, and None for a new group.
+        The group to upload to (None: a new group), and that group as fetched ({} if the fetch failed: do not refetch).
 
     Raises:
         click.Abort: If the user aborts.
@@ -1034,11 +1033,9 @@ def held_formats(
         release: The reviewed release metadata.
         source_flac: The FLAC the transcodes are made from, which never counts as held.
         formats: The format and encoding of each candidate, by name.
-        same_edition: Whether the source FLAC is filed under the transcodes' edition, catalogue number included: this
-            run sent it with the form they use (the group must then be fetched after the upload), or they take
-            its edition fields. A format is then held only by a torrent in that edition. False (a FLAC on the
-            site that may be filed under another edition), or a source FLAC missing from the group, keeps to the
-            year and edition title.
+        same_edition: Whether the source FLAC is filed under the transcodes' edition (catno included): only that
+            edition's torrents count, once the group is fetched. False, or the FLAC missing from the group: the
+            year and edition title decide.
 
     Returns:
         The names of the candidates the edition already has.

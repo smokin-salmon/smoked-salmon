@@ -14,9 +14,9 @@ from salmon.uploader.upload import generate_catno
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
 
-# The fields a site files an edition by, as the metadata names them, in remaster_text's order.
+# In remaster_text's order: site_edition zips the two.
 _FIELDS = ("year", "edition_title", "label", "catno")
-# What adopting an edition changes. The year stays ours: an edition is adopted only in our year.
+# Not the year: an edition is adopted only in our year.
 _ADOPTED = ("edition_title", "label", "catno")
 
 
