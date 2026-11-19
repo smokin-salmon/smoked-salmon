@@ -264,5 +264,5 @@ def _run_tag(monkeypatch, album: Path, **real: Any) -> Any:
 
 
 async def _same_group(_site, group_id, *_args):
-    """Stands in for recheck_edition: the group picked or given is kept."""
-    return group_id
+    """Stands in for recheck_edition: the group picked or given is kept, fetched holding no torrent."""
+    return group_id, {"torrents": []}

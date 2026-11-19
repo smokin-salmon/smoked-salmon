@@ -75,6 +75,7 @@ from salmon.uploader.dupe_checker import (
     generate_dupe_check_searchstrs,
     held_formats,
 )
+from salmon.uploader.held_edition import edition_in_group
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import report_lossy_master
 from salmon.uploader.staging import run_directory
@@ -1196,6 +1197,7 @@ def most_requests(
         gets = len(_searchstrs(data)) + 1  # The search, and a group pasted at the prompt
         if cfg.upload.requests.check_recent_uploads and target.has_session_cookie:
             gets += LOG_MAX_PAGES  # The pages of the site log, read when the search finds nothing
+    gets += 1  # The group, for the editions it holds, when the upload goes into one
     if release.tasks:
         gets += 1  # The group, for the formats it already has
     if not target.api_key:
@@ -1293,6 +1295,8 @@ async def _upload(
             target, _searchstrs(data), offer_deletion=False, our_title=data["title"], release=edition
         )
     existing_group = group_id is not None
+    if group_id is not None:
+        edition = await _held_edition(target, group_id, edition, data)
 
     await _rehost_images(data, release.rehost, source, target)
     _refuse_secrets(data, source)
@@ -1325,7 +1329,16 @@ async def _upload(
         click.secho(f"\nNo group id came back for {url}: its conversions are not uploaded.", fg="yellow")
         return
     await _upload_conversions(
-        release, target, group_id, torrent_id, url, existing_group, seedbox, uploaded, flac_uploaded=True
+        release,
+        target,
+        group_id,
+        torrent_id,
+        url,
+        existing_group,
+        seedbox,
+        uploaded,
+        edition=edition,
+        flac_uploaded=True,
     )
 
 
@@ -1470,6 +1483,28 @@ def _refuse_secrets(data: dict[str, Any], source: "BaseGazelleApi") -> None:
                 raise CrossUploadRefused(f"the {name} field would carry a {source.site_string} credential")
 
 
+async def _held_edition(
+    target: "BaseGazelleApi", group_id: int, edition: dict[str, Any], data: dict[str, Any]
+) -> dict[str, Any]:
+    """edition, or TARGET's wording of it in group_id written into data, for the FLAC and its conversions.
+
+    Raises:
+        CrossUploadRefused: If TARGET's Do-Not-Upload list forbids its wording.
+    """
+    held = await edition_in_group(target, group_id, edition)
+    if held is edition:
+        return edition
+    data.update(
+        remaster_title=held["edition_title"],
+        remaster_record_label=held["label"],
+        remaster_catalogue_number=held["catno"],
+    )
+    # The source's fields passed the list; TARGET's wording (its edition title, a label's words) may not.
+    if reason := do_not_upload_reason(target.site_code, Candidate.from_form(data)):
+        raise CrossUploadRefused(reason)
+    return held
+
+
 async def _upload_conversions(
     release: Release,
     target: "BaseGazelleApi",
@@ -1480,18 +1515,18 @@ async def _upload_conversions(
     seedbox: UploadManager,
     uploaded: list[str],
     *,
+    edition: dict[str, Any],
     flac_uploaded: bool,
 ) -> None:
     """Upload the conversions asked for that the group does not have yet, with master's converters and forms.
 
     `flac_uploaded`: this run sent the FLAC the conversions are made from (see held_formats).
     """
-    edition = _edition(release)
     tasks = release.tasks
     if existing_group:
         group = await target.torrentgroup(group_id)
         formats = {task["name"]: downconversion_format(task) for task in tasks}
-        held = held_formats(group, edition, {"id": torrent_id}, formats, uploaded=flac_uploaded)
+        held = held_formats(group, edition, {"id": torrent_id}, formats, same_edition=flac_uploaded)
         for name in sorted(held):
             click.secho(f"Not uploading {name}: the group already has it in this edition.", fg="yellow")
         tasks = [task for task in tasks if task["name"] not in held]

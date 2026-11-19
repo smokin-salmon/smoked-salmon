@@ -76,6 +76,7 @@ def _release(**overrides: Any) -> dict[str, Any]:
         "format": "FLAC",
         "encoding": "Lossless",
         "year": 2020,
+        "label": "Label",
         "catno": "CAT1",
         "edition_title": None,
         "artists": [("Artist", "main")],
@@ -395,6 +396,7 @@ def _flow(
     source: str = "WEB",
     reviewed: dict[str, Any] | None = None,
     conversions: tuple[str, ...] | None = None,
+    confirm: Any = None,  # Answers the questions asked; without it, each is answered yes
     **fakes: Any,
 ) -> tuple[list[str], list[tuple]]:
     """Run upload() with --skip-flac-upload over stubbed seams. Returns the calls and the transcode runs.
@@ -445,7 +447,7 @@ def _flow(
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "check_requests", True)
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "last_minute_dupe_check", False)
     monkeypatch.setattr(salmon.uploader.cfg.image, "embed_missing_cover", False)
-    monkeypatch.setattr(salmon.uploader.click, "confirm", _returning(True, calls, "confirm"))
+    monkeypatch.setattr(salmon.uploader.click, "confirm", confirm or _returning(True, calls, "confirm"))
     monkeypatch.setattr(salmon.trackers, "choose_tracker", _returning_async(None, calls, "choose_tracker"))
     # Another tracker is configured, so going on to it would be possible.
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
@@ -623,15 +625,47 @@ def test_a_held_format_of_another_edition_is_offered(monkeypatch) -> None:
     assert transcoded == [(["MP3 320", "MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
 
 
-def test_a_format_held_in_the_forms_edition_is_left_out_beside_a_flac_of_another(monkeypatch) -> None:
-    # The transcodes go up with the form's catalogue number (CAT1), not the existing FLAC's (CAT-2): the FLAC
-    # was not sent by this run, so no edition is known to be theirs and every match counts.
-    monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", True)
+def _transcodes_beside_two_editions(monkeypatch, **kwargs: Any) -> list[tuple[list[str], str, str]]:
+    """The transcodes run, with their catno and source, from a FLAC under CAT-2: the form says CAT1, which has a 320."""
     group = _group(_torrent(11, catno="CAT-2"), _torrent(12, format_="MP3", encoding="320", catno="CAT1"))
+    sent: list[tuple[list[str], str, str]] = []
 
-    _calls, transcoded = _flow(monkeypatch, group)
+    async def execute(tasks, _path, _site, _group_id, metadata, *args: Any, **_kwargs: Any) -> None:
+        sent.append(([t["name"] for t in tasks], metadata["catno"], args[-1]))
 
-    assert transcoded == [(["MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
+    _flow(monkeypatch, group, execute_downconversion_tasks=execute, **kwargs)
+    return sent
+
+
+def test_transcodes_go_up_in_the_edition_of_their_flac_and_count_only_its_formats(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", True)
+
+    sent = _transcodes_beside_two_editions(monkeypatch)
+
+    # -yyy takes the FLAC's edition, where the MP3 320 held under CAT1 is not.
+    assert sent == [(["MP3 320", "MP3 V0"], "CAT-2", "https://tracker.test/torrents.php?torrentid=11")]
+    output = capsys.readouterr().out
+    assert "RED files this release as: 2020 / Label / CAT-2" in output
+    assert "Using RED's edition fields (-yyy)." in output
+
+
+def test_transcodes_go_up_in_the_forms_edition_when_their_flacs_is_declined(monkeypatch) -> None:
+    asked: list[str] = []
+
+    def confirm(text: str, *_args: Any, **_kwargs: Any) -> bool:
+        asked.append(salmon.uploader.click.unstyle(text))
+        return "edition fields" not in text
+
+    async def take_default(_text: str, default: Any = None, **_kwargs: Any) -> Any:
+        return default
+
+    monkeypatch.setattr(salmon.uploader.click, "prompt", take_default)
+
+    sent = _transcodes_beside_two_editions(monkeypatch, confirm=confirm)
+
+    assert "Use RED's edition fields?" in asked
+    # CAT1, as the form says, already holds the MP3 320: the conversions offered by default leave it out.
+    assert sent == [(["MP3 V0"], "CAT1", "https://tracker.test/torrents.php?torrentid=11")]
 
 
 def test_a_held_format_with_another_catalogue_number_is_held() -> None:

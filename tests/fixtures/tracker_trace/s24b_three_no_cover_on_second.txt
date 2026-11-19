@@ -130,6 +130,7 @@ GET /ajax.php action=browse searchstr=artist album [API key]
 GET /ajax.php action=index [no auth]
 GET /ajax.php action=browse searchstr=artist album [no auth]
 GET /ajax.php action=requests search=artist album [no auth]
+GET /ajax.php action=torrentgroup id=55 [no auth]
 POST /upload.php groupid=55 [no auth]
   file_input: meowmeow.torrent: infohash <infohash 4>, private True, announce tracker.52dic.vip
   The torrent: Artist - Album (2020) [WEB FLAC], 2 file(s), 2.22 KiB, piece size 16 KiB, source DICMusic

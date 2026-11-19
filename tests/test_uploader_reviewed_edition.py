@@ -297,9 +297,12 @@ def test_a_group_id_given_as_text_is_fetched_once(monkeypatch) -> None:
     defaults = _answers(monkeypatch, "y")
 
     # As -g gives it: click passes the option's text on.
-    result = anyio.run(dupe_checker.recheck_edition, site, "555", REVIEWED, None)  # pyright: ignore[reportArgumentType]
+    group_id, group = anyio.run(dupe_checker.recheck_edition, site, "555", REVIEWED, None)  # pyright: ignore[reportArgumentType]
 
-    assert result == "555"
+    assert group_id == "555"
+    # The group fetched, handed on so the upload reads its editions without fetching it again.
+    assert group is not None
+    assert group["torrents"] == [{**WEB_FLAC, "id": 7}]
     assert defaults == ["a"]
     assert site.calls == ["555"]
 
@@ -307,13 +310,19 @@ def test_a_group_id_given_as_text_is_fetched_once(monkeypatch) -> None:
 def test_a_new_group_answer_gives_none(monkeypatch) -> None:
     _answers(monkeypatch, "n")
 
-    assert anyio.run(dupe_checker.recheck_edition, _site(_group()), 555, REVIEWED, {**REVIEWED, "year": 2010}) is None
+    result = anyio.run(dupe_checker.recheck_edition, _site(_group()), 555, REVIEWED, {**REVIEWED, "year": 2010})
+
+    assert result == (None, None)
 
 
 def test_a_torrent_the_pick_already_named_asks_nothing(monkeypatch) -> None:
     defaults = _answers(monkeypatch)
 
-    assert anyio.run(dupe_checker.recheck_edition, _site(_group()), 555, REVIEWED, REVIEWED) == 555
+    group_id, group = anyio.run(dupe_checker.recheck_edition, _site(_group()), 555, REVIEWED, REVIEWED)
+
+    assert group_id == 555
+    assert group is not None
+    assert group["torrents"] == [{**WEB_FLAC, "id": 7}]
     assert defaults == []
 
 
@@ -322,6 +331,6 @@ def test_a_failed_recheck_keeps_the_group_and_says_so(monkeypatch, capsys) -> No
 
     result = anyio.run(dupe_checker.recheck_edition, _site(RequestFailedError("down")), 555, REVIEWED, None)
 
-    assert result == 555
+    assert result == (555, {})
     assert defaults == []
     assert "Could not re-check group 555 on TRK against the reviewed edition (down)" in capsys.readouterr().out

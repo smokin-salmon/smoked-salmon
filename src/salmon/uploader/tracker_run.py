@@ -21,10 +21,12 @@ from salmon.uploader.conversion_choice import (
 from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.cover_upload import resolve_cover_url
 from salmon.uploader.dupe_checker import print_torrents
+from salmon.uploader.held_edition import edition_in_group, edition_of_source, in_edition_of
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import SpectralsDeclined, SpectralUploads, post_upload_spectral_check
 from salmon.uploader.upload import upload_and_report
+from salmon.uploader.upload_checks import _do_not_upload_refusal
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -98,8 +100,26 @@ def _say_declined(declined: SpectralsDeclined, uploaded: list[str]) -> None:
             click.echo(f"  {line}")
 
 
+async def _upload_edition(
+    gazelle_site: "BaseGazelleApi", release: ReleaseToUpload, group_id: int | None, fetched_group: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    """The metadata to upload under on this tracker (see held_edition); None when its list forbids that edition."""
+    if release.flac_url and release.source_flac is not None:
+        metadata = await edition_of_source(gazelle_site, release.source_flac, release.metadata)
+    else:
+        metadata = await edition_in_group(gazelle_site, group_id, release.metadata, fetched_group)
+    # The reviewed fields passed the list; the site's wording (its edition title, a label's words) may not.
+    if metadata is not release.metadata and _do_not_upload_refusal(gazelle_site.site_code, metadata) is not None:
+        return None
+    return metadata
+
+
 async def upload_to_tracker(
-    release: ReleaseToUpload, gazelle_site: "BaseGazelleApi", group_id: int | None, run: TrackerRun
+    release: ReleaseToUpload,
+    gazelle_site: "BaseGazelleApi",
+    group_id: int | None,
+    run: TrackerRun,
+    fetched_group: dict[str, Any] | None = None,  # {} = the fetch failed: do not fetch again
 ) -> Turn:
     """Upload the release to one tracker: its cover, spectrals, request, torrent and conversions.
 
@@ -138,16 +158,21 @@ async def upload_to_tracker(
         if not release.flac_url and not run.request_id and cfg.upload.requests.check_requests:
             run.request_id = await check_requests(gazelle_site, release.searchstrs)
 
+        metadata = await _upload_edition(gazelle_site, release, group_id, fetched_group)
+        if metadata is None:
+            run.failed_trackers.append(gazelle_site.site_string)
+            return Turn.SKIPPED
         held: set[str] = set()
         if release.flac_url and release.source_flac is not None:
             click.secho(f"\nNot uploading the FLAC: transcoding from {release.flac_url}", fg="yellow")
             url = release.flac_url
             held = _held_conversions(
                 release.flac_group or {},
-                release.metadata,
+                metadata,
                 release.source_flac,
                 release.rls_data,
                 release.track_data,
+                same_edition=in_edition_of(release.source_flac, metadata),
             )
         else:
             group_link = f"{gazelle_site.base_url}/torrents.php?id={group_id}" if group_id else release.source_url
@@ -155,7 +180,7 @@ async def upload_to_tracker(
                 gazelle_site,
                 release.path,
                 group_id,
-                release.metadata,
+                metadata,
                 cover_url,
                 release.track_data,
                 release.hybrid,
@@ -186,11 +211,11 @@ async def upload_to_tracker(
                 # Read from the group just printed: no request of its own.
                 held = _held_conversions(
                     group,
-                    release.metadata,
+                    metadata,
                     {"id": torrent_id},
                     release.rls_data,
                     release.track_data,
-                    uploaded=True,
+                    same_edition=True,
                 )
 
             if run.spectrals_after:
@@ -242,7 +267,7 @@ async def upload_to_tracker(
                     release.path,
                     gazelle_site,
                     group_id,
-                    release.metadata,
+                    metadata,
                     cover_url,
                     release.track_data,
                     release.hybrid,

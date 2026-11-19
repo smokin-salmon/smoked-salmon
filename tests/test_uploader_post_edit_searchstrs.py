@@ -259,5 +259,5 @@ def test_the_upload_describes_the_files_by_the_names_the_review_gave_them(monkey
 
 
 async def _same_group(_site, group_id, *_args):
-    """Stands in for recheck_edition: the group picked or given is kept."""
-    return group_id
+    """Stands in for recheck_edition: the group picked or given is kept, fetched holding no torrent."""
+    return group_id, {"torrents": []}
