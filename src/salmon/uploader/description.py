@@ -104,7 +104,7 @@ def _with_guests(title: str, guests: list[str]) -> str | None:
     """The title naming its guests, as guests_in_track_title puts them but with every name (the line is where they
     show): unchanged when its credit names them all and its feat. credit no one else, and None, the line keeping its
     artist, when not ("Song (feat. B)" for guests B and C, "Song (feat. B & C)" for guest B)."""
-    if credit_in_title(title, guests):
+    if credit_in_title(title, guests) or any(_names_each(title, [guest]) for guest in guests):
         return title if _names_each(title, guests, only=True) else None
     remix = _REMIX_BRACKET.search(title)
     head, tail = (title[: remix.start()] + title[remix.end() :], remix[0]) if remix else (title, "")
@@ -132,10 +132,31 @@ def _names_each(title: str, names: list[str], only: bool = False) -> bool:
     return wanted <= {name for _feat, name in credits} and not others
 
 
+# What a title names before "Remix" when it says which remix, not whose: the kind ("Stereo", "Dolby Atmos", "50th
+# Anniversary", with or without a year) at the end of a name, or a year or one of these words alone.
+_RE_REMIX_KIND = re.compile(
+    r"(?:\s*\b(?:(?:19|20)\d\d\s+)?(?:stereo|mono|quad(?:raphonic)?|surround|(?:dolby\s+)?atmos|binaural"
+    r"|spatial(?:\s+audio)?|[57]\.1|(?:\d+(?:st|nd|rd|th)\s+)?anniversary|(?:digital\s+)?remaster(?:ed)?)"
+    r"(?:\s+(?:19|20)\d\d)?)+$",
+    flags=re.IGNORECASE,
+)
+_RE_NO_ONE = re.compile(
+    r"(?:19|20)\d\d|new|original|single(?: version)?|live|bonus|demo|version|special|deluxe|alternat(?:e|ive)|us|uk",
+    flags=re.IGNORECASE,
+)
+
+
 def _remixers(credits: list[tuple[str, str]], title: str | None) -> list[str]:
-    """The remixers a track credits, in REMIXER or as salmon reads them from its title ("Song (X Remix)")."""
-    pairs = [*credits, *_extract_remixers_from_title(title or "")]
-    return list(dict.fromkeys(name for name, role in pairs if role == "remixer"))
+    """The remixers a track credits in REMIXER, or with none, as salmon reads them from its title ("Song (X Remix)"),
+    on each track as the merge does for a store that states its credits. A credit that is only the title's reading
+    (as the merge adds for another store) is read as the title is. A title names a remixer without the kind of
+    remix: "2021" and "Stereo" name no one, "Steven Wilson Stereo" names Steven Wilson."""
+    read = [name for name, _ in _extract_remixers_from_title(title or "")]
+    credited = [name for name, role in credits if role == "remixer"]
+    if any(name not in read for name in credited):
+        return list(dict.fromkeys(credited))
+    names = (_RE_REMIX_KIND.sub("", name).strip() for name in read)
+    return list(dict.fromkeys(name for name in names if name and not _RE_NO_ONE.fullmatch(name)))
 
 
 def album_remixers(tracks: Sequence[tuple[list[tuple[str, str]], str]]) -> list[str] | None:

@@ -856,6 +856,15 @@ def test_a_title_naming_only_some_of_the_guests_keeps_the_artist() -> None:
     assert _lines(description) == ["[b]01.[/b] Sullivan Murphy (feat. Bob & Carol) - Song (feat. Bob) [i](3:20)[/i]"]
 
 
+def test_a_title_crediting_one_guest_in_a_with_bracket_keeps_the_artist() -> None:
+    # The line would name Bob twice: "Song (with Bob) (feat. Bob & Carol)".
+    tracks = _tracks({"artist": ["Sullivan Murphy (feat. Bob & Carol)"], "title": "Song (with Bob)"})
+
+    description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
+
+    assert _lines(description) == ["[b]01.[/b] Sullivan Murphy (feat. Bob & Carol) - Song (with Bob) [i](3:20)[/i]"]
+
+
 @pytest.mark.parametrize("title", ["Song (feat. Bob)", "Sullivan Murphy's Song (feat. Bob)"])
 def test_an_artists_name_the_title_does_not_credit_is_no_guest(title: str) -> None:
     # ARTISTS repeats the album's artist; the title credits someone else, whom the tags don't name, if it names the
@@ -902,3 +911,101 @@ def test_the_remix_line_wraps_its_names_as_the_lines_do(monkeypatch) -> None:
     description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
 
     assert "\nAll tracks remixed by [artist]Remi Xer[/artist].\n" in description
+
+
+def _remixed_album(title: str, remixer: list[str] | None = None) -> str:
+    """Two tracks of a one-artist album, each a remix titled "Song N (title)", with these REMIXER values."""
+    tags = [{"artist": ["Sullivan Murphy"], "remixer": remixer, "title": f"Song {n} {title}"} for n in (1, 2)]
+    return generate_description(_tracks(*tags), _album(("Sullivan Murphy", "main")))
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "(2021 Remix)",
+        "(Stereo Remix)",
+        "(Mono Remix)",
+        "(Dolby Atmos Remix)",
+        "(2009 Stereo Remix)",
+        "(50th Anniversary Remix)",
+        "(Original Stereo Remix)",
+        "(New Remix)",
+        "(Spatial Audio Remix)",
+        "(2009 Digital Remaster Remix)",
+        "(Single Version Remix)",
+        "(US Remix)",
+        "(Alternate Remix)",
+    ],
+)
+def test_a_year_or_the_kind_of_remix_in_every_title_is_no_remixer(title: str) -> None:
+    description = _remixed_album(title)
+
+    assert "remixed by" not in description
+    assert all(line.startswith(f"[b]0{n}.[/b] Sullivan Murphy - ") for n, line in enumerate(_lines(description), 1))
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "(Steven Wilson Stereo Remix)",
+        "(Steven Wilson Stereo 2021 Remix)",
+        "(Steven Wilson 2021 Stereo Remix)",
+        "(Steven Wilson Dolby Atmos Remix)",
+    ],
+)
+def test_a_remixer_named_with_the_kind_of_remix_is_said_without_it(title: str) -> None:
+    assert "\nAll tracks remixed by Steven Wilson.\n" in _remixed_album(title)
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["Thomas Dolby", "The 1975", "2000 And One", "Stereo MC's", "Brand New", "The Alternative", "Deluxe Edition"],
+)
+def test_as_before_a_remixer_s_name_holding_a_year_or_a_kind_of_remix_is_said_whole(name: str) -> None:
+    assert f"\nAll tracks remixed by {name}.\n" in _remixed_album(f"({name} Remix)")
+
+
+@pytest.mark.parametrize(
+    ("remixer", "title"),
+    [
+        (["Steven Wilson"], "(2021 Remix)"),
+        (["Remi Xer"], "(REMI XER Remix)"),
+        (["Remi Xer"], "(Remi Xer's Remix)"),
+        (["X & Y"], "(X & Y Remix)"),
+    ],
+)
+def test_a_remixer_in_remixer_is_said_and_the_title_not_read(remixer: list[str], title: str) -> None:
+    assert f"\nAll tracks remixed by {', '.join(remixer)}.\n" in _remixed_album(title, remixer)
+
+
+def test_as_before_every_remixer_in_remixer_is_said_when_the_title_names_one() -> None:
+    assert "\nAll tracks remixed by X, Y.\n" in _remixed_album("(X Remix)", ["X", "Y"])
+
+
+def test_a_remixer_in_remixer_on_one_track_and_in_the_title_of_another_is_said_once() -> None:
+    tags = [
+        {"artist": ["Sullivan Murphy"], "remixer": ["Steven Wilson"], "title": "Song 1 (2021 Remix)"},
+        {"artist": ["Sullivan Murphy"], "title": "Song 2 (Steven Wilson Remix)"},
+    ]
+
+    description = generate_description(_tracks(*tags), _album(("Sullivan Murphy", "main")))
+
+    assert "\nAll tracks remixed by Steven Wilson.\n" in description
+
+
+@pytest.mark.parametrize(
+    ("title", "line"),
+    [("(2021 Remix)", None), ("(Steven Wilson Stereo Remix)", "All tracks remixed by Steven Wilson.")],
+)
+def test_descgen_reads_a_remixer_the_merge_read_from_the_titles_as_the_titles_are(
+    monkeypatch, title: str, line: str | None
+) -> None:
+    # With several URLs, the merge credits what it reads in a later store's titles: "2021" is no one here either.
+    remixer = title[1 : -len(" Remix)")]
+    album = _store_album(*([("Sullivan Murphy", "main"), (remixer, "remixer")] for _ in (1, 2)))
+    for track in album["tracks"]["1"].values():
+        track["title"] += f" {title}"
+
+    description = _descgen_description(monkeypatch, album)
+
+    assert (line in description.splitlines()) if line else ("remixed by" not in description)
