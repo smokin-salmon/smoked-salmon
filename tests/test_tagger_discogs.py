@@ -314,6 +314,15 @@ def test_dots_naming_a_video_disc_beside_the_cds_read_it_as_a_disc_too() -> None
     assert parsed == {"1": ["1", "2"], "2": ["1", "2"], "3": ["1"]}
 
 
+def test_as_before_dots_repeated_on_each_cd_number_movements_on_two_discs() -> None:
+    # Each CD numbers its works from "1.1": as disc and track, the second CD's would replace the first's.
+    tracklist = [heading("CD 1"), *MOVEMENTS, heading("CD 2"), *MOVEMENTS]
+
+    parsed = discs(tracklist, TWO_CDS)
+
+    assert parsed == {"1": ["1.1", "1.2", "2.1", "2.2"], "2": ["1.1", "1.2", "2.1", "2.2"]}
+
+
 def test_as_before_a_dot_numbering_a_tracks_parts_stays_as_written() -> None:
     # A single CD whose 12th track has parts: "12.1" is no disc.
     parsed = discs([track("11", "Eleven"), track("12.1", "Part one"), track("12.2", "Part two")])
@@ -521,6 +530,16 @@ def test_as_before_numbering_going_back_later_under_a_heading_starts_no_disc() -
     parsed = discs(tracklist)
 
     assert parsed == {"2": ["1", "2", "3", "2:4"]}
+
+
+def test_a_heading_s_first_number_after_the_ninth_part_goes_on_by_its_number() -> None:
+    # "1.10" follows "1.9": it goes on, though it sorts before it as text.
+    tracklist = [*(track(f"1.{part}", f"Part {part}") for part in range(1, 10)), heading("Finale")]
+    tracklist.append(track("1.10", "Part 10"))
+
+    parsed = discs(tracklist)
+
+    assert parsed == {"1": [*(f"1.{part}" for part in range(1, 11))]}
 
 
 def test_as_before_numbering_going_back_after_a_heading_starts_a_disc() -> None:

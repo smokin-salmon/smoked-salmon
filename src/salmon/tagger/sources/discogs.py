@@ -52,9 +52,9 @@ _RE_DISC_TRACK = re.compile(r"(?:CD|SACD)?(\d+)-(\S+)")
 # A disc's first position: seen again on that disc, its numbering or a record's sides start again.
 _FIRST_POSITIONS = {"1", "A1"}
 # "1.1", "2.1": a disc and track when every numbered position is so, over more than one disc, on a release of more
-# than one CD, naming no disc beyond the discs it states; else the dot numbers a track's parts ("12.1") or a work's
-# movements ("1.1" to "2.2" on one CD).
-_RE_DOTTED = re.compile(r"(\d+)\.\d+")
+# than one CD, naming no disc beyond the discs it states and no disc and track twice; else the dot numbers a track's
+# parts ("12.1") or a work's movements ("1.1" to "2.2" on one CD, or again on each CD).
+_RE_DOTTED = re.compile(r"(\d+)\.(\d+)")
 # Formats that are CDs: a record's or a tape's sides are one disc, and a file release's qty counts its files.
 _CD_FORMATS = {"CD", "CDr", "SACD"}
 # Video discs, which a set's dots may number on from its CDs ("3.1" on the DVD after two CDs).
@@ -108,11 +108,12 @@ def _numbered(position: str) -> bool:
     return any(char.isalnum() for char in position)
 
 
-def _place(number: str) -> tuple[int, str] | None:
-    """A track number's place in a numbering of parts: (1, "B") for "1B", (2, "") for "2", or None when it starts with
-    no number ("A1", "-")."""
-    match = re.match(r"\d+", number)
-    return (int(match[0]), number[match.end() :]) if match else None
+def _place(number: str) -> tuple[int | str, ...] | None:
+    """A track number's place in a numbering of parts, each run of digits by its value: (1, "B") for "1B", (2,) for
+    "2", (1, ".", 10) for "1.10", after "1.9", or None when it starts with no number ("A1", "-")."""
+    if not number[:1].isdecimal():
+        return None
+    return tuple(int(run) if run.isdecimal() else run for run in re.findall(r"\d+|\D+", number))
 
 
 class Scraper(DiscogsBase, MetadataMixin):
@@ -163,9 +164,11 @@ class Scraper(DiscogsBase, MetadataMixin):
         cur_disc = 1
         positions = (str(t.get("position", "")).strip() for t in soup["tracklist"] if t["type_"] == "track")
         matches = [_RE_DOTTED.fullmatch(position) for position in positions if _numbered(position)]
-        leads = {int(match[1]) for match in matches if match}
+        pairs = [(int(match[1]), int(match[2])) for match in matches if match]
+        leads = {lead for lead, _ in pairs}
         dotted = (
             all(matches)
+            and len(set(pairs)) == len(pairs)
             and len(leads) > 1
             and _stated(soup, _CD_FORMATS) > 1
             and max(leads) <= _stated(soup, _CD_FORMATS | _VIDEO_FORMATS)
