@@ -1,5 +1,7 @@
 """A leading ~ in a folder setting is expanded when the config loads (#1095)."""
 
+from pathlib import Path
+
 import pytest
 
 from salmon.config.validations import Cfg, Directory, GazelleTrackerSettings, Tracker
@@ -29,11 +31,13 @@ def test_a_tilde_in_a_folder_setting_is_expanded_at_load(home_dirs) -> None:
         library_dirs=["~/library"],
     )
 
-    assert directory.download_directory == str(directories["music"])
-    assert directory.dottorrents_dir == str(directories["torrents"])
-    assert directory.tmp_dir == str(directories["tmp"])
-    assert directory.cross_upload_dottorrents_dir == str(directories["torrents"])
-    assert directory.library_dirs == [str(directories["library"])]
+    assert Path(directory.download_directory) == directories["music"]
+    assert Path(directory.dottorrents_dir) == directories["torrents"]
+    assert directory.tmp_dir is not None
+    assert Path(directory.tmp_dir) == directories["tmp"]
+    assert directory.cross_upload_dottorrents_dir is not None
+    assert Path(directory.cross_upload_dottorrents_dir) == directories["torrents"]
+    assert [Path(entry) for entry in directory.library_dirs] == [directories["library"]]
 
 
 def test_a_tilde_folder_that_does_not_exist_is_still_refused(home_dirs) -> None:
@@ -62,7 +66,14 @@ def test_a_trackers_tilde_folder_is_expanded_and_checked_against_library_dirs(ho
     with pytest.raises(ValueError, match=r"must not contain tracker\.red\.cross_upload_dottorrents_dir"):
         Cfg(directory=directory, tracker=Tracker(red=inside))
 
-    beside = GazelleTrackerSettings(session="session", cross_upload_dottorrents_dir="~/torrents")
+    beside = GazelleTrackerSettings(
+        session="session",
+        dottorrents_dir="~/torrents",
+        cross_upload_dottorrents_dir="~/torrents",
+    )
     loaded = Cfg(directory=directory, tracker=Tracker(red=beside))
     assert loaded.tracker.red is not None
-    assert loaded.tracker.red.cross_upload_dottorrents_dir == str(home_dirs["torrents"])
+    assert loaded.tracker.red.dottorrents_dir is not None
+    assert Path(loaded.tracker.red.dottorrents_dir) == home_dirs["torrents"]
+    assert loaded.tracker.red.cross_upload_dottorrents_dir is not None
+    assert Path(loaded.tracker.red.cross_upload_dottorrents_dir) == home_dirs["torrents"]
