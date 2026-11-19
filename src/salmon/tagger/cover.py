@@ -162,13 +162,17 @@ async def offer_cover_rename(path: str) -> None:
 
     Does nothing when the folder's cover is a named one, or it has none. A folder that may hold a library album is
     left as it is, without asking. A no leaves the file under its own name, and it is used as it is; an error from
-    the rename is said, and the file is left too.
+    the rename is said, and the file is left too. A lone image is not offered while a FLAC has oversized embedded
+    pictures: a cover file named so would stand for them when they are stripped, and a lone image is a guess, so
+    the embedded front cover is extracted first, as it is for a folder with no cover file.
 
     Only a step that runs before any torrent is made from the folder may call this: a rename later would change a
     folder a torrent was made from.
     """
     match = find_cover(path)
     if match is None or match.kind == "named" or cfg.directory.protects(path):
+        return
+    if match.kind == "lone" and find_oversized_pictures(path):
         return
     filename = os.path.basename(match.path)
     new_name = ("c" if cfg.upload.formatting.lowercase_cover else "C") + "over" + os.path.splitext(filename)[1]

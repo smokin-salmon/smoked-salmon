@@ -426,3 +426,42 @@ def test_embed_missing_cover_embeds_a_lone_image(tmp_path) -> None:
     cover.embed_missing_cover(str(tmp_path))
 
     assert len(FLAC(tmp_path / "01.flac").pictures) == 1
+
+
+def _prepare(folder: Path) -> None:
+    async def run() -> None:
+        with interaction.assuming_defaults():
+            await uploader._prepare_pictures(str(folder), {"cover": None}, False)
+
+    anyio.run(run)
+
+
+def test_a_lone_image_is_not_renamed_over_oversized_embedded_artwork(tmp_path) -> None:
+    _oversized(tmp_path)
+    (tmp_path / "photo.jpg").write_bytes(JPEG)
+
+    _prepare(tmp_path)
+
+    assert (tmp_path / "photo.jpg").read_bytes() == JPEG
+    assert (tmp_path / "cover.jpg").read_bytes() == _image(1500 * KIB)
+    assert cover.find_oversized_pictures(str(tmp_path)) == {}
+
+
+def test_an_album_named_image_is_still_renamed_with_oversized_embedded_artwork(tmp_path) -> None:
+    _oversized(tmp_path)
+    _two_images(tmp_path, "Tin Cup.jpg")
+
+    _prepare(tmp_path)
+
+    assert (tmp_path / "cover.jpg").read_bytes() == JPEG
+    assert not (tmp_path / "Tin Cup.jpg").exists()
+    assert cover.find_oversized_pictures(str(tmp_path)) == {}
+
+
+def test_a_lone_image_is_still_renamed_without_oversized_artwork(album) -> None:
+    (album / "photo.jpg").write_bytes(JPEG)
+
+    _prepare(album)
+
+    assert (album / "cover.jpg").read_bytes() == JPEG
+    assert not (album / "photo.jpg").exists()
