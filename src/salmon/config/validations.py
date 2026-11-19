@@ -21,6 +21,11 @@ def _lexical(path: str) -> str:
     return os.path.abspath(os.path.expanduser(path))
 
 
+def _expand_folder(path: str) -> str:
+    """Expand a leading ~ to the user's home; other paths are left as written."""
+    return os.path.expanduser(path)
+
+
 def _holds(folder: str, path: str) -> bool:
     """Whether path is folder or inside it, resolved or as given (commonpath: /music-old is not in /music)."""
     # As given too: an album symlinked into a library is in it, wherever the link points.
@@ -71,6 +76,14 @@ class Directory(BaseStruct):
     library_dirs: list[str] = msgspec.field(default_factory=list)
 
     def __post_init__(self):
+        # Expand once at load so existence and library_dirs checks, and later use, see the real path.
+        self.dottorrents_dir = _expand_folder(self.dottorrents_dir)
+        self.download_directory = _expand_folder(self.download_directory)
+        if self.tmp_dir:
+            self.tmp_dir = _expand_folder(self.tmp_dir)
+        if self.cross_upload_dottorrents_dir:
+            self.cross_upload_dottorrents_dir = _expand_folder(self.cross_upload_dottorrents_dir)
+        self.library_dirs = [_expand_folder(entry) for entry in self.library_dirs]
         if not os.path.isdir(self.dottorrents_dir):
             raise ValueError("dottorrents_dir is not a valid directory")
         if self.cross_upload_dottorrents_dir and not os.path.isdir(self.cross_upload_dottorrents_dir):
@@ -254,6 +267,12 @@ class GazelleTrackerSettings(BaseStruct):
     dottorrents_dir: str | None = None
     # Where salmon cross-upload writes this tracker's .torrent files. Unset: see Cfg.cross_upload_dottorrents_dir.
     cross_upload_dottorrents_dir: str | None = None
+
+    def __post_init__(self):
+        if self.dottorrents_dir:
+            self.dottorrents_dir = _expand_folder(self.dottorrents_dir)
+        if self.cross_upload_dottorrents_dir:
+            self.cross_upload_dottorrents_dir = _expand_folder(self.cross_upload_dottorrents_dir)
 
 
 class Tracker(BaseStruct):

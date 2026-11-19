@@ -9,6 +9,8 @@
 # DIRECTORY SETTINGS
 # ===============================
 [directory]
+# A leading ~ in a folder setting (here, in library_dirs, or in a tracker's dottorrents_dir or
+# cross_upload_dottorrents_dir) is expanded when the config loads; existence and library_dirs checks use that path.
 # Where to copy files (usually the download/seeding folder for your torrent client)
 # download_directory = '.music'
 
