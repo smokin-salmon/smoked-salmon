@@ -167,8 +167,9 @@ def _rewrite_lines(
 ) -> _Outcome:
     outcome = _Outcome(list(lines), [], [], [], False)
     old_files = {_key(old).casefold() for old, _ in renames}
-    # Any code page reads as cp1252 without error, as nonsense: a non-ASCII entry naming no file may be a renamed one,
-    # when a renamed name (not the folders it is in) is non-ASCII.
+    # Another code page mostly reads as cp1252 without error, as nonsense (one with a byte cp1252 leaves undefined is
+    # not read at all): a non-ASCII entry naming no file may be a renamed one, when the path an entry would name a
+    # renamed file by is non-ASCII, from the playlist's folder ("..\Björk\01.flac"), not the folders above it.
     unsure = encoding == "cp1252" and any(not os.path.relpath(old, old_folder).isascii() for old, _ in renames)
     for index, line in enumerate(lines):
         parts = _cue_entry(line) if cue else _m3u_entry(line)
