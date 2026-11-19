@@ -40,16 +40,16 @@ def in_edition_of(torrent: Any, metadata: dict[str, Any]) -> bool:
     return held is not None and _ours(metadata) == held
 
 
-def _catno_key(catno: str) -> str:
-    """comparable(), with a catno of digits alone stripped of leading zeros: a UPC-A and its EAN-13 are one catno."""
-    key = comparable(catno)
-    return (key.lstrip("0") or "0") if key.isdecimal() else key
-
-
 def _is_barcode(catno: str) -> bool:
     """Whether a catalogue number is a barcode (a UPC or EAN: 12 digits or more), which names one product."""
     key = comparable(catno)
     return key.isdecimal() and len(key) >= 12
+
+
+def _catno_key(catno: str) -> str:
+    """comparable(), with a barcode stripped of leading zeros: a UPC-A and its EAN-13 are one catno."""
+    key = comparable(catno)
+    return (key.lstrip("0") or "0") if _is_barcode(catno) else key
 
 
 def names_ours(held: dict[str, str], ours: dict[str, str]) -> bool:
