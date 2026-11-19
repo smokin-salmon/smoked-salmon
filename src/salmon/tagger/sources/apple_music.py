@@ -175,6 +175,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                     if rel.get("type") == "artists" and name and (name, "main") not in artists:
                         artists.append((name, "main"))
 
+                explicit_artists = bool(artists)
                 if not artists:
                     # Older/cached responses without the included artists: keep the display string whole.
                     artist_name = (attrs.get("artistName") or "").strip()
@@ -196,6 +197,10 @@ class Scraper(AppleMusicBase, MetadataMixin):
                     isrc=attrs.get("isrc"),
                     explicit=attrs.get("contentRating") == "explicit",
                 )
+                if explicit_artists:
+                    # These credits are stated per artist by the store, not inferred from a joined string:
+                    # the split-repair must not join them back by name.
+                    new_track["explicit_artists"] = True
                 add_track(tracks, str(disc_num), track_num, new_track)
 
             if not tracks:

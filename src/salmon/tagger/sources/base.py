@@ -465,14 +465,12 @@ def filter_artists(artists, tracks=None):
         artist_pool = artist_spellings(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
-                repaired = fix_artists_list(
-                    list(
-                        dict.fromkeys(
-                            (artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"]
-                        )
-                    ),
-                    to_replace,
+                credits = list(
+                    dict.fromkeys((artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"])
                 )
+                # A store that names each artist itself has already said where the credits split; joined-name
+                # matching must not merge those. Unstructured display strings still get the repair.
+                repaired = credits if track.pop("explicit_artists", False) else fix_artists_list(credits, to_replace)
                 # Then deduplicate, so a name joined back counts too. Main and guest, the ARTIST credit, are one credit
                 # per name; another role (remixer, arranger, ...) is kept beside it.
                 deduplicated_artists = []
