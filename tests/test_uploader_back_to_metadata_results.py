@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from helpers.interaction_typed_sites import ask, edit_metadata_stubs
 from helpers.tagger_ai_review import make_metadata, make_review
+from helpers.tagger_multi_value_tags import _flac_album, _flac_tags
 from helpers.uploader_dry_run import (
     SOURCE_URL,
     _album,
@@ -18,6 +19,11 @@ from helpers.uploader_dry_run import (
     _returning_async,
     _run_up,
 )
+from mutagen.flac import FLAC
+from test_tagger_multi_value_tags import (
+    _formatting,  # noqa: F401 (an autouse fixture)
+)
+from test_tagger_rerun_clears_album_tags import _release
 from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
@@ -27,6 +33,8 @@ from salmon.errors import PickOtherResults
 from salmon.search.base import IdentData
 from salmon.tagger import ai_review, review
 from salmon.tagger import metadata as metadata_mod
+from salmon.tagger.retagger import tag_files as real_tag_files
+from salmon.tagger.tagfile import TagFile
 from salmon.uploader import metadata_review
 from salmon.uploader.upload import prepare_and_upload
 
@@ -260,3 +268,63 @@ def test_going_back_after_the_ai_review_applied_its_changes_asks_first(monkeypat
     assert asked_ai == ["ai"]
     assert [call[0] for call in terminal.calls] == ["prompt", "confirm", "prompt", "prompt", "confirm"]
     assert "Going back drops the changes made since the pick." in terminal.calls[-1][1]
+
+
+def test_what_the_pick_after_going_back_writes_is_what_a_rerun_clears(monkeypatch, tmp_path) -> None:
+    # `written` starts empty with each edit_metadata: going back leaves the files alone, so the abandoned pick has
+    # nothing in them to clear, and the new pick's own record is what the metadata step's re-run clears.
+    edit_metadata_stubs(monkeypatch)
+    file = _flac_album(tmp_path, CATALOGNUMBER="ORIGINAL")
+    abandoned = _release(catno="ABANDONED", label="Label")
+    picked = _release(catno="CAT1", label="Label")
+    rerun = _release(label="Label")
+    queue: list[Any] = [PickOtherResults, picked, rerun]
+    after_going_back: list[Any] = []
+
+    async def review(metadata: dict[str, Any], *_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        reviewed = queue.pop(0)
+        if reviewed is PickOtherResults:
+            raise PickOtherResults
+        return deepcopy(reviewed)
+
+    def gather_all(_path: str = "") -> dict[str, TagFile]:
+        return {f.name: TagFile(str(f)) for f in sorted(tmp_path.iterdir())}
+
+    async def gather(_path: str) -> dict[str, TagFile]:
+        return gather_all()
+
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", review)
+    monkeypatch.setattr(metadata_review, "check_tags", gather)
+    monkeypatch.setattr(metadata_review, "gather_tags", gather_all)
+    monkeypatch.setattr(metadata_review, "tag_files", real_tag_files)
+
+    async def up_with_a_way_back(metadata: dict[str, Any]) -> Any:
+        return await uploader.edit_metadata(
+            str(tmp_path),
+            gather_all(),
+            metadata,
+            None,
+            "WEB",
+            {},
+            False,
+            False,
+            None,
+            skip_integrity_check=True,
+            offer_other_results=True,
+        )
+
+    async def site() -> Any:
+        # As upload does: pick again, then run edit_metadata from the start.
+        try:
+            await up_with_a_way_back(abandoned)
+        except PickOtherResults:
+            after_going_back.append(FLAC(file).get("catalognumber"))
+        return await up_with_a_way_back(picked)
+
+    # The pick's retag, then re-run the metadata step; the retag of the re-run, then upload.
+    ask(monkeypatch, site, [True, False, True, True])
+
+    assert after_going_back == [["ORIGINAL"]]
+    names = {name.upper() for name, _ in _flac_tags(file)}
+    assert "CATALOGNUMBER" not in names
+    assert "LABEL" in names
