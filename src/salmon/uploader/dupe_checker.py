@@ -763,8 +763,7 @@ async def recheck_edition(
 ) -> tuple[int | None, dict | None]:
     """Weigh a group picked or given before the review against the reviewed edition.
 
-    The group is fetched once. Only a torrent of the reviewed edition that the pick did not already name for
-    weighed_against asks again, with abort as the default, as the first check does.
+    Fetched once. Only a reviewed-edition torrent the pick did not name for weighed_against asks again (abort default).
 
     Args:
         gazelle_site: The tracker API instance.
