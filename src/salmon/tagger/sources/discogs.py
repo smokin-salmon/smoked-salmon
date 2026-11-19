@@ -49,7 +49,7 @@ RELEASE_TYPES = {
 # A disc and what follows it: "2-15", a box set's "CD2-15", or "2-1a", a track's part. A video disc's ("DVD1-1")
 # stays as written, so its entries never take a CD's track numbers.
 _RE_DISC_TRACK = re.compile(r"(?:CD|SACD)?(\d+)-(\S+)")
-# A disc's first position: seen again on that disc, its numbering or a record's sides start again.
+# The positions a disc's numbering or a record's sides start from: either seen again on a disc starts the next.
 _FIRST_POSITIONS = {"1", "A1"}
 # "1.1", "2.1": a disc and track when every numbered position is so, over more than one disc, on a release of more
 # than one CD, naming no disc beyond the discs it states and no disc and track twice; else the dot numbers a track's
@@ -84,23 +84,91 @@ def _stated(soup: dict, names: set[str]) -> int:
     return sum(int(qty) if qty.isdecimal() else 1 for qty in quantities)
 
 
-def _starts_a_disc(number: str, listed: dict[str, int], headings: int, after_heading: bool) -> bool:
-    """Whether a track numbered `number`, its position naming no disc, starts the next one: the disc's first position
-    seen again on it, a position repeated across a heading (an unnumbered one, "-", only before the heading's first
-    numbered track), or, as a heading's first numbered track, numbering that goes back ("1" after "12", a side's "A"
-    again).
+def _dotted(soup: dict) -> bool:
+    """Whether the release's dots ("1.1", "2.1") are disc and track (_RE_DOTTED says when)."""
+    positions = (str(t.get("position", "")).strip() for t in soup["tracklist"] if t["type_"] == "track")
+    matches = [_RE_DOTTED.fullmatch(position) for position in positions if _numbered(position)]
+    pairs = [(int(match[1]), int(match[2])) for match in matches if match]
+    leads = {lead for lead, _ in pairs}
+    return (
+        all(matches)
+        and len(set(pairs)) == len(pairs)
+        and len(leads) > 1
+        and _stated(soup, _CD_FORMATS) > 1
+        and max(leads) <= _stated(soup, _CD_FORMATS | _VIDEO_FORMATS)
+    )
+
+
+def _disc_and_number(track: dict, dotted: bool) -> tuple[int | None, str]:
+    """A track's disc (None when its position names none) and track number."""
+    position = str(track.get("position", ""))
+    return _clean_discogs_position(position.replace(".", "-") if dotted else position)
+
+
+def _why_a_disc_starts(number: str, listed: dict[str, int], headings: int, after_heading: bool) -> str | None:
+    """Why a track numbered `number`, its position naming no disc, starts the next disc, or None when it doesn't.
+
     `listed` holds the disc's positions so far, each with how many headings came before it was first listed. A heading
-    alone starts none: headings also group one disc's tracks (a record's side, a composer's works)."""
-    across = number in listed and listed[number] < headings and (after_heading or _numbered(number))
-    if across or (number in listed and number in _FIRST_POSITIONS):
-        return True
+    alone starts no disc: headings also group one disc's tracks (a record's side, a composer's works).
+    """
+    if number in listed and number in _FIRST_POSITIONS:
+        return f"{number!r} again"
+    # An unnumbered position ("-") only before the heading's first numbered track: later, it is one more "-".
+    if number in listed and listed[number] < headings and (after_heading or _numbered(number)):
+        return f"{number!r} again after a heading"
+    # Only as a heading's first numbered track: later under it, going back is more likely a typo ("2:15" for "2-15").
     # A part goes back by its number, then its letter: "1a" after "2" does, "3a" after "2" and "1b" after "1a" don't.
     place = _place(number)
-    return (
+    if (
         after_heading
         and place is not None
-        and any((other_place := _place(other)) is not None and other_place >= place for other in listed)
-    )
+        and any((other := _place(seen)) is not None and other >= place for seen in listed)
+    ):
+        return f"numbering back to {number!r} after a heading"
+    return None
+
+
+def _disc_starts(tracklist: list[dict], dotted: bool) -> dict[int, str]:
+    """Where each disc that no position names starts, by its index in the tracklist, and why.
+
+    A disc starts at the latest heading when the heading came partway through the disc before, so the tracks under it
+    go with it ("A", "B", heading, "AA", "B"): except when numbering starts over, later under the heading, at the
+    disc's first numbered position, which starts the disc there and leaves a "Bonus" heading's tracks on the disc
+    before. A track whose position names its disc keeps it, so a heading over one starts no disc.
+    """
+    starts: dict[int, str] = {}
+    disc, headings, heading_at, after_heading, named_under = 1, 0, 0, False, False
+    listed: defaultdict[int, dict[str, int]] = defaultdict(dict)
+    for index, entry in enumerate(tracklist):
+        if entry["type_"] == "heading":
+            headings, heading_at, after_heading, named_under = headings + 1, index, True, False
+            continue
+        if entry["type_"] != "track":
+            continue
+        named, number = _disc_and_number(entry, dotted)
+        if named is not None:
+            disc, named_under = named, True
+        elif why := _why_a_disc_starts(number, listed[disc], headings, after_heading):
+            on_disc = listed[disc]
+            under = {position: seen for position, seen in on_disc.items() if seen == headings}
+            first = next((position for position in on_disc if _numbered(position)), None)
+            # Not a heading at or before the latest start: a disc named out of order ("2-2" before "1-2") can leave one.
+            at_heading = (
+                not named_under
+                and heading_at > max(starts, default=-1)
+                and len(under) < len(on_disc)
+                and (after_heading or number != first)
+            )
+            starts[heading_at if at_heading else index] = why
+            disc += 1
+            if at_heading:
+                listed[disc].update(under)
+                for position in under:
+                    del on_disc[position]
+        listed[disc].setdefault(number, headings)
+        # An unnumbered track ("-") after a heading leaves the heading's checks to the next.
+        after_heading = after_heading and not _numbered(number)
+    return starts
 
 
 def _numbered(position: str) -> bool:
@@ -161,46 +229,17 @@ class Scraper(DiscogsBase, MetadataMixin):
 
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
-        cur_disc = 1
-        positions = (str(t.get("position", "")).strip() for t in soup["tracklist"] if t["type_"] == "track")
-        matches = [_RE_DOTTED.fullmatch(position) for position in positions if _numbered(position)]
-        pairs = [(int(match[1]), int(match[2])) for match in matches if match]
-        leads = {lead for lead, _ in pairs}
-        dotted = (
-            all(matches)
-            and len(set(pairs)) == len(pairs)
-            and len(leads) > 1
-            and _stated(soup, _CD_FORMATS) > 1
-            and max(leads) <= _stated(soup, _CD_FORMATS | _VIDEO_FORMATS)
-        )
-        headings, after_heading = 0, False
-        listed: defaultdict[int, dict[str, int]] = defaultdict(dict)
-        for track in soup["tracklist"]:
-            if track["type_"] == "heading":
-                headings, after_heading = headings + 1, True
-            elif track["type_"] == "track":
-                position = str(track.get("position", ""))
-                disc, track_num = _clean_discogs_position(position.replace(".", "-") if dotted else position)
-                if disc is not None:
-                    cur_disc = disc
-                elif _starts_a_disc(track_num, listed[cur_disc], headings, after_heading):
-                    # The latest heading, partway through the disc, started the next, so what came under it moves too;
-                    # numbering starting over at the disc's first numbered position further on starts the disc there
-                    # instead.
-                    on_disc = listed[cur_disc]
-                    under = [number for number, seen in on_disc.items() if seen == headings]
-                    first = next((number for number in on_disc if _numbered(number)), None)
-                    if len(under) < len(on_disc) and (after_heading or track_num != first):
-                        for number in under:
-                            moved = tracks[str(cur_disc)].pop(number)
-                            tracks[str(cur_disc + 1)][number] = moved | {"disc#": str(cur_disc + 1)}
-                            listed[cur_disc + 1][number] = listed[cur_disc].pop(number)
-                    cur_disc += 1
-                listed[cur_disc].setdefault(track_num, headings)
-                # An unnumbered track ("-") after a heading leaves the heading's checks to the next.
-                after_heading = after_heading and not _numbered(track_num)
-                disc_str = str(cur_disc)
-                disc_num = cur_disc
+        dotted = _dotted(soup)
+        # Each start's reason is for the tests, and for saying why a release has its discs when that is wanted.
+        starts = _disc_starts(soup["tracklist"], dotted)
+        disc_num = 1
+        for index, track in enumerate(soup["tracklist"]):
+            if index in starts:
+                disc_num += 1
+            if track["type_"] == "track":
+                named, track_num = _disc_and_number(track, dotted)
+                disc_num = disc_num if named is None else named
+                disc_str = str(disc_num)
 
                 artists, variations = parse_credits(soup["artists"], track)
                 tracks[disc_str][track_num] = self.generate_track(

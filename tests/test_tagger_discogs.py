@@ -1,10 +1,11 @@
 import asyncio
 import json
+import random
 
 import pytest
 
 from salmon.tagger.sources.base import append_remixers_to_track_titles, generate_artists
-from salmon.tagger.sources.discogs import Scraper, _clean_discogs_position, parse_artists, parse_credits
+from salmon.tagger.sources.discogs import Scraper, _clean_discogs_position, _disc_starts, parse_artists, parse_credits
 
 
 def make_soup(tracklist: list[dict]) -> dict:
@@ -583,6 +584,136 @@ def test_a_second_record_from_a1_again_starts_a_disc_without_a_heading() -> None
 
 def artist(name: str, join: str = "") -> dict:
     return {"name": name, "join": join}
+
+
+def test_a_track_naming_its_disc_stays_on_it_when_a_repeat_after_it_starts_a_disc() -> None:
+    # "1-1" names disc 1: the repeat of "1" after it starts disc 2 there, not at the heading above "1-1".
+    tracklist = [track("2", "Two"), heading("More"), track("1-1", "One"), track("1", "One again")]
+
+    parsed = discs(tracklist)
+
+    assert parsed == {"1": ["2", "1"], "2": ["1"]}
+
+
+def test_a_heading_after_tracks_naming_their_disc_starts_the_next_at_a_repeat() -> None:
+    tracklist = [track("1-1", "One"), track("1-2", "Two"), heading("Disc 2"), track("3", "Three"), track("2", "Two")]
+
+    parsed = discs(tracklist)
+
+    assert parsed == {"1": ["1", "2"], "2": ["3", "2"]}
+
+
+def test_discs_named_out_of_order_keep_every_track_when_numbering_starts_over() -> None:
+    # "2-2" before "1-2": disc 2 began before the heading, so the "1"s after it start discs from there, not from it.
+    tracklist = [track("2-2", "a"), track("1-2", "b"), track("1a", "c"), track("3", "d"), heading("x")]
+    tracklist += [track("1", "e"), track("1", "f")]
+
+    parsed = discs(tracklist)
+
+    assert parsed == {"2": ["2", "1"], "1": ["2", "1A", "3"], "3": ["1"]}
+
+
+def test_a_track_moved_to_the_next_disc_is_no_repeat_on_the_disc_before() -> None:
+    # "3" went to disc 2 with its heading, so a "3" back on disc 1, after "1-4", is disc 1's first.
+    tracklist = [track("1", "a"), track("2", "b"), heading("x"), track("3", "c"), track("2", "d"), heading("y")]
+    tracklist += [track("1-4", "e"), track("3", "f")]
+
+    parsed = discs(tracklist)
+
+    assert parsed == {"1": ["1", "2", "4", "3"], "2": ["3", "2"]}
+
+
+@pytest.mark.parametrize(
+    ("tracklist", "starts"),
+    [
+        ([track("1", "a"), track("2", "b"), track("1", "c")], {2: "'1' again"}),
+        (
+            [heading("x"), track("A", "a"), track("B", "b"), heading("y"), track("AA", "c"), track("B", "d")],
+            {3: "'B' again after a heading"},
+        ),
+        (
+            [heading("x"), track("1a", "a"), track("2", "b"), heading("y"), track("1", "c")],
+            {3: "numbering back to '1' after a heading"},
+        ),
+        (
+            [track("1", "a"), track("2", "b"), heading("Bonus"), track("3", "c"), track("1", "d")],
+            {4: "'1' again"},
+        ),
+    ],
+)
+def test_each_disc_start_gives_its_place_and_reason(tracklist: list[dict], starts: dict) -> None:
+    assert _disc_starts(tracklist, dotted=False) == starts
+
+
+# What holds for every tracklist, over many generated ones: a reader can rely on these without the rules above.
+
+_POSITIONS = [
+    "1",
+    "2",
+    "3",
+    "01",
+    "1a",
+    "1b",
+    "2a",
+    "A1",
+    "A2",
+    "B1",
+    "A",
+    "B",
+    "AA",
+    "-",
+    "",
+    "1-1",
+    "1-2",
+    "2-1",
+    "2-2",
+]
+
+
+def _generated(count: int) -> list[list[dict]]:
+    """Tracklists of positions drawn at random, headings among them, each track titled by its place."""
+    rng = random.Random(984)
+    tracklists = []
+    for _ in range(count):
+        choices = rng.choices([*_POSITIONS, "[H]", "[H]"], k=rng.randint(1, 9))
+        tracklists.append([heading("h") if c == "[H]" else track(c, f"t{i}") for i, c in enumerate(choices)])
+    return tracklists
+
+
+def _named(entry: dict) -> tuple[int | None, str]:
+    return _clean_discogs_position(entry["position"]) if entry["type_"] == "track" else (None, "")
+
+
+def test_a_track_whose_position_names_its_disc_is_never_on_another() -> None:
+    # It may be written over by its own number again on that disc, which #968 refuses.
+    for tracklist in _generated(2000):
+        tracks = asyncio.run(Scraper().parse_tracks(make_soup(tracklist)))
+        disc_of = {track["title"]: disc for disc, numbers in tracks.items() for track in numbers.values()}
+
+        for entry in tracklist:
+            disc, _ = _named(entry)
+            if disc is not None:
+                assert disc_of.get(entry["title"], str(disc)) == str(disc), tracklist
+
+
+def test_distinct_positions_are_all_kept_in_order_and_with_no_heading_on_one_disc() -> None:
+    for tracklist in _generated(2000):
+        numbers = [_named(entry)[1] for entry in tracklist if entry["type_"] == "track"]
+        if len(set(numbers)) < len(numbers) or any(_named(entry)[0] is not None for entry in tracklist):
+            continue
+
+        parsed = discs(tracklist)
+
+        assert [number for disc in parsed.values() for number in disc] == numbers, tracklist
+        assert len(parsed) == 1 or any(entry["type_"] == "heading" for entry in tracklist), tracklist
+
+
+def test_the_disc_starts_come_in_tracklist_order() -> None:
+    # Placing tracks counts the starts in order: one out of order, or two at one place, would lose a disc.
+    for tracklist in _generated(2000):
+        starts = _disc_starts(tracklist, dotted=False)
+
+        assert list(starts) == sorted(starts), tracklist
 
 
 def test_discogs_feat_join_makes_following_artists_guests() -> None:
