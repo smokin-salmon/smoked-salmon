@@ -4,7 +4,7 @@ from salmon.sources.bandcamp import BandcampBase
 from salmon.sources.beatport import BeatportBase
 from salmon.sources.deezer import DeezerBase
 from salmon.sources.discogs import DiscogsBase
-from salmon.sources.musicbrainz import MusicBrainzBase
+from salmon.sources.musicbrainz import MusicBrainzBase, is_placeholder_catno
 from salmon.sources.qobuz import QobuzBase
 from salmon.sources.tidal import TidalBase
 
@@ -16,6 +16,7 @@ __all__ = [
     "DiscogsBase",
     "AppleMusicBase",
     "MusicBrainzBase",
+    "is_placeholder_catno",
     "QobuzBase",
     "TidalBase",
     "SOURCE_ICONS",

@@ -5,7 +5,7 @@ import musicbrainzngs
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
-from salmon.sources import MusicBrainzBase
+from salmon.sources import MusicBrainzBase, is_placeholder_catno
 
 
 class Searcher(MusicBrainzBase, SearchMixin):
@@ -36,8 +36,10 @@ class Searcher(MusicBrainzBase, SearchMixin):
                     and "name" in rls["label-info-list"][0]["label"]
                 ):
                     label = rls["label-info-list"][0]["label"]["name"]
-                    if "catalog_number" in rls["label-info-list"][0]:
-                        catno = rls["label-info-list"][0]["catalog_number"]
+                    if "catalog-number" in rls["label-info-list"][0] and not is_placeholder_catno(
+                        rls["label-info-list"][0]["catalog-number"]
+                    ):
+                        catno = rls["label-info-list"][0]["catalog-number"]
 
                 try:
                     source = rls["medium-list"][0]["format"]

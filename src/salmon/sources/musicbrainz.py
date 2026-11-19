@@ -19,6 +19,18 @@ musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")
 MAX_REQUESTS = 2  # One retry, after its 2 s sleep
 REQUEST_TIMEOUT = 10  # Seconds per socket operation
 
+# MusicBrainz stores these where a release has no catalogue number.
+_PLACEHOLDER_CATNOS = frozenset({"none", "[none]", "(none)", "n/a", "[n/a]", "(n/a)"})
+
+
+def is_placeholder_catno(catno: object) -> bool:
+    """Whether a MusicBrainz catalogue number is a placeholder (``[none]``, ``n/a``...) and not a real number.
+
+    Only an exact match counts: "non" or "None Audio" can be part of a real number.
+    """
+    return str(catno).strip().lower() in _PLACEHOLDER_CATNOS
+
+
 _safe_read = mb_module._safe_read
 
 
