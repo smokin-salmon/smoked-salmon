@@ -350,6 +350,38 @@ def test_a_flac_and_its_transcode_go_into_the_edition_the_group_words_otherwise(
     assert _within_the_plans_bound(run)
 
 
+def test_an_edition_worded_as_the_targets_list_forbids_stops_before_the_upload(monkeypatch, dirs, tmp_path) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    write_lists(
+        monkeypatch, tmp_path / "lists", RED="[[entry]]\nartist = 'sample3000'\nalbum = 'Bootleg'\nnote = 'Fakes.'\n"
+    )
+    # TARGET adds an edition title the source's fields lack, tied to them by the barcode.
+    held = {
+        "id": 700009,
+        "media": "CD",
+        "format": "FLAC",
+        "encoding": "Lossless",
+        "remastered": True,
+        "remasterYear": 2023,
+        "remasterTitle": "Bootleg",
+        "remasterRecordLabel": "SAMPLE GARDEN",
+        "remasterCatalogueNumber": "0000000000002",
+    }
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.results = [_result([])]
+        target.groups[TARGET_GROUP_ID] = {"group": {"id": TARGET_GROUP_ID, "year": 2018}, "torrents": [held]}
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="1\n\n", prepare=prepare)
+
+    assert run.result.exit_code == 1, run.output
+    assert "RED files this release as: 2023 / Bootleg / SAMPLE GARDEN / 0000000000002" in run.output
+    assert "is on RED's Do-Not-Upload list: Fakes." in run.output
+    assert "Nothing more is uploaded." in run.output
+    assert run.target.posts() == []
+
+
 def test_conversions_give_the_two_transcodes_as_transcode_does(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
 

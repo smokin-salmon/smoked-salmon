@@ -49,7 +49,8 @@ def _is_barcode(catno: str) -> bool:
 def _catno_key(catno: str) -> str:
     """comparable(), with a barcode stripped of leading zeros: a UPC-A and its EAN-13 are one catno."""
     key = comparable(catno)
-    return (key.lstrip("0") or "0") if _is_barcode(catno) else key
+    # "#" keeps a barcode apart from a label's number of the same digits: comparable() leaves no "#".
+    return "#" + (key.lstrip("0") or "0") if _is_barcode(catno) else key
 
 
 def names_ours(held: dict[str, str], ours: dict[str, str]) -> bool:

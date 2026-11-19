@@ -1296,16 +1296,7 @@ async def _upload(
         )
     existing_group = group_id is not None
     if group_id is not None:
-        # TARGET may word the release's edition otherwise: edition_in_group offers its wording for the FLAC and
-        # its conversions.
-        held = await edition_in_group(target, group_id, edition)
-        if held is not edition:
-            edition = held
-            data.update(
-                remaster_title=held["edition_title"],
-                remaster_record_label=held["label"],
-                remaster_catalogue_number=held["catno"],
-            )
+        edition = await _held_edition(target, group_id, edition, data)
 
     await _rehost_images(data, release.rehost, source, target)
     _refuse_secrets(data, source)
@@ -1490,6 +1481,28 @@ def _refuse_secrets(data: dict[str, Any], source: "BaseGazelleApi") -> None:
         for item in value if isinstance(value, list) else [value]:
             if isinstance(item, str) and any(secret in item for secret in secrets):
                 raise CrossUploadRefused(f"the {name} field would carry a {source.site_string} credential")
+
+
+async def _held_edition(
+    target: "BaseGazelleApi", group_id: int, edition: dict[str, Any], data: dict[str, Any]
+) -> dict[str, Any]:
+    """edition, or TARGET's wording of it in group_id written into data, for the FLAC and its conversions.
+
+    Raises:
+        CrossUploadRefused: If TARGET's Do-Not-Upload list forbids its wording.
+    """
+    held = await edition_in_group(target, group_id, edition)
+    if held is edition:
+        return edition
+    data.update(
+        remaster_title=held["edition_title"],
+        remaster_record_label=held["label"],
+        remaster_catalogue_number=held["catno"],
+    )
+    # The source's fields passed the list; TARGET's wording (its edition title, a label's words) may not.
+    if reason := do_not_upload_reason(target.site_code, Candidate.from_form(data)):
+        raise CrossUploadRefused(reason)
+    return held
 
 
 async def _upload_conversions(

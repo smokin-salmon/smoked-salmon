@@ -9,6 +9,7 @@ from typing import Any
 import anyio
 import asyncclick as click
 import pytest
+from helpers.checks_do_not_upload import write_lists
 from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see test_a_flac_and_its_conversions_go_into_the_held_edition)
 )
@@ -78,6 +79,7 @@ def _upc_as_catno(monkeypatch) -> None:
         ([_held(year=2024)], {}, []),
         ([_held(catno="199538185516")], {}, []),
         ([_held(catno="0042")], {"catno": "42", "upc": ""}, []),
+        ([_held(catno="0000000000017")], {"catno": "17", "upc": ""}, []),
         ([_held(label="Armada")], {}, []),
         ([_held(title="Deluxe")], {"edition_title": "Remixes"}, []),
         ([_held(title="Deluxe", catno="")], {"upc": ""}, []),
@@ -93,6 +95,7 @@ def _upc_as_catno(monkeypatch) -> None:
         "another year",
         "another catno",
         "a label's catno with other leading zeros",
+        "a label's catno and a barcode of the same digits",
         "another label",
         "another title",
         "a title only the site has, nothing tying them",
@@ -281,3 +284,15 @@ def test_a_flac_and_its_conversions_go_into_the_held_edition(monkeypatch, tmp_pa
     ]
     # The group the review re-check fetched: its editions are not fetched again.
     assert _group_fetches_before_the_upload(run) == 1
+
+
+@pytest.mark.usefixtures("image_uploads")
+def test_an_edition_worded_as_the_list_forbids_skips_the_tracker(monkeypatch, tmp_path) -> None:
+    write_lists(monkeypatch, tmp_path / "lists", RED="[[entry]]\nlabel = 'La Bel'\nnote = 'Bootleg label.'\n")
+    held = {**_torrent(13, media="CD"), "remasterRecordLabel": "La Bel", "remasterCatalogueNumber": "CAT-1"}
+
+    run = _up(monkeypatch, tmp_path, GroupTracker([held], found=True), input="1\n\n")
+
+    assert "RED files this release as: 2020 / La Bel / CAT-1" in run.result.output
+    assert "Not uploading to RED: the label La Bel is on RED's Do-Not-Upload list: Bootleg label." in run.result.output
+    assert [sent for sent in run.tracker.sent if sent.query.get("action") == "upload"] == []
