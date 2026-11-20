@@ -2,6 +2,7 @@ import re
 import threading
 from time import monotonic
 from typing import Any
+from urllib.parse import urljoin
 
 import aiohttp
 import anyio
@@ -15,6 +16,8 @@ from salmon.release_notification import get_version
 from .base import BaseScraper
 
 MAX_REQUESTS = 2  # One retry, and only for a failure that may pass
+MAX_REDIRECTS = 5  # The Cover Art Archive sends its image list on to archive.org in two
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 
 # MusicBrainz asks for a User-Agent naming the application and how to reach its makers.
 USER_AGENT = f"smoked-salmon/{get_version() or 'unknown'} ( https://github.com/smokin-salmon/smoked-salmon/ )"
@@ -37,24 +40,27 @@ MIN_INTERVAL = 1.0
 
 
 class RateLimiter:
-    """Spaces the calls to wait() `interval` seconds apart, across threads and event loops alike.
+    """Grants the calls to wait() turns at least `interval` seconds apart, across threads and event loops alike.
 
     Under salmon web each job has a thread and an event loop of its own, so the lock is a threading one, and each
-    caller sleeps on its own loop, outside it.
+    caller sleeps on its own loop, outside it. A turn is granted on the clock as it is when granted, checked again
+    after every sleep: a caller that wakes late takes the next free turn, never one beside another caller's.
     """
 
     def __init__(self, interval: float) -> None:
         self._interval = interval
         self._lock = threading.Lock()
-        self._next = 0.0
+        self._last = float("-inf")
 
     async def wait(self) -> None:
-        with self._lock:
-            now = monotonic()
-            start = max(now, self._next)
-            self._next = start + self._interval
-        if start > now:
-            await anyio.sleep(start - now)
+        while True:
+            with self._lock:
+                now = monotonic()
+                ready = self._last + self._interval
+                if now >= ready:
+                    self._last = now
+                    return
+            await anyio.sleep(ready - now)
 
 
 limiter = RateLimiter(MIN_INTERVAL)
@@ -134,31 +140,21 @@ class MusicBrainzBase(BaseScraper):
     ) -> dict:
         sent = {**(headers or {}), **_HEADERS}
         for attempt in range(1, MAX_REQUESTS + 1):
-            if limited:
-                await limiter.wait()
             try:
-                return await self._attempt(full_url, params, sent)
+                return await self._attempt(full_url, params, sent, limited=limited)
             except _Transient as e:
                 if attempt == MAX_REQUESTS or e.wait is None:
                     raise e.error from e.error.__cause__
                 await anyio.sleep(e.wait)
         raise AssertionError("unreachable")
 
-    async def _attempt(self, full_url: str, params: dict[str, str], headers: dict[str, str]) -> dict:
-        name = self.store
+    async def _attempt(self, url: str, params: dict[str, str], headers: dict[str, str], *, limited: bool) -> dict:
         try:
-            async with self._session() as session, session.get(full_url, params=params, headers=headers) as resp:
-                if resp.status == 404:
-                    raise NotFoundError()
-                if resp.status == 503:
-                    retry_after = parse_retry_after(resp.headers.get("Retry-After"))
-                    wait = RETRY_WAIT if retry_after is None else retry_after
-                    raise _Transient(
-                        ScrapeError(f"{name}: Request failed (HTTP 503)."), wait if wait <= MAX_RETRY_AFTER else None
-                    )
-                if resp.status != 200:
-                    raise ScrapeError(f"{name}: Request failed (HTTP {resp.status}).")
-                body = await resp.read()
+            async with self._session() as session:
+                # The retry in _request_json is the only one: aiohttp's own resend of a GET whose connection
+                # dropped would double the requests, and go out past the limiter.
+                session._retry_connection = False
+                body = await self._follow(session, url, params, headers, limited=limited)
         except _Transient:
             raise
         except ScrapeError as e:
@@ -168,7 +164,44 @@ class MusicBrainzBase(BaseScraper):
         try:
             return msgspec.json.decode(body)
         except msgspec.DecodeError as e:
-            raise ScrapeError(f"{name}: Did not receive JSON from API.") from e
+            raise ScrapeError(f"{self.store}: Did not receive JSON from API.") from e
+
+    async def _follow(
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        params: dict[str, str] | None,
+        headers: dict[str, str],
+        *,
+        limited: bool,
+    ) -> bytes:
+        """The body at the end of `url`'s redirects, each hop sent on a turn of the limiter of its own.
+
+        aiohttp would follow up to ten redirects in one turn: a merged release's old MBID is a 301.
+        """
+        for _ in range(MAX_REDIRECTS + 1):
+            if limited:
+                await limiter.wait()
+            async with session.get(url, params=params, headers=headers, allow_redirects=False) as resp:
+                location = resp.headers.get("Location")
+                if resp.status in _REDIRECT_STATUSES and location:
+                    url, params = urljoin(str(resp.url), location), None
+                    continue
+                self._check_status(resp)
+                return await resp.read()
+        raise ScrapeError(f"{self.store}: Request failed (too many redirects).")
+
+    def _check_status(self, resp: aiohttp.ClientResponse) -> None:
+        if resp.status == 404:
+            raise NotFoundError()
+        if resp.status == 503:
+            retry_after = parse_retry_after(resp.headers.get("Retry-After"))
+            wait = RETRY_WAIT if retry_after is None else retry_after
+            raise _Transient(
+                ScrapeError(f"{self.store}: Request failed (HTTP 503)."), wait if wait <= MAX_RETRY_AFTER else None
+            )
+        if resp.status != 200:
+            raise ScrapeError(f"{self.store}: Request failed (HTTP {resp.status}).")
 
     async def fetch_data(
         self,

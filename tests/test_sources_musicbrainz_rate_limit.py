@@ -2,7 +2,6 @@
 
 import threading
 import time
-from collections.abc import Iterator
 
 import anyio
 import pytest
@@ -10,20 +9,24 @@ import pytest
 from salmon.sources import musicbrainz
 
 
+class _Clock:
+    """The limiter's clock, which only a sleep moves on: each sleep is recorded and passes at once."""
+
+    def __init__(self) -> None:
+        self.now = 100.0
+        self.slept: list[float] = []
+
+    async def sleep(self, seconds: float) -> None:
+        self.slept.append(seconds)
+        self.now += seconds
+
+
 @pytest.fixture
-def slept(monkeypatch: pytest.MonkeyPatch) -> list[float]:
-    """Every wait the limiter asks for, recorded instead of slept."""
-    waits: list[float] = []
-
-    async def _sleep(seconds: float) -> None:
-        waits.append(seconds)
-
-    monkeypatch.setattr(musicbrainz.anyio, "sleep", _sleep)
-    return waits
-
-
-def _clock(monkeypatch: pytest.MonkeyPatch, readings: Iterator[float]) -> None:
-    monkeypatch.setattr(musicbrainz, "monotonic", lambda: next(readings))
+def clock(monkeypatch: pytest.MonkeyPatch) -> _Clock:
+    fake = _Clock()
+    monkeypatch.setattr(musicbrainz, "monotonic", lambda: fake.now)
+    monkeypatch.setattr(musicbrainz.anyio, "sleep", fake.sleep)
+    return fake
 
 
 async def _wait(limiter: musicbrainz.RateLimiter, times: int) -> None:
@@ -31,20 +34,52 @@ async def _wait(limiter: musicbrainz.RateLimiter, times: int) -> None:
         await limiter.wait()
 
 
-def test_back_to_back_requests_are_spaced_a_second_apart(monkeypatch: pytest.MonkeyPatch, slept: list[float]) -> None:
-    _clock(monkeypatch, iter([100.0] * 3))
-
+def test_back_to_back_requests_are_spaced_a_second_apart(clock: _Clock) -> None:
     anyio.run(_wait, musicbrainz.RateLimiter(1.0), 3)
 
-    assert slept == [1.0, 2.0]
+    assert clock.slept == [1.0, 1.0]
 
 
-def test_a_request_after_the_interval_does_not_wait(monkeypatch: pytest.MonkeyPatch, slept: list[float]) -> None:
-    _clock(monkeypatch, iter([100.0, 101.5]))
+def test_a_request_after_the_interval_does_not_wait(clock: _Clock) -> None:
+    limiter = musicbrainz.RateLimiter(1.0)
 
-    anyio.run(_wait, musicbrainz.RateLimiter(1.0), 2)
+    anyio.run(limiter.wait)
+    clock.now += 1.5
+    anyio.run(limiter.wait)
 
-    assert slept == []
+    assert clock.slept == []
+
+
+def test_a_waiter_that_wakes_late_does_not_go_on_the_next_ones_heels(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A salmon web job's thread can be slow to wake. A slot reserved ahead of time would let it go late, right
+    # beside the waiter after it: each turn is granted a whole interval after the last one granted instead.
+    limiter = musicbrainz.RateLimiter(0.2)
+    real_sleep = anyio.sleep
+    late: list[None] = []
+
+    async def _sleep(seconds: float) -> None:
+        if not late:  # The first waiter to sleep wakes 0.15 s late
+            late.append(None)
+            seconds += 0.15
+        await real_sleep(seconds)
+
+    monkeypatch.setattr(musicbrainz.anyio, "sleep", _sleep)
+    granted: list[float] = []
+
+    async def _turn() -> None:
+        await limiter.wait()
+        granted.append(time.monotonic())
+
+    async def _three() -> None:
+        async with anyio.create_task_group() as tasks:
+            for _ in range(3):
+                tasks.start_soon(_turn)
+
+    anyio.run(_three)
+
+    times = sorted(granted)
+    assert len(times) == 3
+    assert all(later - earlier >= 0.19 for earlier, later in zip(times, times[1:], strict=False))
 
 
 def test_two_threads_with_their_own_loops_share_the_limiter() -> None:

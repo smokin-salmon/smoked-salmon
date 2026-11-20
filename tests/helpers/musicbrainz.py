@@ -3,6 +3,7 @@
 import contextlib
 import re
 import threading
+import time
 from collections.abc import Iterator
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -25,7 +26,9 @@ class FakeMusicBrainz:
 
     It answers from the recordings, or a 404 where there is none. `status` holds the statuses of the next requests,
     one each, before it answers 200 again; `body` replaces every answer's body, `headers` adds to every answer's
-    headers, and `delay` holds every answer back that many seconds. Each request is kept as (path, query, headers).
+    headers, and `delay` holds every answer back that many seconds. `redirects` maps a path to the Location a 301
+    sends it on to, and `drops` is how many of the next requests get their connection closed with no answer. Each
+    request is kept as (path, query, headers), and when it came (time.monotonic) in `times`.
     """
 
     def __init__(self) -> None:
@@ -33,7 +36,10 @@ class FakeMusicBrainz:
         self.body: str | None = None
         self.headers: dict[str, str] = {}
         self.delay = 0.0
+        self.redirects: dict[str, str] = {}
+        self.drops = 0
         self.requests: list[tuple[str, dict[str, str], dict[str, str]]] = []
+        self.times: list[float] = []
         self.released = threading.Event()  # Set at close, so no handler outlives the test
         fake = self
 
@@ -42,8 +48,19 @@ class FakeMusicBrainz:
                 parts = urlsplit(self.path)
                 query = dict(parse_qsl(parts.query))
                 fake.requests.append((parts.path, query, dict(self.headers)))
+                fake.times.append(time.monotonic())
+                if fake.drops:
+                    fake.drops -= 1
+                    self.close_connection = True
+                    return  # No answer: the client sees the server disconnect
                 if fake.delay and fake.released.wait(fake.delay):
                     return  # The client gave up long ago: nothing to answer
+                if parts.path in fake.redirects:
+                    self.send_response(301)
+                    self.send_header("Location", fake.redirects[parts.path])
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
                 status, payload = fake.answer(parts.path, query)
                 self.send_response(status)
                 for name, value in {"Content-Type": "application/json", **fake.headers}.items():

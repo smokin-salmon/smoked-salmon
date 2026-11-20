@@ -164,6 +164,92 @@ def test_a_tls_failure_is_not_retried(
     assert sleeps == []
 
 
+MERGED = "11111111-1111-1111-1111-111111111111"
+
+
+def _counted(monkeypatch: pytest.MonkeyPatch) -> list[None]:
+    """Every turn taken on MusicBrainz's limiter, counted, with no wait."""
+    turns: list[None] = []
+
+    class _Counting(musicbrainz.RateLimiter):
+        async def wait(self) -> None:
+            turns.append(None)
+
+    monkeypatch.setattr(musicbrainz, "limiter", _Counting(0))
+    return turns
+
+
+def _merge(server: FakeMusicBrainz) -> None:
+    # MusicBrainz answers a merged release's old MBID with a 301 to the release it was merged into.
+    server.redirects = {f"/ws/2/release/{MERGED}": f"/ws/2/release/{KIND_OF_BLUE}?inc=media&fmt=json"}
+
+
+def test_a_merged_release_is_followed_each_hop_on_a_turn_of_its_own(
+    server: FakeMusicBrainz, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    turns = _counted(monkeypatch)
+    _merge(server)
+
+    release = anyio.run(MusicBrainzBase().get_json, f"/release/{MERGED}", {"inc": "media"})
+
+    assert release["id"] == KIND_OF_BLUE
+    assert [path for path, _query, _headers in server.requests] == [
+        f"/ws/2/release/{MERGED}",
+        f"/ws/2/release/{KIND_OF_BLUE}",
+    ]
+    assert len(turns) == 2
+
+
+def test_a_redirects_hops_are_a_second_apart(server: FakeMusicBrainz, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(musicbrainz, "limiter", musicbrainz.RateLimiter(0.3))
+    _merge(server)
+
+    anyio.run(MusicBrainzBase().get_json, f"/release/{MERGED}", {"inc": "media"})
+
+    first, second = server.times
+    assert second - first >= 0.25
+
+
+def test_redirects_are_bounded(server: FakeMusicBrainz, sleeps: list[float]) -> None:
+    server.redirects = {f"/ws/2/release/{MERGED}": f"/ws/2/release/{MERGED}"}
+
+    assert _failure(lambda: anyio.run(MusicBrainzBase().get_json, f"/release/{MERGED}")) == (
+        "MusicBrainz: Request failed (too many redirects)."
+    )
+    assert len(server.requests) == musicbrainz.MAX_REDIRECTS + 1
+    assert sleeps == []
+
+
+def test_a_dropped_connection_is_sent_twice_in_all(server: FakeMusicBrainz, sleeps: list[float]) -> None:
+    # aiohttp would send it again itself, and the retry again: four requests. The retry is the only one.
+    server.drops = 10
+
+    assert _failure() == "MusicBrainz: Request failed (ServerDisconnectedError)."
+    assert len(server.requests) == 2
+    assert sleeps == [2.0]
+
+
+def test_a_dropped_connection_then_an_answer_is_the_answer(server: FakeMusicBrainz, sleeps: list[float]) -> None:
+    server.drops = 1
+
+    assert _get_release()["id"] == KIND_OF_BLUE
+    assert len(server.requests) == 2
+
+
+def test_the_cover_art_archives_redirect_is_followed_without_the_limiter(
+    server: FakeMusicBrainz, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The Cover Art Archive sends its image list on to archive.org.
+    turns = _counted(monkeypatch)
+    server.redirects = {f"/release/{MERGED}": f"/release/{KIND_OF_BLUE}"}
+
+    images = anyio.run(MusicBrainzBase().fetch_cover_art, MERGED)
+
+    assert images["images"][0]["front"] is True
+    assert len(server.requests) == 2
+    assert turns == []
+
+
 def test_the_cover_art_archive_is_asked_for_its_image_list(server: FakeMusicBrainz) -> None:
     images = anyio.run(MusicBrainzBase().fetch_cover_art, KIND_OF_BLUE)
 
