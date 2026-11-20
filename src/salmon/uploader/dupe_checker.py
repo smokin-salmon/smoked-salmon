@@ -12,7 +12,13 @@ import asyncclick as click
 
 from salmon import cfg, interaction
 from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
-from salmon.common.strings import artist_keys, comparable, numeric_id
+from salmon.common.strings import (
+    artist_keys,
+    classical_artist_matches,
+    comparable,
+    composer_title_forms,
+    numeric_id,
+)
 from salmon.errors import AbortAndDeleteFolder, RequestError, SkipTracker
 from salmon.trackers.base import hold_request_messages
 from salmon.uploader.upload import generate_catno
@@ -660,6 +666,10 @@ def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
     accents and punctuation aside); the year must be the same on both sides, and present. A group is keyed on the
     original year, so our group year is compared when we have one, and our (edition) year otherwise.
 
+    A classical group is credited "<composers> performed by <performers> under <conductors>" and its name may
+    start with a composer ("Haydn: "): the prefix is dropped from either title when it names one of our
+    composers, and the credit matches when its composer and its performers part name ours.
+
     Args:
         results: The tracker's search results, in the order printed.
         release: Our release, with its artists, title, and group year or year.
@@ -669,17 +679,23 @@ def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
     """
     if not results or not release:
         return ""
-    title = comparable(release.get("title"))
-    artists = artist_keys(release.get("artists"))
+    pairs = list(release.get("artists") or [])
+    composers = [name for name, role in pairs if role == "composer"]
+    performers = [name for name, role in pairs if role == "main"]
+    titles = composer_title_forms(release.get("title"), composers)
+    artists = artist_keys(pairs)
     year = str(release.get("group_year") or release.get("year") or "").strip()
-    if not title or not artists or not year:
+    if not titles or not artists or not year:
         return ""
     matches = [
         str(number)
         for number, result in enumerate(results, 1)
         if result.get("groupId") is not None
-        and comparable(html.unescape(str(result.get("groupName") or ""))) == title
-        and comparable(html.unescape(str(result.get("artist") or ""))) in artists
+        and titles & composer_title_forms(result.get("groupName"), composers)
+        and (
+            comparable(html.unescape(str(result.get("artist") or ""))) in artists
+            or classical_artist_matches(result.get("artist"), composers, performers)
+        )
         and str(result.get("groupYear") or "").strip() == year
     ]
     return matches[0] if len(matches) == 1 else ""

@@ -423,6 +423,82 @@ def test_a_group_of_another_year_than_our_group_year_is_no_default() -> None:
     assert dupe_checker.suggest_group([_result(1, year=2023)], _rls_data(year="2023", group_year="2018")) == ""
 
 
+_HAYDN_ARTIST = "Joseph Haydn performed by Austro-Hungarian Haydn Orchestra under Ádám Fischer"
+
+
+def _classical(title: str = "Haydn: Complete Symphonies", **overrides: Any) -> dict[str, Any]:
+    artists = [
+        ("Austro-Hungarian Haydn Orchestra", "main"),
+        ("Joseph Haydn", "composer"),
+        ("Ádám Fischer", "conductor"),
+    ]
+    return _rls_data(artists=artists, title=title, year="2002", group_year="2002", **overrides)
+
+
+def _haydn(group_id: int = 1, name: str = "Complete Symphonies", artist: str = _HAYDN_ARTIST) -> dict:
+    return _result(group_id, name=name, year=2002, artist=artist)
+
+
+def test_a_classical_group_named_without_the_composer_prefix_is_the_default() -> None:
+    assert dupe_checker.suggest_group([_haydn()], _classical()) == "1"
+
+
+def test_a_classical_group_named_with_the_composer_prefix_is_the_default() -> None:
+    assert (
+        dupe_checker.suggest_group([_haydn(name="Haydn: Complete Symphonies")], _classical("Complete Symphonies"))
+        == "1"
+    )
+    assert dupe_checker.suggest_group([_haydn(name="Joseph Haydn: Complete Symphonies")], _classical()) == "1"
+
+
+def test_a_classical_credit_without_a_conductor_matches() -> None:
+    artist = "Joseph Haydn performed by Austro-Hungarian Haydn Orchestra"
+
+    assert dupe_checker.suggest_group([_haydn(artist=artist)], _classical()) == "1"
+
+
+def test_a_classical_credit_of_another_composer_with_the_same_surname_is_no_default() -> None:
+    artist = "Michael Haydn performed by Austro-Hungarian Haydn Orchestra under Ádám Fischer"
+
+    assert dupe_checker.suggest_group([_haydn(artist=artist)], _classical()) == ""
+
+
+def test_a_classical_credit_of_various_performers_is_no_default() -> None:
+    artist = "Joseph Haydn performed by Various Artists under Ádám Fischer"
+
+    assert dupe_checker.suggest_group([_haydn(artist=artist)], _classical()) == ""
+
+
+def test_various_artists_in_both_credits_names_nobody() -> None:
+    release = _classical()
+    release["artists"] = [("Various Artists", "main"), ("Joseph Haydn", "composer")]
+    artist = "Joseph Haydn performed by Various Artists"
+
+    assert dupe_checker.suggest_group([_haydn(artist=artist)], release) == ""
+
+
+def test_a_composer_prefix_is_dropped_only_for_a_composer_of_our_release() -> None:
+    # Same artist and year on both sides: only the title rule decides.
+    no_composer = _rls_data(title="Haydn: Complete Symphonies")
+    assert dupe_checker.suggest_group([_result(1, name="Complete Symphonies")], no_composer) == ""
+    with_composer = _rls_data(
+        title="Haydn: Complete Symphonies", artists=[("Artist", "main"), ("Joseph Haydn", "composer")]
+    )
+    assert dupe_checker.suggest_group([_result(1, name="Complete Symphonies")], with_composer) == "1"
+
+
+def test_a_prefix_that_is_not_a_composer_is_not_dropped() -> None:
+    release = _rls_data(title="Live: Album", artists=[("Artist", "main"), ("Joseph Haydn", "composer")])
+
+    assert dupe_checker.suggest_group([_result(1, name="Album")], release) == ""
+
+
+def test_two_classical_matches_are_no_default() -> None:
+    results = [_haydn(1), _haydn(2, name="Haydn: Complete Symphonies")]
+
+    assert dupe_checker.suggest_group(results, _classical()) == ""
+
+
 def _site(**kw: Any) -> Any:
     # No torrentgroup: a group picked from the results must be printed and checked from them, without a request.
     return cast(
