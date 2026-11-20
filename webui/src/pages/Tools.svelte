@@ -6,14 +6,13 @@
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
   import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
-  import { loadToolsOptions, reportTrackerFromTarget, type DescgenResult, type ImageUploadResult, type ToolsOptions } from '../lib/tools'
+  import { loadToolsOptions, type DescgenResult, type ImageUploadResult, type ToolsOptions } from '../lib/tools'
 
   let options = $state<ToolsOptions | null>(null)
   let optionsError = $state('')
 
   let reportTarget = $state('')
   let reportTracker = $state('')
-  let reportType = $state('')
   let reportComment = $state('')
   let reportSource = $state('')
   let reportFolder = $state('')
@@ -22,7 +21,6 @@
   let reportStarting = $state(false)
   let reportError = $state('')
   let reportJobId = $state<string | null>(null)
-  const effectiveReportTracker = $derived(reportTracker || reportTrackerFromTarget(reportTarget))
   const reportJob = $derived(reportJobId ? jobStore.get(reportJobId) : undefined)
 
   async function prepareReport() {
@@ -35,7 +33,6 @@
         params: {
           target: reportTarget,
           tracker: reportTracker || null,
-          report_type: reportType || null,
           comment: reportComment || null,
           source_url: reportSource.trim(),
           folder: reportFolder.trim() || null,
@@ -132,7 +129,8 @@
   }
 </script>
 
-<!-- Each tool runs as a job. The copy buttons fill this browser's clipboard. -->
+<!-- Ported from the fork's Tools page (chodeus 0b29d2d5, 9bfdddc3, 1f8e47d8, 18fc08d9), trimmed to the description
+     generator and the image upload, each a job of its own. The copy buttons fill this browser's clipboard. -->
 <h1>Tools</h1>
 <p class="lead">
   Build a tracklist description from store URLs, as <span class="mono">salmon descgen</span> does, and upload images,
@@ -142,7 +140,7 @@
 <p class="muted">
   These tools contact external services when you run them: the description generator fetches store pages,
   and image upload sends the selected images to the chosen host. Approval reports contact the selected tracker
-  only after you confirm the lookup, then ask for confirmation of the eligible FLAC before submitting reports.
+  only after you confirm the lookup, then ask for confirmation of the eligible FLAC before submitting the report.
   Print only makes no tracker requests. No local audio is changed by these tools.
 </p>
 
@@ -159,11 +157,6 @@
         <option value={t.code}>{t.code}</option>
       {/each}
     </select></label>
-    {#if effectiveReportTracker !== 'OPS'}
-      <label>RED report type<select bind:value={reportType}>
-        <option value="">Ask</option><option value="master">Lossy Master</option><option value="web">Lossy WEB</option>
-      </select></label>
-    {/if}
     <label>Source URL (optional)<input type="text" class="mono" bind:value={reportSource} placeholder="https://…" /></label>
   </div>
   <fieldset>
@@ -174,7 +167,6 @@
   <p class="muted">Provide a comment or source URL. With an album folder, salmon uploads full and zoomed spectral images for each track to the tracker's configured image host before final confirmation. Leave the folder empty to report without local audio. Print only checks the folder and skips image generation and upload.</p>
   <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>
   <p class="muted">Print only prepares text to copy for manual reporting. It cannot verify ownership or FLAC eligibility.</p>
-  <p class="muted">If a report fails, the batch stops and the job lists completed and unattempted IDs. Check any uncertain submission on the tracker and finish manually; running the batch again can file duplicate reports.</p>
   <div class="row actions"><button class="btn" onclick={prepareReport}
     disabled={!reportTarget.trim() || (!!reportFolder && !reportFolderUsable) || reportStarting || (reportJob && !FINISHED.includes(reportJob.status))}>Prepare report</button></div>
   {#if reportError}<p class="error">{reportError}</p>{/if}

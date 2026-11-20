@@ -398,6 +398,12 @@ seedbox copy or client add is a 3.
 
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
+### Request lossy approval after uploading
+
+Run `salmon report 12345 --tracker RED` or pass a RED or OPS torrent permalink to report your own FLAC upload. RED selects Lossy WEB or Lossy Master from the torrent’s media. OPS uses one approval category.
+
+Add `--folder PATH` to upload spectral evidence before final confirmation. Use `--dry-run` for an offline preview. The same workflow is available under **Tools → Lossy approval report**.
+
 ### 🌐 Spectral Viewer for `up`
 When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. If salmon runs on another machine or in Docker, set `display_host` under `[upload.spectrals_viewer]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead: in a terminal that speaks the Kitty graphics protocol (kitty, Ghostty, WezTerm...), salmon shows them in the terminal itself, a track at a time (← and → move between tracks, Enter goes on, q stops early), and this works over SSH too; elsewhere it opens feh (or, without feh, your desktop's default image viewer), Quick Look or the default Windows viewer. Set `terminal_spectrals_viewer = false` to always use those. This viewer is separate from `salmon web` below.
 
@@ -583,28 +589,3 @@ For bug reports and feature requests, use GitHub Issues. Or use the forums.
 * Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon). Huge thanks!
 * Further development & maintenance by elghoto, xmoforf, miandru, redusys, kyokomiki and others. Keeping the dream alive.
 * Docker image build workflow and update notification mechanisms heavily inspired from the awesome work of Audionut on his [Upload Assistant tool](https://github.com/Audionut/Upload-Assistant) !
-
-### Request lossy approval after uploading
-
-Use `salmon report` to request Lossy Master/WEB approval for an existing
-RED or OPS torrent when the upload-time report failed or was skipped. No local
-audio files are required. Supply a positive torrent ID and `--tracker`, or a
-tracker permalink containing `torrentid` (a group-only URL is not sufficient).
-
-```bash
-salmon report 12345 --tracker RED --type web
-salmon report 'https://orpheus.network/torrents.php?torrentid=12345'
-salmon report 12345 --tracker RED --type master \
-  --comment 'Source and evidence for this request' \
-  --source-url 'https://example.org/album' --dry-run
-```
-
-Missing source information is prompted for. RED supports master and WEB approval; OPS uses its single category.
-
-Optionally pass `--folder PATH` or browse for an **Album folder** on the Tools page. Check the displayed path and audio file count against the selected FLAC. After verifying eligibility, salmon generates full and zoomed spectral images for each track and uploads them to the tracker's configured spectral host. The preview includes the links before you confirm submission. If preparation fails, continuing without images requires confirmation. Omit the folder to report without local audio or spectral uploads. Print-only validates the folder and skips both generation and upload.
-
-As a temporary conservative safeguard, automatic submission requires an explicitly selected FLAC owned by the authenticated reporting account. MP3 and other formats are rejected; metadata matches are never used to infer a common original master or automatically report other torrents. Hidden or unverifiable ownership, a mismatched torrent ID, or missing source metadata prevents submission. Select the original FLAC explicitly; if it cannot be identified, report manually instead. These restrictions are not confirmed tracker rules.
-
-The cookie-authenticated index endpoint identifies the account used for report submission, independently of any API-key account. Requests continue through the shared tracker limiter (five requests per 10.5 seconds). The defensive 20-ID cap and sequential submission remain; the command selects only one eligible FLAC. Uncertain outcomes stop submission and retain recovery details without retrying.
-
-Print-only/dry-run remains offline and cannot verify eligibility. The same checks and confirmation apply to **Tools → Lossy approval report**. The existing upload-time reporting workflow is unchanged.

@@ -34,8 +34,6 @@ def test_dry_run_without_audio():
         "123",
         "--tracker",
         "RED",
-        "--type",
-        "web",
         "--comment",
         "Source evidence",
         "--source-url",
@@ -68,7 +66,7 @@ def test_report_folder_evidence(monkeypatch, tmp_path, tracker, failure, proceed
     (tmp_path / "01.flac").touch()
     client = AsyncMock()
     monkeypatch.setattr(reports.trackers, "get_class", lambda _: lambda: client)
-    monkeypatch.setattr(reports, "related_report_targets", AsyncMock(return_value=[123]))
+    monkeypatch.setattr(reports, "related_report_target", AsyncMock(return_value="WEB"))
     monkeypatch.setattr(reports, "gather_audio_info", lambda _: {})
     generate = AsyncMock(return_value={1: "01.flac"})
     upload = AsyncMock(return_value={1: ["https://example.org/full", "https://example.org/zoom"]})
@@ -81,8 +79,6 @@ def test_report_folder_evidence(monkeypatch, tmp_path, tracker, failure, proceed
         "123",
         "--tracker",
         tracker,
-        "--type",
-        "master",
         "--folder",
         str(tmp_path),
         "--comment",
@@ -120,26 +116,28 @@ def test_conflicting_tracker():
 
 
 def test_red_prompts_and_decline_sends_nothing():
-    result = run("123", "--tracker", "RED", input="web\nhttps://example.org\nEvidence\nn\n")
+    result = run("123", "--tracker", "RED", input="https://example.org\nEvidence\nn\n")
     assert result.exit_code == 0, result.output
-    assert "Report type" in result.output
+    assert "Report type" not in result.output
     assert "Evidence" in result.output
 
 
 @pytest.mark.parametrize(
-    "tracker,kind,expected",
-    [("RED", "master", "lossyapproval"), ("RED", "web", "lossywebapproval"), ("OPS", "web", "lossyapproval")],
+    "tracker,media,expected",
+    [("RED", "CD", "lossyapproval"), ("RED", "WEB", "lossywebapproval"), ("OPS", "WEB", "lossyapproval")],
 )
 @pytest.mark.parametrize("outcome", ["success", "rejected", "unknown", "disconnect", "auth"])
-def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome):
+def test_submission_local_tracker(monkeypatch, tracker, media, expected, outcome):
     from aiohttp import web
 
     from salmon import trackers
 
     async def scenario():
         forms = []
+        requests = []
 
         async def handler(request):
+            requests.append(request.path)
             if request.path == "/ajax.php":
                 if request.query.get("action") == "torrent":
                     return web.json_response(
@@ -147,7 +145,7 @@ def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome)
                             "status": "success",
                             "response": {
                                 "group": {"id": 50},
-                                "torrent": report_torrent(123),
+                                "torrent": report_torrent(123, media=media),
                             },
                         }
                     )
@@ -186,6 +184,7 @@ def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome)
         await web.TCPSite(server, "127.0.0.1", 0).start()
         cls = trackers.get_class(tracker)
         client = cls()
+        client.api_key = ""
         client._rate_limiter = AsyncLimiter(1000, 1)
         client.base_url = f"http://127.0.0.1:{server.addresses[0][1]}"
         monkeypatch.setattr(trackers, "get_class", lambda code: lambda: client)
@@ -196,8 +195,6 @@ def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome)
                     "123",
                     "--tracker",
                     tracker,
-                    "--type",
-                    kind,
                     "--comment",
                     "Evidence",
                     "--source-url",
@@ -206,6 +203,8 @@ def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome)
                 input="y\ny\n",
             )
             assert result.exit_code == (0 if outcome == "success" else 1), result.output
+            if outcome == "success":
+                assert len(requests) == 4
             if outcome == "auth":
                 assert forms == []
             else:
@@ -215,7 +214,7 @@ def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome)
                 assert forms[0]["torrentid"] == "123"
                 assert forms[0]["extra"] == "Evidence\n\nSourced from: https://example.org\n\n"
             if outcome in ("unknown", "disconnect"):
-                assert "may have been submitted" in result.output
+                assert "Check torrent 123" in str(result.exception)
         finally:
             await server.cleanup()
 
@@ -267,7 +266,7 @@ def test_conservative_targets(tracker, case):
     import msgspec
 
     from salmon.errors import RequestError
-    from salmon.reports import related_report_targets
+    from salmon.reports import related_report_target
     from salmon.trackers import get_class
     from salmon.trackers.base import HttpResponse
 
@@ -306,29 +305,10 @@ def test_conservative_targets(tracker, case):
             return {"group": {"id": 50}, "torrent": target}
 
     client = Client()
+    client.api_key = "test-key"
     client.authkey = "test-auth"
     if case == "flac":
-        assert anyio.run(related_report_targets, client, 123) == [123]
+        assert anyio.run(related_report_target, client, 123) == "WEB"
     else:
         with pytest.raises(RequestError):
-            anyio.run(related_report_targets, client, 123)
-
-
-def test_batch_deduplicates_and_enforces_limit():
-    import asyncclick as click
-
-    from salmon.reports import submit_reports
-    from salmon.trackers.red import RedApi
-
-    sent = []
-
-    class Client(RedApi):
-        async def report_lossy_master(self, torrent_id, comment, source):
-            sent.append(torrent_id)
-            return True
-
-    anyio.run(submit_reports, Client(), [123, 123], "Evidence", "WEB")
-    assert sent == [123]
-    with pytest.raises(click.ClickException):
-        anyio.run(submit_reports, Client(), list(range(1, 22)), "Evidence", "WEB")
-    assert sent == [123]
+            anyio.run(related_report_target, client, 123)

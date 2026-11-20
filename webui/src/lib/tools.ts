@@ -3,16 +3,9 @@ import { apiGet } from './api'
 export interface LossyReportParams {
   target: string
   tracker: string | null
-  report_type: string | null
   comment: string | null
   source_url: string
   folder: string | null
-}
-
-/** UI hint only; the report job validates the complete permalink and tracker selection. */
-export function reportTrackerFromTarget(target: string): string {
-  const match = /^https?:\/\/(redacted\.sh|orpheus\.network)\/torrents\.php\?/i.exec(target.trim())
-  return match ? (match[1].toLowerCase() === 'redacted.sh' ? 'RED' : 'OPS') : ''
 }
 
 /** What `/api/tools/options` says: the image hosts, and the host each tracker's images and spectrals go to. */

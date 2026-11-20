@@ -15,26 +15,25 @@ from salmon.tagger.audio_info import gather_audio_info
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import spectrals
 
-MAX_REPORTS = 20
 
-
-async def related_report_targets(client: BaseGazelleApi, torrent_id: int) -> list[int]:
+async def related_report_target(client: BaseGazelleApi, torrent_id: int) -> str:
     """Verify only the explicitly selected FLAC; metadata similarity is not provenance."""
     # Reports use cookie authentication. Verify that account, not a possibly different API-key account.
-    response = await client._request(
-        "GET", client.base_url + "/ajax.php", params={"action": "index"}, prefer_api_key=False
-    )
-    account = {}
-    try:
-        account = msgspec.json.decode(response.text)
-        user_id = numeric_id(account["response"]["id"]) if account["status"] == "success" else None
-    except (ValueError, KeyError, TypeError):
-        user_id = None
+    user_id = client.account_id
+    if client.api_key:
+        response = await client._request(
+            "GET", client.base_url + "/ajax.php", params={"action": "index"}, prefer_api_key=False
+        )
+        try:
+            account = msgspec.json.decode(response.text)
+            cookie_authkey = account["response"]["authkey"]
+            user_id = numeric_id(account["response"]["id"]) if account["status"] == "success" else None
+        except (ValueError, KeyError, TypeError):
+            raise RequestError("Cannot verify the authenticated reporting account. No reports sent.") from None
+        if not cookie_authkey or cookie_authkey != client.authkey:
+            raise RequestError("Cookie and API credentials could not be verified as the same account. No reports sent.")
     if user_id is None or user_id <= 0:
         raise RequestError("Cannot verify the authenticated reporting account. No reports sent.")
-    cookie_authkey = account["response"].get("authkey")
-    if not cookie_authkey or cookie_authkey != client.authkey:
-        raise RequestError("Cookie and API credentials could not be verified as the same account. No reports sent.")
     found = await client.api_call("torrent", params={"id": torrent_id})
     target = found.get("torrent")
     group = found.get("group")
@@ -49,36 +48,7 @@ async def related_report_targets(client: BaseGazelleApi, torrent_id: int) -> lis
     media = target.get("media")
     if group_id is None or group_id <= 0 or not isinstance(media, str) or not media.strip():
         raise RequestError("Cannot verify the FLAC source metadata. No reports sent.")
-    return [torrent_id]
-
-
-async def submit_reports(client: BaseGazelleApi, targets: list[int], text: str, source: str) -> None:
-    """Send the confirmed batch sequentially, stopping on the first failure without replaying any report."""
-    targets = list(dict.fromkeys(targets))
-    if len(targets) > MAX_REPORTS:
-        raise click.ClickException("Too many report targets; no reports sent.")
-    completed: list[int] = []
-    for index, torrent_id in enumerate(targets):
-        try:
-            await client.report_lossy_master(torrent_id, text, source)
-        except RequestError as err:
-            already = ", ".join(map(str, completed)) or "none"
-            remaining = ", ".join(map(str, targets[index + 1 :])) or "none"
-            reason = (
-                f"The report for torrent {torrent_id} may have been submitted. Check it before trying again."
-                if isinstance(err, UnknownOutcomeError)
-                else f"Could not submit the report for torrent {torrent_id}."
-            )
-            message = (
-                f"{reason}\nAlready reported: {already}\nNot attempted: {remaining}\n"
-                f"Do not rerun the batch; check these torrents and report any remaining ones manually.\n{err}"
-            )
-            if isinstance(err, UnknownOutcomeError):
-                # The web job displays this exception's text, not a ClickException wrapping it.
-                raise UnknownOutcomeError(message) from err
-            raise click.ClickException(message) from err
-        completed.append(torrent_id)
-        click.echo(f"Reported torrent {torrent_id} for Lossy Master/WEB Approval Request.")
+    return media
 
 
 def parse_target(target: str, tracker: str | None) -> tuple[int, str | None]:
@@ -106,7 +76,6 @@ def parse_target(target: str, tracker: str | None) -> tuple[int, str | None]:
 
 @commandgroup.command()
 @click.argument("target")
-@click.option("--type", "report_type", type=click.Choice(["master", "web"]))
 @click.option("--tracker", type=click.Choice(["RED", "OPS"], case_sensitive=False))
 @click.option("--comment", help="Source information and evidence for the approval request.")
 @click.option("--source-url", help="Release source URL.")
@@ -114,7 +83,6 @@ def parse_target(target: str, tracker: str | None) -> tuple[int, str | None]:
 @click.option("--dry-run", "--print-only", is_flag=True, help="Print the report without contacting the tracker.")
 async def report(
     target: str,
-    report_type: str | None,
     tracker: str | None,
     comment: str | None,
     source_url: str | None,
@@ -127,7 +95,7 @@ async def report(
     explicitly selected FLAC is eligible. Transcodes are not automatically reported.
     Unverifiable ownership or source metadata prevents submission.
     """
-    await run_lossy_report(target, report_type, tracker, comment, source_url, dry_run, folder)
+    await run_lossy_report(target, tracker, comment, source_url, dry_run, folder)
 
 
 async def _spectral_evidence(folder: str, tracker: str) -> tuple[dict[int, str], dict[int, list[str]]]:
@@ -151,7 +119,6 @@ def _preview_folder(folder: str, torrent_id: int) -> None:
 
 async def run_lossy_report(
     target: str,
-    report_type: str | None,
     tracker: str | None,
     comment: str | None,
     source_url: str | None,
@@ -169,8 +136,6 @@ async def run_lossy_report(
         tracker = choices[0] if len(choices) == 1 else await trackers.choose_tracker(choices)
     if tracker not in choices:
         raise click.ClickException("Choose a RED or OPS tracker present in your config.")
-    if tracker == "RED" and report_type is None:
-        report_type = await interaction.prompt("Report type", type=click.Choice(["master", "web"]))
     if source_url is None:
         source_url = await interaction.prompt("Source URL (optional)", default="")
     if comment is None:
@@ -182,8 +147,7 @@ async def run_lossy_report(
     if not (comment or "").strip() and not (source_url or "").strip():
         raise click.BadParameter("Provide a comment or source URL explaining the source.")
     text = spectrals._add_spectral_links_to_lossy_comment(comment, source_url, None, None)
-    label = "WEB" if tracker == "RED" and report_type == "web" else "Master"
-    click.echo(f"{tracker} torrent {torrent_id}: Lossy {label} Approval")
+    click.echo(f"{tracker} torrent {torrent_id}")
     click.echo(text)
     if dry_run:
         if folder:
@@ -198,7 +162,7 @@ async def run_lossy_report(
     client = trackers.get_class(tracker)()
     try:
         await client.ensure_authenticated()
-        targets = await related_report_targets(client, torrent_id)
+        media = await related_report_target(client, torrent_id)
         if folder:
             try:
                 ids, urls = await _spectral_evidence(folder, tracker)
@@ -208,9 +172,15 @@ async def run_lossy_report(
                 if not await interaction.confirm("Continue without spectrals?", default=False):
                     raise click.ClickException("Report aborted before submission.") from err
             click.echo(text)
-        click.echo(f"Torrents to report on {tracker}: {', '.join(map(str, targets))}")
-        if await interaction.confirm(f"Submit this approval report for all {len(targets)} torrents?", default=False):
-            await submit_reports(client, targets, text, "WEB" if report_type == "web" else "CD")
+        if await interaction.confirm(
+            f"Submit this approval report for {tracker} torrent {torrent_id} ({media})?", default=False
+        ):
+            await client.report_lossy_master(torrent_id, text, media)
+            click.echo(f"Reported torrent {torrent_id}.")
+    except UnknownOutcomeError as err:
+        raise UnknownOutcomeError(
+            f"The report may have been submitted. Check torrent {torrent_id} on {tracker} before reporting again."
+        ) from err
     except RequestError as err:
         raise click.ClickException(f"Could not submit the report: {err}") from err
     finally:
