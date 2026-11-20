@@ -60,6 +60,16 @@ def test_no_front_cover_makes_no_request(monkeypatch: pytest.MonkeyPatch) -> Non
     assert asked == []
 
 
+def test_a_release_claiming_a_front_image_gets_none_when_no_listed_image_is_front(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    release = _release(RELAXIN)
+    release["cover-art-archive"]["front"] = "true"
+    asked = _serve_recorded(monkeypatch)
+    assert METASOURCES["MusicBrainz"].Scraper().parse_cover_url(release) is None
+    assert asked == [RELAXIN]
+
+
 def test_a_404_from_the_cover_art_archive_is_no_cover(monkeypatch: pytest.MonkeyPatch) -> None:
     def _not_found(mbid: str) -> dict[str, Any]:
         raise musicbrainzngs.ResponseError(cause=None)
