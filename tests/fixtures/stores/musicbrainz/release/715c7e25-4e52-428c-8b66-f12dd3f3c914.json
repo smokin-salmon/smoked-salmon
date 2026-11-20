@@ -1,0 +1,274 @@
+{
+ "id": "715c7e25-4e52-428c-8b66-f12dd3f3c914",
+ "title": "Moving Pictures",
+ "date": "2011-04-05",
+ "barcode": "00602527636993",
+ "artist-credit": [
+  {
+   "name": "Rush",
+   "joinphrase": "",
+   "artist": {
+    "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+    "name": "Rush"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "40e30dc1-55ac-33e1-85d3-1f1508140bfc",
+  "title": "Moving Pictures",
+  "first-release-date": "1981-02-06",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Rush",
+    "joinphrase": "",
+    "artist": {
+     "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+     "name": "Rush"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2011-04-05"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Mercury Records"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "703b9f1d-0cf5-455a-a59e-168379665b45",
+     "position": 1,
+     "number": "1",
+     "title": "Tom Sawyer",
+     "artist-credit": [
+      {
+       "name": "Rush",
+       "joinphrase": "",
+       "artist": {
+        "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+        "name": "Rush"
+       }
+      }
+     ],
+     "recording": {
+      "id": "cb837d0c-5115-479d-ac0e-ab1650fe9078",
+      "title": "Tom Sawyer",
+      "first-release-date": "1981-02-06",
+      "artist-credit": [
+       {
+        "name": "Rush",
+        "joinphrase": "",
+        "artist": {
+         "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+         "name": "Rush"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6661431e-243c-483d-b6ce-9a3e0b1fcc26",
+     "position": 2,
+     "number": "2",
+     "title": "Red Barchetta",
+     "artist-credit": [
+      {
+       "name": "Rush",
+       "joinphrase": "",
+       "artist": {
+        "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+        "name": "Rush"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0266c4c2-5e64-402e-8e26-5cd46b64e8c9",
+      "title": "Red Barchetta",
+      "first-release-date": "1981-02-06",
+      "artist-credit": [
+       {
+        "name": "Rush",
+        "joinphrase": "",
+        "artist": {
+         "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+         "name": "Rush"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "64dc7db3-54a6-448d-a068-12e83dc59bff",
+     "position": 3,
+     "number": "3",
+     "title": "YYZ",
+     "artist-credit": [
+      {
+       "name": "Rush",
+       "joinphrase": "",
+       "artist": {
+        "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+        "name": "Rush"
+       }
+      }
+     ],
+     "recording": {
+      "id": "336acc6e-0f4a-4dae-8427-fe48aaa8984c",
+      "title": "YYZ",
+      "first-release-date": "1981-02-06",
+      "artist-credit": [
+       {
+        "name": "Rush",
+        "joinphrase": "",
+        "artist": {
+         "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+         "name": "Rush"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1e857d92-5dce-40b4-a069-79d9162e313d",
+     "position": 4,
+     "number": "4",
+     "title": "Limelight",
+     "artist-credit": [
+      {
+       "name": "Rush",
+       "joinphrase": "",
+       "artist": {
+        "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+        "name": "Rush"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3ed46a79-c541-496b-9508-c04ecf9fb206",
+      "title": "Limelight",
+      "first-release-date": "1981-02-06",
+      "artist-credit": [
+       {
+        "name": "Rush",
+        "joinphrase": "",
+        "artist": {
+         "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+         "name": "Rush"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "eb31c05d-8551-4619-95a9-2c1c53e2083b",
+     "position": 5,
+     "number": "5",
+     "title": "The Camera Eye",
+     "artist-credit": [
+      {
+       "name": "Rush",
+       "joinphrase": "",
+       "artist": {
+        "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+        "name": "Rush"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7d9354b2-f8d8-4b7c-be95-1acb97771d2b",
+      "title": "The Camera Eye",
+      "first-release-date": "1981-02-06",
+      "artist-credit": [
+       {
+        "name": "Rush",
+        "joinphrase": "",
+        "artist": {
+         "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+         "name": "Rush"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "aa27e424-f993-43f3-af5d-ba6fd321d378",
+     "position": 6,
+     "number": "6",
+     "title": "Witch Hunt",
+     "artist-credit": [
+      {
+       "name": "Rush",
+       "joinphrase": "",
+       "artist": {
+        "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+        "name": "Rush"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9057d88d-f03a-4c0f-b55f-e0d5b901e288",
+      "title": "Witch Hunt",
+      "first-release-date": "1981-02-06",
+      "artist-credit": [
+       {
+        "name": "Rush",
+        "joinphrase": "",
+        "artist": {
+         "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+         "name": "Rush"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "446ba962-dac2-4f73-a365-273a72243bf4",
+     "position": 7,
+     "number": "7",
+     "title": "Vital Signs",
+     "artist-credit": [
+      {
+       "name": "Rush",
+       "joinphrase": "",
+       "artist": {
+        "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+        "name": "Rush"
+       }
+      }
+     ],
+     "recording": {
+      "id": "71fcdceb-aa1f-49bb-9d5d-86319bb182d1",
+      "title": "Vital Signs",
+      "first-release-date": "1981-02-06",
+      "artist-credit": [
+       {
+        "name": "Rush",
+        "joinphrase": "",
+        "artist": {
+         "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
+         "name": "Rush"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

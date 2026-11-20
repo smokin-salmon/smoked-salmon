@@ -1,0 +1,446 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="3a823c2c-b8fa-464a-8942-636dd2d558a5">
+<title>The Lockdown Sessions</title>
+<artist-credit>
+<name-credit>
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="78b65cee-4a6d-49c8-a98e-9159bf147cd1" type="Album">
+<title>The Lockdown Sessions</title>
+<first-release-date>2021-10-22</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2021-10-22</date>
+<release-event-list>
+<release-event>
+<date>2021-10-22</date>
+</release-event>
+</release-event-list>
+<barcode>00602438711611</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>EMI</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="f7eb6063-833a-46bb-9ce4-47bc14a9639d">
+<position>1</position>
+<number>1</number>
+<recording id="a3906438-a1b2-403d-a7c2-7f48fca0a586">
+<title>Cold Heart (PNAU remix)</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="6f1a58bf-9b1b-49cf-a44a-6cefad7ae04f">
+<name>Dua Lipa</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-08-13</first-release-date>
+<relation-list target-type="artist">
+<relation type="remixer">
+<direction>backward</direction>
+<artist id="b04df404-eefa-4ae4-9f3e-ba220d9dce16">
+<name>PNAU</name>
+</artist>
+</relation>
+</relation-list>
+</recording>
+</track>
+<track id="a78519d5-0e37-40d0-a335-043c7b0414f4">
+<position>2</position>
+<number>2</number>
+<recording id="1e620f99-c769-42ee-b0ab-f6afa311e899">
+<title>Always Love You</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="800760de-bdf8-43a2-8fe0-44a2401a5515">
+<name>Young Thug</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="1036b808-f58c-4a3e-b461-a2c4492ecf1b">
+<name>Nicki Minaj</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+<track id="d8e11e53-1b12-4a92-bb8a-43e5a42c066f">
+<position>3</position>
+<number>3</number>
+<recording id="2b9f54fb-59d0-4a86-a4a9-4b410c562b7e">
+<title>Learn to Fly</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="7442fbfa-00ad-4e3b-8f45-9d2c62786eed">
+<name>Surfaces</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2020-06-12</first-release-date>
+</recording>
+</track>
+<track id="2402efd1-a824-4866-a7c8-3fb86de98db5">
+<position>4</position>
+<number>4</number>
+<recording id="6bdc451f-499f-4fbd-9764-6ec49fc0c3f8">
+<title>After All</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="525f1f1c-03f0-4bc8-8dfd-e7521f87631b">
+<name>Charlie Puth</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-09-22</first-release-date>
+</recording>
+</track>
+<track id="b8ecf8cd-4247-4afe-918b-b88b2bff83a6">
+<position>5</position>
+<number>5</number>
+<recording id="73aaede2-3b65-40fd-aabb-898bea3038e7">
+<title>Chosen Family</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="52494f9b-789d-4467-bcaf-9915e70cc8f6">
+<name>Rina Sawayama</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-04-15</first-release-date>
+</recording>
+</track>
+<track id="840afb67-7dcc-4322-ad53-9ddef8444f00">
+<position>6</position>
+<number>6</number>
+<recording id="359b4614-6520-4fe4-9358-d7ce5cf2466a">
+<title>The Pink Phantom</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="e21857d5-3256-4547-afb3-4b6ded592596">
+<name>Gorillaz</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="07832b42-8826-4ab1-acd3-c49a2f595ffe">
+<name>6LACK</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2020-10-01</first-release-date>
+</recording>
+</track>
+<track id="caac5a5e-b0a5-40d6-a533-6a0ca30cf250">
+<position>7</position>
+<number>7</number>
+<recording id="28b37b4b-e56c-4425-a219-085c4063e2e7">
+<title>It’s a sin (global reach mix)</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="9f23b7c3-baa6-4e38-b1a9-5c38359ad982">
+<name>Years &amp; Years</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+<track id="50d06710-6eea-4824-816d-723575253369">
+<position>8</position>
+<number>8</number>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<name>Miley Cyrus</name>
+<artist id="7e9bd05a-117f-4cce-87bc-e011527a8b18">
+<name>MILEY</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<name>WATT</name>
+<artist id="00136dd9-1047-4999-af1f-d709c5fa09f9">
+<name>Andrew Watt</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="62fe877d-b7a5-43e8-952e-2610d7614bff">
+<name>Yo‐Yo Ma</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="777038ba-d2b5-41ab-a6c5-57a7e97abdf1">
+<name>Robert Trujillo</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="da8f13f1-2a7f-44f7-93a8-3f5f9d7fa52d">
+<name>Chad Smith</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="93257a5d-dfa1-4d29-a33b-7cf13e18660f">
+<title>Nothing Else Matters</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<name>Miley Cyrus</name>
+<artist id="7e9bd05a-117f-4cce-87bc-e011527a8b18">
+<name>MILEY</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<name>Watt</name>
+<artist id="00136dd9-1047-4999-af1f-d709c5fa09f9">
+<name>Andrew Watt</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<name>Yo-Yo Ma</name>
+<artist id="62fe877d-b7a5-43e8-952e-2610d7614bff">
+<name>Yo‐Yo Ma</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="777038ba-d2b5-41ab-a6c5-57a7e97abdf1">
+<name>Robert Trujillo</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="da8f13f1-2a7f-44f7-93a8-3f5f9d7fa52d">
+<name>Chad Smith</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-06-22</first-release-date>
+</recording>
+</track>
+<track id="19d25a52-ef1b-44a1-9234-12e31e9f3230">
+<position>9</position>
+<number>9</number>
+<recording id="7df5432d-f6b8-4ac0-8534-757fe5e088bb">
+<title>Orbit</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="ab413f29-71af-4f7f-8ca8-5ece68beeaf3">
+<name>SG Lewis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+<track id="366da307-93ba-4821-ab98-b438daac9788">
+<position>10</position>
+<number>10</number>
+<recording id="c4da6300-cd9b-4b55-9c3b-179bed39c1a4">
+<title>Simple Things</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="baf05baf-69fb-47dd-93c2-033536b8c385">
+<name>Brandi Carlile</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+<track id="559b5306-184a-43d4-b243-97cd194482a9">
+<position>11</position>
+<number>11</number>
+<recording id="f232f382-182b-49bd-8a87-c63db14f0fe9">
+<title>Beauty in the Bones</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="33f3276d-4d1a-46b1-9949-bbacfee41651">
+<name>Jimmie Allen</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+<track id="1122713a-8518-4491-bd15-7281c2735b57">
+<position>12</position>
+<number>12</number>
+<title>One of Me</title>
+<recording id="aa20dc87-136a-48a3-b011-d6fe89a13d67">
+<title>ONE OF ME</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="0b30341b-b59d-4979-8130-b66c0e475321">
+<name>Lil Nas X</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-09-17</first-release-date>
+</recording>
+</track>
+<track id="315145d6-545b-4513-a168-ddd9df566b83">
+<position>13</position>
+<number>13</number>
+<recording id="bd2a75e5-3197-4856-98ec-7dbc337122cf">
+<title>E‐Ticket</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="1a60d6dd-9d3e-40fc-a66d-3184f9ee0d61">
+<name>Eddie Vedder</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+<track id="db5d25fb-b695-4d89-ab7e-8e6427281063">
+<position>14</position>
+<number>14</number>
+<recording id="9595db2f-a042-4dde-b2bb-d9dca1f0b388">
+<title>Finish Line</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="1ee18fb3-18a6-4c7f-8ba0-bc41cdd0462e">
+<name>Stevie Wonder</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-09-30</first-release-date>
+</recording>
+</track>
+<track id="8987d315-54e4-46e2-bed4-bdadb49a80a3">
+<position>15</position>
+<number>15</number>
+<recording id="61060009-b30b-4865-8cf1-500dca9ab2df">
+<title>Stolen Car</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="b7f2cca2-72c6-41fb-ae33-53370fc62fe7">
+<name>Stevie Nicks</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+<track id="5f8e2e61-479f-420a-ada5-cea9aeb2cc4a">
+<position>16</position>
+<number>16</number>
+<recording id="c89f0bea-b084-485b-bbd6-14cb31d1a744">
+<title>I’m Not Gonna Miss You</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="57976431-1a5c-4968-a422-b92c5e9b0d4f">
+<name>Glen Campbell</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="b83bc61f-8451-4a5d-8b8e-7e9ed295e822">
+<name>Elton John</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2021-10-22</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

@@ -1,0 +1,405 @@
+{
+ "id": "150e61a6-dbf5-4aa3-ae50-0d77838a8183",
+ "title": "Sunday at the Village Vanguard",
+ "date": "1990-10-25",
+ "barcode": "025218614023",
+ "artist-credit": [
+  {
+   "name": "Bill Evans Trio",
+   "joinphrase": "",
+   "artist": {
+    "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+    "name": "Bill Evans Trio"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "79a8fca9-2678-3c9c-a18f-b6f715d2375d",
+  "title": "Sunday at the Village Vanguard",
+  "first-release-date": "1961",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Live"
+  ],
+  "artist-credit": [
+   {
+    "name": "Bill Evans Trio",
+    "joinphrase": " featuring ",
+    "artist": {
+     "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+     "name": "Bill Evans Trio"
+    }
+   },
+   {
+    "name": "Scott LaFaro",
+    "joinphrase": "",
+    "artist": {
+     "id": "97cc902a-2850-4db8-8218-186f3b5a1ea5",
+     "name": "Scott LaFaro"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "1990-10-25"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "9376",
+   "label": {
+    "name": "Riverside"
+   }
+  },
+  {
+   "catalog-number": "OJCCD-140-2",
+   "label": {
+    "name": "Original Jazz Classics"
+   }
+  },
+  {
+   "catalog-number": "RLP-9376",
+   "label": {
+    "name": "Riverside"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "40b63c2c-0fae-3e8e-a55a-cc44d1a01f4d",
+     "position": 1,
+     "number": "1",
+     "title": "Gloria’s Step (take 2)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f4344022-0de5-4bf9-b9a1-da51f93b7d0a",
+      "title": "Gloria’s Step (take 2)",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e023f7dd-543e-3dac-88f2-fa0df4968332",
+     "position": 2,
+     "number": "2",
+     "title": "Gloria’s Step (take 3)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "609bb977-a3a6-4766-be93-57a792b4dc82",
+      "title": "Gloria’s Step (take 3)",
+      "first-release-date": "1987",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "78bf4236-1645-327b-979f-ddf18fb85576",
+     "position": 3,
+     "number": "3",
+     "title": "My Man’s Gone Now",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3b5e8402-bb24-4822-bad4-8fa1099aaf72",
+      "title": "My Man’s Gone Now",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       },
+       {
+        "name": "Scott LaFaro",
+        "joinphrase": "",
+        "artist": {
+         "id": "97cc902a-2850-4db8-8218-186f3b5a1ea5",
+         "name": "Scott LaFaro"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "877584fe-d5ae-342a-bdfc-ef9352300273",
+     "position": 4,
+     "number": "4",
+     "title": "Solar",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "631fedbe-6aa7-4145-95a8-2f0480d37dbe",
+      "title": "Solar",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "4bd25871-24c0-3b01-a436-d78f5f380700",
+     "position": 5,
+     "number": "5",
+     "title": "Alice in Wonderland (take 2)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9e6baea5-5b19-445a-b4b2-555c964f9472",
+      "title": "Alice in Wonderland",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       },
+       {
+        "name": "Scott LaFaro",
+        "joinphrase": "",
+        "artist": {
+         "id": "97cc902a-2850-4db8-8218-186f3b5a1ea5",
+         "name": "Scott LaFaro"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a65add23-0412-3bb1-9c69-41920d53a4e7",
+     "position": 6,
+     "number": "6",
+     "title": "Alice in Wonderland (take 1)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ccb5bb72-6d45-4f12-aa2c-76328a3418da",
+      "title": "Alice in Wonderland (take 1)",
+      "first-release-date": "1987",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "33648847-8c39-3ef7-af84-bba4850cdb1b",
+     "position": 7,
+     "number": "7",
+     "title": "All of You (take 2)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0778ab15-0cd1-4912-a542-b143e2600748",
+      "title": "All of You (take 2)",
+      "first-release-date": "1986",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0c7b9844-ed22-32e0-8aab-4f8ae55e3316",
+     "position": 8,
+     "number": "8",
+     "title": "All of You (take 3)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "78fd6a5f-a1ee-4554-be7d-6df2c327f733",
+      "title": "All of You (take 3)",
+      "first-release-date": "1987",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8f59f1fc-f1c4-33e2-a0be-daa3dc8c54b8",
+     "position": 9,
+     "number": "9",
+     "title": "Jade Visions (take 2)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9d7d5c29-5d98-454d-b22b-db958653a858",
+      "title": "Jade Visions (take 2)",
+      "first-release-date": "1986",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "14a4b9d6-5fdc-3b6c-be0a-ad8063a12db5",
+     "position": 10,
+     "number": "10",
+     "title": "Jade Visions (take 1)",
+     "artist-credit": [
+      {
+       "name": "Bill Evans Trio",
+       "joinphrase": "",
+       "artist": {
+        "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+        "name": "Bill Evans Trio"
+       }
+      }
+     ],
+     "recording": {
+      "id": "fa773268-7f2a-4b9a-bc9c-f1f5bb5b6833",
+      "title": "Jade Visions (take 1)",
+      "first-release-date": "1987",
+      "artist-credit": [
+       {
+        "name": "Bill Evans Trio",
+        "joinphrase": "",
+        "artist": {
+         "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
+         "name": "Bill Evans Trio"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

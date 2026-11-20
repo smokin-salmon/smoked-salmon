@@ -1,0 +1,603 @@
+{
+ "id": "aa2eae9d-05be-411c-80c2-60f7a15da57f",
+ "title": "DJ‐Kicks: Kruder & Dorfmeister",
+ "date": "",
+ "barcode": "730003704628",
+ "artist-credit": [
+  {
+   "name": "Kruder & Dorfmeister",
+   "joinphrase": "",
+   "artist": {
+    "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
+    "name": "Kruder & Dorfmeister"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "965922f6-52b4-32b8-af66-7bfba786eb4b",
+  "title": "DJ‐Kicks: Kruder & Dorfmeister",
+  "first-release-date": "1996-08-19",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Compilation",
+   "DJ-mix"
+  ],
+  "artist-credit": [
+   {
+    "name": "Kruder & Dorfmeister",
+    "joinphrase": "",
+    "artist": {
+     "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
+     "name": "Kruder & Dorfmeister"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": ""
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "!K7"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "57f03c95-ae0c-4f10-80c7-bade64a90c4d",
+     "position": 1,
+     "number": "1",
+     "title": "A Mother",
+     "artist-credit": [
+      {
+       "name": "The Herbaliser",
+       "joinphrase": "",
+       "artist": {
+        "id": "bf48d271-9595-4043-9064-52f43707d4ab",
+        "name": "The Herbaliser"
+       }
+      }
+     ],
+     "recording": {
+      "id": "78bf8b69-812a-41d0-9b27-da0dfc314c38",
+      "title": "A Mother (For Your Mind)",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "The Herbaliser",
+        "joinphrase": "",
+        "artist": {
+         "id": "bf48d271-9595-4043-9064-52f43707d4ab",
+         "name": "The Herbaliser"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "817c8270-af15-46c2-bbd7-3687be780a21",
+     "position": 2,
+     "number": "2",
+     "title": "Livin’ Free",
+     "artist-credit": [
+      {
+       "name": "Small World",
+       "joinphrase": "",
+       "artist": {
+        "id": "c8ba1952-3508-4b7e-a59e-4d519328d6d9",
+        "name": "Small World"
+       }
+      }
+     ],
+     "recording": {
+      "id": "322d5927-bef6-4944-843d-9d21a47307fa",
+      "title": "Livin’ Free",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Small World",
+        "joinphrase": "",
+        "artist": {
+         "id": "c8ba1952-3508-4b7e-a59e-4d519328d6d9",
+         "name": "Small World"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "72ccd0e1-b39a-49e7-8ba7-bdf36b9a0ab4",
+     "position": 3,
+     "number": "3",
+     "title": "Spellbound",
+     "artist-credit": [
+      {
+       "name": "Tango",
+       "joinphrase": "",
+       "artist": {
+        "id": "aeacd604-aebf-454b-92be-4fe4007d7a95",
+        "name": "Tango"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1473e930-df63-46d1-8737-1a6644ea3518",
+      "title": "Spellbound",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Tango",
+        "joinphrase": "",
+        "artist": {
+         "id": "aeacd604-aebf-454b-92be-4fe4007d7a95",
+         "name": "Tango"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c364e3fe-3751-48b4-86bc-c0c97c0313fd",
+     "position": 4,
+     "number": "4",
+     "title": "Give My Soul",
+     "artist-credit": [
+      {
+       "name": "Lab Rats",
+       "joinphrase": "",
+       "artist": {
+        "id": "c4896a65-651b-41e0-a6d7-fd9fb72a7047",
+        "name": "Lab Rats"
+       }
+      }
+     ],
+     "recording": {
+      "id": "00c3b673-789f-417e-8e84-29b00ddd5bb4",
+      "title": "Give My Soul",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "The Lab Rats",
+        "joinphrase": "",
+        "artist": {
+         "id": "7c29ac1c-e903-4839-b737-dc438e15cd41",
+         "name": "The Lab Rats"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f9ea9237-2ada-4ce0-967d-c164955ee9ef",
+     "position": 5,
+     "number": "5",
+     "title": "Revolutionary Pilot",
+     "artist-credit": [
+      {
+       "name": "Statik Sound System",
+       "joinphrase": "",
+       "artist": {
+        "id": "532fcdd8-18f1-4c9e-91b8-5cfa8e96db63",
+        "name": "Statik Sound System"
+       }
+      }
+     ],
+     "recording": {
+      "id": "aa2294ad-173e-43ec-9ca8-5991362f32c9",
+      "title": "Revolutionary Pilot",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Statik Sound System",
+        "joinphrase": "",
+        "artist": {
+         "id": "532fcdd8-18f1-4c9e-91b8-5cfa8e96db63",
+         "name": "Statik Sound System"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5a541d1c-8d11-488d-947a-d5121a6311e3",
+     "position": 6,
+     "number": "6",
+     "title": "In Too Deep",
+     "artist-credit": [
+      {
+       "name": "JMJ",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "65833881-48b2-45c4-b6d4-8d7dfa478e0d",
+        "name": "JMJ"
+       }
+      },
+      {
+       "name": "Flytronix",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d7ce3bf-9ea8-4750-a9c8-6344dff0fe08",
+        "name": "Flytronix"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8b2c1da8-0d8f-471c-81b2-8f251e09934e",
+      "title": "In Too Deep",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "JMJ",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "65833881-48b2-45c4-b6d4-8d7dfa478e0d",
+         "name": "JMJ"
+        }
+       },
+       {
+        "name": "Flytronix",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d7ce3bf-9ea8-4750-a9c8-6344dff0fe08",
+         "name": "Flytronix"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b4357e95-be3e-4daf-a8bf-b3b6df2c7a77",
+     "position": 7,
+     "number": "7",
+     "title": "Kauna",
+     "artist-credit": [
+      {
+       "name": "Aquasky",
+       "joinphrase": "",
+       "artist": {
+        "id": "bd8f19ba-c3e9-410c-9253-e4d997a0c310",
+        "name": "Aquasky"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d8ab65d7-d550-434d-bfb7-0279a1d9b451",
+      "title": "Kauna",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Aquasky",
+        "joinphrase": "",
+        "artist": {
+         "id": "bd8f19ba-c3e9-410c-9253-e4d997a0c310",
+         "name": "Aquasky"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "26bbd1fb-a4d4-4836-b3c7-d9065806d189",
+     "position": 8,
+     "number": "8",
+     "title": "Never Say?",
+     "artist-credit": [
+      {
+       "name": "James Bong",
+       "joinphrase": "",
+       "artist": {
+        "id": "1a1531ca-c74e-400b-9412-4b422b59e94c",
+        "name": "James Bong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "48a80acf-bf5f-4e28-9b17-aab370fe0df0",
+      "title": "Mr. Kiss Kiss Bong Bong (Big Brother’s Dubbing You Full On / full length remix)",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "James Bong",
+        "joinphrase": "",
+        "artist": {
+         "id": "1a1531ca-c74e-400b-9412-4b422b59e94c",
+         "name": "James Bong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "87d55e87-b955-44e6-aaf6-4ac7547fd7ef",
+     "position": 9,
+     "number": "9",
+     "title": "Dubdope",
+     "artist-credit": [
+      {
+       "name": "Hardfloor",
+       "joinphrase": "",
+       "artist": {
+        "id": "49c5cce4-aaa6-4600-a9a2-2b045fb6a87b",
+        "name": "Hardfloor"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6490d884-0918-4fdf-9612-47b20e43096d",
+      "title": "Dubdope",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Hardfloor",
+        "joinphrase": "",
+        "artist": {
+         "id": "49c5cce4-aaa6-4600-a9a2-2b045fb6a87b",
+         "name": "Hardfloor"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bd38a25a-ff9e-4cca-814c-adf68e6773ab",
+     "position": 10,
+     "number": "10",
+     "title": "Shaolin Satellite",
+     "artist-credit": [
+      {
+       "name": "Thievery Corporation",
+       "joinphrase": "",
+       "artist": {
+        "id": "a505bb48-ad65-4af4-ae47-29149715bff9",
+        "name": "Thievery Corporation"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9149a8b8-18aa-4dbb-b856-84c044a885de",
+      "title": "Shaolin Satellite",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Thievery Corporation",
+        "joinphrase": "",
+        "artist": {
+         "id": "a505bb48-ad65-4af4-ae47-29149715bff9",
+         "name": "Thievery Corporation"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1928a15c-7613-4415-a7f2-f174e6ac9951",
+     "position": 11,
+     "number": "11",
+     "title": "High Noon",
+     "artist-credit": [
+      {
+       "name": "Kruder & Dorfmeister",
+       "joinphrase": "",
+       "artist": {
+        "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
+        "name": "Kruder & Dorfmeister"
+       }
+      }
+     ],
+     "recording": {
+      "id": "729edd71-5f8d-4c74-9c05-f160738ae32e",
+      "title": "High Noon",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Kruder & Dorfmeister",
+        "joinphrase": "",
+        "artist": {
+         "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
+         "name": "Kruder & Dorfmeister"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c8317cf0-09f3-4a1c-8009-982dd1d2bc18",
+     "position": 12,
+     "number": "12",
+     "title": "Keep On Believing",
+     "artist-credit": [
+      {
+       "name": "Beanfield",
+       "joinphrase": "",
+       "artist": {
+        "id": "ad0811ea-e213-451d-b22f-fa1a7f9e0226",
+        "name": "Beanfield"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6db5af38-8605-40a9-9aec-e26034f74e44",
+      "title": "Keep On Believing",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Beanfield",
+        "joinphrase": "",
+        "artist": {
+         "id": "ad0811ea-e213-451d-b22f-fa1a7f9e0226",
+         "name": "Beanfield"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "569eb270-905a-45c1-913e-7ad3e4d56e73",
+     "position": 13,
+     "number": "13",
+     "title": "Que dolor",
+     "artist-credit": [
+      {
+       "name": "Sapien",
+       "joinphrase": "",
+       "artist": {
+        "id": "4ad93913-f9de-43f6-8d14-efeb2642b85a",
+        "name": "Sapien"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8218d451-1a16-47a3-803c-10a727c0fafc",
+      "title": "Que dolor (Rude Boy Fandango mix)",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Sapien",
+        "joinphrase": "",
+        "artist": {
+         "id": "4ad93913-f9de-43f6-8d14-efeb2642b85a",
+         "name": "Sapien"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c3b4e509-88ac-40a7-858f-1c2c1a20e8b2",
+     "position": 14,
+     "number": "14",
+     "title": "Bass and Several Cars",
+     "artist-credit": [
+      {
+       "name": "Shantel",
+       "joinphrase": "",
+       "artist": {
+        "id": "fc79b760-fc4a-4efa-b0e5-f0387d7cd25f",
+        "name": "Shantel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "37014e4c-5f6a-4c33-b31c-895ea00fe542",
+      "title": "Bass and Several Cars",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Shantel",
+        "joinphrase": "",
+        "artist": {
+         "id": "fc79b760-fc4a-4efa-b0e5-f0387d7cd25f",
+         "name": "Shantel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "77ccd6b0-897e-4fbc-9bac-0c8d99a46c78",
+     "position": 15,
+     "number": "15",
+     "title": "Look Up Dere",
+     "artist-credit": [
+      {
+       "name": "Karma",
+       "joinphrase": "",
+       "artist": {
+        "id": "e200ef60-9626-49ed-b761-864acef70d2a",
+        "name": "Karma"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2421c539-ccde-4388-95f2-0d3c41626cd4",
+      "title": "Look Up Dere",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Karma",
+        "joinphrase": "",
+        "artist": {
+         "id": "e200ef60-9626-49ed-b761-864acef70d2a",
+         "name": "Karma"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "14f54df9-f8f5-4f53-967e-a0e83a7ac107",
+     "position": 16,
+     "number": "16",
+     "title": "Radio Burning Chrome",
+     "artist-credit": [
+      {
+       "name": "Showroom Recordings",
+       "joinphrase": "",
+       "artist": {
+        "id": "aefe448b-c5e6-4d2a-b92d-79b90b4441a4",
+        "name": "Showroom Recordings"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b5e61423-bdfb-45c1-8276-f3a2999b782c",
+      "title": "Radio Burning Chrome",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Showroom Recordings",
+        "joinphrase": "",
+        "artist": {
+         "id": "aefe448b-c5e6-4d2a-b92d-79b90b4441a4",
+         "name": "Showroom Recordings"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "16af1f58-d826-482f-9f3a-09a0283cecca",
+     "position": 17,
+     "number": "17",
+     "title": "Black Baby (DJ‐Kicks)",
+     "artist-credit": [
+      {
+       "name": "Kruder & Dorfmeister",
+       "joinphrase": "",
+       "artist": {
+        "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
+        "name": "Kruder & Dorfmeister"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c5905647-1d2b-4eb5-8eb8-eb2e91dac026",
+      "title": "Black Baby (DJ‐Kicks)",
+      "first-release-date": "1996-08-19",
+      "artist-credit": [
+       {
+        "name": "Kruder & Dorfmeister",
+        "joinphrase": "",
+        "artist": {
+         "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
+         "name": "Kruder & Dorfmeister"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

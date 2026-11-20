@@ -1,0 +1,185 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="7995c76c-6471-4055-be66-3d384a0ba276">
+<title>Perfecth</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="b835704b-05f4-4572-ae8f-d0bb9d8a8f95" type="Album">
+<title>Perfecth</title>
+<first-release-date>2026-10-30</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2026-10-30</date>
+<release-event-list>
+<release-event>
+<date>2026-10-30</date>
+</release-event>
+</release-event-list>
+<barcode>0191401225359</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>Matador</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="bf5b76e7-c572-4641-bfd9-1556cb26b297">
+<position>1</position>
+<number>1</number>
+<recording id="9e333aba-40f0-44e7-8fc5-4579c1ad1faf">
+<title>It’s Only Love</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-10-30</first-release-date>
+</recording>
+</track>
+<track id="018325e3-97ad-4b67-adbd-fcf3f45f61dd">
+<position>2</position>
+<number>2</number>
+<recording id="7a04d4ef-637f-44b0-ad81-c2ce25f3f0e9">
+<title>Insignificant Other</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-08-25</first-release-date>
+</recording>
+</track>
+<track id="cedf882f-4a98-4c2d-bec3-95e08dea3d0c">
+<position>3</position>
+<number>3</number>
+<recording id="79c95a9d-a835-4c0f-bc44-5537706b70a8">
+<title>Where the Goth Girls At?</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-09-23</first-release-date>
+</recording>
+</track>
+<track id="fe54bcf4-24aa-4d1a-9b50-8acca6bf7b8b">
+<position>4</position>
+<number>4</number>
+<recording id="1688913b-ff6e-4282-b165-347eaea6b0ff">
+<title>Mono</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-10-30</first-release-date>
+</recording>
+</track>
+<track id="2c3b3974-5e91-4cd8-b703-c5b05bee5cf5">
+<position>5</position>
+<number>5</number>
+<recording id="c2718554-74de-4e96-a1d2-3594221a296b">
+<title>From the Cliff</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-10-30</first-release-date>
+</recording>
+</track>
+<track id="e04cfc41-f02e-4e03-aa55-2ff53c03103a">
+<position>6</position>
+<number>6</number>
+<recording id="b380c264-170d-4128-b19d-7c1cb8b397b4">
+<title>Sunday</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-10-30</first-release-date>
+</recording>
+</track>
+<track id="b407123b-49b3-415c-a6a8-844888f25838">
+<position>7</position>
+<number>7</number>
+<recording id="55bab3e8-9fdf-4321-b928-9a91eff1f572">
+<title>Easy Street</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-07-14</first-release-date>
+</recording>
+</track>
+<track id="e3176a7f-e1ae-44e8-a48e-0f401feda6a8">
+<position>8</position>
+<number>8</number>
+<recording id="520f4492-381e-42f9-937f-e2f501fe7978">
+<title>Phantom Limb</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-10-30</first-release-date>
+</recording>
+</track>
+<track id="9e0eb7cd-2386-4489-9607-d9d19be1aa92">
+<position>9</position>
+<number>9</number>
+<recording id="2bc1eb8c-b449-492d-9204-4db9473a6939">
+<title>Run Away From the Mob</title>
+<artist-credit>
+<name-credit>
+<artist id="7dc8f5bd-9d0b-4087-9f73-dc164950bbd8">
+<name>Queens of the Stone Age</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2026-10-28</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

@@ -6,7 +6,7 @@ files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
-musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, in tests/fixtures/stores/musicbrainz/release/, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
@@ -214,10 +214,7 @@ deezer = '''
  ]
 }
 '''
-musicbrainz = '''
-<?xml version='1.0' encoding='utf-8'?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="4c8af71f-5746-4981-92d7-0d6c64db1155"><title>Kind of Blue</title><artist-credit><name-credit><artist><name>Miles Davis</name></artist></name-credit></artist-credit><release-group type="Album"><title>Kind of Blue</title><first-release-date>1959-08-17</first-release-date><artist-credit><name-credit><artist><name>Miles Davis</name></artist></name-credit></artist-credit></release-group><date>2011-11-08</date><release-event-list><release-event><date>2011-11-08</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Columbia</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>So What</title><artist-credit><name-credit><artist><name>Miles Davis</name></artist></name-credit></artist-credit><first-release-date>1969</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Freddie Freeloader</title><artist-credit><name-credit><artist><name>Miles Davis</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Blue in Green</title><artist-credit><name-credit><artist><name>Miles Davis</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>All Blues</title><artist-credit><name-credit><artist><name>Miles Davis</name></artist></name-credit></artist-credit><first-release-date>1959-08-17</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Flamenco Sketches</title><artist-credit><name-credit><artist><name>Miles Davis</name></artist></name-credit></artist-credit><first-release-date>1959-08-17</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
-'''
+musicbrainz = "4c8af71f-5746-4981-92d7-0d6c64db1155"
 discogs = '''
 {
  "id": 6276183,

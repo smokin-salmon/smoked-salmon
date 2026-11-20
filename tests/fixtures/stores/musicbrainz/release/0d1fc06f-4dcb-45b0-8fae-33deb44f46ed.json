@@ -1,0 +1,336 @@
+{
+ "id": "0d1fc06f-4dcb-45b0-8fae-33deb44f46ed",
+ "title": "Led Zeppelin II",
+ "date": "",
+ "barcode": "603497900831",
+ "artist-credit": [
+  {
+   "name": "Led Zeppelin",
+   "joinphrase": "",
+   "artist": {
+    "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+    "name": "Led Zeppelin"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "33b4653d-006e-3cc1-8afb-386b15a6cd6e",
+  "title": "Led Zeppelin II",
+  "first-release-date": "1969-10-22",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Led Zeppelin",
+    "joinphrase": "",
+    "artist": {
+     "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+     "name": "Led Zeppelin"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": ""
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Atlantic"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "806229f1-d21b-4f22-99e1-690812468b4f",
+     "position": 1,
+     "number": "1",
+     "title": "Whole Lotta Love",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9d9c8206-8b4c-45fc-8f12-ffc1940b2b7f",
+      "title": "Whole Lotta Love",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "33d6874a-0b41-44c9-a69b-b933d7fc6341",
+     "position": 2,
+     "number": "2",
+     "title": "What Is and What Should Never Be",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "edf5afb6-7c9b-403d-aad9-6e5323711cc9",
+      "title": "What Is and What Should Never Be",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "fcfaf885-4903-4c69-8784-15910bb487c7",
+     "position": 3,
+     "number": "3",
+     "title": "The Lemon Song",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d79553cf-a4f5-494f-adb5-be841567e6d2",
+      "title": "The Lemon Song",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9b53166b-4728-4ef3-8228-602aa40cd7d9",
+     "position": 4,
+     "number": "4",
+     "title": "Thank You",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e21defb3-82b7-481a-a457-63ce2329feaa",
+      "title": "Thank You",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e02e15ef-8f35-4f7d-9952-dc15ff94b1bc",
+     "position": 5,
+     "number": "5",
+     "title": "Heartbreaker",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a642c527-692e-4466-a734-bf30d0170ece",
+      "title": "Heartbreaker",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a54dc91c-51ab-4ed4-81a8-dd776c18c336",
+     "position": 6,
+     "number": "6",
+     "title": "Living Loving Maid (She’s Just a Woman)",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7895202a-b37a-4d54-8bcb-1678a6e3ec23",
+      "title": "Living Loving Maid (She’s Just a Woman)",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b3441271-dba1-4673-901d-7cb8e58559db",
+     "position": 7,
+     "number": "7",
+     "title": "Ramble On",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "01c2ce15-bc8b-4629-825d-03d0f24d90bb",
+      "title": "Ramble On",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d32b428d-9e6d-4b46-9e06-c3de368b5b7b",
+     "position": 8,
+     "number": "8",
+     "title": "Moby Dick",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "dce2ef42-e12c-4c0f-ab27-b69495c3a41e",
+      "title": "Moby Dick",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8d4a5a38-d244-4394-a495-0fb08678c17c",
+     "position": 9,
+     "number": "9",
+     "title": "Bring It On Home",
+     "artist-credit": [
+      {
+       "name": "Led Zeppelin",
+       "joinphrase": "",
+       "artist": {
+        "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+        "name": "Led Zeppelin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "71c2acbb-c5ff-4677-ab7b-525ee2f70c66",
+      "title": "Bring It On Home",
+      "first-release-date": "1969-10-22",
+      "artist-credit": [
+       {
+        "name": "Led Zeppelin",
+        "joinphrase": "",
+        "artist": {
+         "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
+         "name": "Led Zeppelin"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

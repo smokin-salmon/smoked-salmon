@@ -1,0 +1,125 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="4c8af71f-5746-4981-92d7-0d6c64db1155">
+<title>Kind of Blue</title>
+<artist-credit>
+<name-credit>
+<artist id="561d854a-6a28-4aa7-8c99-323e6ce46c2a">
+<name>Miles Davis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="8e8a594f-2175-38c7-a871-abb68ec363e7" type="Album">
+<title>Kind of Blue</title>
+<first-release-date>1959-08-17</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="561d854a-6a28-4aa7-8c99-323e6ce46c2a">
+<name>Miles Davis</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2011-11-08</date>
+<release-event-list>
+<release-event>
+<date>2011-11-08</date>
+</release-event>
+</release-event-list>
+<barcode>5099749522428</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>Columbia</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="3fc452fc-a199-4c2e-b8f3-f852f8ba095b">
+<position>1</position>
+<number>1</number>
+<recording id="272dbf93-1501-4650-bbde-627ff0588a73">
+<title>So What</title>
+<artist-credit>
+<name-credit>
+<artist id="561d854a-6a28-4aa7-8c99-323e6ce46c2a">
+<name>Miles Davis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1969</first-release-date>
+</recording>
+</track>
+<track id="f07fa684-228e-4113-a261-7605c3683f70">
+<position>2</position>
+<number>2</number>
+<recording id="6ea17013-fa68-4446-a2c7-7b864e366803">
+<title>Freddie Freeloader</title>
+<artist-credit>
+<name-credit>
+<artist id="561d854a-6a28-4aa7-8c99-323e6ce46c2a">
+<name>Miles Davis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987</first-release-date>
+</recording>
+</track>
+<track id="e560005f-1e2a-4887-b6f7-516db762696a">
+<position>3</position>
+<number>3</number>
+<recording id="8121ce09-135d-477d-aafb-0404f1f15b78">
+<title>Blue in Green</title>
+<artist-credit>
+<name-credit>
+<artist id="561d854a-6a28-4aa7-8c99-323e6ce46c2a">
+<name>Miles Davis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1987</first-release-date>
+</recording>
+</track>
+<track id="1579294d-9a06-4a6e-a6cc-e714c19e7551">
+<position>4</position>
+<number>4</number>
+<recording id="b7ebe185-21e9-4400-a17a-3d0cee232925">
+<title>All Blues</title>
+<artist-credit>
+<name-credit>
+<artist id="561d854a-6a28-4aa7-8c99-323e6ce46c2a">
+<name>Miles Davis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1959-08-17</first-release-date>
+</recording>
+</track>
+<track id="eaf0ebc6-8164-4ba9-b26d-0a9fc192e246">
+<position>5</position>
+<number>5</number>
+<recording id="250b3f1d-7620-42a9-87b3-5d1a166e0f2f">
+<title>Flamenco Sketches</title>
+<artist-credit>
+<name-credit>
+<artist id="561d854a-6a28-4aa7-8c99-323e6ce46c2a">
+<name>Miles Davis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1959-08-17</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

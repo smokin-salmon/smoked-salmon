@@ -6,7 +6,7 @@ files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
-musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, in tests/fixtures/stores/musicbrainz/release/, trimmed to what the parser reads"
 discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
@@ -315,10 +315,7 @@ deezer = '''
  ]
 }
 '''
-musicbrainz = '''
-<?xml version='1.0' encoding='utf-8'?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="0d1fc06f-4dcb-45b0-8fae-33deb44f46ed"><title>Led Zeppelin II</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><release-group><title>Led Zeppelin II</title><first-release-date>1969-10-22</first-release-date><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit></release-group><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Atlantic</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Whole Lotta Love</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>What Is and What Should Never Be</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>The Lemon Song</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Thank You</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Heartbreaker</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Living Loving Maid (She’s Just a Woman)</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Ramble On</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Moby Dick</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Bring It On Home</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
-'''
+musicbrainz = "0d1fc06f-4dcb-45b0-8fae-33deb44f46ed"
 discogs = '''
 {
  "id": 1846223,

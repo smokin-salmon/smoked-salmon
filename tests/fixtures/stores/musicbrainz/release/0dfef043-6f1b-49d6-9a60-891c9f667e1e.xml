@@ -1,0 +1,926 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="0dfef043-6f1b-49d6-9a60-891c9f667e1e">
+<title>Doris</title>
+<artist-credit>
+<name-credit>
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="6de45ac3-5eca-44c4-8b71-cdc60c41bf5d" type="Album">
+<title>Doris</title>
+<first-release-date>2013-08-16</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2013-08-16</date>
+<release-event-list>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+<release-event>
+<date>2013-08-16</date>
+</release-event>
+</release-event-list>
+<barcode>886444062770</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<label>
+<name>Columbia</name>
+</label>
+</label-info>
+<label-info>
+<label>
+<name>Tan Cressida</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="68ce1006-e991-4397-bfa5-1d9e97261902">
+<position>1</position>
+<number>1</number>
+<recording id="dfe01207-f650-490d-90a2-9be73ff96661">
+<title>Pre</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="e8362d53-c891-47f4-8cd8-813184ec95d1">
+<name>SK La’Flare</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="4ca6b842-c9c3-4061-8eda-fd559e3ac13e">
+<position>2</position>
+<number>2</number>
+<recording id="74c979fa-c3b7-45fa-a273-d70f580c8a6a">
+<title>Burgundy</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="78e854b8-9713-4ff2-9218-6b3784893bff">
+<name>Vince Staples</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="14b3369c-f6fa-49a3-83a6-849227701ef5">
+<position>3</position>
+<number>3</number>
+<recording id="cbb6e9d7-de63-4da4-812d-6c7ee8563dbe">
+<title>20 Wave Caps</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="0ad99596-cbec-4726-af16-138e2a9268a1">
+<name>Domo Genesis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="a88ebe4d-16cc-444f-bbf8-af46463907f2">
+<position>4</position>
+<number>4</number>
+<recording id="c2c5d0f6-127e-4a4e-964d-5dae80162918">
+<title>Sunday</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="e520459c-dff4-491d-a6e4-c97be35e0044">
+<name>Frank Ocean</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="8266edd9-6d5f-4efc-99a3-0da5342afedd">
+<position>5</position>
+<number>5</number>
+<recording id="45084b78-ce4f-44b9-9d5e-61557f3a5928">
+<title>Hive</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="78e854b8-9713-4ff2-9218-6b3784893bff">
+<name>Vince Staples</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="67c6a1f0-7910-4c52-a651-2b7ec819e647">
+<name>Casey Veggies</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="5c64ad97-bec7-4dc0-8f44-ac322d8aba5e">
+<position>6</position>
+<number>6</number>
+<recording id="45cfc9f8-1118-4345-bbfe-fcd805d59804">
+<title>Chum</title>
+<artist-credit>
+<name-credit>
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="5dae6e80-4168-431a-95cc-16bc3d1075e2">
+<position>7</position>
+<number>7</number>
+<recording id="7e1d63ec-2e9a-46cb-bfbd-f85e62d10e81">
+<title>Sasquatch</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="f6beac20-5dfe-4d1f-ae02-0b0a740aafd6">
+<name>Tyler, The Creator</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="dd3496a1-8ea2-404e-a738-34c4e92e48f2">
+<position>8</position>
+<number>8</number>
+<recording id="5d6157e0-56a2-4d03-9626-2c60c8c17a71">
+<title>Centurion</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="78e854b8-9713-4ff2-9218-6b3784893bff">
+<name>Vince Staples</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="dd1eab19-6add-47f1-b7d1-5e2cdf657258">
+<position>9</position>
+<number>9</number>
+<recording id="fb1bdee2-f841-4b1b-bbaf-8d4d719e1563">
+<title>523</title>
+<artist-credit>
+<name-credit>
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="59d164da-20b2-4ff2-8c36-a4875a848166">
+<position>10</position>
+<number>10</number>
+<recording id="d5a87758-9f93-4142-81ee-f5c0433598ea">
+<title>Uncle Al</title>
+<artist-credit>
+<name-credit>
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="1ee3907c-4fb7-4116-8fbf-1280308dfbeb">
+<position>11</position>
+<number>11</number>
+<recording id="e36c9aad-af57-4885-a115-cf6a6882b871">
+<title>Guild</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="a0e8a1b1-5f8f-475a-a253-17415c17d0ff">
+<name>Mac Miller</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="2437f836-0fae-4a7f-9367-404a71013fd4">
+<position>12</position>
+<number>12</number>
+<recording id="38f0a352-b87b-4e85-bd64-bbfea7402a63">
+<title>Molasses</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="29c28ac3-27c5-4822-8eb6-0af89a3a7240">
+<name>RZA</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="1a160fc6-5a8f-413f-8588-d15ad86ace40">
+<position>13</position>
+<number>13</number>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="f6beac20-5dfe-4d1f-ae02-0b0a740aafd6">
+<name>Tyler, The Creator</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="83de90b7-fabf-4268-a0a0-75e985661ab5">
+<title>Whoa</title>
+<artist-credit>
+<name-credit>
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-03-12</first-release-date>
+</recording>
+</track>
+<track id="6281087b-685c-4f09-a964-4a8be1c1112d">
+<position>14</position>
+<number>14</number>
+<recording id="5819bbb3-bc66-47ef-9840-fc5568e62714">
+<title>Hoarse</title>
+<artist-credit>
+<name-credit>
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+<track id="b9688ccf-10d1-432d-8efe-3ebf36d9c41a">
+<position>15</position>
+<number>15</number>
+<recording id="7196339a-4c3f-4d03-9fae-af5b7532d6f3">
+<title>Knight</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8b22acd6-20e6-4463-a75c-c14b5cfdb666">
+<name>Earl Sweatshirt</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="0ad99596-cbec-4726-af16-138e2a9268a1">
+<name>Domo Genesis</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2013-08-16</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

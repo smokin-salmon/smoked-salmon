@@ -1,0 +1,367 @@
+{
+ "id": "b1e3799d-2d1c-47fd-b2f2-ad0d23ac2554",
+ "title": "Ágætis byrjun",
+ "date": "2018-03-22",
+ "barcode": "5690351111750",
+ "artist-credit": [
+  {
+   "name": "Sigur Rós",
+   "joinphrase": "",
+   "artist": {
+    "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+    "name": "Sigur Rós"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "62b427b8-1c52-34e7-b250-da2aa3e44860",
+  "title": "Ágætis byrjun",
+  "first-release-date": "1999-06",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Sigur Rós",
+    "joinphrase": "",
+    "artist": {
+     "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+     "name": "Sigur Rós"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2018-03-22"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Smekkleysa"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "ef795995-0cee-45a7-9b27-d6853ad4c026",
+     "position": 1,
+     "number": "1",
+     "title": "Intro",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "80c8836e-5dff-4d00-a092-8094216921f3",
+      "title": "Intro",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "376ef2d5-79eb-448b-8ced-ce7907f055c7",
+     "position": 2,
+     "number": "2",
+     "title": "Svefn‐g‐englar",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "59e24cd5-5c11-4dd8-b6c2-99ed9885553c",
+      "title": "Svefn‐g‐englar",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "684b718e-0414-4b75-b1a3-c4ef35047a6a",
+     "position": 3,
+     "number": "3",
+     "title": "Starálfur",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9c691c15-dba1-42c8-a99b-0aead1ec0bd4",
+      "title": "Starálfur",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "777fecb3-806d-4a37-b674-5ad1f74016bb",
+     "position": 4,
+     "number": "4",
+     "title": "Flugufrelsarinn",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "53837546-8792-41e2-a0fa-2ee34dfcaec5",
+      "title": "Flugufrelsarinn",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9f111ab3-5129-46d2-997e-16846e6025e5",
+     "position": 5,
+     "number": "5",
+     "title": "Ný batterí",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0003dd36-b4d2-4216-a37e-b110f6882ecb",
+      "title": "Ný batterí",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "63315e79-d4f5-41b7-8604-ebd1dd251a54",
+     "position": 6,
+     "number": "6",
+     "title": "Hjartað hamast (bamm bamm bamm)",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "cd96be20-9dc2-409a-8faf-b6d938def0d9",
+      "title": "Hjartað hamast (bamm bamm bamm)",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3f8a10b2-74a3-48d8-8490-b8dc303fd55b",
+     "position": 7,
+     "number": "7",
+     "title": "Viðrar vel til loftárása",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8cf770ff-b93a-48b4-ba04-cb437bc52d36",
+      "title": "Viðrar vel til loftárása",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1bbb9eaf-2b60-408d-a9b4-414158be0ca9",
+     "position": 8,
+     "number": "8",
+     "title": "Olsen Olsen",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9ca22b58-f9a8-43e3-9404-57cdef7b1f29",
+      "title": "Olsen Olsen",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5ec3d2d7-863a-401f-943c-43b2bbbc14a7",
+     "position": 9,
+     "number": "9",
+     "title": "Ágætis byrjun",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "482c80fc-9281-4d3c-b570-8bf053f01b7d",
+      "title": "Ágætis byrjun",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1f7176e2-ff3f-459b-92c7-db3a2b0afb1b",
+     "position": 10,
+     "number": "10",
+     "title": "Avalon",
+     "artist-credit": [
+      {
+       "name": "Sigur Rós",
+       "joinphrase": "",
+       "artist": {
+        "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+        "name": "Sigur Rós"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6bc9cd53-f0eb-4cea-b4c1-27a536bb13ba",
+      "title": "Avalon",
+      "first-release-date": "1999-06",
+      "artist-credit": [
+       {
+        "name": "Sigur Rós",
+        "joinphrase": "",
+        "artist": {
+         "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
+         "name": "Sigur Rós"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

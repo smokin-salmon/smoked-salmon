@@ -1,0 +1,304 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="bb465a9d-e465-451c-ab84-9dbe6e4e6917">
+<title>Brahms: Violinkonzert / Beethoven: Symphonie 5</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<name>Brahms</name>
+<artist id="c70d12a2-24fe-4f83-a6e6-57d84f8efb51">
+<name>Johannes Brahms</name>
+</artist>
+</name-credit>
+<name-credit joinphrase="; ">
+<name>Beethoven</name>
+<artist id="1f9df192-a621-4f54-8850-2c5373b7eac9">
+<name>Ludwig van Beethoven</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<name>Kyung-Wha Chung</name>
+<artist id="a83500d7-4b80-4a5c-ada8-60676bbb2848">
+<name>정경화</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="bad11f73-6a3b-3fc0-85ba-8e5eb2b5886e" type="Album">
+<title>Brahms: Violinkonzert / Beethoven: Symphonie 5</title>
+<first-release-date>2001-09-03</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit joinphrase=", ">
+<name>Brahms</name>
+<artist id="c70d12a2-24fe-4f83-a6e6-57d84f8efb51">
+<name>Johannes Brahms</name>
+</artist>
+</name-credit>
+<name-credit joinphrase="; ">
+<name>Beethoven</name>
+<artist id="1f9df192-a621-4f54-8850-2c5373b7eac9">
+<name>Ludwig van Beethoven</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<name>Kyung-Wha Chung</name>
+<artist id="a83500d7-4b80-4a5c-ada8-60676bbb2848">
+<name>정경화</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2001-09-03</date>
+<release-event-list>
+<release-event>
+<date>2001-09-03</date>
+</release-event>
+</release-event-list>
+<barcode>724355716521</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<catalog-number>7243 5 57165 2 1</catalog-number>
+<label>
+<name>EMI Classics</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>CD</format>
+<track-list>
+<track id="77dc030e-98fd-3d54-8b8b-d068de593ae1">
+<position>1</position>
+<number>1</number>
+<artist-credit>
+<name-credit>
+<artist id="1f9df192-a621-4f54-8850-2c5373b7eac9">
+<name>Ludwig van Beethoven</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="b4923b10-b740-4197-804a-0210bdc34157">
+<title>Symphony no. 5 in C minor, op. 67: I. Allegro con brio</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2001-09-03</first-release-date>
+</recording>
+</track>
+<track id="9ffeb9c4-56bb-3d29-a9ea-6e2a240981f0">
+<position>2</position>
+<number>2</number>
+<artist-credit>
+<name-credit>
+<artist id="1f9df192-a621-4f54-8850-2c5373b7eac9">
+<name>Ludwig van Beethoven</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="04a51bbd-dfde-44f3-808e-2b54895cf55a">
+<title>Symphony no. 5 in C minor, op. 67: II. Andante con moto</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2001-09-03</first-release-date>
+</recording>
+</track>
+<track id="c2d7db33-6cc6-30a1-8e5d-f5067908b203">
+<position>3</position>
+<number>3</number>
+<artist-credit>
+<name-credit>
+<artist id="1f9df192-a621-4f54-8850-2c5373b7eac9">
+<name>Ludwig van Beethoven</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="69d01695-a874-4493-9039-c3d9412796e5">
+<title>Symphony no. 5 in C minor, op. 67: III. Allegro -</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2001-09-03</first-release-date>
+</recording>
+</track>
+<track id="fceb6fb7-10e9-35f8-9b20-5e6ce8f1288c">
+<position>4</position>
+<number>4</number>
+<artist-credit>
+<name-credit>
+<artist id="1f9df192-a621-4f54-8850-2c5373b7eac9">
+<name>Ludwig van Beethoven</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="614203e9-905a-4c5f-8807-7df31efa8d01">
+<title>Symphony No. 5 in C minor, op. 67: IV. Allegro</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2001-09-03</first-release-date>
+</recording>
+</track>
+<track id="8fea01b1-8be9-3224-9df7-d338755559c1">
+<position>5</position>
+<number>5</number>
+<artist-credit>
+<name-credit>
+<artist id="c70d12a2-24fe-4f83-a6e6-57d84f8efb51">
+<name>Johannes Brahms</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="beebafb0-a374-4407-bc8a-48d7c591a3f7">
+<title>Concerto for Violin and Orchestra in D major, op. 77: I. Allegro non troppo</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<name>Kyung-Wha Chung</name>
+<artist id="a83500d7-4b80-4a5c-ada8-60676bbb2848">
+<name>정경화</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2001-09-03</first-release-date>
+</recording>
+</track>
+<track id="ec9027eb-638a-3539-a7a8-2b2f5c79aa3b">
+<position>6</position>
+<number>6</number>
+<artist-credit>
+<name-credit>
+<artist id="c70d12a2-24fe-4f83-a6e6-57d84f8efb51">
+<name>Johannes Brahms</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="c8c24f9b-3453-48bc-bfbf-3d2af0f4b657">
+<title>Concerto for Violin and Orchestra in D major, op. 77: II. Adagio</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<name>Kyung-Wha Chung</name>
+<artist id="a83500d7-4b80-4a5c-ada8-60676bbb2848">
+<name>정경화</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2001-09-03</first-release-date>
+</recording>
+</track>
+<track id="546cdadc-2216-34a5-9fe1-491759084583">
+<position>7</position>
+<number>7</number>
+<artist-credit>
+<name-credit>
+<artist id="c70d12a2-24fe-4f83-a6e6-57d84f8efb51">
+<name>Johannes Brahms</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="ca93f9e1-33b9-41c1-b443-725db961d733">
+<title>Concerto for Violin and Orchestra in D major, op. 77: III. Allegro giocoso, ma non troppo vivace - Poco più presto</title>
+<artist-credit>
+<name-credit joinphrase=", ">
+<name>Kyung-Wha Chung</name>
+<artist id="a83500d7-4b80-4a5c-ada8-60676bbb2848">
+<name>정경화</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="d770374d-05e9-4ed3-a068-3fbd4e6e4dd6">
+<name>Wiener Philharmoniker</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="80c3bce9-0b54-409c-aa10-3b0c7dbbc597">
+<name>Simon Rattle</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2001-09-03</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

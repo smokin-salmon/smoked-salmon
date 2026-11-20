@@ -1,0 +1,531 @@
+{
+ "id": "a0f4c5d7-d05c-45b3-8b9e-4ec4ae932ba0",
+ "title": "The Graduate: The Original Sound Track Recording",
+ "date": "2019-05-24",
+ "barcode": "886447698648",
+ "artist-credit": [
+  {
+   "name": "Paul Simon",
+   "joinphrase": "; ",
+   "artist": {
+    "id": "05517043-ff78-4988-9c22-88c68588ebb9",
+    "name": "Paul Simon"
+   }
+  },
+  {
+   "name": "Simon & Garfunkel",
+   "joinphrase": "; ",
+   "artist": {
+    "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+    "name": "Simon & Garfunkel"
+   }
+  },
+  {
+   "name": "David Grusin",
+   "joinphrase": "",
+   "artist": {
+    "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+    "name": "Dave Grusin"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "676c253c-bf4c-38e3-9b66-c55327c841e8",
+  "title": "The Graduate: The Original Sound Track Recording",
+  "first-release-date": "1968-02",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Soundtrack"
+  ],
+  "artist-credit": [
+   {
+    "name": "Paul Simon",
+    "joinphrase": "; ",
+    "artist": {
+     "id": "05517043-ff78-4988-9c22-88c68588ebb9",
+     "name": "Paul Simon"
+    }
+   },
+   {
+    "name": "Simon & Garfunkel",
+    "joinphrase": "; ",
+    "artist": {
+     "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+     "name": "Simon & Garfunkel"
+    }
+   },
+   {
+    "name": "David Grusin",
+    "joinphrase": "",
+    "artist": {
+     "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+     "name": "Dave Grusin"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2019-05-24"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "G010004089083D",
+   "label": {
+    "name": "Columbia"
+   }
+  },
+  {
+   "catalog-number": "G010004089083D",
+   "label": {
+    "name": "Legacy"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "a76fb4fa-b31b-4596-830b-d4e7b89df3c3",
+     "position": 1,
+     "number": "1",
+     "title": "The Sound of Silence (electric version)",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "16b61caf-c1f5-48b6-8fb8-77d5de1374c0",
+      "title": "The Sound of Silence",
+      "first-release-date": "1966-01-17",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8b35debe-47d2-46d4-999e-fa9a09b1d03c",
+     "position": 2,
+     "number": "2",
+     "title": "The Singleman Party Foxtrot",
+     "artist-credit": [
+      {
+       "name": "David Grusin",
+       "joinphrase": "",
+       "artist": {
+        "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+        "name": "Dave Grusin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1e6ffb3d-351f-4230-9282-beb2462d65c1",
+      "title": "The Singleman Party Foxtrot",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "David Grusin",
+        "joinphrase": "",
+        "artist": {
+         "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+         "name": "Dave Grusin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "29bc749a-9b25-4565-9722-8a16a998fec4",
+     "position": 3,
+     "number": "3",
+     "title": "Mrs. Robinson (version 1)",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "fe62ff55-f2bc-4e03-9f3e-7189a60dcc44",
+      "title": "Mrs. Robinson",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3cff18c7-adbe-4a05-92a8-70fea6a79730",
+     "position": 4,
+     "number": "4",
+     "title": "Sunporch Cha‐Cha‐Cha",
+     "artist-credit": [
+      {
+       "name": "David Grusin",
+       "joinphrase": "",
+       "artist": {
+        "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+        "name": "Dave Grusin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f348bf60-39af-47b9-80ea-b90d592ea3d1",
+      "title": "Sunporch Cha‐Cha‐Cha",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "David Grusin",
+        "joinphrase": "",
+        "artist": {
+         "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+         "name": "Dave Grusin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "36669e01-9763-4881-89b9-b1861b0b5b74",
+     "position": 5,
+     "number": "5",
+     "title": "Scarborough Fair / Canticle (interlude)",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f3929e17-9cb9-4fc2-9c37-895a99ee30ad",
+      "title": "Scarborough Fair / Canticle (interlude)",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ecfc322c-f976-4e0a-8c22-5060e0296ae2",
+     "position": 6,
+     "number": "6",
+     "title": "On the Strip",
+     "artist-credit": [
+      {
+       "name": "David Grusin",
+       "joinphrase": "",
+       "artist": {
+        "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+        "name": "Dave Grusin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f233d49e-b975-422b-9ead-3250646795ea",
+      "title": "On the Strip",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "David Grusin",
+        "joinphrase": "",
+        "artist": {
+         "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+         "name": "Dave Grusin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ac851f8f-c2f6-45bb-b75e-340d661bcfe8",
+     "position": 7,
+     "number": "7",
+     "title": "April Come She Will",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "78885bda-3724-47eb-8cfc-b6f24d4a3965",
+      "title": "April Come She Will",
+      "first-release-date": "1966-01-17",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d772589f-68be-425b-8ddf-c9e2b85c73fb",
+     "position": 8,
+     "number": "8",
+     "title": "The Folks",
+     "artist-credit": [
+      {
+       "name": "David Grusin",
+       "joinphrase": "",
+       "artist": {
+        "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+        "name": "Dave Grusin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b635a78d-e78f-483c-9b44-0a9042d3ef59",
+      "title": "The Folks",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "David Grusin",
+        "joinphrase": "",
+        "artist": {
+         "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+         "name": "Dave Grusin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1c37506c-7d95-471f-8d90-57a1e02a8317",
+     "position": 9,
+     "number": "9",
+     "title": "Scarborough Fair / Canticle (extended version)",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "522947f8-30e0-4161-a77e-df6c79e9c06e",
+      "title": "Scarborough Fair / Canticle",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "65f4bc0b-a86e-41e3-a959-cad17a4588ed",
+     "position": 10,
+     "number": "10",
+     "title": "A Great Effect",
+     "artist-credit": [
+      {
+       "name": "David Grusin",
+       "joinphrase": "",
+       "artist": {
+        "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+        "name": "Dave Grusin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "16300528-5cf9-46b4-8ed5-cfdb4ffcff08",
+      "title": "A Great Effect",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "David Grusin",
+        "joinphrase": "",
+        "artist": {
+         "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+         "name": "Dave Grusin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "cc6b582c-ca45-4be0-a576-367c4a74c5ee",
+     "position": 11,
+     "number": "11",
+     "title": "The Big Bright Green Pleasure Machine (alternate version)",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6e98d69a-9b70-497a-a59f-cd4f0df84f37",
+      "title": "The Big Bright Green Pleasure Machine",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "4e9b01d3-b63b-4e89-b91b-9a618efeb5ec",
+     "position": 12,
+     "number": "12",
+     "title": "Whew",
+     "artist-credit": [
+      {
+       "name": "David Grusin",
+       "joinphrase": "",
+       "artist": {
+        "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+        "name": "Dave Grusin"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ec1ec734-9b96-47ce-b7d8-fe3ca97c8ce0",
+      "title": "Whew",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "David Grusin",
+        "joinphrase": "",
+        "artist": {
+         "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
+         "name": "Dave Grusin"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5d324264-aeb2-4a79-9e25-4dd1e1c709e6",
+     "position": 13,
+     "number": "13",
+     "title": "Mrs. Robinson (version 2)",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e6b4f461-027b-46dc-bf19-8e2b9086940e",
+      "title": "Mrs. Robinson",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c75e8170-bef0-4864-b8b2-be0182e543bf",
+     "position": 14,
+     "number": "14",
+     "title": "The Sound of Silence (reprise)",
+     "artist-credit": [
+      {
+       "name": "Simon & Garfunkel",
+       "joinphrase": "",
+       "artist": {
+        "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+        "name": "Simon & Garfunkel"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6804aec2-8eae-4852-bdac-942e55f620a3",
+      "title": "The Sound of Silence",
+      "first-release-date": "1968-02",
+      "artist-credit": [
+       {
+        "name": "Simon & Garfunkel",
+        "joinphrase": "",
+        "artist": {
+         "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
+         "name": "Simon & Garfunkel"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

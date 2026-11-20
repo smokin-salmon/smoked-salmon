@@ -1,0 +1,590 @@
+{
+ "id": "54f13825-801d-4b1f-a06f-e3ffa3b79065",
+ "title": "Ella and Louis",
+ "date": "2005",
+ "barcode": "602498840214",
+ "artist-credit": [
+  {
+   "name": "Ella Fitzgerald",
+   "joinphrase": " & ",
+   "artist": {
+    "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+    "name": "Ella Fitzgerald"
+   }
+  },
+  {
+   "name": "Louis Armstrong",
+   "joinphrase": "",
+   "artist": {
+    "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+    "name": "Louis Armstrong"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "6a8ec885-544e-3b31-859a-a73289a01421",
+  "title": "Ella and Louis",
+  "first-release-date": "1956",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Ella Fitzgerald",
+    "joinphrase": " & ",
+    "artist": {
+     "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+     "name": "Ella Fitzgerald"
+    }
+   },
+   {
+    "name": "Louis Armstrong",
+    "joinphrase": "",
+    "artist": {
+     "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+     "name": "Louis Armstrong"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2005"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "MGV 4003",
+   "label": {
+    "name": "Verve Music Group"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "5705943b-ca3a-4024-b2ee-34dee9d3aff6",
+     "position": 1,
+     "number": "1",
+     "title": "Can't We Be Friends?",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "98b86f2d-5424-4318-8c56-7896f8352f31",
+      "title": "Can’t We Be Friends?",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "92738955-39d9-42bb-b2b3-dc06d6a70acc",
+     "position": 2,
+     "number": "2",
+     "title": "Isn't This a Lovely Day",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "54550d7b-23f6-4162-a80f-e55bed5ccb91",
+      "title": "Isn’t This a Lovely Day",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d486eb9b-b8dd-4a15-9796-f929ea7ba5a1",
+     "position": 3,
+     "number": "3",
+     "title": "Moonlight in Vermont",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8fa40eb1-3b76-45e9-b259-c28f46a93938",
+      "title": "Moonlight in Vermont",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c7ae44cf-9cbb-4cb1-bb68-a28c4412898b",
+     "position": 4,
+     "number": "4",
+     "title": "They Can't Take That Away From Me",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "903cdba8-8750-48d4-964c-c8d57d4d180d",
+      "title": "They Can’t Take That Away From Me",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " and ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "136cf8f1-ab3e-48aa-8a40-3c1d0a4a923b",
+     "position": 5,
+     "number": "5",
+     "title": "Under a Blanket of Blue",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d8e774f2-e359-49d5-b94c-467454197965",
+      "title": "Under a Blanket of Blue",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "16f1ea0d-8d9a-4731-b28a-a0c6bba1d3f3",
+     "position": 6,
+     "number": "6",
+     "title": "Tenderly",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7001e0d9-e8ae-492e-b508-322d2ddde2e0",
+      "title": "Tenderly",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6ffaaa0f-1bf0-4250-89ac-475517b5b3a3",
+     "position": 7,
+     "number": "7",
+     "title": "A Foggy Day",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0e6ccf41-dbf3-45bb-a736-caa84df2036b",
+      "title": "A Foggy Day",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2a0dbcb7-4e45-445b-a5b2-9194124bba2f",
+     "position": 8,
+     "number": "8",
+     "title": "Stars Fell on Alabama",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b727d224-87ad-4188-bdaf-d717802089d2",
+      "title": "Stars Fell on Alabama",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "496148c2-6700-4807-9d60-4e65c22fd58a",
+     "position": 9,
+     "number": "9",
+     "title": "Cheek to Cheek",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f8c921ed-aef0-4dd8-a13a-c8b817fc1bbb",
+      "title": "Cheek to Cheek",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9cbba938-496b-49b5-84a5-9e77e85b1bb8",
+     "position": 10,
+     "number": "10",
+     "title": "The Nearness of You",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9f82211e-d44f-4ba1-916c-4c5cbc557d17",
+      "title": "The Nearness of You",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1ac36797-b305-4f20-b0bb-cb2722babfc2",
+     "position": 11,
+     "number": "11",
+     "title": "April in Paris",
+     "artist-credit": [
+      {
+       "name": "Ella Fitzgerald",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+        "name": "Ella Fitzgerald"
+       }
+      },
+      {
+       "name": "Louis Armstrong",
+       "joinphrase": "",
+       "artist": {
+        "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+        "name": "Louis Armstrong"
+       }
+      }
+     ],
+     "recording": {
+      "id": "662e377a-dd22-4cb4-9b90-20e6a7f6d5d2",
+      "title": "April in Paris",
+      "first-release-date": "1956",
+      "artist-credit": [
+       {
+        "name": "Ella Fitzgerald",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
+         "name": "Ella Fitzgerald"
+        }
+       },
+       {
+        "name": "Louis Armstrong",
+        "joinphrase": "",
+        "artist": {
+         "id": "eea8a864-fcda-4602-9569-38ab446decd6",
+         "name": "Louis Armstrong"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

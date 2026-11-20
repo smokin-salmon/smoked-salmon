@@ -1,0 +1,802 @@
+{
+ "id": "afb1c604-79da-4470-90b1-940cc2caeee3",
+ "title": "Distant Relatives",
+ "date": "2010-05-18",
+ "barcode": "602527354019",
+ "artist-credit": [
+  {
+   "name": "Nas",
+   "joinphrase": " & ",
+   "artist": {
+    "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+    "name": "Nas"
+   }
+  },
+  {
+   "name": "Damian Marley",
+   "joinphrase": "",
+   "artist": {
+    "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+    "name": "Damian “Jr. Gong” Marley"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "24ef63c9-1f3c-4135-9a2e-48f3d35aedd7",
+  "title": "Distant Relatives",
+  "first-release-date": "2010-05-14",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Nas",
+    "joinphrase": " & ",
+    "artist": {
+     "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+     "name": "Nas"
+    }
+   },
+   {
+    "name": "Damian Marley",
+    "joinphrase": "",
+    "artist": {
+     "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+     "name": "Damian “Jr. Gong” Marley"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2010-05-18"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "B0014136",
+   "label": {
+    "name": "Def Jam Recordings"
+   }
+  },
+  {
+   "catalog-number": "B0014136",
+   "label": {
+    "name": "Universal Republic Records"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "64891790-f6af-32a6-b242-b8a75c64b26c",
+     "position": 1,
+     "number": "1",
+     "title": "As We Enter",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7d4a73fc-778e-488e-9e67-fec6b036f236",
+      "title": "As We Enter",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "45b6d5ba-6156-32ff-846c-ab0d62acd46f",
+     "position": 2,
+     "number": "2",
+     "title": "Tribes at War",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      },
+      {
+       "name": "K’naan",
+       "joinphrase": "",
+       "artist": {
+        "id": "ee421ee4-f861-405d-8730-29cb512dfdbd",
+        "name": "K’naan"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2492bccf-2805-425e-b5ba-30e278217287",
+      "title": "Tribes at War",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       },
+       {
+        "name": "K’naan",
+        "joinphrase": "",
+        "artist": {
+         "id": "ee421ee4-f861-405d-8730-29cb512dfdbd",
+         "name": "K’naan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ce1167ad-374f-3f93-a940-32375843e7ee",
+     "position": 3,
+     "number": "3",
+     "title": "Strong Will Continue",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "de9a9be9-002b-4aa8-8753-41eeab044333",
+      "title": "Strong Will Continue",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0714a092-d8e5-382a-b83e-d344298830e5",
+     "position": 4,
+     "number": "4",
+     "title": "Leaders",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      },
+      {
+       "name": "Stephen Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "99298e13-87d6-4f0c-9334-d327d73f83c0",
+        "name": "Stephen Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c85860c8-31b7-468d-a23f-e6daf6172596",
+      "title": "Leaders",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       },
+       {
+        "name": "Stephen Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "99298e13-87d6-4f0c-9334-d327d73f83c0",
+         "name": "Stephen Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "33185371-4468-3432-822f-05f16d7eed56",
+     "position": 5,
+     "number": "5",
+     "title": "Friends",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "faa7d97c-bb69-4c6f-85f2-b3a3ea85074b",
+      "title": "Friends",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "34db1afe-8190-3e13-a04c-8b4aa066b8ad",
+     "position": 6,
+     "number": "6",
+     "title": "Count Your Blessings",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c1b06bf3-135d-4e1b-ae83-2b86db9df3e7",
+      "title": "Count Your Blessings",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ee52abc8-d3b4-3eab-8821-5d6eb2dfa724",
+     "position": 7,
+     "number": "7",
+     "title": "Dispear",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b0279b65-7c3a-4ee5-8b3e-e59ce9b6b78d",
+      "title": "Dispear",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "db583b99-85e6-3970-97d6-11a0bc3ac464",
+     "position": 8,
+     "number": "8",
+     "title": "Land of Promise",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      },
+      {
+       "name": "Dennis Brown",
+       "joinphrase": "",
+       "artist": {
+        "id": "24c0aaf3-4ac2-4f9a-9ce6-a1545a96f017",
+        "name": "Dennis Brown"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a551d5db-3733-4333-9bf9-6e508a5afb9f",
+      "title": "Land of Promise",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       },
+       {
+        "name": "Dennis Brown",
+        "joinphrase": "",
+        "artist": {
+         "id": "24c0aaf3-4ac2-4f9a-9ce6-a1545a96f017",
+         "name": "Dennis Brown"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ce2931cf-5f24-37de-82e2-a3003928f311",
+     "position": 9,
+     "number": "9",
+     "title": "In His Own Words",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      },
+      {
+       "name": "Stephen Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "99298e13-87d6-4f0c-9334-d327d73f83c0",
+        "name": "Stephen Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1ae356eb-6843-4d3a-b358-f561d9414be4",
+      "title": "In His Own Words",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       },
+       {
+        "name": "Stephen Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "99298e13-87d6-4f0c-9334-d327d73f83c0",
+         "name": "Stephen Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "76042d3d-4d0f-3d89-93a0-f05005ef3ed1",
+     "position": 10,
+     "number": "10",
+     "title": "Nah Mean",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b2000b66-ba20-438b-9766-d842ccb70c4c",
+      "title": "Nah Mean",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "671f7e88-a8df-3347-94c6-82447f658b61",
+     "position": 11,
+     "number": "11",
+     "title": "Patience",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": "",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5fd6079c-776b-4a2f-9b58-3d1b0bd13d6e",
+      "title": "Patience",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": "",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f0dc9da9-b042-363b-b74e-f7d037546ab1",
+     "position": 12,
+     "number": "12",
+     "title": "My Generation",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      },
+      {
+       "name": "Lil Wayne",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "ac9a487a-d9d2-4f27-bb23-0f4686488345",
+        "name": "Lil Wayne"
+       }
+      },
+      {
+       "name": "Joss Stone",
+       "joinphrase": "",
+       "artist": {
+        "id": "dbbc47a5-1338-4830-9298-a8d0b11c0a46",
+        "name": "Joss Stone"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e6513918-7e83-4384-905c-3fa9e3294467",
+      "title": "My Generation",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       },
+       {
+        "name": "Lil Wayne",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "ac9a487a-d9d2-4f27-bb23-0f4686488345",
+         "name": "Lil Wayne"
+        }
+       },
+       {
+        "name": "Joss Stone",
+        "joinphrase": "",
+        "artist": {
+         "id": "dbbc47a5-1338-4830-9298-a8d0b11c0a46",
+         "name": "Joss Stone"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d744e5bc-47aa-3a52-bea9-52bc65ba3c02",
+     "position": 13,
+     "number": "13",
+     "title": "Africa Must Wake Up",
+     "artist-credit": [
+      {
+       "name": "Nas",
+       "joinphrase": " & ",
+       "artist": {
+        "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+        "name": "Nas"
+       }
+      },
+      {
+       "name": "Damian Marley",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+        "name": "Damian “Jr. Gong” Marley"
+       }
+      },
+      {
+       "name": "K’naan",
+       "joinphrase": "",
+       "artist": {
+        "id": "ee421ee4-f861-405d-8730-29cb512dfdbd",
+        "name": "K’naan"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0559fa1b-10be-483e-ade2-e9f492dc96df",
+      "title": "Africa Must Wake Up",
+      "first-release-date": "2010-05-14",
+      "artist-credit": [
+       {
+        "name": "Nas",
+        "joinphrase": " & ",
+        "artist": {
+         "id": "cfbc0924-0035-4d6c-8197-f024653af823",
+         "name": "Nas"
+        }
+       },
+       {
+        "name": "Damian Marley",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
+         "name": "Damian “Jr. Gong” Marley"
+        }
+       },
+       {
+        "name": "K’naan",
+        "joinphrase": "",
+        "artist": {
+         "id": "ee421ee4-f861-405d-8730-29cb512dfdbd",
+         "name": "K’naan"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

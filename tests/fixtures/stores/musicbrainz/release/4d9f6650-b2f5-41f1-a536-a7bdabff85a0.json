@@ -1,0 +1,1279 @@
+{
+ "id": "4d9f6650-b2f5-41f1-a536-a7bdabff85a0",
+ "title": "Vienna",
+ "date": "2006-02-07",
+ "barcode": "828767161525",
+ "artist-credit": [
+  {
+   "name": "Chicago Symphony Orchestra",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+    "name": "Chicago Symphony Orchestra"
+   }
+  },
+  {
+   "name": "Fritz Reiner",
+   "joinphrase": "",
+   "artist": {
+    "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+    "name": "Fritz Reiner"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "073e98db-2159-4cdf-9a51-b6159f9ea7bd",
+  "title": "Vienna",
+  "first-release-date": "1995",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Johann Strauss, Jr.",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+     "name": "Johann Strauss"
+    }
+   },
+   {
+    "name": "Carl Maria von Weber",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "c2d17829-1424-435b-9386-c77d3a920abe",
+     "name": "Carl Maria von Weber"
+    }
+   },
+   {
+    "name": "Richard Strauss",
+    "joinphrase": " / ",
+    "artist": {
+     "id": "4cb43d82-824e-4034-b03d-1a98f36f6e16",
+     "name": "Richard Strauss"
+    }
+   },
+   {
+    "name": "Fritz Reiner",
+    "joinphrase": " / ",
+    "artist": {
+     "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+     "name": "Fritz Reiner"
+    }
+   },
+   {
+    "name": "Chicago Symphony Orchestra",
+    "joinphrase": "",
+    "artist": {
+     "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+     "name": "Chicago Symphony Orchestra"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2006-02-07"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "82876-71615-2",
+   "label": {
+    "name": "RCA Red Seal"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Hybrid SACD (CD layer)",
+   "tracks": [
+    {
+     "id": "4080e2db-a835-383a-b0a2-ca5cb3676d50",
+     "position": 1,
+     "number": "1",
+     "title": "Morning Papers, op. 279",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ea478ad2-2ff3-488c-8ed0-34a47f1117aa",
+      "title": "Morning Papers, op. 279",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0ee3e9ed-ee9a-3f89-92f9-4aaa260d2f77",
+     "position": 2,
+     "number": "2",
+     "title": "Emperor Waltz, op. 437",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "eb624863-ae13-4216-8b85-8d8955162d23",
+      "title": "Emperor Waltz, op. 437",
+      "first-release-date": "1996",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "fc316d7b-4c92-3019-a39f-2c3ceb929b36",
+     "position": 3,
+     "number": "3",
+     "title": "On the Beautiful Blue Danube, op. 314",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "03d877b3-c476-469f-8436-2bba7e2b2fde",
+      "title": "On the Beautiful Blue Danube, op. 314",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "612659f0-222c-374d-9828-afb483608ff4",
+     "position": 4,
+     "number": "4",
+     "title": "Invitation to the Dance, op. 65",
+     "artist-credit": [
+      {
+       "name": "Carl Maria von Weber",
+       "joinphrase": "",
+       "artist": {
+        "id": "c2d17829-1424-435b-9386-c77d3a920abe",
+        "name": "Carl Maria von Weber"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4098adde-8b95-492a-a71b-367bd1f26240",
+      "title": "Invitation to the Dance, op. 65",
+      "first-release-date": "2006-02-07",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8be1576a-d741-3225-8183-449fdfe63bd6",
+     "position": 5,
+     "number": "5",
+     "title": "Village Swallows, op. 164",
+     "artist-credit": [
+      {
+       "name": "Josef Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "9942ef92-91a2-46f7-aff4-32389df33c9e",
+        "name": "Josef Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c788dd28-3778-4ff8-bac5-c53c5c504304",
+      "title": "Village Swallows, op. 164",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3f604f14-c097-33ff-99c4-dda7d901689d",
+     "position": 6,
+     "number": "6",
+     "title": "Der Rosenkavalier: Waltzes",
+     "artist-credit": [
+      {
+       "name": "Richard Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "4cb43d82-824e-4034-b03d-1a98f36f6e16",
+        "name": "Richard Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d784a392-8091-4677-b2e5-21c8d254c2dd",
+      "title": "Der Rosenkavalier: Waltzes",
+      "first-release-date": "1997",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "712113e3-6060-32b7-af58-4633968324d1",
+     "position": 7,
+     "number": "7",
+     "title": "Vienna Blood, op. 354",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c8f2d618-7ddc-4c45-90ef-99d0c313aa9c",
+      "title": "Vienna Blood, op. 354",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "37a51a62-1cf1-318f-9b39-83acf493b0d4",
+     "position": 8,
+     "number": "8",
+     "title": "Roses from the South, op. 388",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d4297738-095d-4805-af1c-46231bdd634b",
+      "title": "Roses from the South, op. 388",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a4b0e402-d381-3c9d-b9c3-66455bb1d5ec",
+     "position": 9,
+     "number": "9",
+     "title": "Treasure Waltz, op. 418",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "54269a7b-2d9c-43cf-a89a-58c368eed335",
+      "title": "Treasure Waltz, op. 418",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d574b6c3-2cc4-31de-9ec5-4dca00a0a58f",
+     "position": 10,
+     "number": "10",
+     "title": "Thunder and Lightning, op. 324",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b3ccf094-5441-4942-8d38-2cbcd796488d",
+      "title": "Thunder and Lightning, op. 324",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "position": 2,
+   "format": "Hybrid SACD (SACD layer, 2 channels)",
+   "tracks": [
+    {
+     "id": "f6061080-1464-4cb5-b98b-3a6f9c877723",
+     "position": 1,
+     "number": "1",
+     "title": "Morning Papers, op. 279",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ea478ad2-2ff3-488c-8ed0-34a47f1117aa",
+      "title": "Morning Papers, op. 279",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "fc690061-d2c7-48ba-9789-58542efc6d78",
+     "position": 2,
+     "number": "2",
+     "title": "Emperor Waltz, op. 437",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "eb624863-ae13-4216-8b85-8d8955162d23",
+      "title": "Emperor Waltz, op. 437",
+      "first-release-date": "1996",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "46591bff-18ba-4749-b69d-d74b8616e806",
+     "position": 3,
+     "number": "3",
+     "title": "On the Beautiful Blue Danube, op. 314",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "03d877b3-c476-469f-8436-2bba7e2b2fde",
+      "title": "On the Beautiful Blue Danube, op. 314",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "fd27e473-318f-4a15-9500-95a6926e043c",
+     "position": 4,
+     "number": "4",
+     "title": "Invitation to the Dance, op. 65",
+     "artist-credit": [
+      {
+       "name": "Carl Maria von Weber",
+       "joinphrase": "",
+       "artist": {
+        "id": "c2d17829-1424-435b-9386-c77d3a920abe",
+        "name": "Carl Maria von Weber"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4098adde-8b95-492a-a71b-367bd1f26240",
+      "title": "Invitation to the Dance, op. 65",
+      "first-release-date": "2006-02-07",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8db99f09-926d-4161-91fc-b78b0b25319d",
+     "position": 5,
+     "number": "5",
+     "title": "Village Swallows, op. 164",
+     "artist-credit": [
+      {
+       "name": "Josef Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "9942ef92-91a2-46f7-aff4-32389df33c9e",
+        "name": "Josef Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c788dd28-3778-4ff8-bac5-c53c5c504304",
+      "title": "Village Swallows, op. 164",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "fdafa711-e5a6-4c91-bd72-3aa31cccd028",
+     "position": 6,
+     "number": "6",
+     "title": "Der Rosenkavalier: Waltzes",
+     "artist-credit": [
+      {
+       "name": "Richard Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "4cb43d82-824e-4034-b03d-1a98f36f6e16",
+        "name": "Richard Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d784a392-8091-4677-b2e5-21c8d254c2dd",
+      "title": "Der Rosenkavalier: Waltzes",
+      "first-release-date": "1997",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0cb2b799-a65e-4a47-9add-370592df1a23",
+     "position": 7,
+     "number": "7",
+     "title": "Vienna Blood, op. 354",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c8f2d618-7ddc-4c45-90ef-99d0c313aa9c",
+      "title": "Vienna Blood, op. 354",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "db681481-887a-4efe-8c50-7c474625c90a",
+     "position": 8,
+     "number": "8",
+     "title": "Roses from the South, op. 388",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d4297738-095d-4805-af1c-46231bdd634b",
+      "title": "Roses from the South, op. 388",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e8704421-1212-4839-9b8c-ecb78232e84f",
+     "position": 9,
+     "number": "9",
+     "title": "Treasure Waltz, op. 418",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "54269a7b-2d9c-43cf-a89a-58c368eed335",
+      "title": "Treasure Waltz, op. 418",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "05dcf3ee-b174-4dc6-89df-fa0372ad6d4f",
+     "position": 10,
+     "number": "10",
+     "title": "Thunder and Lightning, op. 324",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b3ccf094-5441-4942-8d38-2cbcd796488d",
+      "title": "Thunder and Lightning, op. 324",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "position": 3,
+   "format": "Hybrid SACD (SACD layer, multichannel)",
+   "tracks": [
+    {
+     "id": "94c353be-1290-4fc1-a985-8e6767f8bcea",
+     "position": 1,
+     "number": "1",
+     "title": "Morning Papers, op. 279",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ea478ad2-2ff3-488c-8ed0-34a47f1117aa",
+      "title": "Morning Papers, op. 279",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3ccf96a8-ef81-419d-881b-08c8d02346be",
+     "position": 2,
+     "number": "2",
+     "title": "Emperor Waltz, op. 437",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "eb624863-ae13-4216-8b85-8d8955162d23",
+      "title": "Emperor Waltz, op. 437",
+      "first-release-date": "1996",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "7cd60110-6a78-44ac-8f91-18f419544e1a",
+     "position": 3,
+     "number": "3",
+     "title": "On the Beautiful Blue Danube, op. 314",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "03d877b3-c476-469f-8436-2bba7e2b2fde",
+      "title": "On the Beautiful Blue Danube, op. 314",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "13601958-649f-4c8a-87c6-980a54798361",
+     "position": 4,
+     "number": "4",
+     "title": "Invitation to the Dance, op. 65",
+     "artist-credit": [
+      {
+       "name": "Carl Maria von Weber",
+       "joinphrase": "",
+       "artist": {
+        "id": "c2d17829-1424-435b-9386-c77d3a920abe",
+        "name": "Carl Maria von Weber"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4098adde-8b95-492a-a71b-367bd1f26240",
+      "title": "Invitation to the Dance, op. 65",
+      "first-release-date": "2006-02-07",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6b9b7d1f-5251-4489-8134-2f5cd456b088",
+     "position": 5,
+     "number": "5",
+     "title": "Village Swallows, op. 164",
+     "artist-credit": [
+      {
+       "name": "Josef Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "9942ef92-91a2-46f7-aff4-32389df33c9e",
+        "name": "Josef Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c788dd28-3778-4ff8-bac5-c53c5c504304",
+      "title": "Village Swallows, op. 164",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d8944db4-a92d-4b10-90f9-f36ff315fbf2",
+     "position": 6,
+     "number": "6",
+     "title": "Der Rosenkavalier: Waltzes",
+     "artist-credit": [
+      {
+       "name": "Richard Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "4cb43d82-824e-4034-b03d-1a98f36f6e16",
+        "name": "Richard Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d784a392-8091-4677-b2e5-21c8d254c2dd",
+      "title": "Der Rosenkavalier: Waltzes",
+      "first-release-date": "1997",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bf23cfc1-82b7-4f37-bf55-1adbdf9b226c",
+     "position": 7,
+     "number": "7",
+     "title": "Vienna Blood, op. 354",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c8f2d618-7ddc-4c45-90ef-99d0c313aa9c",
+      "title": "Vienna Blood, op. 354",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1eea360c-21e5-48dc-9fa0-62fbec1ff128",
+     "position": 8,
+     "number": "8",
+     "title": "Roses from the South, op. 388",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d4297738-095d-4805-af1c-46231bdd634b",
+      "title": "Roses from the South, op. 388",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c439fcee-29c3-45ed-a66b-f1892a058503",
+     "position": 9,
+     "number": "9",
+     "title": "Treasure Waltz, op. 418",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "54269a7b-2d9c-43cf-a89a-58c368eed335",
+      "title": "Treasure Waltz, op. 418",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f2a63f5a-ba7b-4224-bf66-3e4ccf9f671e",
+     "position": 10,
+     "number": "10",
+     "title": "Thunder and Lightning, op. 324",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b3ccf094-5441-4942-8d38-2cbcd796488d",
+      "title": "Thunder and Lightning, op. 324",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

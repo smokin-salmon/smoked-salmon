@@ -1,0 +1,306 @@
+{
+ "count": 53674,
+ "offset": 0,
+ "releases": [
+  {
+   "id": "75c4bd73-aa6c-4a67-b26e-796313861fbf",
+   "title": "Disco Queen: Greatest Hits",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "Carol Douglas",
+     "artist": {
+      "id": "caf891ac-9f48-4e95-bb34-51c71bae0da8",
+      "name": "Carol Douglas"
+     }
+    }
+   ],
+   "label-info": [],
+   "media": [
+    {
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "92655853-3fcc-3491-b166-0c932420f594",
+   "title": "Greatest Hits II",
+   "track-count": 17,
+   "artist-credit": [
+    {
+     "name": "Queen",
+     "artist": {
+      "id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+      "name": "Queen"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CDPMTV 2",
+     "label": {
+      "name": "Parlophone"
+     }
+    },
+    {
+     "catalog-number": "598 CDP 79 7971 2",
+     "label": {
+      "name": "Parlophone"
+     }
+    },
+    {
+     "catalog-number": "CDP 79 7971 2",
+     "label": {
+      "name": "Parlophone"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 17
+    }
+   ]
+  },
+  {
+   "id": "d2aaa62b-0a22-4731-a45e-0554a4fffbb0",
+   "title": "Greatest Hits I & II",
+   "track-count": 34,
+   "artist-credit": [
+    {
+     "name": "Queen",
+     "artist": {
+      "id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+      "name": "Queen"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "HR-62042-2",
+     "label": {
+      "name": "Hollywood Records"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 17
+    },
+    {
+     "format": "CD",
+     "track-count": 17
+    }
+   ]
+  },
+  {
+   "id": "a8e5772e-757f-4ba8-8452-56b785d13d0a",
+   "title": "Queen: Greatest Video Hits",
+   "track-count": 33,
+   "artist-credit": [
+    {
+     "name": "Queen",
+     "artist": {
+      "id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
+      "name": "Queen"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": null,
+     "label": {
+      "name": "Eagle Rock Entertainment"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "DVD-Video",
+     "track-count": 16
+    },
+    {
+     "format": "DVD-Video",
+     "track-count": 17
+    }
+   ]
+  },
+  {
+   "id": "eace2379-7b55-44e6-b258-240d6e796562",
+   "title": "Symphonic Queen: The Greatest Hits",
+   "track-count": 19,
+   "artist-credit": [
+    {
+     "name": "The Royal Philharmonic Orchestra",
+     "artist": {
+      "id": "299597ae-3a20-4bf1-973e-03704af69f6b",
+      "name": "Royal Philharmonic Orchestra"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "479 6268",
+     "label": {
+      "name": "Panorama"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 19
+    }
+   ]
+  },
+  {
+   "id": "82609ad0-8286-4c22-91dd-e435289a22d5",
+   "title": "Symphonic Queen: The Greatest Hits",
+   "track-count": 19,
+   "artist-credit": [
+    {
+     "name": "The Royal Philharmonic Orchestra",
+     "joinphrase": ", ",
+     "artist": {
+      "id": "299597ae-3a20-4bf1-973e-03704af69f6b",
+      "name": "Royal Philharmonic Orchestra"
+     }
+    },
+    {
+     "name": "Matthew Freeman",
+     "artist": {
+      "id": "9441d439-bbf4-4acc-9729-5bfb813e3eb7",
+      "name": "Matthew Freeman"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "479 6268",
+     "label": {
+      "name": "Panorama"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 19
+    }
+   ]
+  },
+  {
+   "id": "52e2fcb5-860d-4d30-a86b-d7fdae255429",
+   "title": "Danse Pop",
+   "track-count": 4,
+   "artist-credit": [
+    {
+     "name": "Greatest Hits",
+     "artist": {
+      "id": "4620b1cd-8102-4b83-8506-33223cc958e3",
+      "name": "Greatest Hits"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "OESB-702",
+     "label": {
+      "name": "Olde English Spelling Bee"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "7\" Vinyl",
+     "track-count": 4
+    }
+   ]
+  },
+  {
+   "id": "85472d01-d29f-4206-af30-6287e1426253",
+   "title": "Spicy",
+   "track-count": 1,
+   "artist-credit": [
+    {
+     "name": "Greatest Hits",
+     "artist": {
+      "id": "08f722a6-e911-45af-9934-8314ce9cd389",
+      "name": "Double Talk"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": null,
+     "label": {
+      "name": "[no label]"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "Digital Media",
+     "track-count": 1
+    }
+   ]
+  },
+  {
+   "id": "2b0854fe-8f66-4c4d-a775-abfe6b76cdcc",
+   "title": "Banana Moon",
+   "track-count": 1,
+   "artist-credit": [
+    {
+     "name": "Greatest Hits",
+     "artist": {
+      "id": "08f722a6-e911-45af-9934-8314ce9cd389",
+      "name": "Double Talk"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": null,
+     "label": {
+      "name": "[no label]"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "Digital Media",
+     "track-count": 1
+    }
+   ]
+  },
+  {
+   "id": "961df75e-5b4c-491c-97d1-42210af61f76",
+   "title": "Palm Springs",
+   "track-count": 1,
+   "artist-credit": [
+    {
+     "name": "Greatest Hits",
+     "artist": {
+      "id": "08f722a6-e911-45af-9934-8314ce9cd389",
+      "name": "Double Talk"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": null,
+     "label": {
+      "name": "[no label]"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "Digital Media",
+     "track-count": 1
+    }
+   ]
+  }
+ ]
+}

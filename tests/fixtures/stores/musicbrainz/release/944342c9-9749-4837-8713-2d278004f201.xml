@@ -1,0 +1,334 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="944342c9-9749-4837-8713-2d278004f201">
+<title>Funk Wav Bounces, Vol. 1</title>
+<artist-credit>
+<name-credit>
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="654730cb-92d6-41ed-b298-ae890899e543" type="Album">
+<title>Funk Wav Bounces, Vol. 1</title>
+<first-release-date>2017-06-30</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit>
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2017-06-30</date>
+<release-event-list>
+<release-event>
+<date>2017-06-30</date>
+</release-event>
+</release-event-list>
+<barcode>886446469607</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<catalog-number>G010003721460R</catalog-number>
+<label>
+<name>Columbia</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>Digital Media</format>
+<track-list>
+<track id="6f7a2d4f-3284-43d6-8eb9-ff740c5562dd">
+<position>1</position>
+<number>1</number>
+<recording id="de9eb1df-07a2-41b2-9e40-32d78f2b9c09">
+<title>Slide</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="e520459c-dff4-491d-a6e4-c97be35e0044">
+<name>Frank Ocean</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="0221734a-35a8-40f7-b5c5-2f61a200bc7c">
+<name>Migos</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-02-24</first-release-date>
+</recording>
+</track>
+<track id="856c2947-6082-4ea1-9771-303bb6397eee">
+<position>2</position>
+<number>2</number>
+<recording id="03a10d76-52a8-4c02-a745-291f54bae534">
+<title>Cash Out</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="bce6d667-cde8-485e-b078-c0a05adea36d">
+<name>ScHoolboy Q</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="f23ef341-33bd-47c1-b83c-846a78581f05">
+<name>PARTYNEXTDOOR</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>D.R.A.M.</name>
+<artist id="6247d69d-426f-440f-97e0-74a9a0b00358">
+<name>DRAM</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-06-30</first-release-date>
+</recording>
+</track>
+<track id="2734a11b-c988-44bf-9a92-cd365f294e97">
+<position>3</position>
+<number>3</number>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="800760de-bdf8-43a2-8fe0-44a2401a5515">
+<name>Young Thug</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="149f91ef-1287-46da-9a8e-87fee02f1471">
+<name>Pharrell Williams</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="f4fdbb4c-e4b7-47a0-b83b-d91bbfcfa387">
+<name>Ariana Grande</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="1c2a3993-acb7-4ec4-9865-a6bc62afabfb">
+<title>Heatstroke</title>
+<artist-credit>
+<name-credit joinphrase=" ft. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="800760de-bdf8-43a2-8fe0-44a2401a5515">
+<name>Young Thug</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="149f91ef-1287-46da-9a8e-87fee02f1471">
+<name>Pharrell Williams</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="f4fdbb4c-e4b7-47a0-b83b-d91bbfcfa387">
+<name>Ariana Grande</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-03-31</first-release-date>
+</recording>
+</track>
+<track id="d8e02a42-87ac-47ba-9ea3-45b14f6505b4">
+<position>4</position>
+<number>4</number>
+<recording id="55f079bf-67ed-4f28-bc77-8a79138580ae">
+<title>Rollin</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="48262e82-db9f-4a92-b650-dfef979b73ec">
+<name>Future</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="28737730-ec70-4da5-89c5-77ac13c5c34d">
+<name>Khalid</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-05-12</first-release-date>
+</recording>
+</track>
+<track id="c5849283-e5ac-4a7f-af83-e5d8af31b6f8">
+<position>5</position>
+<number>5</number>
+<recording id="3d1079aa-bc64-436f-af32-70df369337ed">
+<title>Prayers Up</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="e4a51f17-a57b-47b1-b37b-f552d0f8e9e6">
+<name>Travis Scott</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="47ea59b7-81c2-4001-8ac3-567877b3172a">
+<name>A‐Trak</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-06-30</first-release-date>
+</recording>
+</track>
+<track id="70e6b4e5-002d-4846-8d2e-b8adc7a15170">
+<position>6</position>
+<number>6</number>
+<recording id="54116411-5bbe-476f-8f86-a2f9cc65394f">
+<title>Holiday</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="f90e8b26-9e52-4669-a5c9-e28529c47894">
+<name>Snoop Dogg</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="75a72702-a5ef-4513-bca5-c5b944903546">
+<name>John Legend</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="70f5bb6e-9b87-4500-9c9f-2e1d373d07da">
+<name>Takeoff</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-06-30</first-release-date>
+</recording>
+</track>
+<track id="50eb09a5-4efb-4ac9-91c1-c22e6a70e68a">
+<position>7</position>
+<number>7</number>
+<recording id="6134dfcf-5132-4813-911a-52c413071230">
+<title>Skrt on Me</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="1036b808-f58c-4a3e-b461-a2c4492ecf1b">
+<name>Nicki Minaj</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-06-30</first-release-date>
+</recording>
+</track>
+<track id="edfed37b-0586-4847-8cb5-ac053abbd623">
+<position>8</position>
+<number>8</number>
+<recording id="df933ba2-3377-4ab4-a648-36c7d3fc1679">
+<title>Feels</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=", ">
+<artist id="149f91ef-1287-46da-9a8e-87fee02f1471">
+<name>Pharrell Williams</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="122d63fc-8671-43e4-9752-34e846d62a9c">
+<name>Katy Perry</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="942a9807-9c1a-4a0e-a285-1fde2c5be9d1">
+<name>Big Sean</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-06-16</first-release-date>
+</recording>
+</track>
+<track id="53ac90b9-3e13-48e7-ab0e-03512041bd0d">
+<position>9</position>
+<number>9</number>
+<recording id="07f6c860-1da3-4944-aeb7-f9445d0530e1">
+<title>Faking It</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="3260ce89-5eb0-4c6a-89c7-379c0dfc2ab9">
+<name>Kehlani</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="a668565b-41b8-44a8-9d5c-8e609dbf69fc">
+<name>Lil Yachty</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-06-30</first-release-date>
+</recording>
+</track>
+<track id="e572f7ea-8fb5-4db2-ab23-794e65fcb8f7">
+<position>10</position>
+<number>10</number>
+<recording id="82d2fd34-b4c5-452b-9ca6-8fad3531e9f5">
+<title>Hard to Love</title>
+<artist-credit>
+<name-credit joinphrase=" feat. ">
+<artist id="8dd98bdc-80ec-4e93-8509-2f46bafc09a7">
+<name>Calvin Harris</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="18f56081-ccd7-4e07-981a-558c20951ccd">
+<name>Jessie Reyez</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2017-06-30</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

@@ -1,0 +1,296 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="54f13825-801d-4b1f-a06f-e3ffa3b79065">
+<title>Ella and Louis</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="6a8ec885-544e-3b31-859a-a73289a01421" type="Album">
+<title>Ella and Louis</title>
+<first-release-date>1956</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2005</date>
+<release-event-list>
+<release-event>
+<date>2005</date>
+</release-event>
+</release-event-list>
+<barcode>602498840214</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<catalog-number>MGV 4003</catalog-number>
+<label>
+<name>Verve Music Group</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>CD</format>
+<track-list>
+<track id="5705943b-ca3a-4024-b2ee-34dee9d3aff6">
+<position>1</position>
+<number>1</number>
+<title>Can't We Be Friends?</title>
+<recording id="98b86f2d-5424-4318-8c56-7896f8352f31">
+<title>Can’t We Be Friends?</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="92738955-39d9-42bb-b2b3-dc06d6a70acc">
+<position>2</position>
+<number>2</number>
+<title>Isn't This a Lovely Day</title>
+<recording id="54550d7b-23f6-4162-a80f-e55bed5ccb91">
+<title>Isn’t This a Lovely Day</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="d486eb9b-b8dd-4a15-9796-f929ea7ba5a1">
+<position>3</position>
+<number>3</number>
+<recording id="8fa40eb1-3b76-45e9-b259-c28f46a93938">
+<title>Moonlight in Vermont</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="c7ae44cf-9cbb-4cb1-bb68-a28c4412898b">
+<position>4</position>
+<number>4</number>
+<title>They Can't Take That Away From Me</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<recording id="903cdba8-8750-48d4-964c-c8d57d4d180d">
+<title>They Can’t Take That Away From Me</title>
+<artist-credit>
+<name-credit joinphrase=" and ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="136cf8f1-ab3e-48aa-8a40-3c1d0a4a923b">
+<position>5</position>
+<number>5</number>
+<recording id="d8e774f2-e359-49d5-b94c-467454197965">
+<title>Under a Blanket of Blue</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="16f1ea0d-8d9a-4731-b28a-a0c6bba1d3f3">
+<position>6</position>
+<number>6</number>
+<recording id="7001e0d9-e8ae-492e-b508-322d2ddde2e0">
+<title>Tenderly</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="6ffaaa0f-1bf0-4250-89ac-475517b5b3a3">
+<position>7</position>
+<number>7</number>
+<recording id="0e6ccf41-dbf3-45bb-a736-caa84df2036b">
+<title>A Foggy Day</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="2a0dbcb7-4e45-445b-a5b2-9194124bba2f">
+<position>8</position>
+<number>8</number>
+<recording id="b727d224-87ad-4188-bdaf-d717802089d2">
+<title>Stars Fell on Alabama</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="496148c2-6700-4807-9d60-4e65c22fd58a">
+<position>9</position>
+<number>9</number>
+<recording id="f8c921ed-aef0-4dd8-a13a-c8b817fc1bbb">
+<title>Cheek to Cheek</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="9cbba938-496b-49b5-84a5-9e77e85b1bb8">
+<position>10</position>
+<number>10</number>
+<recording id="9f82211e-d44f-4ba1-916c-4c5cbc557d17">
+<title>The Nearness of You</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+<track id="1ac36797-b305-4f20-b0bb-cb2722babfc2">
+<position>11</position>
+<number>11</number>
+<recording id="662e377a-dd22-4cb4-9b90-20e6a7f6d5d2">
+<title>April in Paris</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="54799c0e-eb45-4eea-996d-c4d71a63c499">
+<name>Ella Fitzgerald</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="eea8a864-fcda-4602-9569-38ab446decd6">
+<name>Louis Armstrong</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>1956</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

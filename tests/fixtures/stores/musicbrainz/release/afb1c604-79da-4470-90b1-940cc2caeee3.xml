@@ -1,0 +1,377 @@
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">
+<release id="afb1c604-79da-4470-90b1-940cc2caeee3">
+<title>Distant Relatives</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<release-group id="24ef63c9-1f3c-4135-9a2e-48f3d35aedd7" type="Album">
+<title>Distant Relatives</title>
+<first-release-date>2010-05-14</first-release-date>
+<primary-type>Album</primary-type>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+</release-group>
+<date>2010-05-18</date>
+<release-event-list>
+<release-event>
+<date>2010-05-18</date>
+</release-event>
+</release-event-list>
+<barcode>602527354019</barcode>
+<cover-art-archive>
+<front>true</front>
+</cover-art-archive>
+<label-info-list>
+<label-info>
+<catalog-number>B0014136</catalog-number>
+<label>
+<name>Def Jam Recordings</name>
+</label>
+</label-info>
+<label-info>
+<catalog-number>B0014136</catalog-number>
+<label>
+<name>Universal Republic Records</name>
+</label>
+</label-info>
+</label-info-list>
+<medium-list>
+<medium>
+<position>1</position>
+<format>CD</format>
+<track-list>
+<track id="64891790-f6af-32a6-b242-b8a75c64b26c">
+<position>1</position>
+<number>1</number>
+<recording id="7d4a73fc-778e-488e-9e67-fec6b036f236">
+<title>As We Enter</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="45b6d5ba-6156-32ff-846c-ab0d62acd46f">
+<position>2</position>
+<number>2</number>
+<recording id="2492bccf-2805-425e-b5ba-30e278217287">
+<title>Tribes at War</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" feat. ">
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="ee421ee4-f861-405d-8730-29cb512dfdbd">
+<name>K’naan</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="ce1167ad-374f-3f93-a940-32375843e7ee">
+<position>3</position>
+<number>3</number>
+<recording id="de9a9be9-002b-4aa8-8753-41eeab044333">
+<title>Strong Will Continue</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="0714a092-d8e5-382a-b83e-d344298830e5">
+<position>4</position>
+<number>4</number>
+<recording id="c85860c8-31b7-468d-a23f-e6daf6172596">
+<title>Leaders</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" feat. ">
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="99298e13-87d6-4f0c-9334-d327d73f83c0">
+<name>Stephen Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="33185371-4468-3432-822f-05f16d7eed56">
+<position>5</position>
+<number>5</number>
+<recording id="faa7d97c-bb69-4c6f-85f2-b3a3ea85074b">
+<title>Friends</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="34db1afe-8190-3e13-a04c-8b4aa066b8ad">
+<position>6</position>
+<number>6</number>
+<recording id="c1b06bf3-135d-4e1b-ae83-2b86db9df3e7">
+<title>Count Your Blessings</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="ee52abc8-d3b4-3eab-8821-5d6eb2dfa724">
+<position>7</position>
+<number>7</number>
+<recording id="b0279b65-7c3a-4ee5-8b3e-e59ce9b6b78d">
+<title>Dispear</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="db583b99-85e6-3970-97d6-11a0bc3ac464">
+<position>8</position>
+<number>8</number>
+<recording id="a551d5db-3733-4333-9bf9-6e508a5afb9f">
+<title>Land of Promise</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" feat. ">
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="24c0aaf3-4ac2-4f9a-9ce6-a1545a96f017">
+<name>Dennis Brown</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="ce2931cf-5f24-37de-82e2-a3003928f311">
+<position>9</position>
+<number>9</number>
+<recording id="1ae356eb-6843-4d3a-b358-f561d9414be4">
+<title>In His Own Words</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" feat. ">
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="99298e13-87d6-4f0c-9334-d327d73f83c0">
+<name>Stephen Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="76042d3d-4d0f-3d89-93a0-f05005ef3ed1">
+<position>10</position>
+<number>10</number>
+<recording id="b2000b66-ba20-438b-9766-d842ccb70c4c">
+<title>Nah Mean</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="671f7e88-a8df-3347-94c6-82447f658b61">
+<position>11</position>
+<number>11</number>
+<recording id="5fd6079c-776b-4a2f-9b58-3d1b0bd13d6e">
+<title>Patience</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit>
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="f0dc9da9-b042-363b-b74e-f7d037546ab1">
+<position>12</position>
+<number>12</number>
+<recording id="e6513918-7e83-4384-905c-3fa9e3294467">
+<title>My Generation</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" feat. ">
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="ac9a487a-d9d2-4f27-bb23-0f4686488345">
+<name>Lil Wayne</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="dbbc47a5-1338-4830-9298-a8d0b11c0a46">
+<name>Joss Stone</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+<track id="d744e5bc-47aa-3a52-bea9-52bc65ba3c02">
+<position>13</position>
+<number>13</number>
+<recording id="0559fa1b-10be-483e-ade2-e9f492dc96df">
+<title>Africa Must Wake Up</title>
+<artist-credit>
+<name-credit joinphrase=" &amp; ">
+<artist id="cfbc0924-0035-4d6c-8197-f024653af823">
+<name>Nas</name>
+</artist>
+</name-credit>
+<name-credit joinphrase=" feat. ">
+<name>Damian Marley</name>
+<artist id="cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c">
+<name>Damian “Jr. Gong” Marley</name>
+</artist>
+</name-credit>
+<name-credit>
+<artist id="ee421ee4-f861-405d-8730-29cb512dfdbd">
+<name>K’naan</name>
+</artist>
+</name-credit>
+</artist-credit>
+<first-release-date>2010-05-14</first-release-date>
+</recording>
+</track>
+</track-list>
+</medium>
+</medium-list>
+</release>
+</metadata>

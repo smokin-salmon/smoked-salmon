@@ -1,0 +1,596 @@
+{
+ "id": "688898bc-bd01-49e2-be81-d05bb10e0340",
+ "title": "Weekend Classics: Slavonic Dances, Hungarian Dances",
+ "date": "1988",
+ "barcode": "028941769626",
+ "artist-credit": [
+  {
+   "name": "Dvořák",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+    "name": "Antonín Dvořák"
+   }
+  },
+  {
+   "name": "Brahms",
+   "joinphrase": "; ",
+   "artist": {
+    "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+    "name": "Johannes Brahms"
+   }
+  },
+  {
+   "name": "Fritz Reiner",
+   "joinphrase": "",
+   "artist": {
+    "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+    "name": "Fritz Reiner"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "25f6fafc-67eb-416d-8936-4d57dac3607a",
+  "title": "Slavonic Dances, Hungarian Dances",
+  "first-release-date": "1988",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Dvořák",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+     "name": "Antonín Dvořák"
+    }
+   },
+   {
+    "name": "Brahms",
+    "joinphrase": "; ",
+    "artist": {
+     "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+     "name": "Johannes Brahms"
+    }
+   },
+   {
+    "name": "Fritz Reiner",
+    "joinphrase": "",
+    "artist": {
+     "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+     "name": "Fritz Reiner"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "1988"
+  }
+ ],
+ "cover-art-archive": {
+  "front": false
+ },
+ "label-info": [
+  {
+   "catalog-number": "417 696-2",
+   "label": {
+    "name": "Decca Classics"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "42a27c3c-ab00-4e42-a3c9-844e516b4dae",
+     "position": 1,
+     "number": "1",
+     "title": "Hungarian Dances: no. 5 in G minor",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2e34bee0-aeac-4693-81cf-309d714df3fb",
+      "title": "Hungarian Dances: no. 5 in G minor",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "023f1c7e-6f47-4085-8a9a-3a2ae56b78ec",
+     "position": 2,
+     "number": "2",
+     "title": "Hungarian Dances: no. 6 in D major",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "156a0e6f-a7c4-4b3c-8e17-e98a36aa36f2",
+      "title": "Hungarian Dances: no. 6 in D-flat major",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ca148218-ef9b-459e-b853-2e446a8e4ebd",
+     "position": 3,
+     "number": "3",
+     "title": "Hungarian Dances: no. 7 in A major",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d0d6bec7-040f-4e95-a2d2-96e34ddd93f7",
+      "title": "Hungarian Dances: no. 7 in A major",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "68e5c7fc-6348-4acf-a481-27fa85c7286a",
+     "position": 4,
+     "number": "4",
+     "title": "Hungarian Dances: no. 12 in D minor",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5bc0645a-18d9-46bf-bf74-d72550e7c96a",
+      "title": "Hungarian Dances: no. 12 in D minor",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "77d3b3cb-71d3-4a69-b181-66a5e59aa540",
+     "position": 5,
+     "number": "5",
+     "title": "Hungarian Dances: no. 13 in D major",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9f8079a2-fc3b-4b2b-b3fa-6661e53ba9f8",
+      "title": "Hungarian Dances: no. 13 in D major",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e41061b3-dc2d-4d1b-a4e6-b3ea72bd84aa",
+     "position": 6,
+     "number": "6",
+     "title": "Hungarian Dances: no. 19 in B minor",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "35cc3aa2-922a-447d-814e-9350c94c1ab0",
+      "title": "Hungarian Dances: no. 19 in B minor",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "885d3a19-4605-4bd0-9f3c-0fc9f009067b",
+     "position": 7,
+     "number": "7",
+     "title": "Hungarian Dances: no. 21 in E minor",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3a2969a8-16da-4202-b316-54a9cc762c27",
+      "title": "Hungarian Dances: no. 21 in E minor",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "aa23a4f8-84c2-4b2d-a1f9-825b28feea44",
+     "position": 8,
+     "number": "8",
+     "title": "Hungarian Dances: no. 1 in G minor",
+     "artist-credit": [
+      {
+       "name": "Johannes Brahms",
+       "joinphrase": "",
+       "artist": {
+        "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
+        "name": "Johannes Brahms"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e2aad1e1-6fef-49ea-bbd4-06227d5e5e66",
+      "title": "Hungarian Dances: no. 1 in G minor",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b68488e0-be71-4a15-9e89-7ddce55fca8e",
+     "position": 9,
+     "number": "9",
+     "title": "Slavonic Dances: no. 1 in C major, op.46",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7f42be67-ba6d-483e-940b-ff489d1f8d6b",
+      "title": "Slavonic Dances, op. 46: no. 1 in C major: Presto",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "782f8c2f-0637-4d18-9775-2b28f7cece0d",
+     "position": 10,
+     "number": "10",
+     "title": "Slavonic Dances: no. 3 in A flat major, op.46",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1a97f7b4-7fcf-4bea-b76a-d1ce1aaacec3",
+      "title": "Slavonic Dances, op. 46: no. 3 in A-flat major: Poco allegro",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "4333171d-7655-4cd3-b6e2-8672cdb78900",
+     "position": 11,
+     "number": "11",
+     "title": "Slavonic Dances: no. 8 in G minor, op.46",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "53a5e3f0-f776-41fe-ba5b-7b00afa15404",
+      "title": "Slavonic Dances, op. 46: no. 8 in G minor: Presto",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "06f7938d-bac0-4338-9ddf-14e7b775bc90",
+     "position": 12,
+     "number": "12",
+     "title": "Slavonic Dances: no. 10 in E minor, op.72",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e8048873-bede-4589-b417-28df5c5c3054",
+      "title": "Slavonic Dances, op. 72: no. 2 in E minor: Allegretto grazioso",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "081b6179-08ad-46c0-a11d-11e9e7210290",
+     "position": 13,
+     "number": "13",
+     "title": "Slavonic Dances: no. 9 in B major, op.72",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8bcaac8f-8c83-4dd4-8733-fee8610fda62",
+      "title": "Slavonic Dances, op. 72: no. 1 in B major: Molto vivace",
+      "first-release-date": "1982",
+      "artist-credit": [
+       {
+        "name": "Wiener Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
+         "name": "Wiener Philharmoniker"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,503 @@
+{
+ "id": "ec3baf33-2d0f-4eea-a3ec-8bcd582bf939",
+ "title": "The Remix",
+ "date": "2010-07-22",
+ "barcode": "00602527462943",
+ "artist-credit": [
+  {
+   "name": "Lady Gaga",
+   "joinphrase": "",
+   "artist": {
+    "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+    "name": "Lady Gaga"
+   }
+  }
+ ],
+ "release-group": {
+  "id": "e7a595f0-0e24-47f2-b000-130726a67292",
+  "title": "The Remix",
+  "first-release-date": "2010-03-03",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Remix"
+  ],
+  "artist-credit": [
+   {
+    "name": "Lady Gaga",
+    "joinphrase": "",
+    "artist": {
+     "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+     "name": "Lady Gaga"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2010-07-22"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Interscope Records"
+   }
+  },
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Streamline Records"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "ac364a60-33f2-45e5-83e0-e58470ec6e37",
+     "position": 1,
+     "number": "1",
+     "title": "Just Dance (Richard Vission remix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      },
+      {
+       "name": "Colby O’Donis",
+       "joinphrase": "",
+       "artist": {
+        "id": "d71c2b20-616a-4bb8-a848-e6edac412c3b",
+        "name": "Colby O’Donis"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1dbdf045-28a8-4562-8c0e-5342ad97ac4c",
+      "title": "Just Dance (Richard Vission remix)",
+      "first-release-date": "2008-04-08",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "0e240099-4c26-4da6-8088-605623476614",
+         "name": "Richard “Humpty” Vission"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e6d3db6b-72c2-4593-b761-95dae1d656ac",
+     "position": 2,
+     "number": "2",
+     "title": "Poker Face (LLG vs. GLG Radio Mix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": "",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      }
+     ],
+     "recording": {
+      "id": "58d44e9d-f036-4ca1-b559-ff22442fd374",
+      "title": "Poker Face (LLG vs. GLG radio mix remix)",
+      "first-release-date": "2008-09-26",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "4bc5642a-4c0b-4a86-a3ab-b2187289d54f",
+     "position": 3,
+     "number": "3",
+     "title": "LoveGame (Chew Fu Ghettohouse Fix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      },
+      {
+       "name": "Marilyn Manson",
+       "joinphrase": "",
+       "artist": {
+        "id": "5dfdca28-9ddc-4853-933c-8bc97d87beec",
+        "name": "Marilyn Manson"
+       }
+      }
+     ],
+     "recording": {
+      "id": "10f57751-8b98-443b-bb14-2d20cfc239a1",
+      "title": "LoveGame (Chew Fu Ghettohouse mix)",
+      "first-release-date": "2009-06-19",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       },
+       {
+        "name": "Marilyn Manson",
+        "joinphrase": "",
+        "artist": {
+         "id": "80cadd99-f560-41e3-babd-16292bbd248a",
+         "name": "Marilyn Manson"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "e3a763fb-105b-41cf-9f3c-07d0776ba3ca",
+         "name": "Chew Fu"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "41ca7880-0125-4630-83c3-d692d6810948",
+     "position": 4,
+     "number": "4",
+     "title": "Eh, Eh (Nothing Else I Can Say) (FrankMusik “Cut Snare Edit” remix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": "",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d385eb9d-30f2-4f1c-ba15-5046da3e66d8",
+      "title": "Eh, Eh (Nothing Else I Can Say) (FrankMusik remix)",
+      "first-release-date": "2009-01-10",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "612231ce-633b-4ebc-99bf-9b14e8d1cb74",
+         "name": "Frankmusik"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2ec9bb83-900f-4291-87e9-1a9e1d63f772",
+     "position": 5,
+     "number": "5",
+     "title": "Paparazzi (Stuart Price remix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": "",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e5b2d6cd-8bcc-4e3e-863e-7510d52840ef",
+      "title": "Paparazzi (Stuart Price remix)",
+      "first-release-date": "2009-07-05",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "68a6a00d-ace3-4244-8a0a-b98ab2100667",
+         "name": "Stuart Price"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c5fde8d0-d19b-468f-9f6a-8476e9e27f5f",
+     "position": 6,
+     "number": "6",
+     "title": "The Fame (Glam as You remix) (radio edit)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": "",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      }
+     ],
+     "recording": {
+      "id": "39d615b2-b8b6-42d8-b464-7ac3778be2d2",
+      "title": "The Fame (Glam as You remix)",
+      "first-release-date": "2009-08-25",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bde75b78-a21a-4f6d-bcef-59e01b37ac18",
+     "position": 7,
+     "number": "7",
+     "title": "Bad Romance (Starsmith remix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": "",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e3f530aa-b73d-4b05-bcb8-94d877a1b25a",
+      "title": "Bad Romance (Starsmith remix)",
+      "first-release-date": "2009-11-18",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "8eb58532-51a9-4f58-b4ca-4ac70a4a8fad",
+         "name": "Starsmith"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f753c997-516b-4cde-8316-573ff4632c77",
+     "position": 8,
+     "number": "8",
+     "title": "Telephone (Passion Pit remix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": " feat. ",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      },
+      {
+       "name": "Beyoncé",
+       "joinphrase": "",
+       "artist": {
+        "id": "859d0860-d480-4efd-970c-c05d5f1776b8",
+        "name": "Beyoncé"
+       }
+      }
+     ],
+     "recording": {
+      "id": "cb7328fa-da1d-4e8a-8161-8d4e1ecdfe5a",
+      "title": "Telephone (Passion Pit remix)",
+      "first-release-date": "2010-03-02",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": " feat. ",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       },
+       {
+        "name": "Beyoncé",
+        "joinphrase": "",
+        "artist": {
+         "id": "859d0860-d480-4efd-970c-c05d5f1776b8",
+         "name": "Beyoncé"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "daeec599-bf5d-4428-994a-e76ba5f86e2f",
+         "name": "Passion Pit"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "eb0e4e7b-3d60-43af-8a50-b3bd8163618f",
+     "position": 9,
+     "number": "9",
+     "title": "Alejandro (The Sound of Arrows remix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": "",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      }
+     ],
+     "recording": {
+      "id": "413f33e4-3f0e-4d14-9ee0-e8a7e824d1b5",
+      "title": "Alejandro (Sounds of Arrow remix)",
+      "first-release-date": "2010-03-03",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "25d6c9b6-051e-4b98-8eb7-bf648889521a",
+         "name": "The Sound of Arrows"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c70ce1dd-c942-437d-8c67-2b255a124a31",
+     "position": 10,
+     "number": "10",
+     "title": "Dance in the Dark (Monarchy ‘Stylites’ remix)",
+     "artist-credit": [
+      {
+       "name": "Lady Gaga",
+       "joinphrase": "",
+       "artist": {
+        "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+        "name": "Lady Gaga"
+       }
+      }
+     ],
+     "recording": {
+      "id": "66743da8-d1cc-4fbf-b005-63040badb54e",
+      "title": "Dance in the Dark (Monarchy ‘Stylites’ remix)",
+      "first-release-date": "2010-03-03",
+      "artist-credit": [
+       {
+        "name": "Lady Gaga",
+        "joinphrase": "",
+        "artist": {
+         "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
+         "name": "Lady Gaga"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "07a0ce09-4e7b-499e-a223-5e094660a67e",
+         "name": "Monarchy"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
