@@ -976,6 +976,11 @@ def test_as_before_a_remixer_s_name_holding_a_year_or_a_kind_of_remix_is_said_wh
     assert f"\nAll tracks remixed by {name}.\n" in _remixed_album(f"({name} Remix)")
 
 
+@pytest.mark.parametrize("name", ["The Anniversary", "The Stereo", "A Mono"])
+def test_a_remixer_s_name_that_is_an_article_and_a_kind_of_remix_is_said_whole(name: str) -> None:
+    assert f"\nAll tracks remixed by {name}.\n" in _remixed_album(f"({name} Remix)")
+
+
 @pytest.mark.parametrize(
     ("remixer", "title"),
     [

@@ -144,16 +144,23 @@ _RE_NO_ONE = re.compile(
     r"(?:19|20)\d\d|new|original|single(?: version)?|live|bonus|demo|version|special|deluxe|alternat(?:e|ive)|us|uk",
     flags=re.IGNORECASE,
 )
+_RE_ARTICLE = re.compile(r"the|an?", flags=re.IGNORECASE)
 
 
 def _remixers(credits: list[tuple[str, str]], title: str | None) -> list[str]:
     """The remixers a track credits in REMIXER, or with none, as salmon reads them from its title ("Song (X Remix)"),
     on each track as the merge does for a store that states its credits. A title names a remixer without the kind of
-    remix: "2021" and "Stereo" name no one, "Steven Wilson Stereo" names Steven Wilson."""
+    remix: "2021" and "Stereo" name no one, "Steven Wilson Stereo" names Steven Wilson, and "The Stereo" The Stereo
+    (the kind is cut only when a name is left)."""
     if credited := [name for name, role in credits if role == "remixer"]:
         return list(dict.fromkeys(credited))
-    names = (_RE_REMIX_KIND.sub("", name).strip() for name, _ in _extract_remixers_from_title(title or ""))
+    names = (_without_kind(name) for name, _ in _extract_remixers_from_title(title or ""))
     return list(dict.fromkeys(name for name in names if name and not _RE_NO_ONE.fullmatch(name)))
+
+
+def _without_kind(name: str) -> str:
+    kept = _RE_REMIX_KIND.sub("", name).strip()
+    return name if _RE_ARTICLE.fullmatch(kept) else kept
 
 
 def album_remixers(tracks: Sequence[tuple[list[tuple[str, str]], str]]) -> list[str] | None:
