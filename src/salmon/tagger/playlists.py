@@ -79,7 +79,8 @@ def rewrite_playlists(path: str, renames: Sequence[Rename]) -> None:
     Call it once the renames are made and kept. A file that cannot be read or written is left and reported; this
     never raises for one. An entry that pointed to an audio file before the renames and now points to none, and a
     new name the file's encoding cannot hold, are reported in yellow, one line each per playlist, as are the non-ASCII
-    entries naming no file in a file read as cp1252, which may be in another code page.
+    entries naming no file in a file read as cp1252, which may be in another code page, when a renamed path, taken
+    from the playlist's folder, is non-ASCII too.
     """
     if not renames:
         return
