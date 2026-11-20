@@ -470,11 +470,19 @@ def test_a_classical_credit_of_various_performers_is_no_default() -> None:
 
 
 def test_a_composer_prefix_is_dropped_only_for_a_composer_of_our_release() -> None:
-    release = _rls_data(title="Haydn: Complete Symphonies", year="2002", group_year="2002")
+    # Same artist and year on both sides: only the title rule decides.
+    no_composer = _rls_data(title="Haydn: Complete Symphonies")
+    assert dupe_checker.suggest_group([_result(1, name="Complete Symphonies")], no_composer) == ""
+    with_composer = _rls_data(
+        title="Haydn: Complete Symphonies", artists=[("Artist", "main"), ("Joseph Haydn", "composer")]
+    )
+    assert dupe_checker.suggest_group([_result(1, name="Complete Symphonies")], with_composer) == "1"
 
-    assert dupe_checker.suggest_group([_haydn(artist="Artist")], release) == ""
-    live = _rls_data(title="Live: Album")
-    assert dupe_checker.suggest_group([_result(1, name="Album")], live) == ""
+
+def test_a_prefix_that_is_not_a_composer_is_not_dropped() -> None:
+    release = _rls_data(title="Live: Album", artists=[("Artist", "main"), ("Joseph Haydn", "composer")])
+
+    assert dupe_checker.suggest_group([_result(1, name="Album")], release) == ""
 
 
 def test_two_classical_matches_are_no_default() -> None:
