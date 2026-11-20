@@ -158,8 +158,9 @@ def classical_artist_matches(credit: object, composers, performers) -> bool:
     if not sep:
         return False
     performer_part = rest.split(" under ", 1)[0]
-    our_composers = {comparable(name) for name in composers} - {""}
-    our_performers = {comparable(name) for name in performers} - {""}
+    nobody = {"", comparable("Various Artists"), comparable("Various")}
+    our_composers = {comparable(name) for name in composers} - nobody
+    our_performers = {comparable(name) for name in performers} - nobody
     return bool(_credit_keys(composer_part) & our_composers) and bool(_credit_keys(performer_part) & our_performers)
 
 

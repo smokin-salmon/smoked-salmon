@@ -469,6 +469,14 @@ def test_a_classical_credit_of_various_performers_is_no_default() -> None:
     assert dupe_checker.suggest_group([_haydn(artist=artist)], _classical()) == ""
 
 
+def test_various_artists_in_both_credits_names_nobody() -> None:
+    release = _classical()
+    release["artists"] = [("Various Artists", "main"), ("Joseph Haydn", "composer")]
+    artist = "Joseph Haydn performed by Various Artists"
+
+    assert dupe_checker.suggest_group([_haydn(artist=artist)], release) == ""
+
+
 def test_a_composer_prefix_is_dropped_only_for_a_composer_of_our_release() -> None:
     # Same artist and year on both sides: only the title rule decides.
     no_composer = _rls_data(title="Haydn: Complete Symphonies")
