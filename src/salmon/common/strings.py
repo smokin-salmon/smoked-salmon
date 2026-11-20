@@ -125,6 +125,44 @@ def artist_keys(artists) -> set[str]:
     return ({comparable(name) for name in names} | {comparable("".join(names))}) - {""}
 
 
+def _credit_keys(part: str) -> set[str]:
+    """comparable() forms a credit part may name an artist by: the whole part, and its pieces split on separators."""
+    pieces = re.split(r" & |, | and ", part)
+    return ({comparable(part)} | {comparable(piece) for piece in pieces}) - {""}
+
+
+def composer_title_forms(title: object, composers) -> set[str]:
+    """comparable() forms of a title: as it is, and without a leading "<composer>:" when that names a composer.
+
+    A composer names the prefix by full name or by surname (the last word of the name). Any other prefix stays.
+    """
+    text = html.unescape("" if title is None else str(title))
+    forms = {comparable(text)}
+    prefix, colon, rest = text.partition(":")
+    if colon:
+        names = {comparable(name) for name in composers} | {
+            comparable(name.split()[-1]) for name in composers if name.split()
+        }
+        if comparable(prefix) in names - {""}:
+            forms.add(comparable(rest))
+    return forms - {""}
+
+
+def classical_artist_matches(credit: object, composers, performers) -> bool:
+    """Whether a classical group's credit ("<composers> performed by <performers> under <conductors>") is ours.
+
+    Its composer part must name one of our composers, and its performers part (up to " under ") one of our
+    performers, each by full name. "Various Artists" names nobody; the conductor part is not compared.
+    """
+    composer_part, sep, rest = html.unescape("" if credit is None else str(credit)).partition(" performed by ")
+    if not sep:
+        return False
+    performer_part = rest.split(" under ", 1)[0]
+    our_composers = {comparable(name) for name in composers} - {""}
+    our_performers = {comparable(name) for name in performers} - {""}
+    return bool(_credit_keys(composer_part) & our_composers) and bool(_credit_keys(performer_part) & our_performers)
+
+
 def join_artists(names) -> str:
     """The names as one credit, in the order given and without duplicates.
 
