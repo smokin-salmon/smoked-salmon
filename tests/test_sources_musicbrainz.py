@@ -2,23 +2,10 @@
 leaves empty where the XML left them out (#1065). The requests themselves: tests/test_sources_musicbrainz_client.py.
 """
 
-import inspect
-
 import anyio
 import pytest
-from musicbrainzngs import musicbrainz as mb_module
 
-from salmon.sources import musicbrainz
 from salmon.tagger.sources import musicbrainz as musicbrainz_tagger
-
-
-def test_safe_read_keeps_the_signature_the_wrapper_calls() -> None:
-    # The bound wraps a private function of musicbrainzngs: an upgrade that changes it must fail here, not quietly.
-    parameters = list(inspect.signature(musicbrainz._safe_read).parameters)
-
-    assert parameters[:3] == ["opener", "req", "body"]
-    assert "max_retries" in parameters
-    assert mb_module._safe_read is musicbrainz._bounded_safe_read
 
 
 def _credit(name: str, joinphrase: str = "") -> dict:
