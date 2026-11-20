@@ -233,7 +233,7 @@ class MusicBrainzBase(BaseScraper):
             follow_redirects: Unused, kept for API compatibility.
 
         Returns:
-            Release data dict from MusicBrainz.
+            The release as MusicBrainz's JSON API gives it, with salmon's includes.
 
         Raises:
             ValueError: If URL is invalid.
@@ -242,20 +242,4 @@ class MusicBrainzBase(BaseScraper):
         match = self.regex.match(url)
         if not match:
             raise ValueError("Invalid MusicBrainz URL.")
-        rls_id = match[1]
-        return (
-            await self._call(
-                musicbrainzngs.get_release_by_id,
-                rls_id,
-                [
-                    "artists",
-                    "labels",
-                    "recordings",
-                    "release-groups",
-                    "media",
-                    "artist-credits",
-                    "artist-rels",
-                    "recording-level-rels",
-                ],
-            )
-        )["release"]
+        return await self.get_json(f"/release/{match[1]}", {"inc": " ".join(INCLUDES)})

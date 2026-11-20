@@ -1,13 +1,13 @@
 import re
 from collections import defaultdict
+from typing import Any
 
 import asyncclick as click
-import musicbrainzngs
-from musicbrainzngs import musicbrainz as mb_module
 
 from salmon.common import RE_FEAT_JOIN
 from salmon.errors import ScrapeError
 from salmon.sources import MusicBrainzBase, is_placeholder_catno
+from salmon.sources.musicbrainz import NotFoundError
 from salmon.tagger.sources.base import MetadataMixin
 
 RELEASE_TYPES = {
@@ -24,28 +24,54 @@ RELEASE_TYPES = {
 }
 
 
-musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")
+# The key fetch_data keeps the release's front cover under, fetched there so the synchronous parse asks nothing.
+FRONT_COVER = "salmon-front-cover"
+
+
+def release_group_type(group: dict[str, Any]) -> str | None:
+    """The release group's type as MusicBrainz's XML gave it: a secondary type stands in for an Album only."""
+    primary = group.get("primary-type")
+    secondaries = group.get("secondary-types") or []
+    if primary == "Album" and secondaries:
+        return secondaries[0]
+    return primary
 
 
 class Scraper(MusicBrainzBase, MetadataMixin):
+    async def fetch_data(
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
+    ) -> dict[str, Any]:
+        release = await super().fetch_data(url, params, headers, follow_redirects, rls_id)
+        release[FRONT_COVER] = await self.front_cover(release)
+        return release
+
+    async def front_cover(self, release: dict[str, Any]) -> str | None:
+        """The release's approved front image in the Cover Art Archive; None, and no request, if it has none."""
+        if not (release.get("cover-art-archive") or {}).get("front"):
+            return None
+        try:
+            images = await self.fetch_cover_art(release["id"])
+        except NotFoundError:
+            return None
+        except ScrapeError:
+            # No cover rather than no release.
+            click.secho("Cover Art Archive request failed: no cover.", fg="yellow")
+            return None
+        for image in images["images"]:
+            if image["approved"] and image["front"]:
+                return image["image"]
+        return None
+
     def parse_release_title(self, soup):
         return soup["title"]
 
     def parse_cover_url(self, soup):
-        if soup["cover-art-archive"] and soup["cover-art-archive"]["front"] == "true":
-            try:
-                r = musicbrainzngs.get_image_list(soup["id"])
-            except mb_module.ResponseError:
-                return None
-            except (mb_module.WebServiceError, ValueError) as e:
-                # No cover rather than no release. ValueError: a 200 whose body is not the JSON image list.
-                click.secho(f"Cover Art Archive request failed ({type(e).__name__}): no cover.", fg="yellow")
-                return None
-
-            for image in r["images"]:
-                if image["approved"] and image["front"]:
-                    return image["image"]
-        return None
+        return soup.get(FRONT_COVER)
 
     def parse_release_year(self, soup):
         date = self.parse_release_date(soup)
@@ -56,8 +82,9 @@ class Scraper(MusicBrainzBase, MetadataMixin):
             return None
 
     def parse_release_date(self, soup):
+        # The JSON gives "" for an event with no date, where the XML had no date.
         try:
-            return soup["release-event-list"][0]["date"]
+            return soup["release-events"][0]["date"] or None
         except (KeyError, IndexError):
             return None
 
@@ -71,13 +98,13 @@ class Scraper(MusicBrainzBase, MetadataMixin):
 
     def parse_release_label(self, soup):
         try:
-            return soup["label-info-list"][0]["label"]["name"]
-        except (KeyError, IndexError):
+            return soup["label-info"][0]["label"]["name"]
+        except (KeyError, IndexError, TypeError):  # TypeError: a label-info with a null label
             return None
 
     def parse_release_catno(self, soup):
         try:
-            catno = soup["label-info-list"][0]["catalog-number"]
+            catno = soup["label-info"][0]["catalog-number"]
             if not catno:
                 return None
 
@@ -100,22 +127,22 @@ class Scraper(MusicBrainzBase, MetadataMixin):
 
     def parse_release_type(self, soup):
         try:
-            return RELEASE_TYPES[soup["release-group"]["type"]]
+            kind = release_group_type(soup["release-group"])
         except KeyError:
             return None
+        return RELEASE_TYPES.get(kind) if kind else None
 
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
-        for disc in soup["medium-list"]:
-            for track in disc["track-list"]:
+        for disc in soup["media"]:
+            for track in disc["tracks"]:
                 try:
                     artists = parse_artists(track["recording"]["artist-credit"])
                     credited_remixers = []
-                    if "artist-relation-list" in track["recording"]:
-                        for relation in track["recording"]["artist-relation-list"]:
-                            if relation["type"] == "remixer":
-                                credited_remixers.append(relation["artist"]["name"])
-                                artists.append((relation["artist"]["name"], "remixer"))
+                    for relation in track["recording"].get("relations", []):
+                        if relation["type"] == "remixer" and relation["target-type"] == "artist":
+                            credited_remixers.append(relation["artist"]["name"])
+                            artists.append((relation["artist"]["name"], "remixer"))
 
                     tracks[str(disc["position"])][str(track["number"])] = self.generate_track(
                         trackno=track["number"],
@@ -129,17 +156,16 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         return dict(tracks)
 
 
-def parse_artists(artist_credits):
+def parse_artists(artist_credits: list[dict[str, Any]]) -> list[tuple[str, str]]:
     """
-    Create the artists list from the given list of artists. MusicBrainz separates the
-    list with join phrases; after a feat. one (" feat. ", " ft. ", " featuring "), all of
-    the artists are guests, as for a Discogs join.
+    Create the artists list from a MusicBrainz artist credit. Each credit carries the join
+    phrase to the next; after a feat. one (" feat. ", " ft. ", " featuring "), all of the
+    artists are guests, as for a Discogs join.
     """
     artists = []
     is_guest = False
-    for artist in artist_credits:
-        if isinstance(artist, str) and RE_FEAT_JOIN.fullmatch(artist.strip()):
+    for credit in artist_credits:
+        artists.append((credit["artist"]["name"], "guest" if is_guest else "main"))
+        if RE_FEAT_JOIN.fullmatch(credit.get("joinphrase", "").strip()):
             is_guest = True
-        elif isinstance(artist, dict):
-            artists.append((artist["artist"]["name"], "guest" if is_guest else "main"))
     return artists

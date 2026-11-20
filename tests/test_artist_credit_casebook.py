@@ -26,10 +26,8 @@ from pathlib import Path
 from typing import Any
 
 import msgspec
-import musicbrainzngs
 import pytest
 from bs4 import BeautifulSoup
-from musicbrainzngs import mbxml
 from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg
@@ -90,9 +88,8 @@ def parse(record: dict[str, Any], store: str, monkeypatch: pytest.MonkeyPatch) -
     sent = record["stores"][store]
     scraper: Any = METASOURCES[STORES[store]].Scraper()
     if store == "musicbrainz":
-        data = mbxml.parse_message((MUSICBRAINZ / "release" / f"{sent}.xml").read_bytes())["release"]
+        data = json.loads((MUSICBRAINZ / "release" / f"{sent}.json").read_text(encoding="utf-8"))
         url = f"https://musicbrainz.org/release/{data['id']}"
-        monkeypatch.setattr(musicbrainzngs, "get_image_list", lambda *a, **k: {"images": []})
     elif store == "bandcamp":
         data, url = BeautifulSoup(sent, "lxml"), record["bandcamp_url"]
     else:
@@ -276,7 +273,7 @@ def test_each_musicbrainz_case_names_a_recorded_release() -> None:
         if mbid is None:
             continue
         assert MBID.fullmatch(mbid), case.name
-        assert (MUSICBRAINZ / "release" / f"{mbid}.xml").is_file(), case.name
+        assert (MUSICBRAINZ / "release" / f"{mbid}.json").is_file(), case.name
 
 
 def test_a_name_holding_a_separator_is_judged_whole() -> None:
