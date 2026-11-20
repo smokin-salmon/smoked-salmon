@@ -172,7 +172,8 @@ PARLOPHONE_IN_QUEEN: list[str] = ["92655853-3fcc-3491-b166-0c932420f594"]
 def test_search_parses_the_recorded_answer(
     slug: str, query: str, expected: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assert _search(slug, query, monkeypatch) == expected
+    results = _search(slug, query, monkeypatch)
+    assert results == expected
 
 
 def test_a_result_on_an_excluded_label_is_left_out(monkeypatch: pytest.MonkeyPatch) -> None:

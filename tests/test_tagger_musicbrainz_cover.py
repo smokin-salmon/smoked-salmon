@@ -48,7 +48,8 @@ def _serve_recorded(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 )
 def test_front_cover_is_the_approved_front_image(mbid: str, image: str, monkeypatch: pytest.MonkeyPatch) -> None:
     asked = _serve_recorded(monkeypatch)
-    assert _cover(mbid) == image
+    cover = _cover(mbid)
+    assert cover == image
     assert asked == [mbid]
 
 
