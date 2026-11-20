@@ -1,11 +1,20 @@
 from typing import Any
 
-import musicbrainzngs
-
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import MusicBrainzBase, is_placeholder_catno
+
+
+def _label_and_catno(rls: dict[str, Any]) -> tuple[str, str]:
+    """The first label-info's label name and catalogue number, "" for each it lacks; no catalogue number without a
+    label, as the edition shows them."""
+    infos = rls.get("label-info") or []
+    label = (infos[0].get("label") or {}).get("name") if infos else None
+    if not label:
+        return "", ""
+    catno = infos[0].get("catalog-number")
+    return label, catno if catno and not is_placeholder_catno(catno) else ""
 
 
 class Searcher(MusicBrainzBase, SearchMixin):
@@ -13,60 +22,38 @@ class Searcher(MusicBrainzBase, SearchMixin):
         """Search for releases on MusicBrainz.
 
         Args:
-            searchstr: Search string.
+            searchstr: Search string, sent as MusicBrainz's query unchanged.
             limit: Maximum number of results.
 
         Returns:
             Tuple of (source name, releases dict).
         """
         releases = {}
-        result = await self._call(musicbrainzngs.search_releases, searchstr, limit)
-        for rls in result["release-list"]:
+        result = await self.get_json("/release", {"query": searchstr, "limit": str(limit)})
+        for rls in result["releases"]:
             try:
-                artists = rls["artist-credit-phrase"]
-                try:
-                    track_count = rls["medium-track-count"]
-                except KeyError:
-                    track_count = None
-                label = catno = ""
-                if (
-                    "label-info-list" in rls
-                    and rls["label-info-list"]
-                    and "label" in rls["label-info-list"][0]
-                    and "name" in rls["label-info-list"][0]["label"]
-                ):
-                    label = rls["label-info-list"][0]["label"]["name"]
-                    if "catalog-number" in rls["label-info-list"][0] and not is_placeholder_catno(
-                        rls["label-info-list"][0]["catalog-number"]
-                    ):
-                        catno = rls["label-info-list"][0]["catalog-number"]
-
-                try:
-                    source = rls["medium-list"][0]["format"]
-                except KeyError:
-                    source = None
-
-                edition = self.edition(label, catno)
-
-                if label.lower() not in cfg.upload.search.excluded_labels:
-                    releases[rls["id"]] = (
-                        IdentData(
-                            artists,
-                            rls["title"],
-                            None,
-                            track_count,
-                            source or "",
-                        ),
-                        self.format_result(
-                            artists,
-                            rls["title"],
-                            edition,
-                            ed_title=source,
-                            track_count=track_count,
-                        ),
-                    )
+                parsed = self._parse_result(rls)
             except (TypeError, IndexError) as e:
                 raise ScrapeError("Failed to parse scraped search results.") from e
+            if parsed is not None:
+                releases[rls["id"]] = parsed
             if len(releases) == limit:
                 break
         return "MusicBrainz", releases
+
+    def _parse_result(self, rls: dict[str, Any]) -> tuple[IdentData, str] | None:
+        """One result's ident data and line; None for a release on an excluded label."""
+        artists = "".join(credit["name"] + (credit.get("joinphrase") or "") for credit in rls["artist-credit"])
+        track_count = rls.get("track-count")
+        label, catno = _label_and_catno(rls)
+        media = rls.get("media")
+        # As from the XML: no media, no format; an empty list fails the search (IndexError).
+        source = None if media is None else media[0].get("format")
+        if label.lower() in cfg.upload.search.excluded_labels:
+            return None
+        return (
+            IdentData(artists, rls["title"], None, track_count, source or ""),
+            self.format_result(
+                artists, rls["title"], self.edition(label, catno), ed_title=source, track_count=track_count
+            ),
+        )

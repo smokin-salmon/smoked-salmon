@@ -1,88 +1,15 @@
-"""MusicBrainz requests are bounded, and their failures are ScrapeErrors (#786).
-
-musicbrainzngs, not aiohttp: the requests go to a local threaded server through its own set_hostname globals.
+"""How a MusicBrainz release's JSON is read: credits, track titles, remixers, barcode, type, and the fields the JSON
+leaves empty where the XML left them out (#1065). The requests themselves: tests/test_sources_musicbrainz_client.py.
 """
 
 import inspect
-import threading
-from collections.abc import Iterator
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import anyio
 import pytest
-from musicbrainzngs import caa
 from musicbrainzngs import musicbrainz as mb_module
 
-from salmon.errors import ScrapeError
-from salmon.search import musicbrainz as musicbrainz_search
 from salmon.sources import musicbrainz
 from salmon.tagger.sources import musicbrainz as musicbrainz_tagger
-
-RELEASE_ID = "0a1b2c3d-0000-0000-0000-000000000000"
-RELEASE_URL = f"https://musicbrainz.org/release/{RELEASE_ID}"
-RELEASE_XML = (
-    '<?xml version="1.0" encoding="UTF-8"?><metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">'
-    f'<release id="{RELEASE_ID}"><title>Album</title></release></metadata>'
-)
-
-
-class _Server:
-    """A local server answering every request with `status` and `body`, after waiting `delay` seconds."""
-
-    def __init__(self) -> None:
-        self.status = 200
-        self.body = RELEASE_XML
-        self.delay = 0.0
-        self.requests: list[str] = []
-        self.released = threading.Event()  # Set at teardown, so no handler outlives the test
-        server = self
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_GET(self) -> None:
-                server.requests.append(self.path)
-                if server.delay and server.released.wait(server.delay):
-                    return  # The client gave up long ago: nothing to answer
-                payload = server.body.encode()
-                self.send_response(server.status)
-                self.send_header("Content-Type", "application/xml")
-                self.send_header("Content-Length", str(len(payload)))
-                self.end_headers()
-                self.wfile.write(payload)
-
-            def log_message(self, format: str, *args: object) -> None:
-                pass
-
-        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        self.host = f"127.0.0.1:{self.httpd.server_address[1]}"
-        threading.Thread(target=self.httpd.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
-
-    def close(self) -> None:
-        self.released.set()
-        self.httpd.shutdown()
-        self.httpd.server_close()
-
-
-@pytest.fixture
-def server(monkeypatch) -> Iterator[_Server]:
-    """MusicBrainz and the Cover Art Archive pointed at a local server, with no rate limit and no real sleeps."""
-    local = _Server()
-    # urllib honours an environment proxy: the local server must be reached directly.
-    for name in ("no_proxy", "NO_PROXY"):
-        monkeypatch.setenv(name, "127.0.0.1")
-    for module in (mb_module, caa):
-        monkeypatch.setattr(module, "hostname", local.host)
-        monkeypatch.setattr(module, "https", False)
-    monkeypatch.setattr(mb_module, "do_rate_limit", False)
-    yield local
-    local.close()
-
-
-@pytest.fixture
-def sleeps(monkeypatch) -> list[float]:
-    """Every time.sleep during the test, recorded instead of slept: here, musicbrainzngs's between retries."""
-    slept: list[float] = []
-    monkeypatch.setattr(mb_module.time, "sleep", slept.append)
-    return slept
 
 
 def test_safe_read_keeps_the_signature_the_wrapper_calls() -> None:
@@ -92,16 +19,6 @@ def test_safe_read_keeps_the_signature_the_wrapper_calls() -> None:
     assert parameters[:3] == ["opener", "req", "body"]
     assert "max_retries" in parameters
     assert mb_module._safe_read is musicbrainz._bounded_safe_read
-
-
-def test_a_failed_search_is_a_scrape_error(server, sleeps) -> None:
-    server.status = 503
-
-    with pytest.raises(ScrapeError) as excinfo:
-        anyio.run(musicbrainz_search.Searcher().search_releases, "artist album", 5)
-
-    assert str(excinfo.value) == "MusicBrainz: Request failed (NetworkError)."
-    assert len(server.requests) == 2
 
 
 def _credit(name: str, joinphrase: str = "") -> dict:

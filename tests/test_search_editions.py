@@ -6,7 +6,6 @@ import anyio
 import asyncclick as click
 import pytest
 from bs4 import BeautifulSoup
-from musicbrainzngs import mbxml
 
 from salmon import cfg
 from salmon.search import bandcamp, beatport, discogs, musicbrainz, qobuz
@@ -78,25 +77,39 @@ def test_discogs_result_with_a_label_but_no_catalogue_number_shows_no_none(monke
     assert shown == "Test Artist - Test Album {CD} 2020 CD Test Label"
 
 
-def _musicbrainz_search(catno: str) -> bytes:
-    return f"""<?xml version="1.0" encoding="UTF-8"?>
-<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release-list count="1" offset="0">
-<release id="00000000-0000-0000-0000-000000000001"><title>Test Album</title>
-<artist-credit><name-credit><name>Test Artist</name><artist id="00000000-0000-0000-0000-000000000002">
-<name>Test Artist</name></artist></name-credit></artist-credit>
-<label-info-list><label-info><catalog-number>{catno}</catalog-number><label><name>Test Label</name></label>
-</label-info></label-info-list>
-<medium-list><track-count>3</track-count><medium><format>CD</format></medium></medium-list>
-</release></release-list></metadata>""".encode()
+def _musicbrainz_search(label_info: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "releases": [
+            {
+                "id": "00000000-0000-0000-0000-000000000001",
+                "title": "Test Album",
+                "track-count": 3,
+                "artist-credit": [{"name": "Test Artist", "artist": {"name": "Test Artist"}}],
+                "label-info": [label_info],
+                "media": [{"format": "CD", "track-count": 3}],
+            }
+        ]
+    }
 
 
-def _musicbrainz_shown(monkeypatch, catno: str) -> str:
-    async def _call(*_args, **_kwargs):
-        return mbxml.parse_message(_musicbrainz_search(catno))
-
-    monkeypatch.setattr(MusicBrainzBase, "_call", _call)
+def _musicbrainz_shown(monkeypatch, catno: str | None, label: str | None = "Test Label") -> str:
+    label_info = {"catalog-number": catno, "label": None if label is None else {"name": label}}
+    monkeypatch.setattr(MusicBrainzBase, "get_json", _answer(_musicbrainz_search(label_info)))
 
     return _shown(anyio.run(musicbrainz.Searcher().search_releases, "test album", 5))
+
+
+def test_musicbrainz_result_with_no_catalogue_number_shows_its_label(monkeypatch) -> None:
+    shown = _musicbrainz_shown(monkeypatch, None)
+
+    assert shown == "Test Artist - Test Album {Tracks: 3} {CD} Test Label"
+
+
+def test_musicbrainz_result_with_a_catalogue_number_but_no_label_shows_no_edition(monkeypatch) -> None:
+    # As the XML, where the result had no label: no label, and no catalogue number shown without one.
+    shown = _musicbrainz_shown(monkeypatch, "X1", label=None)
+
+    assert shown == "Test Artist - Test Album {Tracks: 3} {CD}"
 
 
 def test_musicbrainz_result_shows_its_catalogue_number(monkeypatch) -> None:
