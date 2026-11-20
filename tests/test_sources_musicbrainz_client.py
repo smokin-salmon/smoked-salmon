@@ -7,6 +7,7 @@ on a failure that may pass, and every failure a ScrapeError naming its type or s
 import time
 from collections.abc import Iterator
 
+import aiohttp
 import anyio
 import pytest
 from helpers.musicbrainz import FakeMusicBrainz, serving_musicbrainz
@@ -142,6 +143,24 @@ def test_a_refused_internal_address_is_not_retried(server: FakeMusicBrainz, slee
         )
 
     assert server.requests == []
+    assert sleeps == []
+
+
+@pytest.mark.parametrize("error", [aiohttp.ClientConnectorCertificateError, aiohttp.ClientConnectorSSLError])
+def test_a_tls_failure_is_not_retried(
+    error: type[Exception], sleeps: list[float], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A certificate the client refuses (an intercepting proxy, say) is refused again: as the tracker client, no retry.
+    attempts: list[None] = []
+
+    async def _refused(*_args: object, **_kwargs: object) -> None:
+        attempts.append(None)
+        raise error.__new__(error)
+
+    monkeypatch.setattr(aiohttp.ClientSession, "_request", _refused)
+
+    assert _failure() == f"MusicBrainz: Request failed ({error.__name__})."
+    assert len(attempts) == 1
     assert sleeps == []
 
 

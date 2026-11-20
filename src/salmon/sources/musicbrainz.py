@@ -77,8 +77,8 @@ class _Transient(Exception):
 
 
 def _is_transient(cause: BaseException | None) -> bool:
-    # An SSRF refusal is a connection error to aiohttp, but asking again is refused again.
-    if isinstance(cause, ssrf.NonPublicAddressError):
+    # An SSRF refusal and a TLS failure are connection errors to aiohttp, but asking again is refused again.
+    if isinstance(cause, (ssrf.NonPublicAddressError, aiohttp.ClientSSLError)):
         return False
     return isinstance(cause, (TimeoutError, aiohttp.ClientConnectionError))
 

@@ -166,6 +166,6 @@ def parse_artists(artist_credits: list[dict[str, Any]]) -> list[tuple[str, str]]
     is_guest = False
     for credit in artist_credits:
         artists.append((credit["artist"]["name"], "guest" if is_guest else "main"))
-        if RE_FEAT_JOIN.fullmatch(credit.get("joinphrase", "").strip()):
+        if RE_FEAT_JOIN.fullmatch((credit.get("joinphrase") or "").strip()):
             is_guest = True
     return artists

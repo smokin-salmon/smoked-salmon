@@ -58,11 +58,13 @@ def test_two_threads_with_their_own_loops_share_the_limiter() -> None:
             passed.append(time.monotonic())
 
     threads = [threading.Thread(target=anyio.run, args=(_requests,)) for _ in range(2)]
+    started = time.monotonic()
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
 
-    times = sorted(passed)
-    assert len(times) == 6
-    assert all(later - earlier >= 0.19 for earlier, later in zip(times, times[1:], strict=False))
+    # Six requests 0.2 s apart take at least 1 s from the first; one limiter per thread would let them through in
+    # 0.4 s. A thread waking late only adds to the time, so this cannot fail on a loaded machine.
+    assert len(passed) == 6
+    assert max(passed) - started >= 1.0

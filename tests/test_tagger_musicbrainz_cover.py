@@ -82,7 +82,7 @@ def test_a_404_from_the_cover_art_archive_is_no_cover(server: FakeMusicBrainz, c
 def test_a_failed_cover_art_archive_request_is_no_cover_and_says_so(
     server: FakeMusicBrainz, capsys: pytest.CaptureFixture
 ) -> None:
-    # The cover lookup caught a 404 only: a Cover Art Archive that failed failed the whole scrape.
+    # A Cover Art Archive that fails costs the cover, not the release.
     server.status = [503, 503]
 
     assert _cover(_release(KIND_OF_BLUE)) is None
@@ -93,7 +93,7 @@ def test_a_failed_cover_art_archive_request_is_no_cover_and_says_so(
 def test_a_cover_art_archive_answer_that_is_not_json_is_no_cover_and_says_so(
     server: FakeMusicBrainz, capsys: pytest.CaptureFixture
 ) -> None:
-    # A 200 with a page in place of the image list raised JSONDecodeError past the cover lookup and failed the scrape.
+    # A 200 with a page in place of the image list costs the cover too.
     server.body = "<html>Not the image list</html>"
 
     assert _cover(_release(KIND_OF_BLUE)) is None

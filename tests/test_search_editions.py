@@ -77,7 +77,7 @@ def test_discogs_result_with_a_label_but_no_catalogue_number_shows_no_none(monke
     assert shown == "Test Artist - Test Album {CD} 2020 CD Test Label"
 
 
-def _musicbrainz_search(label_info: dict[str, Any]) -> dict[str, Any]:
+def _musicbrainz_search(label_info: dict[str, Any], format: str | None = "CD") -> dict[str, Any]:
     return {
         "releases": [
             {
@@ -86,7 +86,7 @@ def _musicbrainz_search(label_info: dict[str, Any]) -> dict[str, Any]:
                 "track-count": 3,
                 "artist-credit": [{"name": "Test Artist", "artist": {"name": "Test Artist"}}],
                 "label-info": [label_info],
-                "media": [{"format": "CD", "track-count": 3}],
+                "media": [{"format": format, "track-count": 3}],
             }
         ]
     }
@@ -97,6 +97,15 @@ def _musicbrainz_shown(monkeypatch, catno: str | None, label: str | None = "Test
     monkeypatch.setattr(MusicBrainzBase, "get_json", _answer(_musicbrainz_search(label_info)))
 
     return _shown(anyio.run(musicbrainz.Searcher().search_releases, "test album", 5))
+
+
+def test_musicbrainz_result_with_a_null_format_shows_no_format(monkeypatch) -> None:
+    label_info = {"catalog-number": "TEST 001", "label": {"name": "Test Label"}}
+    monkeypatch.setattr(MusicBrainzBase, "get_json", _answer(_musicbrainz_search(label_info, format=None)))
+
+    shown = _shown(anyio.run(musicbrainz.Searcher().search_releases, "test album", 5))
+
+    assert shown == "Test Artist - Test Album {Tracks: 3} Test Label TEST 001"
 
 
 def test_musicbrainz_result_with_no_catalogue_number_shows_its_label(monkeypatch) -> None:

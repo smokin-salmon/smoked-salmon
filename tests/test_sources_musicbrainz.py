@@ -20,6 +20,12 @@ def test_a_featured_join_makes_the_artists_after_it_guests(join) -> None:
     assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "guest")]
 
 
+def test_a_null_join_phrase_is_no_join() -> None:
+    credits = [{"name": "A", "joinphrase": None, "artist": {"name": "A"}}, _credit("B")]
+
+    assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "main")]
+
+
 @pytest.mark.parametrize("join", [" & ", ", ", " x ", " with "])
 def test_another_join_keeps_the_artists_after_it_main(join) -> None:
     credits = [_credit("A", join), _credit("B")]
