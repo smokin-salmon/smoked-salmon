@@ -57,6 +57,8 @@ _FIRST_POSITIONS = {"1", "A1"}
 _RE_DOTTED = re.compile(r"(\d+)\.(\d+)")
 # Formats that are CDs: a record's or a tape's sides are one disc, and a file release's qty counts its files.
 _CD_FORMATS = {"CD", "CDr", "SACD"}
+# Formats that name no medium: a file release's qty counts its files.
+_NO_MEDIA = {"File", "All Media", "Box Set"}
 # Video discs, which a set's dots may number on from its CDs ("3.1" on the DVD after two CDs).
 _VIDEO_FORMATS = {"DVD", "DVDr", "Blu-ray", "Blu-ray-R"}
 
@@ -171,6 +173,33 @@ def _disc_starts(tracklist: list[dict], dotted: bool) -> dict[int, str]:
     return starts
 
 
+def _disc_starts_on(soup: dict, dotted: bool) -> dict[int, str]:
+    """Where each disc starts on a release, and why: as its positions say (_disc_starts), and, when no position names
+    a disc and they start fewer discs than its formats state, at its first other headings between tracks, up to that
+    count: "1" to "3", "CD 2", "4" to "6" on two CDs. When its formats name no medium (a file release), at each of
+    them, as on master. Headings in a row count once, at the first ("CD 2", "Act 2"). A heading that starts no disc
+    of its own ("Bonus") is a smaller harm than a missing disc: the merge keeps the files' numbers when a disc's don't
+    run from 1, and renumbers a later disc's files after the one before when they are on one."""
+    tracklist = soup["tracklist"]
+    starts = _disc_starts(tracklist, dotted)
+    tracks = [index for index, entry in enumerate(tracklist) if entry["type_"] == "track"]
+    if not tracks or any(_disc_and_number(tracklist[index], dotted)[0] is not None for index in tracks):
+        return starts
+    between = [
+        index
+        for index in range(tracks[0] + 1, tracks[-1])
+        if tracklist[index]["type_"] == "heading" and tracklist[index - 1]["type_"] != "heading"
+    ]
+    formats = soup.get("formats") or []
+    if formats and all(f.get("name") in _NO_MEDIA for f in formats):
+        discs, why = len(between) + 1, "a heading, with no media stated"
+    else:
+        discs = _stated(soup, _CD_FORMATS | _VIDEO_FORMATS)
+        why = f"a heading, with {discs} discs stated"
+    more = [index for index in between if index not in starts][: max(discs - 1 - len(starts), 0)]
+    return {**starts, **dict.fromkeys(more, why)}
+
+
 def _numbered(position: str) -> bool:
     """Whether a position numbers its track at all: "-" and "" don't."""
     return any(char.isalnum() for char in position)
@@ -231,7 +260,7 @@ class Scraper(DiscogsBase, MetadataMixin):
         tracks = defaultdict(dict)
         dotted = _dotted(soup)
         # Each start's reason is for the tests, and for saying why a release has its discs when that is wanted.
-        starts = _disc_starts(soup["tracklist"], dotted)
+        starts = _disc_starts_on(soup, dotted)
         disc_num = 1
         for index, track in enumerate(soup["tracklist"]):
             if index in starts:

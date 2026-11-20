@@ -533,6 +533,26 @@ def test_as_before_a_discogs_disc_shown_by_a_repeat_starts_at_its_heading():
     }
 
 
+def test_as_before_a_two_cd_discogs_release_numbered_on_across_its_heading_keeps_the_second_disc_s_numbers():
+    # "1" to "3", "CD 2", "4" to "6", on two CDs: disc 2's files keep their own numbers and pair in order.
+    tracklist = [{"type_": "track", "position": str(n), "title": f"T{n}"} for n in (1, 2, 3)]
+    tracklist += [{"type_": "heading", "position": "", "title": "CD 2"}]
+    tracklist += [{"type_": "track", "position": str(n), "title": f"T{n}"} for n in (4, 5, 6)]
+    soup = {"artists": [{"name": "A"}], "tracklist": tracklist, "formats": [{"name": "CD", "qty": "2"}]}
+    meta = asyncio.run(Scraper().parse_tracks(soup))
+    base = {**local_files("1", "2", "3", disc="1"), **local_files("1", "2", "3", disc="2")}
+    for disc in base.values():
+        for local in disc.values():
+            local["title"] = ""
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {disc: {n: t["title"] for n, t in tracks.items()} for disc, tracks in combined.items()} == {
+        "1": {"1": "T1", "2": "T2", "3": "T3"},
+        "2": {"1": "T4", "2": "T5", "3": "T6"},
+    }
+
+
 def test_single_disc_source_numbered_1_5_keeps_the_files_numbers():
     meta = {"1": {"1": source_track("1", "1", 2, 1), "5": source_track("5", "1", 2, 1)}}
 

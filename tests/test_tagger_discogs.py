@@ -5,7 +5,14 @@ import random
 import pytest
 
 from salmon.tagger.sources.base import append_remixers_to_track_titles, generate_artists
-from salmon.tagger.sources.discogs import Scraper, _clean_discogs_position, _disc_starts, parse_artists, parse_credits
+from salmon.tagger.sources.discogs import (
+    Scraper,
+    _clean_discogs_position,
+    _disc_starts,
+    _disc_starts_on,
+    parse_artists,
+    parse_credits,
+)
 
 
 def make_soup(tracklist: list[dict]) -> dict:
@@ -450,11 +457,13 @@ def test_as_before_a_position_repeated_later_under_a_heading_starts_a_disc(
         ),
     ],
 )
+# Two CDs stated, and a disc started by the positions: the bonus heading still starts none.
+@pytest.mark.parametrize("formats", [None, [{"name": "CD", "qty": "2"}]])
 def test_numbering_starting_over_later_under_a_heading_moves_no_track(
-    tracklist: list[dict], parsed: dict[str, list[str]]
+    tracklist: list[dict], parsed: dict[str, list[str]], formats: list[dict] | None
 ) -> None:
     # The disc's first position again: the next disc starts there, with no heading of its own after a bonus track.
-    result = discs(tracklist)
+    result = discs(tracklist, formats)
 
     assert result == parsed
 
@@ -621,6 +630,133 @@ def test_a_track_moved_to_the_next_disc_is_no_repeat_on_the_disc_before() -> Non
     parsed = discs(tracklist)
 
     assert parsed == {"1": ["1", "2", "4", "3"], "2": ["3", "2"]}
+
+
+def _running_on(title: str, first: list[dict]) -> list[dict]:
+    """Numbering that runs on across a heading: "1" to "3", the heading, "4" to "6"."""
+    tracklist = [*first, *(track(str(n), f"t{n}") for n in (1, 2, 3)), heading(title)]
+    return tracklist + [track(str(n), f"t{n}") for n in (4, 5, 6)]
+
+
+@pytest.mark.parametrize("title", ["CD 2", "Bonus Disc"])
+@pytest.mark.parametrize(
+    "first", [[], [heading("CD 1")], [{"type_": "index", "position": "", "title": "w"}, heading("x")]]
+)
+def test_a_heading_starts_a_disc_when_the_numbering_runs_on_and_the_formats_state_the_cds(
+    title: str, first: list[dict]
+) -> None:
+    parsed = discs(_running_on(title, first), [{"name": "CD", "qty": "2"}])
+
+    assert parsed == {"1": ["1", "2", "3"], "2": ["4", "5", "6"]}
+
+
+@pytest.mark.parametrize(
+    "formats",
+    [[{"name": "File", "qty": "7"}], [{"name": "All Media", "qty": "1"}], [{"name": "Box Set"}, {"name": "File"}]],
+)
+def test_each_heading_starts_a_disc_when_the_numbering_runs_on_and_the_formats_name_no_medium(
+    formats: list[dict],
+) -> None:
+    # A file release's qty counts its files: as on master, since a split costs less at the merge than one disc.
+    tracklist = [*_running_on("Live at A", []), heading("Live at B"), track("7", "t7")]
+
+    assert discs(tracklist, formats) == {"1": ["1", "2", "3"], "2": ["4", "5", "6"], "3": ["7"]}
+
+
+def test_headings_in_a_row_start_one_disc_by_the_stated_cds() -> None:
+    tracklist = [track("1", "a"), heading("CD 2"), heading("Act 2"), track("2", "b"), heading("CD 3"), track("3", "c")]
+
+    assert discs(tracklist, [{"name": "CD", "qty": "3"}]) == {"1": ["1"], "2": ["2"], "3": ["3"]}
+
+
+@pytest.mark.parametrize("formats", [None, [{"name": "CD", "qty": "1"}], [{"name": "Vinyl", "qty": "2"}]])
+def test_headings_the_numbering_runs_on_across_start_no_disc_unless_the_formats_state_more_cds(
+    formats: list[dict] | None,
+) -> None:
+    tracklist = [*_running_on("Side B", []), heading("Side C"), track("7", "t7")]
+
+    assert discs(tracklist, formats) == {"1": ["1", "2", "3", "4", "5", "6", "7"]}
+
+
+@pytest.mark.parametrize(
+    ("tracklist", "parsed"),
+    [
+        # A bonus heading after disc 2's: the first heading starts disc 2, and the bonus tracks stay on it.
+        (
+            [heading("CD 1"), track("1", "a"), heading("CD 2"), track("2", "b"), heading("Bonus"), track("3", "c")],
+            {"1": ["1"], "2": ["2", "3"]},
+        ),
+        # A bonus heading before disc 2's: the bonus tracks go to disc 2, the files keeping their numbers at the merge.
+        (
+            [track("1", "a"), heading("Bonus"), track("2", "b"), heading("CD 2"), track("3", "c")],
+            {"1": ["1"], "2": ["2", "3"]},
+        ),
+        # An index entry, a work's movements, ending disc 1.
+        (
+            [track("1", "a"), {"type_": "index", "position": "", "title": "w"}, heading("CD 2"), track("2", "b")],
+            {"1": ["1"], "2": ["2"]},
+        ),
+    ],
+)
+@pytest.mark.parametrize("formats", [[{"name": "CD", "qty": "2"}], [{"name": "Box Set"}, {"name": "CD", "qty": "2"}]])
+def test_only_the_first_headings_start_discs_up_to_the_stated_cds(
+    tracklist: list[dict], parsed: dict[str, list[str]], formats: list[dict]
+) -> None:
+    assert discs(tracklist, formats) == parsed
+
+
+@pytest.mark.parametrize(
+    "tracklist",
+    [
+        [heading("x")],
+        [track("1", "a"), track("2", "b"), heading("x")],
+        [track("1-1", "a"), track("1-2", "b"), heading("x"), track("3", "c")],
+    ],
+)
+def test_a_heading_with_no_track_after_it_or_by_a_position_naming_its_disc_starts_none_by_the_stated_cds(
+    tracklist: list[dict],
+) -> None:
+    # A position naming its disc ("1-1") leaves the discs to the positions.
+    soup = {**make_soup(tracklist), "formats": [{"name": "CD", "qty": "2"}]}
+
+    assert _disc_starts_on(soup, dotted=False) == {}
+
+
+@pytest.mark.parametrize(
+    ("tracklist", "formats", "parsed"),
+    [
+        # Three CDs: "1" again starts disc 2, and the first heading after it disc 3, with every track kept.
+        (
+            [track("1", "a"), track("2", "b"), track("1", "c"), track("2", "d"), heading("x"), track("3", "e")]
+            + [heading("y"), track("4", "f")],
+            [{"name": "CD", "qty": "3"}],
+            {"1": ["1", "2"], "2": ["1", "2"], "3": ["3", "4"]},
+        ),
+        # Disc 3 numbered on from disc 2.
+        (
+            [heading("CD 1"), track("1", "a"), track("2", "b"), heading("CD 2"), track("1", "c"), track("2", "d")]
+            + [heading("CD 3"), track("3", "e"), track("4", "f")],
+            [{"name": "CD", "qty": "3"}],
+            {"1": ["1", "2"], "2": ["1", "2"], "3": ["3", "4"]},
+        ),
+        # Video discs count: two DVD-Audio discs, numbered on.
+        (
+            [track("1", "a"), track("2", "b"), heading("Disc 2"), track("3", "c")],
+            [{"name": "DVD", "qty": "2"}],
+            {"1": ["1", "2"], "2": ["3"]},
+        ),
+    ],
+)
+def test_headings_start_the_discs_the_positions_leave_short_of_the_stated_count(
+    tracklist: list[dict], formats: list[dict], parsed: dict[str, list[str]]
+) -> None:
+    assert discs(tracklist, formats) == parsed
+
+
+def test_a_disc_started_at_a_heading_by_the_stated_cds_gives_its_reason() -> None:
+    soup = {**make_soup(_running_on("CD 2", [])), "formats": [{"name": "CD", "qty": "2"}]}
+
+    assert _disc_starts_on(soup, dotted=False) == {3: "a heading, with 2 discs stated"}
 
 
 @pytest.mark.parametrize(
