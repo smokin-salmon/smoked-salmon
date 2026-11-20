@@ -1,8 +1,11 @@
 import re
+import threading
 from collections.abc import Callable
+from time import monotonic
 from typing import Any
 from urllib.error import HTTPError
 
+import anyio
 import anyio.to_thread
 import musicbrainzngs
 from musicbrainzngs import musicbrainz as mb_module
@@ -18,6 +21,33 @@ musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")
 # A test pins the parameters the wrapper passes.
 MAX_REQUESTS = 2  # One retry, after its 2 s sleep
 REQUEST_TIMEOUT = 10  # Seconds per socket operation
+
+# MusicBrainz's rule: at most one request a second from each client.
+MIN_INTERVAL = 1.0
+
+
+class RateLimiter:
+    """Spaces the calls to wait() `interval` seconds apart, across threads and event loops alike.
+
+    Under salmon web each job has a thread and an event loop of its own, so the lock is a threading one, and each
+    caller sleeps on its own loop, outside it.
+    """
+
+    def __init__(self, interval: float) -> None:
+        self._interval = interval
+        self._lock = threading.Lock()
+        self._next = 0.0
+
+    async def wait(self) -> None:
+        with self._lock:
+            now = monotonic()
+            start = max(now, self._next)
+            self._next = start + self._interval
+        if start > now:
+            await anyio.sleep(start - now)
+
+
+limiter = RateLimiter(MIN_INTERVAL)
 
 # MusicBrainz stores these where a release has no catalogue number.
 _PLACEHOLDER_CATNOS = frozenset({"none", "[none]", "(none)", "n/a", "[n/a]", "(n/a)"})
