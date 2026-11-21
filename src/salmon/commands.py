@@ -34,14 +34,14 @@ from salmon.sources.tidal import credentials_configured as tidal_credentials_con
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
-from salmon.tagger.retagger import append_guests_to_track_titles, create_artist_str
+from salmon.tagger.retagger import append_guests_to_track_titles, create_artist_str, create_remixer_list
 from salmon.tagger.sources import METASOURCES, run_metadata
 from salmon.tagger.sources.base import generate_artists
 from salmon.trackers.connection import check_trackers
 from salmon.uploader.description import (
     TracklistLine,
     album_credit_names,
-    listed_bare,
+    listed_titles,
     tracklist_description,
 )
 from salmon.uploader.seedbox import config_args, seedbox_secrets
@@ -142,20 +142,35 @@ async def build_description(urls: Sequence[str]) -> str:
     if cfg.upload.formatting.guests_in_track_title:
         for _dnum, _tnum, track in numbered:
             track["title"] = append_guests_to_track_titles(track)
-    bare = listed_bare(
-        [(track["artists"], track["title"]) for _dnum, _tnum, track in numbered],
+    # A remixer the store doesn't credit was read from a title (by the merge, or Tidal's parser): the tracklist reads
+    # the title itself, as REMIXER holds only the credited ones (create_remixer_list).
+    tracks = [
+        (
+            [
+                *((name, role) for name, role in track["artists"] if role != "remixer"),
+                *((name, "remixer") for name in create_remixer_list(track)),
+            ],
+            track["title"],
+        )
+        for _dnum, _tnum, track in numbered
+    ]
+    titles, remixers = listed_titles(
+        tracks,
         album_credit_names(metadata),
         metadata.get("rls_type"),
     )
     lines: list[TracklistLine] = []
-    for (dnum, tnum, track), is_bare in zip(numbered, bare, strict=True):
+    for (dnum, tnum, track), bare in zip(numbered, titles, strict=True):
         number = padded_number(str(tnum))
         if multi_disc:
             number = f"{padded_number(str(dnum))}-{number}"
-        artist = None if is_bare else create_artist_str(track["artists"])
+        if bare is None:
+            title, artist = track["title"], create_artist_str(track["artists"])
+        else:
+            title, artist = bare, None
         # Most stores give no length, and a store's 0 is no length either.
-        lines.append(TracklistLine(number, track["title"], artist, track.get("duration") or None))
-    return tracklist_description(lines, metadata["comment"], metadata["urls"])
+        lines.append(TracklistLine(number, title, artist, track.get("duration") or None))
+    return tracklist_description(lines, metadata["comment"], metadata["urls"], remixers)
 
 
 @commandgroup.command()
