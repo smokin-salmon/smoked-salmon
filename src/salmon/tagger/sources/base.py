@@ -6,7 +6,7 @@ from typing import Any
 
 from salmon import cfg
 from salmon.common import RE_USELESS_VERSION, fetch_genre, less_uppers, normalize_accents, split_genre
-from salmon.common.strings import join_artists, names_no_artist, reaches_various_threshold, unbracketed
+from salmon.common.strings import join_artists, names_no_artist, reaches_various_threshold, same_artist_key, unbracketed
 from salmon.errors import GenreNotInWhitelist
 
 
@@ -481,7 +481,8 @@ def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[lis
         # normalize_accents returns str when given single argument
         normalized = str(normalized_result).lower() if normalized_result else ""
         if normalized:
-            unsorted_pool.append([normalized, artist_name])
+            # The whole name also as the decision keys it, so "Simon and Garfunkel" is "Simon" and "Garfunkel" too.
+            unsorted_pool.append([normalized, artist_name, same_artist_key(artist_name)])
     artist_pool: list[list[str]] = sorted(unsorted_pool, key=lambda x: len(x[0]))
     for i, pri_a_raw in enumerate(artist_pool):
         for other_a in reversed(artist_pool[0:i]):
@@ -489,7 +490,7 @@ def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[lis
             # Either part may come first: "Simon" and "Garfunkel", or "Leslie Odom" and "Jr.".
             joined = {other_a[0] + pri_a_raw[0], pri_a_raw[0] + other_a[0]}
             for artist_to_compare in artist_pool[i:]:
-                if artist_to_compare[0] in joined:
+                if artist_to_compare[0] in joined or artist_to_compare[2] in joined:
                     to_replace.append((current_replacements, artist_to_compare[1]))
     return to_replace
 
