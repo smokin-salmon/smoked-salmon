@@ -28,6 +28,11 @@ def norm_title(title):
     return title_key(title) if title else ""
 
 
+def _norm_titles(track):
+    """The track's titles as its exact-title pass compares them: its ``titles`` when given, else its ``title``."""
+    return frozenset(filter(None, map(norm_title, track.get("titles") or [track.get("title")])))
+
+
 def title_words(title):
     """The title's words, so a local title is found in a longer scraped one only as whole words."""
     return tuple(re.findall(r"[a-z0-9]+", unidecode(title).lower())) if title else ()
@@ -47,7 +52,8 @@ def pair_by_content(locals_, metas, *, numbered=False):
     """Work out which local track belongs to each scraped track.
 
     Both arguments are sequences of mappings with ``title``, ``isrc`` and ``duration`` keys; a missing or empty
-    one is skipped as a signal. A scraped track's ``titles``, when given, are each a title its exact-title pass takes.
+    one is skipped as a signal. A track's ``titles``, when given, are each a title a second exact-title pass takes,
+    after its ``title``.
 
     Passes run in confidence order: ISRC, exact title, then a local title found as whole words in the scraped
     one ("Django" in "Django (Original Mix)", but not "Work" in "Homework"). A pass only pairs a scraped track and
@@ -107,8 +113,16 @@ def pair_by_content(locals_, metas, *, numbered=False):
 
     run_pass(
         "title",
-        lambda m: frozenset(filter(None, map(norm_title, m.get("titles") or [m.get("title")]))),
-        lambda t, want: norm_title(t.get("title")) in want,
+        lambda m: norm_title(m.get("title")),
+        lambda t, want: norm_title(t.get("title")) == want,
+        duration_breaks_ties=True,
+    )
+    # Then by every title a track has, for those still waiting: a store's as written ("Song" for "Song",
+    # "Remastered"), after its own, so "Intro (feat. Bob)" has paired before it could also want an "Intro".
+    run_pass(
+        "title",
+        _norm_titles,
+        lambda t, want: not _norm_titles(t).isdisjoint(want),
         duration_breaks_ties=True,
     )
 

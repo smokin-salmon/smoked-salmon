@@ -103,13 +103,17 @@ def test_a_release_of_remixes_given_apart_is_still_a_remix_release() -> None:
     meta = release(*((f"Song {n}", f"DJ {n} Remix") for n in range(1, 9)))
     meta["tracks"]["1"] = {n: {**t, "tracktotal": "8"} for n, t in meta["tracks"]["1"].items()}
 
-    assert Deezer().determine_rls_type(meta)[1] == "Remix"
+    _, rls_type = Deezer().determine_rls_type(meta)
+
+    assert rls_type == "Remix"
 
 
 def test_as_before_original_mixes_given_apart_do_not_make_a_remix_release() -> None:
     meta = release(*((f"Song {n}", "Original Mix") for n in range(1, 9)))
 
-    assert Deezer().determine_rls_type(meta)[1] != "Remix"
+    _, rls_type = Deezer().determine_rls_type(meta)
+
+    assert rls_type != "Remix"
 
 
 # The merge
@@ -238,7 +242,9 @@ def test_as_before_with_no_files_a_store_s_title_keeps_a_featuring_clause_naming
     """The title is then the only place the guest appears, as with the files' title."""
     setting(monkeypatch, strip=True)
 
-    assert written((source, release("Song (feat. Xavier)"))) == ["Song (feat. Xavier)"]
+    titles = written((source, release("Song (feat. Xavier)")))
+
+    assert titles == ["Song (feat. Xavier)"]
 
 
 def test_with_no_files_a_store_s_featuring_clause_naming_only_credited_guests_goes(
@@ -249,7 +255,47 @@ def test_with_no_files_a_store_s_featuring_clause_naming_only_credited_guests_go
     discogs = release("Song (feat. Xavier)")
     discogs["tracks"]["1"]["1"]["artists"].append(("Xavier", "guest"))
 
-    assert written(("Discogs", discogs)) == ["Song"]
+    titles = written(("Discogs", discogs))
+
+    assert titles == ["Song"]
+
+
+def test_as_before_with_no_files_a_store_s_title_pairs_with_the_next_store_s_as_written(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Deezer's "Zebra", "Remastered" is "Zebra" as written, which Discogs' "Zebra" pairs with in any order."""
+    setting(monkeypatch, strip=True)
+    deezer = release(("Zebra", "Remastered"), ("Apple", "Remastered"))
+    deezer["tracks"]["1"]["1"]["isrc"], deezer["tracks"]["1"]["2"]["isrc"] = "ZEBRA", "APPLE"
+
+    discogs = release("Apple", "Zebra")
+    discogs["tracks"]["1"]["1"]["artists"].append(("Ann", "guest"))
+    discogs["tracks"]["1"]["2"]["artists"].append(("Zed", "guest"))
+
+    merged = combine_metadatas(("Deezer", deezer), ("Discogs", discogs))
+
+    guests = {t["isrc"]: [n for n, r in t["artists"] if r == "guest"] for t in merged["tracks"]["1"].values()}
+    assert guests == {"APPLE": ["Ann"], "ZEBRA": ["Zed"]}
+
+
+def test_numbered_files_salmon_wrote_without_a_credited_featuring_clause_pair_by_their_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Files a merge already wrote as "Post", for Deezer's "Post", "feat. Bob": the second title pass pairs them."""
+    setting(monkeypatch, strip=True)
+    deezer = release("Pre (feat. Bob)", ("Pre", "Bob Remix"), ("Post", "feat. Bob"))
+    for number, isrc in (("1", "PREFEAT"), ("2", "PREREMIX"), ("3", "POST")):
+        deezer["tracks"]["1"][number]["isrc"] = isrc
+
+    merged = combine_metadatas(
+        ("Deezer", deezer), base=release("Post", "Pre (Bob Remix)", "Pre", replay_gain="-7.0 dB")
+    )
+
+    assert {t["title"]: t["isrc"] for t in merged["tracks"]["1"].values()} == {
+        "Post": "POST",
+        "Pre (Bob Remix)": "PREREMIX",
+        "Pre": "PREFEAT",
+    }
 
 
 def test_as_before_numbered_files_out_of_order_pair_by_the_store_s_title_as_written(
@@ -309,7 +355,9 @@ def test_a_featuring_clause_naming_credited_artists_leaves_the_files_title(monke
     files = release("Pre (feat. Alice)", replay_gain="-7.0 dB")
     files["tracks"]["1"]["1"]["artists"].append(("Alice", "guest"))
 
-    assert written(("Deezer", release("Pre")), files=files) == ["Pre"]
+    titles = written(("Deezer", release("Pre")), files=files)
+
+    assert titles == ["Pre"]
 
 
 def test_as_before_the_files_featuring_clause_stays_with_the_setting_off(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -317,41 +365,122 @@ def test_as_before_the_files_featuring_clause_stays_with_the_setting_off(monkeyp
     files = release("Pre (feat. Alice)", replay_gain="-7.0 dB")
     files["tracks"]["1"]["1"]["artists"].append(("Alice", "guest"))
 
-    assert written(("Deezer", release("Pre")), files=files) == ["Pre (feat. Alice)"]
+    titles = written(("Deezer", release("Pre")), files=files)
+
+    assert titles == ["Pre (feat. Alice)"]
 
 
 def test_a_featuring_clause_naming_an_artist_the_track_doesn_t_credit_stays(monkeypatch: pytest.MonkeyPatch) -> None:
     """It isn't redundant then: the title is the only place the guest is named."""
     setting(monkeypatch, strip=True)
 
-    assert written(("Discogs", release("Hard to Love")), files=release("Hard to Love (feat. Jessie Reyez)")) == [
-        "Hard to Love (feat. Jessie Reyez)"
-    ]
+    titles = written(("Discogs", release("Hard to Love")), files=release("Hard to Love (feat. Jessie Reyez)"))
+
+    assert titles == ["Hard to Love (feat. Jessie Reyez)"]
 
 
 def test_a_files_track_with_no_title_takes_the_first_store_s() -> None:
     files = release("x")
     files["tracks"]["1"]["1"]["title"] = None
 
-    assert written(("Qobuz", release(("Song", "Alice Remix"))), files=files) == ["Song (Alice Remix)"]
+    titles = written(("Qobuz", release(("Song", "Alice Remix"))), files=files)
+
+    assert titles == ["Song (Alice Remix)"]
 
 
 def test_accents_come_from_a_store_s_title_that_folds_its_version() -> None:
-    assert written(("Discogs", release("Ný batterí (Remastered)")), files=release("Ny Batteri")) == ["Ný Batterí"]
+    titles = written(("Discogs", release("Ný batterí (Remastered)")), files=release("Ny Batteri"))
+
+    assert titles == ["Ný Batterí"]
 
 
 def test_a_featuring_clause_naming_a_credited_artist_with_a_comma_in_their_name_goes() -> None:
     files = release("Sasquatch (feat. Tyler, The Creator)", replay_gain="-7.0 dB")
     files["tracks"]["1"]["1"]["artists"].append(("Tyler, The Creator", "guest"))
 
-    assert written(("Discogs", release("Sasquatch")), files=files) == ["Sasquatch"]
+    titles = written(("Discogs", release("Sasquatch")), files=files)
+
+    assert titles == ["Sasquatch"]
 
 
 def test_a_featuring_clause_joining_credited_artists_with_and_goes() -> None:
     files = release("Song (feat. Alice and Bob)", replay_gain="-7.0 dB")
     files["tracks"]["1"]["1"]["artists"] += [("Alice", "guest"), ("Bob", "guest")]
 
-    assert written(("Discogs", release("Song")), files=files) == ["Song"]
+    titles = written(("Discogs", release("Song")), files=files)
+
+    assert titles == ["Song"]
+
+
+def featured(clause: str, guests: list[str]) -> list[str]:
+    files = release(f"Song (feat. {clause})", replay_gain="-7.0 dB")
+    files["tracks"]["1"]["1"]["artists"] += [(guest, "guest") for guest in guests]
+    return written(("Discogs", release("Song")), files=files)
+
+
+@pytest.mark.parametrize(
+    ("clause", "guests"),
+    [
+        ("Alice & X", ["Alice"]),  # X, credited nowhere, is a name, not a joining word
+        ("X & Alice", ["Alice"]),
+        ("Alice, Bob & Carol", ["Alice", "Bob"]),
+    ],
+)
+def test_as_before_a_featuring_clause_naming_someone_uncredited_stays(clause: str, guests: list[str]) -> None:
+    titles = featured(clause, guests)
+
+    assert titles == [f"Song (feat. {clause})"]
+
+
+def test_a_featuring_clause_joining_credited_artists_with_x_goes() -> None:
+    """Between two credited names, "x" joins them."""
+    titles = featured("Alice x Bob", ["Alice", "Bob"])
+
+    assert titles == ["Song"]
+
+
+def test_accents_come_from_a_store_s_title_whose_version_is_not_the_files() -> None:
+    titles = written(("Discogs", release("Ný batterí (Remastered)")), files=release("Ny Batteri (Live)"))
+
+    assert titles == ["Ný Batterí (Live)"]
+
+
+@pytest.mark.parametrize("store", ["Song (Björk Remix)", "Söng (Björk Remix)"])
+def test_as_before_accents_in_the_files_version_are_restored_too(store: str) -> None:
+    titles = written(("Discogs", release(store)), files=release("Song (Bjork Remix)"))
+
+    assert titles == [store]
+
+
+def test_accents_in_a_version_a_store_gives_apart_are_restored() -> None:
+    titles = written(("Qobuz", release(("Song", "Tiësto Remix"))), files=release("Song (Tiesto Remix)"))
+
+    assert titles == ["Song (Tiësto Remix)"]
+
+
+def test_as_before_a_track_and_its_featuring_version_pair_by_their_own_titles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Deezer's "Intro", "feat. Bob" pairs as "Intro (feat. Bob)", not as the "Intro" beside it."""
+    setting(monkeypatch, strip=True)
+    tracklist = [deezer_song(1, "(feat. Bob)", "Intro"), deezer_song(2, "", "Intro")]
+    tracklist[0]["ISRC"], tracklist[1]["ISRC"] = "FEAT", "PLAIN"
+    deezer = release("x")
+    deezer["tracks"] = anyio.run(Deezer().parse_tracks, {"tracklist": tracklist})
+
+    merged = combine_metadatas(("Deezer", deezer), base=release("Intro", "Intro (feat. Bob)", replay_gain="-7.0 dB"))
+
+    assert {t["title"]: t["isrc"] for t in merged["tracks"]["1"].values()} == {
+        "Intro": "PLAIN",
+        "Intro (feat. Bob)": "FEAT",
+    }
+
+
+def test_as_before_with_no_files_a_store_s_placeholder_title_takes_the_next_store_s() -> None:
+    """A store's "Track 1" names no more than a ripper's: the next store's title, as the last store's was before."""
+    titles = written(("Deezer", release("Track 1")), ("Qobuz", release("Intro")))
+
+    assert titles == ["Intro"]
 
 
 def test_with_no_files_any_store_s_title_follows_the_setting(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -371,7 +500,9 @@ def test_a_featuring_version_stays_with_the_setting_off(monkeypatch: pytest.Monk
     qobuz = release(("F For You", "ft. Mary J Blige"))
     qobuz["tracks"]["1"]["1"]["artists"].append(("Mary J Blige", "guest"))
 
-    assert written(("Qobuz", qobuz)) == ["F For You (ft. Mary J Blige)"]
+    titles = written(("Qobuz", qobuz))
+
+    assert titles == ["F For You (ft. Mary J Blige)"]
 
 
 def test_a_placeholder_taking_a_store_s_title_with_no_version_is_written_as_a_store_s(
@@ -400,17 +531,21 @@ def test_as_before_a_store_s_featuring_version_naming_someone_the_track_doesn_t_
 
 
 def test_as_before_a_featuring_clause_naming_a_band_called_x_stays() -> None:
-    assert written(("Discogs", release("Song")), files=release("Song (feat. X)", replay_gain="-7.0 dB")) == [
-        "Song (feat. X)"
-    ]
+    titles = written(("Discogs", release("Song")), files=release("Song (feat. X)", replay_gain="-7.0 dB"))
+
+    assert titles == ["Song (feat. X)"]
 
 
 def test_accents_reach_a_files_title_that_folds_a_version_the_store_lacks() -> None:
     files = release("Ny Batteri (Remastered)", replay_gain="-7.0 dB")
 
-    assert written(("Discogs", release("Ný batterí")), files=files) == ["Ný Batterí (Remastered)"]
+    titles = written(("Discogs", release("Ný batterí")), files=files)
+
+    assert titles == ["Ný Batterí (Remastered)"]
 
 
 @pytest.mark.parametrize("placeholder", ["Track 01", "Audio Track 1", "Piste 01", "Pista 1", "Titel 03"])
 def test_a_ripper_s_placeholder_in_several_languages_takes_the_store_s_title(placeholder: str) -> None:
-    assert written(("Deezer", release(("Song", None))), files=release(placeholder, replay_gain="-7.0 dB")) == ["Song"]
+    titles = written(("Deezer", release(("Song", None))), files=release(placeholder, replay_gain="-7.0 dB"))
+
+    assert titles == ["Song"]

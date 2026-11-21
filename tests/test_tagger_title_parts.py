@@ -5,7 +5,7 @@ import msgspec
 import pytest
 
 from salmon import cfg
-from salmon.common.strings import enclosed, restore_accents, split_version, unbracketed
+from salmon.common.strings import enclosed, restore_accents, unbracketed
 from salmon.tagger.sources.base import folded_title, title_with_version
 
 
@@ -30,32 +30,6 @@ def test_one_pair_of_brackets_encloses_all_of_a_text_or_not(text: str, expected:
 )
 def test_a_version_loses_only_brackets_enclosing_all_of_it(given: str | None, expected: str | None) -> None:
     assert unbracketed(given) == expected
-
-
-@pytest.mark.parametrize(
-    ("folded", "title", "expected"),
-    [
-        ("Spellbound (Mixed)", "Spellbound", ("Spellbound", "Mixed")),
-        ("Spellbound [Mixed]", "Spellbound", ("Spellbound", "Mixed")),
-        (
-            "Livin' Free (Soundtrack Mix) (Mixed)",
-            "Livin' Free (Soundtrack Mix)",
-            ("Livin' Free (Soundtrack Mix)", "Mixed"),
-        ),
-        ("Livin' Free (Soundtrack Mix) (Mixed)", "Livin' Free", None),
-        (
-            "Livin’ Free (Soundtrack Mix) (Mixed)",
-            "Livin' Free (Soundtrack Mix)",
-            ("Livin’ Free (Soundtrack Mix)", "Mixed"),
-        ),
-        ("Song (X Remix)", "Song", ("Song", "X Remix")),
-        ("Song", "Song", None),
-    ],
-)
-def test_a_folded_title_splits_into_a_title_and_its_version(
-    folded: str, title: str, expected: tuple[str, str] | None
-) -> None:
-    assert split_version(folded, title) == expected
 
 
 @pytest.mark.parametrize(

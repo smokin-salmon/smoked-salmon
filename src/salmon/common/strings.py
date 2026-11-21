@@ -346,16 +346,6 @@ def unbracketed(version: str | None) -> str | None:
     return (version[1:-1].strip() if enclosed(version) else version) or None
 
 
-def split_version(folded: str, title: str) -> tuple[str, str] | None:
-    """`folded` as `title` and the version in brackets after it, both in `folded`'s own text: "Spellbound (Mixed)" and
-    "Spellbound" give ("Spellbound", "Mixed"). Titles compare as the merge compares them. Else None."""
-    for at in (index for index, char in enumerate(folded) if char in "(["):
-        head, tail = folded[:at].rstrip(), folded[at:].strip()
-        if enclosed(tail) and same_title(head, title):
-            return head, tail[1:-1].strip()
-    return None
-
-
 def restore_accents(title: str, accented: str) -> str:
     """`title` with the accented letters `accented` has where `title` has them plain, in `title`'s case: "Ny Batteri"
     and "Ný batterí" give "Ný Batterí". Its capitals and punctuation stay; any other difference leaves it as it is."""
@@ -392,13 +382,9 @@ def _plain_letter(letter: str) -> str:
 
 
 def title_key(title: str) -> str:
-    """A title as the merge and the pairing compare titles: without case, accents and punctuation."""
+    """A title as the pairing compares titles, by re_strip: lowercased and unaccented, dots and round brackets dropped,
+    and slashes, dashes and commas read as spaces."""
     return re_strip(unidecode(title))
-
-
-def same_title(one: str, other: str) -> bool:
-    """Whether two titles are the same but for case, accents and punctuation."""
-    return title_key(one) == title_key(other)
 
 
 def tagify(genre: str) -> str:

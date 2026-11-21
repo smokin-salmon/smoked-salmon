@@ -10,7 +10,7 @@ from salmon import cfg
 from salmon.common import normalize_accents
 from salmon.common.credits import Claim, resolve_credits
 from salmon.common.numbers import natural_key, number_or_text
-from salmon.common.strings import comparable, restore_accents, split_version
+from salmon.common.strings import comparable, restore_accents
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
@@ -265,10 +265,14 @@ def _pair_base_tracks(btracks, mtracks):
 
 def _with_folded_titles(tracks):
     """The tracks with each title as its store folds it, for pairing: the files' titles hold their versions. A title
-    pairs as written too ("Song" for "Song", "Remastered", by strip_useless_versions), as it did before the store gave
-    its version apart."""
+    pairs as written too ("Song" for "Song", "Remastered", by strip_useless_versions), in pairing's second title pass:
+    a files title salmon wrote before may be one."""
     return [
-        {**track, "title": folded_title(track), "titles": (folded_title(track), title_with_version(track["title"], v))}
+        {
+            **track,
+            "title": folded_title(track),
+            "titles": (folded_title(track), title_with_version(track["title"], v)),
+        }
         if (v := track.get("version")) and track["title"]
         else {**track, "title": folded_title(track)}
         for track in tracks
@@ -403,7 +407,8 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
             btrack = next(paired_btracks)
 
             if _untitled(btrack["title"]):
-                # The files name no title ("Track 01"): the first store's names it, for the next store's pairing too.
+                # The base names no title (a ripper's "Track 01", or a store's): the next store's names it, for the
+                # store after's pairing too.
                 btrack["title"], btrack["version"] = track["title"], track.get("version")
             # Each store's title and version beside the base's, for _decide_titles once the last store is merged.
             btrack.setdefault("store_titles", []).append((track["title"], track.get("version")))
@@ -550,23 +555,36 @@ def _written_title(title, version, stores, files, credited):
 
 def _names_only(names, credited):
     """Whether `names` ("A & B", a featuring clause's) are only artists in `credited` (by comparable), however they're
-    joined: "Tyler, The Creator" is one."""
-    whole = left = comparable(names)  # letters and digits only: "frankoceanmigos"
-    for name in sorted(credited, key=len, reverse=True):
-        left = left.replace(name, "", 1) if name else left
-    # Some name was credited, and what's left only joins them: a band named "X" is no joining word.
-    return left != whole and re.fullmatch(r"(?:and|with|x)*", left) is not None
+    joined: "Tyler, The Creator" is one. A joining word ("and", "with", "x") joins only between two credited names, so
+    the "X" of "Alice & X" is a name."""
+    words = [word for word in map(comparable, re.split(r"\W+", names)) if word]
+    pieces, start = [], 0
+    while start < len(words):
+        # The longest run of words from here that is a credited name, "" for it ("Tyler, The Creator" is three).
+        end = next((end for end in range(len(words), start, -1) if "".join(words[start:end]) in credited), None)
+        pieces.append("" if end else words[start])
+        start = end or start + 1
+    return bool(pieces) and pieces[0] == pieces[-1] == "" and set(pieces) <= {"", "and", "with", "x"}
+
+
+def _bare_head(title):
+    """The title without the bracketed versions it ends in: "Song (Live) [2011]" is "Song"."""
+    return re.sub(r"(?:\s*[\(\[][^()\[\]]*[\)\]])+\s*$", "", title) or title
 
 
 def _with_store_accents(title, stores):
-    """The title with the accents the first store to give them restores, letter by letter: the two compared without a
-    version either folds in ("Ny Batteri (Remastered)" and "Ný batterí")."""
-    for store_title, _ in stores:
+    """The title with the accents the first store to give them restores, letter by letter: the whole title first, as
+    the store folds it or as it gives it ("Song (Tiesto Remix)" and "Song", "Tiësto Remix"), then each without the
+    versions it ends in ("Ny Batteri (Live)" and "Ný batterí (Remastered)")."""
+    for store_title, store_version in stores:
         if not store_title:
             continue
-        own, theirs = split_version(title, store_title), split_version(store_title, title)
-        head, store_head = own[0] if own else title, theirs[0] if theirs else store_title
-        if (accented := restore_accents(head, store_head)) != head:
+        folded = f"{store_title} ({store_version})" if store_version else store_title
+        for theirs in dict.fromkeys((folded, store_title)):
+            if (accented := restore_accents(title, theirs)) != title:
+                return accented
+        head = _bare_head(title)
+        if (accented := restore_accents(head, _bare_head(store_title))) != head:
             return accented + title[len(head) :]
     return title
 
