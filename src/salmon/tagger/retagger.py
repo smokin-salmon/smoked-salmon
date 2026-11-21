@@ -38,6 +38,7 @@ from salmon.tagger.mutation import abort_partial
 from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
 from salmon.tagger.playlists import rewrite_playlists
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
+from salmon.tagger.sources.base import featuring_clause
 from salmon.tagger.tagfile import TagFile
 
 
@@ -407,8 +408,13 @@ def _tagset_identity(tagset):
 
     mut = getattr(tagset, "mut", None)
     info = getattr(mut, "info", None)
+    title = tag("title")
+    # The merge writes a files title without a featuring clause it credits ("Song (feat. B)" is "Song"): the file's
+    # tag is matched to that too, in pairing's second title pass.
+    clause = featuring_clause(title) if isinstance(title, str) else None
     return {
-        "title": tag("title"),
+        "title": title,
+        "written_titles": (clause[0],) if clause else (),
         "isrc": tag("isrc"),
         "duration": int(info.length) if info and getattr(info, "length", None) else None,
     }
@@ -421,9 +427,10 @@ def order_tracks_for_files(items, tracks, *, numbered=False, show=True):
     zipped with ``tracks``. ``combine_tracks`` already paired the tracks by content, but it
     works on track dicts that carry no filename, so the association is lost by the time tags
     are written. Redo the match here against the files themselves: a track that
-    ``combine_tracks`` paired by ISRC or title now carries that ISRC or the scraped title, and
-    the duration of the local file it was built from (``create_track_list``), which breaks
-    ties between titles that fit two tracks the same way the first match did.
+    ``combine_tracks`` paired by ISRC or title now carries that ISRC or the title the merge
+    wrote (the file's own, perhaps without a featuring clause it credits), and the duration of
+    the local file it was built from (``create_track_list``), which breaks ties between titles
+    that fit two tracks the same way the first match did.
 
     With ``numbered``, the files are in the order of their own track numbers, and only an ISRC
     or an exact title moves one (see ``pair_by_content``). With ``show``, the matches are printed

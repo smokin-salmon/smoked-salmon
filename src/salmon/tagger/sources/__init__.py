@@ -52,9 +52,10 @@ def without_tracking(url: str) -> str:
     return bare if matching_source(bare) == source else url
 
 
-# What a scraper keeps beside each track for the merge alone: Discogs' credited names (ANVs), and a stating store's
-# guesses. The merge drops them once it has decided, and a scrape shown on its own never holds them.
-MERGE_ONLY_KEYS = ("artist_variations", "assumed_artists")
+# What a scraper keeps beside each track for the merge alone: Discogs' credited names (ANVs), a stating store's
+# guesses, a version given apart from the title, and the stores' titles the merge gathers (with the store that named a
+# placeholder). The merge drops them once it has decided, and a scrape shown on its own never holds them.
+MERGE_ONLY_KEYS = ("artist_variations", "assumed_artists", "version", "store_titles", "placeholder_from")
 
 
 def without_merge_only_keys(metadata: dict[str, Any]) -> None:
