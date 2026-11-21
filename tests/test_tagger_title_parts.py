@@ -69,6 +69,7 @@ def test_a_version_holding_brackets_of_its_own_keeps_them(monkeypatch: pytest.Mo
     assert title_with_version("Alive", "Live") == "Alive (Live)"
     assert title_with_version("Song (Remastered 2011)", "Remaster") == "Song (Remastered 2011)"
     assert title_with_version("Song - Live Version", "Live Version") == "Song - Live Version"
+    assert title_with_version("Song (Alive)", "Live") == "Song (Alive) (Live)"  # from a word's start only
 
 
 @pytest.mark.parametrize(

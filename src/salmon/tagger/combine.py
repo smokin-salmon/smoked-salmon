@@ -10,7 +10,7 @@ from salmon import cfg
 from salmon.common import normalize_accents
 from salmon.common.credits import Claim, resolve_credits
 from salmon.common.numbers import natural_key, number_or_text
-from salmon.common.strings import comparable, restore_accents
+from salmon.common.strings import comparable, restore_accents, unbracketed
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
@@ -264,19 +264,18 @@ def _pair_base_tracks(btracks, mtracks):
 
 
 def _with_folded_titles(tracks):
-    """The tracks with each title as its store folds it, for pairing: the files' titles hold their versions. A title
-    pairs as written too ("Song" for "Song", "Remastered", by strip_useless_versions), in pairing's second title pass:
-    a files title salmon wrote before may be one."""
-    return [
-        {
-            **track,
-            "title": folded_title(track),
-            "titles": (folded_title(track), title_with_version(track["title"], v)),
-        }
-        if (v := track.get("version")) and track["title"]
-        else {**track, "title": folded_title(track)}
-        for track in tracks
-    ]
+    """The tracks with each title as its store folds it, for pairing: the files' titles hold their versions. A base
+    track is also known by each title a store merged before gave it, so a track one store paired (by its ISRC, say) is
+    found by the next store's title for it. In pairing's second title pass every title counts as written too ("Song"
+    for "Song", "Remastered", by strip_useless_versions), as files salmon tagged before may hold it."""
+    return [_for_pairing(track) for track in tracks]
+
+
+def _for_pairing(track):
+    named = [(track["title"], track.get("version")), *track.get("store_titles", [])]
+    folded = [folded_title({"title": title, "version": version}) for title, version in named]
+    written = [title_with_version(title, version) for title, version in named if title]
+    return {**track, "title": folded[0], "titles": tuple(folded[1:]), "written_titles": tuple(written)}
 
 
 def _numbers_usable(meta):
@@ -407,9 +406,10 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
             btrack = next(paired_btracks)
 
             if _untitled(btrack["title"]):
-                # The base names no title (a ripper's "Track 01", or a store's): the next store's names it, for the
-                # store after's pairing too.
+                # The base names no title (a ripper's "Track 01", or a store's): the first store that names it does, and
+                # the stores after pair by that name. Gathered, not decided: _decide_titles writes it as that store's.
                 btrack["title"], btrack["version"] = track["title"], track.get("version")
+                btrack["placeholder_from"] = store
             # Each store's title and version beside the base's, for _decide_titles once the last store is merged.
             btrack.setdefault("store_titles", []).append((track["title"], track.get("version")))
 
@@ -516,40 +516,77 @@ def _untitled(title):
 
 
 def _decide_titles(tracks, base_source):
-    """Write each track's one title from its own and from each store's beside it (`store_titles`), in place."""
+    """Write each track's one title, from its own and each store's beside it (`store_titles`), in place."""
     for disc in tracks.values():
         for track in disc.values():
-            credited = {comparable(name) for name, _ in track["artists"]}
-            # A files' track holds a version only where it took a store's title for its placeholder: a store's title.
-            own = base_source == "files" and "version" not in track
-            track["title"] = _written_title(
-                track["title"], track.get("version"), track.get("store_titles", []), own, credited
-            )
+            # Who a featuring clause may name as already credited: the track's performers, not its producer or
+            # composer, whose credit says nothing of a guest.
+            credited = {comparable(name) for name, role in track["artists"] if role in {"main", "guest"}}
+            track["title"], _why = _written_title(track, base_source == "files", credited)
 
 
-def _written_title(title, version, stores, files, credited):
-    """The title written from the base's title and version and each store's (title, version), in the merge's order.
-
-    The files' title is written as it is, with no store's version added, with the accents a store restores and without
-    a featuring clause naming only artists the track credits (`credited`, by comparable): what the release says is not
-    trimmed. A store's (descgen, salmon meta) is written with its version, by strip_useless_versions. One version at
-    most either way.
-    """
+def _written_title(track, files, credited):
+    """The track's title and its reason: which text it is, then what changed it. A placeholder the merge named from a
+    store is that store's title, the files' title is written as it is (`_files_title`), a store's with its version
+    (`_store_title`), each with the accents a store restores. What changed it is read from what is written: the title
+    written without that step differs. The reason is for the tests, and for saying why a title is as it is when that is
+    wanted."""
+    title, stores = track["title"], track.get("store_titles", [])
     if not title:
-        return title
-    title = _with_store_accents(title, stores)
-    if files:
-        clause = featuring_clause(title)
-        strip = cfg.upload.formatting.strip_useless_versions
-        return clause[0] if strip and clause and _names_only(clause[1], credited) else title
-    # A store's featuring clause, in its version ("ft. Mary J Blige") or its title, goes only as the files' does: when
-    # the track credits them.
-    guests, named = featuring_clause(f"({version})") if version else None, featuring_clause(title)
+        return title, "no title"
+    if "placeholder_from" in track:
+        own, why = False, f"{track['placeholder_from'] or 'a store'}'s title, for a placeholder"
+    elif files:
+        own, why = True, "the files' title"
+    else:
+        own, why = False, "the store's title and version"
+
+    version = track.get("version")  # a files track holds one only once a placeholder took a store's title
+
+    def write(text, kept, names):
+        return _files_title(text, names) if own else _store_title(text, kept, names)
+
+    accented, accented_version = _accented(title, version, stores)
+    written = write(accented, accented_version, credited)
+    if written != write(title, version, credited):
+        why += ", with a store's accents"
+    if written != write(accented, accented_version, set()):
+        why += ", without a credited featuring clause"
+    return written, why
+
+
+def _accented(title, version, stores):
+    """The title and version with the accents a store restores (`_with_store_accents`), the two read together as the
+    store folds them, so a version's accents come back too ("Tiesto Remix" beside a store's "Tiësto Remix")."""
+    if version:
+        folded = f"{title} ({version})"
+        accented = _with_store_accents(folded, stores)
+        # Restoring keeps each letter's place, so the folded title splits back where it was joined.
+        if len(accented) == len(folded):
+            return accented[: len(title)], accented[len(title) + 2 : -1]
+    return _with_store_accents(title, stores), version
+
+
+def _files_title(title, credited):
+    """The files' title as it is, but for a trailing featuring clause under strip_useless_versions that names only
+    artists the track credits (`credited`, by comparable), as the credit says it already. What the release says is not
+    trimmed otherwise, and no store's version is added."""
+    clause = featuring_clause(title)
+    if cfg.upload.formatting.strip_useless_versions and clause and _names_only(clause[1], credited):
+        return clause[0]
+    return title
+
+
+def _store_title(title, version, credited):
+    """A store's title written with its version by strip_useless_versions (title_with_version), a featuring clause in
+    its title (as `_files_title`, "ft." too) or its version ("ft. Mary J Blige") going only as the files' does: when
+    the track credits them."""
+    guests = featuring_clause(f"({bare})") if (bare := unbracketed(version)) else None
     return title_with_version(
-        title,
+        _files_title(title, credited),
         version,
-        keep_featuring=bool(guests) and not _names_only(guests[1], credited),
-        keep_title_featuring=bool(named) and not _names_only(named[1], credited),
+        keep_featuring=not (guests and _names_only(guests[1], credited)),
+        keep_title_featuring=True,
     )
 
 

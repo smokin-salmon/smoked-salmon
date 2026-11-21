@@ -303,7 +303,8 @@ def title_with_version(title, version, keep_featuring=False, keep_title_featurin
         version = None  # "ft. Mary J Blige": the guest credit says it.
     if version := unbracketed(version):
         # Already in the title's version part (from its first bracket or dash) from a word's start, brackets aside:
-        # "Live" is in "Song (Live)", not in "Alive" nor "Live and Let Die", and "Remaster" in "(Remastered 2011)".
+        # "Live" is in "Song (Live)", not in "Alive" nor "Live and Let Die", and "Remaster" in "(Remastered 2011)", as
+        # "Live" is in "(Lively Mix)".
         plain = re.sub(r"[\(\)\[\]]", "", version).lower()
         said = re.search(r"[\(\[]|\s[-\u2013\u2014]\s", base)
         flat = re.sub(r"[\(\)\[\]]", "", base[said.start() :] if said else "").lower()

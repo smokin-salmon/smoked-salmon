@@ -59,6 +59,9 @@ TrackMetadata = TypedDict(
         "assumed_artists": NotRequired[list[Credit]],  # a stating store's guesses, among its artists
         # Merge-only: each store's (title, version) beside the base track's, for the merge to decide the title.
         "store_titles": NotRequired[list[tuple[str | None, str | None]]],
+        # Merge-only: the store whose title the merge took for the base's placeholder ("Track 01"), None when
+        # combine_tracks is given no sources.
+        "placeholder_from": NotRequired[str | None],
         # The files' only.
         "numbered": NotRequired[bool],
     },
