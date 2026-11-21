@@ -28,13 +28,19 @@ RELEASE_TYPES = {
 FRONT_COVER = "salmon-front-cover"
 
 
+# The secondary types MusicBrainz's XML serializer gave in place of Album, the first the group has in this order.
+_ALBUM_FALLBACK_TYPES = ("Compilation", "Remix", "Soundtrack", "Live", "Spokenword", "Interview")
+
+
 def release_group_type(group: dict[str, Any]) -> str | None:
-    """The release group's type as MusicBrainz's XML gave it: a secondary type stands in for an Album only."""
+    """The release group's type as MusicBrainz's XML gave it, in its one `type` attribute."""
     primary = group.get("primary-type")
     secondaries = group.get("secondary-types") or []
-    if primary == "Album" and secondaries:
-        return secondaries[0]
-    return primary
+    if primary == "Album":
+        return next((kind for kind in _ALBUM_FALLBACK_TYPES if kind in secondaries), primary)
+    if primary:
+        return primary
+    return secondaries[0] if secondaries else None
 
 
 class Scraper(MusicBrainzBase, MetadataMixin):
@@ -135,7 +141,8 @@ class Scraper(MusicBrainzBase, MetadataMixin):
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for disc in soup["media"]:
-            for track in disc["tracks"]:
+            # MusicBrainz leaves out the tracks of a disc with data tracks only.
+            for track in disc.get("tracks", []):
                 try:
                     artists = parse_artists(track["recording"]["artist-credit"])
                     credited_remixers = []

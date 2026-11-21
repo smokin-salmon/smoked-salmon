@@ -63,6 +63,17 @@ def test_a_track_takes_its_release_track_title_not_its_recordings() -> None:
     }
 
 
+def test_a_disc_with_only_data_tracks_adds_no_tracks_and_keeps_the_others() -> None:
+    # MusicBrainz's JSON leaves out "tracks" on a medium with no audio track; the XML gave an empty track list.
+    audio = {"position": 1, "tracks": [_track("1", "Wannabe", "Wannabe")]}
+    data_only = {"position": 2, "track-count": 0, "data-tracks": [_track("1", "Video", "Video")]}
+
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"media": [audio, data_only]})
+
+    assert list(tracks) == ["1"]
+    assert list(tracks["1"]) == ["1"]
+
+
 # Tracks of MusicBrainz release https://musicbrainz.org/release/ec3baf33-2d0f-4eea-a3ec-8bcd582bf939
 # (Lady Gaga, The Remix)
 def _remix_track(number: str, recording_title: str, relations: list[tuple[str, str]]) -> dict:
@@ -118,10 +129,18 @@ def test_a_releases_barcode_is_its_upc(release, upc) -> None:
         ("Album", [], "Album"),
         ("Album", ["Live"], "Live"),
         ("Album", ["Compilation", "DJ-mix"], "Compilation"),
-        # The XML's type takes a secondary type only over Album: release 4c1dd3a5-ada8-4e6a-ab6e-b129f6758b9b
+        # Over an Album, MusicBrainz's XML serializer takes the first of Compilation, Remix, Soundtrack, Live,
+        # Spokenword and Interview the group has, in that order, and otherwise keeps Album.
+        ("Album", ["Live", "Compilation"], "Compilation"),
+        ("Album", ["DJ-mix"], "Album"),
+        ("Album", ["Audiobook"], "Album"),
+        ("Album", ["Mixtape/Street", "Remix"], "Remix"),
+        # It takes no secondary type over another primary: release 4c1dd3a5-ada8-4e6a-ab6e-b129f6758b9b
         # (Single + Live) was "Single", d4b8af18-da19-48c3-b5bb-d6254fd1510a (EP + Soundtrack) "EP".
         ("Single", ["Live"], "Single"),
         ("EP", ["Soundtrack"], "EP"),
+        # With no primary type, the first secondary type.
+        (None, ["Live", "Compilation"], "Live"),
         # Release 2f35c487-1f25-4179-a815-0713bb940d40: no type at all, and no type attribute in the XML.
         (None, [], None),
     ],
