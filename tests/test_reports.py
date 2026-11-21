@@ -49,10 +49,13 @@ def test_dry_run_without_audio():
 def test_folder_validation_and_offline_preview(tmp_path):
     args = ("123", "--tracker", "OPS", "--comment", "Evidence", "--source-url", "", "--print-only", "--folder")
     track = tmp_path / "01.flac"
-    assert "existing directory" in run(*args, str(track)).output
-    assert "no audio files" in run(*args, str(tmp_path)).output
+    result = run(*args, str(track))
+    assert "existing directory" in result.output
+    result = run(*args, str(tmp_path))
+    assert "no audio files" in result.output
     track.touch()
-    assert "existing directory" in run(*args, str(track)).output
+    result = run(*args, str(track))
+    assert "existing directory" in result.output
     result = run(*args, str(tmp_path))
     assert result.exit_code == 0, result.output
     assert "1 audio files" in result.output
@@ -123,7 +126,8 @@ def test_ops_does_not_prompt_for_type():
 
 
 def test_conflicting_tracker():
-    assert run("https://redacted.sh/torrents.php?torrentid=1", "--tracker", "OPS").exit_code != 0
+    result = run("https://redacted.sh/torrents.php?torrentid=1", "--tracker", "OPS")
+    assert result.exit_code != 0
 
 
 def test_red_prompts_and_decline_sends_nothing():

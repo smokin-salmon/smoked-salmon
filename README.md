@@ -402,7 +402,7 @@ You can get help directly from the CLI by appending --help to any command. This 
 
 Run `salmon report 12345 --tracker RED` or pass a RED or OPS torrent permalink to report your own FLAC upload. RED selects Lossy WEB or Lossy Master from the torrent’s media. OPS uses one approval category.
 
-Add `--folder PATH` to upload spectral evidence before final confirmation. Use `--dry-run` for an offline preview. The same workflow is available under **Tools → Lossy approval report**.
+Add `--folder PATH` to upload spectral evidence before final confirmation. Use `--dry-run` to preview the report without contacting the tracker. The same workflow is available under **Tools → Lossy approval report**.
 
 ### 🌐 Spectral Viewer for `up`
 When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. If salmon runs on another machine or in Docker, set `display_host` under `[upload.spectrals_viewer]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead: in a terminal that speaks the Kitty graphics protocol (kitty, Ghostty, WezTerm...), salmon shows them in the terminal itself, a track at a time (← and → move between tracks, Enter goes on, q stops early), and this works over SSH too; elsewhere it opens feh (or, without feh, your desktop's default image viewer), Quick Look or the default Windows viewer. Set `terminal_spectrals_viewer = false` to always use those. This viewer is separate from `salmon web` below.

@@ -15,7 +15,8 @@ def test_report_job_prints_without_tracker_requests(capsys):
 
     result = anyio.run(scenario)
     assert "Evidence" in result["text"]
-    assert "Evidence" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Evidence" in out
     assert kinds is not None
 
 
@@ -44,7 +45,8 @@ def test_optional_source_does_not_prompt_again(capsys):
 
     result = anyio.run(scenario)
     assert "Evidence" in result["text"]
-    assert "Source URL (optional)" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Source URL (optional)" not in out
 
 
 def test_folder_job_previews_links_before_declined_submission(tmp_path, monkeypatch, capsys):
@@ -63,7 +65,8 @@ def test_folder_job_previews_links_before_declined_submission(tmp_path, monkeypa
 
     async def confirm(text, **kwargs):
         if text.startswith("Submit"):
-            assert "[img=zoom]" in capsys.readouterr().out
+            out = capsys.readouterr().out
+            assert "[img=zoom]" in out
             return False
         return True
 
