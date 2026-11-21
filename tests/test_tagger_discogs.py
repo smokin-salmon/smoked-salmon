@@ -739,6 +739,13 @@ def test_a_heading_with_no_track_after_it_or_by_a_position_naming_its_disc_start
             [{"name": "CD", "qty": "3"}],
             {"1": ["1", "2"], "2": ["1", "2"], "3": ["3", "4"]},
         ),
+        # Disc 2 started by its numbering under the second of two headings in a row: the run starts no other.
+        (
+            [track("1", "a"), track("2", "b"), heading("CD 2"), heading("Act 1"), track("1", "c"), track("2", "d")]
+            + [heading("CD 3"), track("3", "e"), track("4", "f")],
+            [{"name": "CD", "qty": "3"}],
+            {"1": ["1", "2"], "2": ["1", "2"], "3": ["3", "4"]},
+        ),
         # Video discs count: two DVD-Audio discs, numbered on.
         (
             [track("1", "a"), track("2", "b"), heading("Disc 2"), track("3", "c")],
@@ -751,6 +758,14 @@ def test_headings_start_the_discs_the_positions_leave_short_of_the_stated_count(
     tracklist: list[dict], formats: list[dict], parsed: dict[str, list[str]]
 ) -> None:
     assert discs(tracklist, formats) == parsed
+
+
+def test_as_before_a_heading_before_the_disc_the_positions_start_still_starts_one_by_the_stated_cds() -> None:
+    # Disc 2 numbered on from disc 1, disc 3 from "1" again: "CD 2" starts disc 2.
+    tracklist = [track("1", "a"), track("2", "b"), heading("CD 2"), track("3", "c"), track("4", "d")]
+    tracklist += [heading("CD 3"), track("1", "e"), track("2", "f")]
+
+    assert discs(tracklist, [{"name": "CD", "qty": "3"}]) == {"1": ["1", "2"], "2": ["3", "4"], "3": ["1", "2"]}
 
 
 def test_a_disc_started_at_a_heading_by_the_stated_cds_gives_its_reason() -> None:

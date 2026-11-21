@@ -177,9 +177,10 @@ def _disc_starts_on(soup: dict, dotted: bool) -> dict[int, str]:
     """Where each disc starts on a release, and why: as its positions say (_disc_starts), and, when no position names
     a disc and they start fewer discs than its formats state, at its first other headings between tracks, up to that
     count: "1" to "3", "CD 2", "4" to "6" on two CDs. When its formats name no medium (a file release), at each of
-    them, as on master. Headings in a row count once, at the first ("CD 2", "Act 2"). A heading that starts no disc
-    of its own ("Bonus") is a smaller harm than a missing disc: the merge keeps the files' numbers when a disc's don't
-    run from 1, and renumbers a later disc's files after the one before when they are on one."""
+    them, as on master. Headings in a row count once, at the first ("CD 2", "Act 2"), and not at all when the positions
+    start a disc at one of them already. A heading that starts no disc of its own ("Bonus") is a smaller harm than a
+    missing disc: the merge keeps the files' numbers when a disc's don't run from 1, and renumbers a later disc's files
+    after the one before when they are on one."""
     tracklist = soup["tracklist"]
     starts = _disc_starts(tracklist, dotted)
     tracks = [index for index, entry in enumerate(tracklist) if entry["type_"] == "track"]
@@ -196,7 +197,9 @@ def _disc_starts_on(soup: dict, dotted: bool) -> dict[int, str]:
     else:
         discs = _stated(soup, _CD_FORMATS | _VIDEO_FORMATS)
         why = f"a heading, with {discs} discs stated"
-    more = [index for index in between if index not in starts][: max(discs - 1 - len(starts), 0)]
+    # Not a run of headings the positions already start a disc in ("CD 2", "Act 1", "1"): that would skip a disc.
+    free = [index for index in between if starts.keys().isdisjoint(range(index, min(t for t in tracks if t > index)))]
+    more = free[: max(discs - 1 - len(starts), 0)]
     return {**starts, **dict.fromkeys(more, why)}
 
 
