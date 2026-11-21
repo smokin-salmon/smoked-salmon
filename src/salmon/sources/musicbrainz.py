@@ -162,9 +162,12 @@ class MusicBrainzBase(BaseScraper):
                 raise _Transient(e, RETRY_WAIT) from e
             raise
         try:
-            return msgspec.json.decode(body)
+            data = msgspec.json.decode(body)
         except msgspec.DecodeError as e:
             raise ScrapeError(f"{self.store}: Did not receive JSON from API.") from e
+        if not isinstance(data, dict):
+            raise ScrapeError(f"{self.store}: Did not receive JSON from API.")
+        return data
 
     async def _follow(
         self,

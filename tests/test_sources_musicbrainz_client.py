@@ -72,7 +72,9 @@ def test_requests_carry_salmons_user_agent(server: FakeMusicBrainz) -> None:
 def test_a_503_is_retried_once_after_two_seconds(server: FakeMusicBrainz, sleeps: list[float]) -> None:
     server.status = [503, 503]
 
-    assert _failure() == "MusicBrainz: Request failed (HTTP 503)."
+    message = _failure()
+
+    assert message == "MusicBrainz: Request failed (HTTP 503)."
     assert len(server.requests) == 2
     assert sleeps == [2.0]
 
@@ -80,7 +82,9 @@ def test_a_503_is_retried_once_after_two_seconds(server: FakeMusicBrainz, sleeps
 def test_a_503_then_an_answer_is_the_answer(server: FakeMusicBrainz, sleeps: list[float]) -> None:
     server.status = [503]
 
-    assert _get_release()["id"] == KIND_OF_BLUE
+    release = _get_release()
+
+    assert release["id"] == KIND_OF_BLUE
     assert len(server.requests) == 2
 
 
@@ -97,7 +101,9 @@ def test_a_long_retry_after_is_not_waited_for(server: FakeMusicBrainz, sleeps: l
     server.status = [503]
     server.headers = {"Retry-After": "120"}
 
-    assert _failure() == "MusicBrainz: Request failed (HTTP 503)."
+    message = _failure()
+
+    assert message == "MusicBrainz: Request failed (HTTP 503)."
     assert len(server.requests) == 1
     assert sleeps == []
 
@@ -109,7 +115,9 @@ def test_a_server_that_does_not_answer_times_out(
     server.delay = 3
 
     started = time.monotonic()
-    assert _failure() == "MusicBrainz: Request failed (TimeoutError)."
+    message = _failure()
+
+    assert message == "MusicBrainz: Request failed (TimeoutError)."
 
     assert time.monotonic() - started < 2
     assert len(server.requests) == 2
@@ -126,21 +134,25 @@ def test_a_release_not_on_musicbrainz_is_said_so(server: FakeMusicBrainz) -> Non
 def test_a_500_is_not_retried(server: FakeMusicBrainz, sleeps: list[float]) -> None:
     server.status = [500]
 
-    assert _failure() == "MusicBrainz: Request failed (HTTP 500)."
+    message = _failure()
+
+    assert message == "MusicBrainz: Request failed (HTTP 500)."
     assert len(server.requests) == 1
 
 
 def test_an_answer_that_is_not_json_is_a_scrape_error(server: FakeMusicBrainz) -> None:
     server.body = "<html>Not the release</html>"
 
-    assert _failure() == "MusicBrainz: Did not receive JSON from API."
+    message = _failure()
+
+    assert message == "MusicBrainz: Did not receive JSON from API."
 
 
 def test_a_refused_internal_address_is_not_retried(server: FakeMusicBrainz, sleeps: list[float]) -> None:
     with ssrf.public_only():
-        assert _failure() == (
-            "MusicBrainz: Refused to connect to 127.0.0.1: salmon web only fetches from public addresses."
-        )
+        message = _failure()
+
+    assert message == ("MusicBrainz: Refused to connect to 127.0.0.1: salmon web only fetches from public addresses.")
 
     assert server.requests == []
     assert sleeps == []
@@ -159,7 +171,9 @@ def test_a_tls_failure_is_not_retried(
 
     monkeypatch.setattr(aiohttp.ClientSession, "_request", _refused)
 
-    assert _failure() == f"MusicBrainz: Request failed ({error.__name__})."
+    message = _failure()
+
+    assert message == f"MusicBrainz: Request failed ({error.__name__})."
     assert len(attempts) == 1
     assert sleeps == []
 
@@ -213,9 +227,9 @@ def test_a_redirects_hops_are_a_second_apart(server: FakeMusicBrainz, monkeypatc
 def test_redirects_are_bounded(server: FakeMusicBrainz, sleeps: list[float]) -> None:
     server.redirects = {f"/ws/2/release/{MERGED}": f"/ws/2/release/{MERGED}"}
 
-    assert _failure(lambda: anyio.run(MusicBrainzBase().get_json, f"/release/{MERGED}")) == (
-        "MusicBrainz: Request failed (too many redirects)."
-    )
+    message = _failure(lambda: anyio.run(MusicBrainzBase().get_json, f"/release/{MERGED}"))
+
+    assert message == "MusicBrainz: Request failed (too many redirects)."
     assert len(server.requests) == musicbrainz.MAX_REDIRECTS + 1
     assert sleeps == []
 
@@ -224,7 +238,9 @@ def test_a_dropped_connection_is_sent_twice_in_all(server: FakeMusicBrainz, slee
     # aiohttp would send it again itself, and the retry again: four requests. The retry is the only one.
     server.drops = 10
 
-    assert _failure() == "MusicBrainz: Request failed (ServerDisconnectedError)."
+    message = _failure()
+
+    assert message == "MusicBrainz: Request failed (ServerDisconnectedError)."
     assert len(server.requests) == 2
     assert sleeps == [2.0]
 
@@ -232,7 +248,9 @@ def test_a_dropped_connection_is_sent_twice_in_all(server: FakeMusicBrainz, slee
 def test_a_dropped_connection_then_an_answer_is_the_answer(server: FakeMusicBrainz, sleeps: list[float]) -> None:
     server.drops = 1
 
-    assert _get_release()["id"] == KIND_OF_BLUE
+    release = _get_release()
+
+    assert release["id"] == KIND_OF_BLUE
     assert len(server.requests) == 2
 
 

@@ -61,22 +61,31 @@ def test_front_cover_is_the_approved_front_image(mbid: str, image: str, server: 
 def test_no_front_cover_makes_no_request(server: FakeMusicBrainz) -> None:
     release = _release(RELAXIN)
     assert release["cover-art-archive"]["front"] is False
-    assert _cover(release) is None
+
+    cover = _cover(release)
+
+    assert cover is None
     assert server.requests == []
 
 
 def test_a_release_claiming_a_front_image_gets_none_when_no_listed_image_is_front(server: FakeMusicBrainz) -> None:
     release = _release(RELAXIN)
     release["cover-art-archive"]["front"] = True
-    assert _cover(release) is None
+
+    cover = _cover(release)
+
+    assert cover is None
     assert _asked(server) == [f"/release/{RELAXIN}"]
 
 
 def test_a_404_from_the_cover_art_archive_is_no_cover(server: FakeMusicBrainz, capsys: pytest.CaptureFixture) -> None:
     release = {"id": NO_CAA_ANSWER, "cover-art-archive": {"front": True}}
 
-    assert _cover(release) is None
-    assert capsys.readouterr().out == ""
+    cover = _cover(release)
+    out = capsys.readouterr().out
+
+    assert cover is None
+    assert out == ""
 
 
 def test_a_failed_cover_art_archive_request_is_no_cover_and_says_so(
@@ -85,8 +94,11 @@ def test_a_failed_cover_art_archive_request_is_no_cover_and_says_so(
     # A Cover Art Archive that fails costs the cover, not the release.
     server.status = [503, 503]
 
-    assert _cover(_release(KIND_OF_BLUE)) is None
-    assert "Cover Art Archive request failed: no cover." in capsys.readouterr().out
+    cover = _cover(_release(KIND_OF_BLUE))
+    out = capsys.readouterr().out
+
+    assert cover is None
+    assert "Cover Art Archive request failed: no cover." in out
     assert len(server.requests) == 2
 
 
@@ -96,9 +108,24 @@ def test_a_cover_art_archive_answer_that_is_not_json_is_no_cover_and_says_so(
     # A 200 with a page in place of the image list costs the cover too.
     server.body = "<html>Not the image list</html>"
 
-    assert _cover(_release(KIND_OF_BLUE)) is None
-    assert "Cover Art Archive request failed: no cover." in capsys.readouterr().out
+    cover = _cover(_release(KIND_OF_BLUE))
+    out = capsys.readouterr().out
+
+    assert cover is None
+    assert "Cover Art Archive request failed: no cover." in out
     assert len(server.requests) == 1
+
+
+def test_a_cover_art_archive_answer_that_is_not_an_object_is_no_cover_and_says_so(
+    server: FakeMusicBrainz, capsys: pytest.CaptureFixture
+) -> None:
+    server.body = "[]"
+
+    cover = _cover(_release(KIND_OF_BLUE))
+    out = capsys.readouterr().out
+
+    assert cover is None
+    assert "Cover Art Archive request failed: no cover." in out
 
 
 def test_a_fetched_release_carries_its_front_cover(server: FakeMusicBrainz) -> None:
