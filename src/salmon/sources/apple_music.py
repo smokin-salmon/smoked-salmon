@@ -98,8 +98,9 @@ class AppleMusicBase(BaseScraper):
                 storefront and language to query.
 
         Returns:
-            A dict with keys ``album`` (album attributes dict) and
-            ``tracks`` (list of track attribute dicts).
+            A dict with keys ``album`` (album attributes dict) and ``tracks`` (list of track
+            resource dicts). Each track's ``relationships.artists`` holds its artists one by
+            one, so the tagger needn't split the ``artistName`` display string.
 
         Raises:
             ScrapeError: If URL parsing or API request fails.
@@ -126,7 +127,7 @@ class AppleMusicBase(BaseScraper):
         try:
             data = await self.get_json(
                 f"{AMP_API_URL}/v1/catalog/{sf}/albums/{album_id}",
-                params={"include": "tracks", "l": lang},
+                params={"include": "tracks,artists", "include[songs]": "artists", "l": lang},
                 headers=request_headers,
             )
 
@@ -139,7 +140,7 @@ class AppleMusicBase(BaseScraper):
             while tracks_next:
                 page_data = await self.get_json(
                     f"{AMP_API_URL}/v1/catalog/{sf}/albums/{album_id}/tracks",
-                    params={"offset": offset, "l": lang},
+                    params={"offset": offset, "l": lang, "include": "artists"},
                     headers=request_headers,
                 )
                 tracks_data.extend(page_data.get("data", []))

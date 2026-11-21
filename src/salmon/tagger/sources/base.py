@@ -370,7 +370,7 @@ def generate_artists(tracks):
             name = artist_pool[normalize_accents(name.lower())]
             if (name, import_) not in artists:
                 artists.append((name, import_))
-    artists, tracks = filter_artists(artists, tracks)
+    artists, _ = filter_artists(artists, tracks)
     return artists, tracks
 
 
@@ -388,14 +388,17 @@ def filter_artists(artists, tracks=None):
         artist_pool = artist_spellings(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
-                repaired = fix_artists_list(
-                    list(
-                        dict.fromkeys(
-                            (artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"]
-                        )
-                    ),
-                    to_replace,
+                credits = list(
+                    dict.fromkeys((artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"])
                 )
+                if track.get("explicit_main_artists", False):
+                    # The store states these main credits artist by artist, so joined-name matching must not
+                    # merge them. Guests read from a title are still one string that may be badly split.
+                    mains = [credit for credit in credits if credit[1] == "main"]
+                    guests = [credit for credit in credits if credit[1] != "main"]
+                    repaired = mains + fix_artists_list(guests, to_replace)
+                else:
+                    repaired = fix_artists_list(credits, to_replace)
                 # Then deduplicate, so a name joined back counts too. Main and guest, the ARTIST credit, are one credit
                 # per name; another role (remixer, arranger, ...) is kept beside it.
                 deduplicated_artists = []
