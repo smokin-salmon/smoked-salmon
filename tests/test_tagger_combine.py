@@ -1,5 +1,6 @@
 import asyncio
 import json
+import random
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -179,11 +180,69 @@ def test_fragment_check_keeps_names_that_only_share_letters():
 
 
 def test_fragment_check_drops_a_name_that_is_whole_words_of_another():
-    artists = [("Ultra", "main"), ("Ultra Nate", "main"), ("Nate", "guest")]
+    artists = [("Ultra", "main"), ("Ultra Nate", "main"), ("Nate", "main")]
 
     kept = check_for_artist_fragments(artists)
 
     assert kept == [("Ultra Nate", "main")]
+
+
+@pytest.mark.parametrize("role", ["guest", "conductor", "remixer", "composer"])
+def test_fragment_check_keeps_a_name_held_by_a_name_in_another_role(role):
+    artists = [("Alice", "main"), ("Bob", "main"), ("Alice & Bob", role)]
+
+    kept = check_for_artist_fragments(list(artists))
+
+    assert kept == artists
+
+
+@pytest.mark.parametrize(
+    ("artists", "guesses", "kept"),
+    [
+        # A guess never removes a stated credit.
+        (
+            [("Alice", "main"), ("Alice & Bob", "main")],
+            {("Alice & Bob", "main")},
+            [("Alice", "main"), ("Alice & Bob", "main")],
+        ),
+        # As before: a stated credit removes a guess, and a guess another guess.
+        ([("Alice", "main"), ("Alice & Bob", "main")], {("Alice", "main")}, [("Alice & Bob", "main")]),
+        (
+            [("Alice", "main"), ("Alice & Bob", "main")],
+            {("Alice", "main"), ("Alice & Bob", "main")},
+            [("Alice & Bob", "main")],
+        ),
+    ],
+)
+def test_fragment_check_weighs_guesses(artists, guesses, kept):
+    assert check_for_artist_fragments(list(artists), guesses=guesses) == kept
+
+
+_FRAGMENT_NAMES = ["Alice", "Bob", "Alice & Bob", "Alice Bob Carol", "Bob Carol", "Carol", "The Bob"]
+_FRAGMENT_ROLES = ["main", "guest", "conductor", "remixer"]
+
+
+def test_fragment_check_drops_a_credit_only_for_a_name_in_its_role_that_no_guess_gives_over_a_stated_one():
+    """Over generated credits: each credit the check drops has, in its own role, a name it is whole words of, and
+    a stated credit only a stated one."""
+    rng = random.Random(1112)
+    for _ in range(2000):
+        pool = [(name, role) for name in _FRAGMENT_NAMES for role in _FRAGMENT_ROLES]
+        artists = rng.sample(pool, rng.randint(2, 6))
+        guesses = {credit for credit in artists if rng.random() < 0.4}
+
+        kept = check_for_artist_fragments(list(artists), guesses=guesses)
+
+        for name, role in set(artists) - set(kept):
+            words = name.replace("&", "").split()
+            holders = [
+                (other, other_role)
+                for other, other_role in artists
+                if other_role == role and other != name and " ".join(words) in " ".join(other.replace("&", "").split())
+            ]
+            if (name, role) not in guesses:
+                holders = [holder for holder in holders if holder not in guesses]
+            assert holders, (artists, guesses, kept, (name, role))
 
 
 def test_fragment_check_matches_words_ignoring_case_and_punctuation():
@@ -415,6 +474,54 @@ def test_combine_metadatas_from_discogs_alone_leaves_the_anv_out_too():
     combined = combine_metadatas(("Discogs", discogs))
 
     assert "artist_variations" not in combined["tracks"]["1"]["1"]
+
+
+def credited(artists: list[tuple[str, str]], title: str = "Good Funky BD") -> dict:
+    meta = make_metadata("Album")
+    meta["tracks"]["1"]["1"]["artists"] = artists
+    meta["tracks"]["1"]["1"]["title"] = title
+    return meta
+
+
+def test_a_guest_named_inside_a_main_s_joint_name_stays_a_guest():
+    # #1107: Deezer's parse of the contributor "Alice & Bob" and the title's "feat. Bob & Carol".
+    title = "Song (feat. Bob & Carol)"
+    deezer = credited([("Bob", "guest"), ("Carol", "guest"), ("Alice & Bob", "main")], title)
+
+    combined = combine_metadatas(("Deezer", deezer), base=credited([], title))
+
+    assert ("Bob", "guest") in combined["tracks"]["1"]["1"]["artists"]
+
+
+def test_a_joint_name_in_another_role_leaves_the_mains_it_names():
+    files = credited([("Alice", "main"), ("Bob", "main")])
+    qobuz = stating(credited([("Alice", "main"), ("Bob", "main"), ("Alice & Bob", "conductor")]))
+
+    combined = combine_metadatas(("Qobuz", qobuz), base=files)
+
+    # The mains survive the fragment check; the split-name repair (#1109) then joins them under the name the release
+    # gives them. Compared across roles, the conductor removed both and left the track with no main.
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Alice & Bob", "main"), ("Alice & Bob", "conductor")]
+
+
+def test_a_store_s_guess_leaves_a_stated_credit_it_names():
+    # Lady Gaga's The Remix: Deezer's remixer comes with the remix's name, Qobuz states the remixer alone.
+    files = credited([("Alice", "main")])
+    qobuz = stating(credited([("Alice", "main"), ("Bob", "remixer")]))
+    deezer = credited([("Alice", "main"), ('Bob "Club Edit"', "remixer")])
+
+    combined = combine_metadatas(("Qobuz", qobuz), ("Deezer", deezer), base=files)
+
+    assert ("Bob", "remixer") in combined["tracks"]["1"]["1"]["artists"]
+
+
+def test_as_before_the_files_credit_removes_a_store_s_guess_it_names():
+    files = credited([("Ultra Nate", "main")])
+    deezer = credited([("Nate", "main")])
+
+    combined = combine_metadatas(("Deezer", deezer), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ultra Nate", "main")]
 
 
 def guessing_bob() -> dict:
