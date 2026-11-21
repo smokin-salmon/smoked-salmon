@@ -140,11 +140,11 @@ class Scraper(AppleMusicBase, MetadataMixin):
 
         Each entry in ``soup["tracks"]`` is a catalog song object with an
         ``attributes`` dict containing name, artistName, trackNumber,
-        discNumber, isrc, etc. When the response includes the songs' artists,
-        ``relationships.artists.data`` holds them one by one, in Apple's order,
-        each with its own ``attributes.name``. The ``artistName`` display string
-        is only a fallback: splitting it would break names like "Simon &
-        Garfunkel" that hold a separator.
+        discNumber, isrc, etc. When the relationship holds the songs' artists
+        one by one, in Apple's order, they become separate main credits, except
+        for any the title credits as a guest. The ``artistName`` display string
+        is used only if the relationship is missing or incomplete: splitting it
+        would break names like "Simon & Garfunkel" that hold a separator.
         """
         tracks: dict[str, dict] = defaultdict(dict)
 
@@ -168,26 +168,38 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 raw_title = attrs.get("name", "").strip()
                 title = RE_FEAT.sub("", raw_title)
 
+                # A title's feat. clause lists guests in free text, even when Apple also lists them in the
+                # relationship.
+                feat_match = RE_FEAT.search(raw_title)
+                guests = _parse_guest_artists(feat_match.group(1)) if feat_match else []
+                guest_keys = {guest.casefold() for guest in guests}
+
                 artists: list[tuple[str, str]] = []
                 artist_rels = (item.get("relationships") or {}).get("artists") or {}
+                rel_names: list[str] = []
                 for rel in artist_rels.get("data") or []:
                     name = (rel.get("attributes") or {}).get("name", "")
-                    if rel.get("type") == "artists" and name and (name, "main") not in artists:
-                        artists.append((name, "main"))
+                    if rel.get("type") == "artists" and name and name not in rel_names:
+                        rel_names.append(name)
 
-                explicit_main_artists = bool(artists)
-                if not artists:
-                    # Older/cached responses without the included artists: keep the display string whole.
-                    artist_name = (attrs.get("artistName") or "").strip()
-                    if artist_name:
-                        artists.append((artist_name, "main"))
+                artist_name = (attrs.get("artistName") or "").strip()
+                explicit_main_artists = False
+                # Apple leaves artists without an artist page out of the relationship. Use it only when its
+                # names account for the whole display string; otherwise the string is all we have.
+                if artist_name and _covers_artist_name(rel_names, artist_name):
+                    for name in rel_names:
+                        if name.casefold() not in guest_keys and (name, "main") not in artists:
+                            artists.append((name, "main"))
+                    explicit_main_artists = bool(artists)
 
-                # Extract featured artists embedded in track title
-                feat_match = RE_FEAT.search(raw_title)
-                if feat_match:
-                    for guest in _parse_guest_artists(feat_match.group(1)):
-                        if (guest, "guest") not in artists:
-                            artists.append((guest, "guest"))
+                # Older/cached responses without the artists, or an incomplete relationship: keep the
+                # display string whole, so a name with no Apple artist page isn't lost or mis-split.
+                if not artists and artist_name:
+                    artists.append((artist_name, "main"))
+
+                for guest in guests:
+                    if (guest, "guest") not in artists:
+                        artists.append((guest, "guest"))
 
                 new_track = self.generate_track(
                     trackno=track_num,
@@ -199,7 +211,9 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 )
                 if explicit_main_artists:
                     # These main credits are stated per artist by the store, not inferred from a joined string:
-                    # the split-repair must not join them back by name. Title guests remain repairable.
+                    # the split-repair must not join them back by name. Title guests remain repairable. The flag
+                    # is per track, so other stores' main credits merged into it skip the repair too; see
+                    # TrackMetadata.explicit_main_artists until Apple's credits become stated claims (ADR 0007).
                     new_track["explicit_main_artists"] = True
                 add_track(tracks, str(disc_num), track_num, new_track)
 
@@ -210,6 +224,19 @@ class Scraper(AppleMusicBase, MetadataMixin):
 
         except (TypeError, KeyError, ValueError) as e:
             raise ScrapeError("Could not parse tracks from Apple Music API") from e
+
+
+def _covers_artist_name(names: list[str], artist_name: str) -> bool:
+    """Whether named artists account for the whole display string, with nothing left but separators.
+
+    Apple's relationship leaves out artists without an artist page. If it only accounts for part of
+    ``artistName``, the missing name must come from the display string, kept whole.
+    """
+    remainder = artist_name
+    for name in sorted(names, key=len, reverse=True):
+        remainder = re.sub(re.escape(name), "", remainder, count=1, flags=re.IGNORECASE)
+    joiners = r"[\s&;,/\\]|\b(?:and|feat|ft|featuring|with)\b\.?"
+    return not re.sub(joiners, "", remainder, flags=re.IGNORECASE)
 
 
 def _parse_guest_artists(artist_string: str) -> list[str]:

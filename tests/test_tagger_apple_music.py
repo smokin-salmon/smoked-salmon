@@ -1,5 +1,3 @@
-import asyncio
-
 import anyio
 import pytest
 
@@ -26,7 +24,7 @@ def soup(artist_names: list[str], title: str = "A Track", include_artists: bool 
 
 
 def test_included_artists_become_distinct_credits_in_apples_order() -> None:
-    tracks = asyncio.run(Scraper().parse_tracks(soup(["Archie Hamilton", "US Two"])))
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Archie Hamilton", "US Two"]))
 
     assert tracks["1"][1]["artists"] == [("Archie Hamilton", "main"), ("US Two", "main")]
 
@@ -36,7 +34,7 @@ def test_three_artists_from_a_real_amp_api_response() -> None:
     s = soup(["Sahil Singh", "RYDM", "KAUSHIK"], title="Mrignaini")
     s["tracks"][0]["attributes"]["artistName"] = "Sahil Singh, RYDM & KAUSHIK"
 
-    tracks = asyncio.run(Scraper().parse_tracks(s))
+    tracks = anyio.run(Scraper().parse_tracks, s)
 
     assert tracks["1"][1]["artists"] == [("Sahil Singh", "main"), ("RYDM", "main"), ("KAUSHIK", "main")]
 
@@ -46,20 +44,20 @@ def test_three_artists_from_a_real_amp_api_response() -> None:
     ["Simon & Garfunkel", "Earth, Wind & Fire", "Tyler, The Creator", "Kool & The Gang", "AC/DC"],
 )
 def test_an_artist_whose_name_holds_a_separator_stays_whole(name: str) -> None:
-    tracks = asyncio.run(Scraper().parse_tracks(soup([name])))
+    tracks = anyio.run(Scraper().parse_tracks, soup([name]))
 
     assert tracks["1"][1]["artists"] == [(name, "main")]
 
 
 def test_a_display_string_without_included_artists_is_kept_whole() -> None:
-    tracks = asyncio.run(Scraper().parse_tracks(soup(["Archie Hamilton", "US Two"], include_artists=False)))
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Archie Hamilton", "US Two"], include_artists=False))
 
     assert tracks["1"][1]["artists"] == [("Archie Hamilton & US Two", "main")]
 
 
 def test_distinct_credits_reach_the_release_artist_list() -> None:
     # scrape_release derives the release's artists from its tracks; distinct credits must survive that step.
-    tracks = asyncio.run(Scraper().parse_tracks(soup(["Archie Hamilton", "US Two"])))
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Archie Hamilton", "US Two"]))
     artists, _tracks = generate_artists(tracks)
 
     assert artists == [("Archie Hamilton", "main"), ("US Two", "main")]
@@ -71,7 +69,7 @@ def test_a_whole_name_on_another_track_does_not_join_two_explicit_artists() -> N
     first = soup(["A", "B"], title="First")
     second = soup(["AB"], title="Second")
     second["tracks"][0]["attributes"]["trackNumber"] = 2
-    tracks = asyncio.run(Scraper().parse_tracks({"tracks": first["tracks"] + second["tracks"]}))
+    tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
 
     artists, tracks = generate_artists(tracks)
 
@@ -85,7 +83,7 @@ def test_exemption_survives_repeated_generate_artists_passes() -> None:
     first = soup(["A", "B"], title="First")
     second = soup(["AB"], title="Second")
     second["tracks"][0]["attributes"]["trackNumber"] = 2
-    tracks = asyncio.run(Scraper().parse_tracks({"tracks": first["tracks"] + second["tracks"]}))
+    tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
 
     artists, tracks = generate_artists(tracks)
     for _ in range(2):
@@ -102,15 +100,37 @@ def test_title_guests_are_repaired_even_when_mains_are_explicit() -> None:
     second = soup(["Simon & Garfunkel"], title="Other")
     second["tracks"][0]["attributes"]["trackNumber"] = 2
 
-    tracks = asyncio.run(Scraper().parse_tracks({"tracks": first["tracks"] + second["tracks"]}))
+    tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
     _artists, tracks = generate_artists(tracks)
 
     assert tracks["1"][1]["artists"] == [("X", "main"), ("Simon & Garfunkel", "guest")]
     assert tracks["1"][2]["artists"] == [("Simon & Garfunkel", "main")]
 
 
+def test_a_featured_artist_in_the_relationship_is_a_guest_not_a_main() -> None:
+    # Apple can list a song's featured artist alongside its main artists. The title says who is a guest.
+    s = soup(["A", "X"], title="Song (feat. X)")
+    s["tracks"][0]["attributes"]["artistName"] = "A feat. X"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("A", "main"), ("X", "guest")]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
+def test_an_incomplete_relationship_falls_back_to_the_whole_display_string() -> None:
+    # C has no Apple artist page, so Apple leaves it out of the relationship. Keep it in the whole string.
+    s = soup(["A", "B"], title="Song")
+    s["tracks"][0]["attributes"]["artistName"] = "A, B & C"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("A, B & C", "main")]
+    assert "explicit_main_artists" not in tracks["1"][1]
+
+
 def test_featured_guests_from_the_title_are_still_split() -> None:
-    tracks = asyncio.run(Scraper().parse_tracks(soup(["Main Artist"], title="Song (feat. One & Two)")))
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Main Artist"], title="Song (feat. One & Two)"))
 
     assert tracks["1"][1]["artists"] == [("Main Artist", "main"), ("One", "guest"), ("Two", "guest")]
 

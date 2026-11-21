@@ -62,6 +62,10 @@ TrackMetadata = TypedDict(
         # Merge-only: the store whose title the merge took for the base's placeholder ("Track 01"), None when
         # combine_tracks is given no sources.
         "placeholder_from": NotRequired[str | None],
+        # Apple Music only: its main credits were read artist by artist, so the bad-split repair must not join
+        # them. The flag is per track, so main credits another store merges into that track skip the repair
+        # too. Until Apple's credits become stated claims (ADR 0007), this carries that distinction.
+        "explicit_main_artists": NotRequired[bool],
         # The files' only.
         "numbered": NotRequired[bool],
     },

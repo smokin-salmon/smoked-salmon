@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from itertools import chain
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 from salmon import cfg
@@ -447,8 +447,8 @@ def generate_artists(tracks):
             name = artist_pool[normalize_accents(name.lower())]
             if (name, import_) not in artists:
                 artists.append((name, import_))
-    artists, _ = filter_artists(artists, tracks)
-    return artists, tracks
+    artists, tracks = filter_artists(artists, tracks)
+    return artists, cast("dict", tracks)
 
 
 def filter_artists(artists, tracks=None):
@@ -470,7 +470,8 @@ def filter_artists(artists, tracks=None):
                 )
                 if track.get("explicit_main_artists", False):
                     # The store states these main credits artist by artist, so joined-name matching must not
-                    # merge them. Guests read from a title are still one string that may be badly split.
+                    # merge them. Guests read from a title are still one string that may be badly split. The
+                    # flag is per track: another store's main credits merged into it skip the repair too.
                     mains = [credit for credit in credits if credit[1] == "main"]
                     guests = [credit for credit in credits if credit[1] != "main"]
                     repaired = mains + fix_artists_list(guests, to_replace)
