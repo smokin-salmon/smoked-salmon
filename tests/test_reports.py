@@ -126,8 +126,18 @@ def test_ops_does_not_prompt_for_type():
 
 
 def test_conflicting_tracker():
-    result = run("https://redacted.sh/torrents.php?torrentid=1", "--tracker", "OPS")
+    result = run(
+        "https://redacted.sh/torrents.php?torrentid=1",
+        "--tracker",
+        "OPS",
+        "--comment",
+        "Evidence",
+        "--source-url",
+        "https://example.org",
+        "--dry-run",
+    )
     assert result.exit_code != 0
+    assert "The permalink and --tracker name different trackers." in result.output
 
 
 def test_red_prompts_and_decline_sends_nothing():
