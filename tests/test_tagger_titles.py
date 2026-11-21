@@ -437,6 +437,10 @@ def featured(clause: str, guests: list[str]) -> list[str]:
         ("Alice & X", ["Alice"]),  # X, credited nowhere, is a name, not a joining word
         ("X & Alice", ["Alice"]),
         ("Alice, Bob & Carol", ["Alice", "Bob"]),
+        ("Alice & X & Bob", ["Alice", "Bob"]),  # an "x" beside an ampersand is a name too
+        ("Alice, X & Bob", ["Alice", "Bob"]),
+        ("X Alice", ["Alice"]),  # a joining word at an end joins nothing
+        ("Alice & X Bob", ["Alice", "Bob"]),  # nor one after a separator: "X Bob" may be a name
     ],
 )
 def test_as_before_a_featuring_clause_naming_someone_uncredited_stays(clause: str, guests: list[str]) -> None:
@@ -448,6 +452,19 @@ def test_as_before_a_featuring_clause_naming_someone_uncredited_stays(clause: st
 def test_a_featuring_clause_joining_credited_artists_with_x_goes() -> None:
     """Between two credited names, "x" joins them."""
     titles = featured("Alice x Bob", ["Alice", "Bob"])
+
+    assert titles == ["Song"]
+
+
+@pytest.mark.parametrize("clause", ["M.I.A. and Bob", "Wham! x Bob", "Zoe\u0308 and Bob"])
+def test_a_featuring_clause_joining_credited_artists_whose_names_end_in_a_mark_goes(clause: str) -> None:
+    titles = featured(clause, [clause.split(" ")[0], "Bob"])
+
+    assert titles == ["Song"]
+
+
+def test_a_featuring_clause_joining_credited_artists_with_a_comma_and_and_goes() -> None:
+    titles = featured("Alice, Bob, and Carol", ["Alice", "Bob", "Carol"])
 
     assert titles == ["Song"]
 
@@ -467,6 +484,13 @@ def test_as_before_accents_in_the_files_version_are_restored_too(store: str) -> 
 
 def test_accents_in_a_version_a_store_gives_apart_are_restored() -> None:
     titles = written(("Qobuz", release(("Song", "Tiësto Remix"))), files=release("Song (Tiesto Remix)"))
+
+    assert titles == ["Song (Tiësto Remix)"]
+
+
+def test_accents_in_a_version_a_store_gives_apart_in_brackets_are_restored() -> None:
+    """Qobuz sends some versions in their brackets ("(Rehearsal)")."""
+    titles = written(("Qobuz", release(("Song", "(Tiësto Remix)"))), files=release("Song (Tiesto Remix)"))
 
     assert titles == ["Song (Tiësto Remix)"]
 
@@ -658,6 +682,13 @@ def test_with_no_files_a_store_s_version_takes_the_next_store_s_accents() -> Non
     assert titles == ["Homework (Tiësto Remix)"]
 
 
+def test_with_no_files_a_decomposed_title_s_version_takes_the_next_store_s_accents() -> None:
+    """The first store's "Café" in decomposed form: the version's accents come back as well as the title's."""
+    titles = written(("Deezer", release(("Cafe\u0301", "Tiesto Remix"))), ("Qobuz", release(("Café", "Tiësto Remix"))))
+
+    assert titles == ["Café (Tiësto Remix)"]
+
+
 def test_the_retagger_matches_a_file_to_its_title_written_without_a_credited_featuring_clause() -> None:
     """Unnumbered files with no ISRC: "Alive (feat. Bob)" is the track the merge wrote as "Alive"."""
     items = [("01.flac", {"title": "Alive (feat. Bob)"}), ("02.flac", {"title": "Song 2 (feat. Zed)"})]
@@ -668,6 +699,48 @@ def test_the_retagger_matches_a_file_to_its_title_written_without_a_credited_fea
     ordered, _reasons = order_tracks_for_files(items, tracks, show=False)
 
     assert [track["title"] for track in ordered] == ["Alive", "Song 2"]
+
+
+def test_the_retagger_tells_apart_two_files_the_merge_wrote_as_one_title_by_whom_each_features(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unnumbered files of one length with no ISRC, both written "Song": each file is the track crediting its guest."""
+    setting(monkeypatch, strip=True)
+    items = [("01.flac", {"title": "Song (feat. Bob)"}), ("02.flac", {"title": "Song (feat. Alice)"})]
+    tracks = [
+        {"title": "Song", "artists": [("Main", "main"), (guest, "guest")], "isrc": None, "duration": 200, "track#": n}
+        for n, guest in (("1", "Alice"), ("2", "Bob"))
+    ]
+
+    ordered, _reasons = order_tracks_for_files(items, tracks, show=False)
+
+    assert [track["artists"][1][0] for track in ordered] == ["Bob", "Alice"]
+
+
+@pytest.mark.parametrize(
+    ("numbered", "files"),
+    [(False, ["Song [feat. Bob]", "Song (feat. Bob)"]), (True, ["Song (feat. Bob)", "Song (feat. Bob & Zed)"])],
+)
+def test_the_retagger_gives_a_file_to_the_track_titled_as_it_before_one_its_title_is_written_as(
+    monkeypatch: pytest.MonkeyPatch, numbered: bool, files: list[str]
+) -> None:
+    """The first file is the track whose store credits no guest, so its title keeps the clause; the second is the
+    track crediting Bob (and Zed), written "Song". Bob is credited on that track, but the first file is the other's."""
+    setting(monkeypatch, strip=True)
+    items = [("01.flac", {"title": files[0]}), ("02.flac", {"title": files[1]})]
+    tracks = [
+        {
+            "title": "Song",
+            "artists": [("Main", "main"), ("Bob", "guest"), ("Zed", "guest")],
+            "isrc": None,
+            "track#": "1",
+        },
+        {"title": files[0], "artists": [("Main", "main")], "isrc": None, "track#": "2"},
+    ]
+
+    ordered, _reasons = order_tracks_for_files(items, tracks, numbered=numbered, show=False)
+
+    assert [track["track#"] for track in ordered] == ["2", "1"]
 
 
 # Each title's reason: which text it is, then what changed it.
@@ -804,7 +877,7 @@ def test_a_store_s_version_is_in_its_written_title_unless_the_setting_drops_it(
         title, version = rng.choice(_ACCENTED), rng.choice([*_VERSIONS, "feat. Bob"])
         credited = rng.choice([set(), {"bob"}])
         # The setting's words among _VERSIONS, and a credited guest's version.
-        dropped = strip and (version in {"Remastered", "Original Mix"} or (version == "feat. Bob" and credited))
+        dropped = strip and (version in {"Remastered", "Original Mix"} or (version == "feat. Bob" and bool(credited)))
 
         written, _why = _written_title(titled(title, version), False, credited)
 

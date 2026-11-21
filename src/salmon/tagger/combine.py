@@ -1,5 +1,6 @@
 import contextlib
 import re
+import unicodedata
 from collections import defaultdict
 from itertools import chain
 
@@ -519,10 +520,19 @@ def _decide_titles(tracks, base_source):
     """Write each track's one title, from its own and each store's beside it (`store_titles`), in place."""
     for disc in tracks.values():
         for track in disc.values():
-            # Who a featuring clause may name as already credited: the track's performers, not its producer or
-            # composer, whose credit says nothing of a guest.
-            credited = {comparable(name) for name, role in track["artists"] if role in {"main", "guest"}}
-            track["title"], _why = _written_title(track, base_source == "files", credited)
+            track["title"], _why = _written_title(track, base_source == "files", _credited(track))
+
+
+def _credited(track):
+    """Who a featuring clause may name as already credited, by comparable: the track's performers, not its producer
+    or composer, whose credit says nothing of a guest."""
+    return {comparable(name) for name, role in track.get("artists") or () if role in {"main", "guest"}}
+
+
+def written_files_title(title, track):
+    """A files title as the merge writes it for `track` (`_files_title`): "Song (feat. B)" is "Song" where the track
+    credits B. The retagger knows each file by it."""
+    return _files_title(title, _credited(track))
 
 
 def _written_title(track, files, credited):
@@ -561,9 +571,10 @@ def _accented(title, version, stores):
     if version:
         folded = f"{title} ({version})"
         accented = _with_store_accents(folded, stores)
-        # Restoring keeps each letter's place, so the folded title splits back where it was joined.
-        if len(accented) == len(folded):
-            return accented[: len(title)], accented[len(title) + 2 : -1]
+        # Restoring keeps each letter's place in the composed text it gives, so it splits back where it was joined.
+        composed = unicodedata.normalize("NFC", title)
+        if len(accented) == len(unicodedata.normalize("NFC", folded)):
+            return accented[: len(composed)], accented[len(composed) + 2 : -1]
     return _with_store_accents(title, stores), version
 
 
@@ -590,18 +601,35 @@ def _store_title(title, version, credited):
     )
 
 
+# What separates two names in a featuring clause, besides a comma.
+_SEPARATORS = r"[&+/;|＆、]"
+
+
 def _names_only(names, credited):
     """Whether `names` ("A & B", a featuring clause's) are only artists in `credited` (by comparable), however they're
-    joined: "Tyler, The Creator" is one. A joining word ("and", "with", "x") joins only between two credited names, so
-    the "X" of "Alice & X" is a name."""
-    words = [word for word in map(comparable, re.split(r"\W+", names)) if word]
+    joined: "Tyler, The Creator" is one. A joining word ("and", "with", "x") joins only between two credited names,
+    with no separator beside it but a comma before it ("A, B, and C"), so the "X" of "Alice & X" and of
+    "Alice & X & Bob" is a name. A name's own marks beside it are no separator ("M.I.A. and Bob", "Wham! x Bob")."""
+    parts = re.split(r"(\W+)", names)  # words, with what separates them between
+    found = [
+        (word, parts[at - 1] if at else "", parts[at + 1] if at + 1 < len(parts) else "")
+        for at in range(0, len(parts), 2)
+        if (word := comparable(parts[at]))
+    ]
+    words = [word for word, _, _ in found]
     pieces, start = [], 0
     while start < len(words):
         # The longest run of words from here that is a credited name, "" for it ("Tyler, The Creator" is three).
         end = next((end for end in range(len(words), start, -1) if "".join(words[start:end]) in credited), None)
-        pieces.append("" if end else words[start])
+        word, before, after = found[start]
+        joins = (
+            word in {"and", "with", "x"}
+            and not re.search(_SEPARATORS, before)
+            and not re.search(f",|{_SEPARATORS}", after)
+        )
+        pieces.append("" if end else "+" if joins else word)
         start = end or start + 1
-    return bool(pieces) and pieces[0] == pieces[-1] == "" and set(pieces) <= {"", "and", "with", "x"}
+    return bool(pieces) and pieces[0] == pieces[-1] == "" and set(pieces) <= {"", "+"}
 
 
 def _bare_head(title):
@@ -616,8 +644,9 @@ def _with_store_accents(title, stores):
     for store_title, store_version in stores:
         if not store_title:
             continue
-        folded = f"{store_title} ({store_version})" if store_version else store_title
-        for theirs in dict.fromkeys((folded, store_title)):
+        # A version as given or out of the brackets it may come in ("(Rehearsal)"), as the title holds it.
+        folded = [f"{store_title} ({given})" for given in (unbracketed(store_version), store_version) if given]
+        for theirs in dict.fromkeys((*folded, store_title)):
             if (accented := restore_accents(title, theirs)) != title:
                 return accented
         head = _bare_head(title)
