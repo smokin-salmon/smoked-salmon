@@ -15,7 +15,14 @@ from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
-from salmon.tagger.sources.base import artist_spellings, determine_label_type, generate_artists, standardize_genres
+from salmon.tagger.sources.base import (
+    artist_spellings,
+    construct_replacement_list,
+    determine_label_type,
+    fix_artists_list,
+    generate_artists,
+    standardize_genres,
+)
 
 PREFERENCES = [
     "Tidal",
@@ -503,23 +510,55 @@ def _decide_credits(tracks, claims, base_source):
 
     Each name first takes the spelling generate_artists gives it, so deciding never changes a spelling. A claim whose
     credit the merge dropped (a fragment of another name) is left out. Every kept credit has a claim: the merge claims
-    each credit it adds to a track, under the name it adds it as.
+    each credit it adds to a track, under the name it adds it as. The track's badly split names are then joined back
+    over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109).
     """
     spellings = artist_spellings(tracks)
+    to_replace = construct_replacement_list(
+        [(spellings[normalize_accents(name.lower())], role) for name, role in _release_credits(tracks)]
+    )
     by_track = {}
     for disc, disc_tracks in tracks.items():
         for num, track in disc_tracks.items():
             kept = {tuple(credit) for credit in track["artists"]}
             own = claims.get(id(track)) or _claims_of(track, base_source)
-            by_track[disc, num] = [
-                msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
-                for claim in own
-                if (claim.name, claim.role) in kept
-            ]
+            by_track[disc, num] = _join_split_names(
+                [
+                    msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
+                    for claim in own
+                    if (claim.name, claim.role) in kept
+                ],
+                to_replace,
+            )
     decided = resolve_credits(by_track)
     for (disc, num), credits in decided.items():
         tracks[disc][num]["artists"] = [credit for credit, _ in credits]
     return [decision for credits in decided.values() for decision in credits]
+
+
+def _release_credits(tracks):
+    """Every credit on the release's tracks, in order."""
+    return [credit for disc in tracks.values() for track in disc.values() for credit in track["artists"]]
+
+
+def _join_split_names(claims, to_replace):
+    """A track's claims with its badly split names joined back, as generate_artists' repair joins a track's credits
+    (fix_artists_list, with `to_replace` from the release's names), over the claims of every source: in a role where
+    every part of a name is claimed, each claim of a part becomes a claim of the whole name, keeping its source and
+    whether it is assumed. Run before the decision, so that a part also claimed in another role does not lose a role
+    the whole name keeps (#1109)."""
+    repaired = fix_artists_list(list(dict.fromkeys((claim.name, claim.role) for claim in claims)), to_replace)
+    return [
+        claim
+        if (claim.name, claim.role) in repaired
+        else msgspec.structs.replace(claim, name=_whole_of(claim.name, claim.role, repaired, to_replace))
+        for claim in claims
+    ]
+
+
+def _whole_of(part, role, repaired, to_replace):
+    """The name fix_artists_list joined `part` into in `role`."""
+    return next((whole for parts, whole in to_replace if part in parts and (whole, role) in repaired), part)
 
 
 def decide_alone(metadata, source):
