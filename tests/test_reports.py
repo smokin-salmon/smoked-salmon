@@ -1,4 +1,5 @@
 from functools import partial
+from pathlib import Path
 from unittest.mock import AsyncMock
 
 import anyio
@@ -61,12 +62,15 @@ def test_folder_validation_and_offline_preview(tmp_path):
 @pytest.mark.parametrize("tracker", ["RED", "OPS"])
 @pytest.mark.parametrize("failure,proceed", [(None, True), ("generate", False), ("upload", False), ("upload", True)])
 def test_report_folder_evidence(monkeypatch, tmp_path, tracker, failure, proceed):
-    from salmon import reports
+    from salmon import cfg, reports
 
     (tmp_path / "01.flac").touch()
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", str(scratch))
     client = AsyncMock()
     monkeypatch.setattr(reports.trackers, "get_class", lambda _: lambda: client)
-    monkeypatch.setattr(reports, "related_report_target", AsyncMock(return_value="WEB"))
+    monkeypatch.setattr(reports, "verified_report_media", AsyncMock(return_value="WEB"))
     monkeypatch.setattr(reports, "gather_audio_info", lambda _: {})
     generate = AsyncMock(return_value={1: "01.flac"})
     upload = AsyncMock(return_value={1: ["https://example.org/full", "https://example.org/zoom"]})
@@ -90,6 +94,13 @@ def test_report_folder_evidence(monkeypatch, tmp_path, tracker, failure, proceed
     assert result.exit_code == (0 if proceed else 1), result.output
     if failure:
         assert "spectral failure" in result.output
+    assert generate.await_args is not None
+    if failure != "generate":
+        assert upload.await_args is not None
+        assert upload.await_args.args[2] == tracker
+        assert upload.await_args.kwargs["ask_host"] is False
+    # Spectrals are made in tmp_dir, not the system temp folder.
+    assert Path(generate.await_args.args[1]).parent == scratch
     if proceed:
         body = client.report_lossy_master.await_args.args[1]
         assert body in result.output
@@ -266,7 +277,7 @@ def test_conservative_targets(tracker, case):
     import msgspec
 
     from salmon.errors import RequestError
-    from salmon.reports import related_report_target
+    from salmon.reports import verified_report_media
     from salmon.trackers import get_class
     from salmon.trackers.base import HttpResponse
 
@@ -308,7 +319,30 @@ def test_conservative_targets(tracker, case):
     client.api_key = "test-key"
     client.authkey = "test-auth"
     if case == "flac":
-        assert anyio.run(related_report_target, client, 123) == "WEB"
+        assert anyio.run(verified_report_media, client, 123) == "WEB"
     else:
         with pytest.raises(RequestError):
-            anyio.run(related_report_target, client, 123)
+            anyio.run(verified_report_media, client, 123)
+
+
+@pytest.mark.parametrize("uploader,passes", [(8, False), (7, True)])
+def test_cookie_only_ownership(uploader, passes):
+    from salmon.errors import RequestError
+    from salmon.reports import verified_report_media
+    from salmon.trackers import get_class
+
+    class Client(get_class("RED")):
+        async def _request(self, *args, **kwargs):
+            raise AssertionError("Cookie-only mode reuses the index from authenticate")
+
+        async def api_call(self, action, params=None):
+            return {"group": {"id": 50}, "torrent": report_torrent(123, userId=uploader)}
+
+    client = Client()
+    client.api_key = ""
+    client.account_id = 7
+    if passes:
+        assert anyio.run(verified_report_media, client, 123) == "WEB"
+    else:
+        with pytest.raises(RequestError):
+            anyio.run(verified_report_media, client, 123)

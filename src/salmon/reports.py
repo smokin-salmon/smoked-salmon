@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlsplit
 import asyncclick as click
 import msgspec
 
-from salmon import interaction, trackers
+from salmon import cfg, interaction, trackers
 from salmon.common import commandgroup, get_audio_files
 from salmon.common.strings import numeric_id
 from salmon.errors import RequestError, UnknownOutcomeError
@@ -16,8 +16,12 @@ from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import spectrals
 
 
-async def related_report_target(client: BaseGazelleApi, torrent_id: int) -> str:
-    """Verify only the explicitly selected FLAC; metadata similarity is not provenance."""
+async def verified_report_media(client: BaseGazelleApi, torrent_id: int) -> str:
+    """Verify the explicitly selected FLAC is the authenticated user's upload and return its media (e.g. "WEB").
+
+    Metadata similarity is not provenance. Raises RequestError when the torrent, its owner or its media cannot be
+    verified.
+    """
     # Reports use cookie authentication. Verify that account, not a possibly different API-key account.
     user_id = client.account_id
     if client.api_key:
@@ -99,7 +103,7 @@ async def report(
 
 
 async def _spectral_evidence(folder: str, tracker: str) -> tuple[dict[int, str], dict[int, list[str]]]:
-    with TemporaryDirectory() as output:
+    with TemporaryDirectory(dir=cfg.directory.tmp_dir or None) as output:
         ids = await spectrals.generate_spectrals_all(folder, output, gather_audio_info(folder))
         await spectrals.compress_chosen_spectrals(output, ids)
         urls = await spectrals.upload_spectrals(output, ids, tracker, ask_host=False)
@@ -162,7 +166,7 @@ async def run_lossy_report(
     client = trackers.get_class(tracker)()
     try:
         await client.ensure_authenticated()
-        media = await related_report_target(client, torrent_id)
+        media = await verified_report_media(client, torrent_id)
         if folder:
             try:
                 ids, urls = await _spectral_evidence(folder, tracker)

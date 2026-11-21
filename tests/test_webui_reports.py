@@ -54,7 +54,7 @@ def test_folder_job_previews_links_before_declined_submission(tmp_path, monkeypa
     (tmp_path / "song.flac").touch()
     client = AsyncMock()
     monkeypatch.setattr(reports.trackers, "get_class", lambda _: lambda: client)
-    monkeypatch.setattr(reports, "related_report_target", AsyncMock(return_value="WEB"))
+    monkeypatch.setattr(reports, "verified_report_media", AsyncMock(return_value="WEB"))
     monkeypatch.setattr(reports, "gather_audio_info", lambda _: {})
     generate = AsyncMock(return_value={1: "song.flac"})
     monkeypatch.setattr(reports.spectrals, "generate_spectrals_all", generate)
