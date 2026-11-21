@@ -418,7 +418,8 @@
 # reached over TLS itself (https://) is not supported.
 #
 # [proxy] url applies to every service below without a setting of its own. A service's own
-# setting overrides it, and an empty one ("") connects that service directly.
+# setting overrides it, and an empty one ("") connects that service directly. These services
+# ignore the HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment variables: set their proxy here.
 #
 # To proxy everything:
 #   [proxy]
@@ -434,9 +435,10 @@
 #   [proxy.services]
 #   qobuz = "http://host:port"
 #
-# The RED image host uploads through the RED tracker client, so it uses the red setting.
-# Not proxied: the imgbox image host, MusicBrainz, cover image downloads, the AI review,
-# torrent clients and seedboxes, and the check for a new salmon version.
+# The RED image host uploads through the RED tracker client, so it uses the red setting. The
+# musicbrainz setting covers the Cover Art Archive's image list too.
+# Not proxied: the imgbox image host, cover image downloads, the AI review, torrent clients
+# and seedboxes, and the check for a new salmon version.
 
 [proxy]
 # url = "socks5://user:password@host:port"
@@ -444,7 +446,7 @@
 [proxy.services]
 # One key per service, set as in the examples above. Unset, a service uses [proxy] url.
 # Trackers: red, ops, dic
-# Metadata sources: qobuz, tidal, bandcamp, deezer, beatport, discogs, apple_music
+# Metadata sources: qobuz, tidal, bandcamp, deezer, beatport, discogs, apple_music, musicbrainz
 # Image hosts: catbox, imgbb, oeimg, ptscreens, ra
 # red = "socks5://host:1080"
 # ops = "socks5://host:1080"
@@ -456,6 +458,7 @@
 # beatport = "socks5://host:1080"
 # discogs = "socks5://host:1080"
 # apple_music = "socks5://host:1080"
+# musicbrainz = "socks5://host:1080"
 # catbox = "socks5://host:1080"
 # imgbb = "socks5://host:1080"
 # oeimg = "socks5://host:1080"

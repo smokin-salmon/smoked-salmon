@@ -10,24 +10,22 @@ from typing import Any
 import anyio
 import asyncclick as click
 import pytest
-from musicbrainzngs import mbxml
+from helpers.musicbrainz import serving_musicbrainz
 
 from salmon import cfg
 from salmon.search import musicbrainz as musicbrainz_search
-from salmon.sources import MusicBrainzBase
 
 SEARCH = Path(__file__).parent / "fixtures" / "stores" / "musicbrainz" / "search"
 
 
 def _search(slug: str, query: str, monkeypatch: pytest.MonkeyPatch) -> dict[str, tuple[dict[str, Any], str]]:
-    answer = mbxml.parse_message((SEARCH / f"{slug}.xml").read_bytes())
-
-    async def _recorded(self: Any, func: Any, *args: Any) -> Any:
-        return answer
-
-    monkeypatch.setattr(MusicBrainzBase, "_call", _recorded)
-    store, releases = anyio.run(musicbrainz_search.Searcher().search_releases, query, 10)
+    assert (SEARCH / f"{slug}.json").is_file()
+    with serving_musicbrainz(monkeypatch) as server:
+        store, releases = anyio.run(musicbrainz_search.Searcher().search_releases, query, 10)
     assert store == "MusicBrainz"
+    [(path, sent, _headers)] = server.requests
+    assert path == "/ws/2/release"
+    assert sent == {"query": query, "limit": "10", "fmt": "json"}
     return {
         mbid: (
             {f: getattr(ident, f) for f in ident.__struct_fields__},

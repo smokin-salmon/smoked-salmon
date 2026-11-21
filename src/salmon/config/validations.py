@@ -558,6 +558,7 @@ class ProxyServicesCfg(BaseStruct):
     beatport: str | None = None
     discogs: str | None = None
     apple_music: str | None = None
+    musicbrainz: str | None = None
     # Image hosts
     catbox: str | None = None
     imgbb: str | None = None
