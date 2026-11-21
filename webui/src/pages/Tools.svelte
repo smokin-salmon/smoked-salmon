@@ -159,11 +159,11 @@
     </select></label>
     <label>Source URL (optional)<input type="text" class="mono" bind:value={reportSource} placeholder="https://…" /></label>
   </div>
-  <fieldset>
-    <legend>Album folder (optional)</legend>
+  <div class="field folder">
+    <span class="label">Album folder (optional)</span>
     <FolderPicker bind:value={reportFolder} bind:usable={reportFolderUsable} empty="no local spectrals" />
-  </fieldset>
-  <label>Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
+  </div>
+  <label class="field">Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
   <p class="muted">Provide a comment or source URL. With an album folder, salmon uploads full and zoomed spectral images for each track to the tracker's configured image host before final confirmation. Leave the folder empty to report without local audio. Print only checks the folder and skips image generation and upload.</p>
   <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>
   <p class="muted">Print only prepares text to copy for manual reporting. It cannot verify ownership or FLAC eligibility.</p>
@@ -172,12 +172,13 @@
   {#if reportError}<p class="error">{reportError}</p>{/if}
   {#if reportJob}
     <JobStatus job={reportJob} />
-    <JobActivity job={reportJob} />
     {#if reportJob.status === 'done'}
       {@const text = (reportJob.result as { text: string }).text}
       <pre class="result mono">{text}</pre>
       <button class="btn small" onclick={() => copy('Report', text)}>Copy report</button>
       <span class="muted">{copied}</span>
+    {:else if !FINISHED.includes(reportJob.status)}
+      <JobActivity job={reportJob} />
     {/if}
   {/if}
 </div>
@@ -300,12 +301,16 @@
     flex-wrap: wrap;
     align-items: flex-end;
   }
-  .options label {
+  .options label,
+  .field {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
     font-size: 0.85rem;
     color: var(--text-dim);
+  }
+  .folder {
+    margin-top: 0.8rem;
   }
   .error {
     color: var(--err);
