@@ -418,7 +418,8 @@
 # reached over TLS itself (https://) is not supported.
 #
 # [proxy] url applies to every service below without a setting of its own. A service's own
-# setting overrides it, and an empty one ("") connects that service directly.
+# setting overrides it, and an empty one ("") connects that service directly. These services
+# ignore the HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment variables: set their proxy here.
 #
 # To proxy everything:
 #   [proxy]
