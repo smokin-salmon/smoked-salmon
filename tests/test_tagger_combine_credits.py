@@ -161,6 +161,26 @@ def test_a_name_joined_back_from_every_source_s_claims_is_one_credit_in_its_role
     assert combined["tracks"]["1"]["1"]["artists"] == expected
 
 
+def test_a_name_split_in_three_is_joined_back_whole() -> None:
+    """ "Ava Max" is joined, then "Ava Max" and "Ray": each part's claim is a claim of the longest name."""
+    files, deezer = release(), release()
+    for meta in (files, deezer):
+        meta["tracks"] = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+        for track in meta["tracks"]["1"].values():
+            track["artists"] = []
+    credits = (
+        [("Ava", "main"), ("Max", "main"), ("Ray", "main")],
+        [("Ava Max", "composer")],
+        [("Ava Max Ray", "composer")],
+    )
+    for num, artists in zip(("1", "2", "3"), credits, strict=True):
+        files["tracks"]["1"][num]["artists"] = artists
+
+    combined = combine_metadatas(("Deezer", deezer), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max Ray", "main")]
+
+
 @pytest.mark.parametrize(
     ("guessed", "role"),
     [((("Max", "main"),), "main"), ((("Ava", "main"), ("Max", "main")), "guest")],

@@ -547,18 +547,14 @@ def _join_split_names(claims, to_replace):
     every part of a name is claimed, each claim of a part becomes a claim of the whole name, keeping its source and
     whether it is assumed. Run before the decision, so that a part also claimed in another role does not lose a role
     the whole name keeps (#1109)."""
-    repaired = fix_artists_list(list(dict.fromkeys((claim.name, claim.role) for claim in claims)), to_replace)
+    joined = {}
+    fix_artists_list(list(dict.fromkeys((claim.name, claim.role) for claim in claims)), to_replace, joined)
     return [
-        claim
-        if (claim.name, claim.role) in repaired
-        else msgspec.structs.replace(claim, name=_whole_of(claim.name, claim.role, repaired, to_replace))
+        msgspec.structs.replace(claim, name=joined[claim.name, claim.role])
+        if (claim.name, claim.role) in joined
+        else claim
         for claim in claims
     ]
-
-
-def _whole_of(part, role, repaired, to_replace):
-    """The name fix_artists_list joined `part` into in `role`."""
-    return next((whole for parts, whole in to_replace if part in parts and (whole, role) in repaired), part)
 
 
 def decide_alone(metadata, source):
