@@ -116,10 +116,11 @@ def test_a_cover_art_archive_answer_that_is_not_json_is_no_cover_and_says_so(
     assert len(server.requests) == 1
 
 
-def test_a_cover_art_archive_answer_that_is_not_an_object_is_no_cover_and_says_so(
-    server: FakeMusicBrainz, capsys: pytest.CaptureFixture
+@pytest.mark.parametrize("body", ["[]", "{}", '{"images": null}', '{"images": [null, "x"]}'])
+def test_a_cover_art_archive_answer_that_is_not_an_image_list_is_no_cover_and_says_so(
+    body: str, server: FakeMusicBrainz, capsys: pytest.CaptureFixture
 ) -> None:
-    server.body = "[]"
+    server.body = body
 
     cover = _cover(_release(KIND_OF_BLUE))
     out = capsys.readouterr().out

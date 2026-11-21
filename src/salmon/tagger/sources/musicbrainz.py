@@ -65,12 +65,15 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         except NotFoundError:
             return None
         except ScrapeError:
+            images = None
+        entries = images.get("images") if images is not None else None
+        if not isinstance(entries, list) or not all(isinstance(image, dict) for image in entries):
             # No cover rather than no release.
             click.secho("Cover Art Archive request failed: no cover.", fg="yellow")
             return None
-        for image in images["images"]:
-            if image["approved"] and image["front"]:
-                return image["image"]
+        for image in entries:
+            if image.get("approved") and image.get("front"):
+                return image.get("image")
         return None
 
     def parse_release_title(self, soup):
