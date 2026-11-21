@@ -1,5 +1,7 @@
 import re
 import threading
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager, nullcontext
 from time import monotonic
 from typing import Any
 from urllib.parse import urljoin
@@ -37,30 +39,41 @@ MAX_RETRY_AFTER = 5.0  # A 503 asking for a longer wait is not retried
 
 # MusicBrainz's rule: at most one request a second from each client.
 MIN_INTERVAL = 1.0
+_BUSY_POLL = 0.05  # Seconds between looks at the limiter while another request has the turn
 
 
 class RateLimiter:
-    """Grants the calls to wait() turns at least `interval` seconds apart, across threads and event loops alike.
+    """One request at a time, each sent at least `interval` seconds after the one before it ended.
 
-    Under salmon web each job has a thread and an event loop of its own, so the lock is a threading one, and each
-    caller sleeps on its own loop, outside it. A turn is granted on the clock as it is when granted, checked again
-    after every sleep: a caller that wakes late takes the next free turn, never one beside another caller's.
+    A turn lasts from before connecting until the answer is read, so a slow connection cannot send its request
+    beside the next one's. Under salmon web each job has a thread and an event loop of its own, so the lock is a
+    threading one, held only to read and set the state, and each caller sleeps on its own loop, outside it. The clock
+    is checked again after every sleep: a caller that wakes late takes the next free turn.
     """
 
     def __init__(self, interval: float) -> None:
         self._interval = interval
         self._lock = threading.Lock()
-        self._last = float("-inf")
+        self._busy = False
+        self._ended = float("-inf")
 
-    async def wait(self) -> None:
+    @asynccontextmanager
+    async def turn(self) -> AsyncGenerator[None]:
         while True:
             with self._lock:
                 now = monotonic()
-                ready = self._last + self._interval
-                if now >= ready:
-                    self._last = now
-                    return
-            await anyio.sleep(ready - now)
+                ready = self._ended + self._interval
+                if not self._busy and now >= ready:
+                    self._busy = True
+                    break
+                wait = _BUSY_POLL if self._busy else ready - now
+            await anyio.sleep(wait)
+        try:
+            yield
+        finally:
+            with self._lock:
+                self._busy = False
+                self._ended = monotonic()
 
 
 limiter = RateLimiter(MIN_INTERVAL)
@@ -183,9 +196,10 @@ class MusicBrainzBase(BaseScraper):
         aiohttp would follow up to ten redirects in one turn: a merged release's old MBID is a 301.
         """
         for _ in range(MAX_REDIRECTS + 1):
-            if limited:
-                await limiter.wait()
-            async with session.get(url, params=params, headers=headers, allow_redirects=False) as resp:
+            async with (
+                limiter.turn() if limited else nullcontext(),
+                session.get(url, params=params, headers=headers, allow_redirects=False) as resp,
+            ):
                 location = resp.headers.get("Location")
                 if resp.status in _REDIRECT_STATUSES and location:
                     url, params = urljoin(str(resp.url), location), None

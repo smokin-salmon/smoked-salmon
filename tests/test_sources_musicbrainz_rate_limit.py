@@ -29,9 +29,14 @@ def clock(monkeypatch: pytest.MonkeyPatch) -> _Clock:
     return fake
 
 
+async def _take(limiter: musicbrainz.RateLimiter) -> None:
+    async with limiter.turn():
+        pass
+
+
 async def _wait(limiter: musicbrainz.RateLimiter, times: int) -> None:
     for _ in range(times):
-        await limiter.wait()
+        await _take(limiter)
 
 
 def test_back_to_back_requests_are_spaced_a_second_apart(clock: _Clock) -> None:
@@ -43,16 +48,30 @@ def test_back_to_back_requests_are_spaced_a_second_apart(clock: _Clock) -> None:
 def test_a_request_after_the_interval_does_not_wait(clock: _Clock) -> None:
     limiter = musicbrainz.RateLimiter(1.0)
 
-    anyio.run(limiter.wait)
+    anyio.run(_take, limiter)
     clock.now += 1.5
-    anyio.run(limiter.wait)
+    anyio.run(_take, limiter)
 
     assert clock.slept == []
 
 
+def test_a_request_that_fails_ends_its_turn(clock: _Clock) -> None:
+    limiter = musicbrainz.RateLimiter(1.0)
+
+    async def _fails() -> None:
+        async with limiter.turn():
+            raise ConnectionError
+
+    with pytest.raises(ConnectionError):
+        anyio.run(_fails)
+    anyio.run(_take, limiter)
+
+    assert clock.slept == [1.0]
+
+
 def test_a_waiter_that_wakes_late_does_not_go_on_the_next_ones_heels(monkeypatch: pytest.MonkeyPatch) -> None:
     # A salmon web job's thread can be slow to wake. A slot reserved ahead of time would let it go late, right
-    # beside the waiter after it: each turn is granted a whole interval after the last one granted instead.
+    # beside the waiter after it: each turn is granted a whole interval after the last one ended instead.
     limiter = musicbrainz.RateLimiter(0.2)
     real_sleep = anyio.sleep
     late: list[None] = []
@@ -67,7 +86,7 @@ def test_a_waiter_that_wakes_late_does_not_go_on_the_next_ones_heels(monkeypatch
     granted: list[float] = []
 
     async def _turn() -> None:
-        await limiter.wait()
+        await _take(limiter)
         granted.append(time.monotonic())
 
     async def _three() -> None:
@@ -89,7 +108,7 @@ def test_two_threads_with_their_own_loops_share_the_limiter() -> None:
 
     async def _requests() -> None:
         for _ in range(3):
-            await limiter.wait()
+            await _take(limiter)
             passed.append(time.monotonic())
 
     threads = [threading.Thread(target=anyio.run, args=(_requests,)) for _ in range(2)]

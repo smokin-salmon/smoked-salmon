@@ -5,7 +5,9 @@ on a failure that may pass, and every failure a ScrapeError naming its type or s
 """
 
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncGenerator, Iterator
+from contextlib import asynccontextmanager
+from typing import Any
 
 import aiohttp
 import anyio
@@ -186,8 +188,10 @@ def _counted(monkeypatch: pytest.MonkeyPatch) -> list[None]:
     turns: list[None] = []
 
     class _Counting(musicbrainz.RateLimiter):
-        async def wait(self) -> None:
+        @asynccontextmanager
+        async def turn(self) -> AsyncGenerator[None]:
             turns.append(None)
+            yield
 
     monkeypatch.setattr(musicbrainz, "limiter", _Counting(0))
     return turns
@@ -219,6 +223,34 @@ def test_a_redirects_hops_are_a_second_apart(server: FakeMusicBrainz, monkeypatc
     _merge(server)
 
     anyio.run(MusicBrainzBase().get_json, f"/release/{MERGED}", {"inc": "media"})
+
+    first, second = server.times
+    assert second - first >= 0.25
+
+
+def test_a_slow_connection_does_not_send_its_request_beside_the_next(
+    server: FakeMusicBrainz, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A turn is taken before connecting: had the next request's turn come while the first was still connecting
+    # (through a proxy, say), the two would have reached MusicBrainz together.
+    monkeypatch.setattr(musicbrainz, "limiter", musicbrainz.RateLimiter(0.3))
+    connect = aiohttp.TCPConnector._create_connection
+    slowed: list[None] = []
+
+    async def _slow_first(self: aiohttp.TCPConnector, *args: Any, **kwargs: Any) -> Any:
+        if not slowed:
+            slowed.append(None)
+            await anyio.sleep(0.5)
+        return await connect(self, *args, **kwargs)
+
+    monkeypatch.setattr(aiohttp.TCPConnector, "_create_connection", _slow_first)
+
+    async def _two() -> None:
+        async with anyio.create_task_group() as tasks:
+            for _ in range(2):
+                tasks.start_soon(MusicBrainzBase().get_json, f"/release/{KIND_OF_BLUE}")
+
+    anyio.run(_two)
 
     first, second = server.times
     assert second - first >= 0.25
@@ -283,13 +315,7 @@ def test_a_release_with_no_cover_art_is_not_found(server: FakeMusicBrainz) -> No
 def test_the_cover_art_archive_does_not_wait_on_musicbrainzs_limiter(
     server: FakeMusicBrainz, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    waited: list[None] = []
-
-    class _Counting(musicbrainz.RateLimiter):
-        async def wait(self) -> None:
-            waited.append(None)
-
-    monkeypatch.setattr(musicbrainz, "limiter", _Counting(0))
+    waited = _counted(monkeypatch)
     anyio.run(MusicBrainzBase().fetch_cover_art, KIND_OF_BLUE)
     assert waited == []
     _get_release()
