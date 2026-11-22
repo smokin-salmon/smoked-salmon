@@ -89,6 +89,13 @@ reviews:
         - Flag new code that repeats an existing helper (a near copy, adapted) instead of using or extending it,
           and name the helper. A torrent's upload (uploader/upload.py, uploader/__init__.py) and its
           conversions' (uploader/conversion_upload.py) are where copies have appeared.
+    - path: "src/salmon/tagger/**/*.py"
+      instructions: |-
+        Where a parser or the merge decides something (a disc, a credit, a title), the decision should come from
+        one function that returns it with its reason, and the code around it should only apply it (#1154).
+        - Flag a rule added inside a loop that also builds the output, output changed after it was built (entries
+          popped or moved), and a decision with no reason.
+        - Not a correctness finding on its own: say which decision and where.
     - path: "**"
       instructions: |-
         - Report correctness, security, data loss and tracker safety. Do not flag style that is consistent
