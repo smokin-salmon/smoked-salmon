@@ -1,5 +1,13 @@
 import { apiGet } from './api'
 
+export interface LossyReportParams {
+  target: string
+  tracker: string | null
+  comment: string | null
+  source_url: string
+  folder: string | null
+}
+
 /** What `/api/tools/options` says: the image hosts, and the host each tracker's images and spectrals go to. */
 export interface ToolsOptions {
   /** `only_for` lists the trackers whose pages show the host's images, when it is only some. */

@@ -1,17 +1,17 @@
 import contextlib
 import re
+import unicodedata
 from collections import defaultdict
 from itertools import chain
 
 import asyncclick as click
 import msgspec
-from unidecode import unidecode
 
 from salmon import cfg
-from salmon.common import normalize_accents, re_strip
+from salmon.common import normalize_accents
 from salmon.common.credits import Claim, resolve_credits
 from salmon.common.numbers import natural_key, number_or_text
-from salmon.common.strings import comparable
+from salmon.common.strings import comparable, restore_accents, unbracketed
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
@@ -19,9 +19,12 @@ from salmon.tagger.sources.base import (
     artist_spellings,
     construct_replacement_list,
     determine_label_type,
+    featuring_clause,
     fix_artists_list,
+    folded_title,
     generate_artists,
     standardize_genres,
+    title_with_version,
 )
 
 PREFERENCES = [
@@ -163,6 +166,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
         del base["url"]
 
     decisions = _decide_credits(base["tracks"], claims, base_source)
+    _decide_titles(base["tracks"], base_source)
     # After the decision: a base track no store paired is decided from its own marks.
     without_merge_only_keys(base)
     _print_disputes(decisions)
@@ -258,8 +262,23 @@ def _pair_base_tracks(btracks, mtracks):
     key (another source's) counts as numbered.
     """
     numbered = all(track.get("numbered", True) for track in btracks)
-    pairing, reasons = pair_by_content(btracks, mtracks, numbered=numbered)
+    pairing, reasons = pair_by_content(_with_folded_titles(btracks), _with_folded_titles(mtracks), numbered=numbered)
     return [None if bi is None else btracks[bi] for bi in pairing], reasons
+
+
+def _with_folded_titles(tracks):
+    """The tracks with each title as its store folds it, for pairing: the files' titles hold their versions. A base
+    track is also known by each title a store merged before gave it, so a track one store paired (by its ISRC, say) is
+    found by the next store's title for it. In pairing's second title pass every title counts as written too ("Song"
+    for "Song", "Remastered", by strip_useless_versions), as files salmon tagged before may hold it."""
+    return [_for_pairing(track) for track in tracks]
+
+
+def _for_pairing(track):
+    named = [(track["title"], track.get("version")), *track.get("store_titles", [])]
+    folded = [folded_title({"title": title, "version": version}) for title, version in named]
+    written = [title_with_version(title, version) for title, version in named if title]
+    return {**track, "title": folded[0], "titles": tuple(folded[1:]), "written_titles": tuple(written)}
 
 
 def _numbers_usable(meta):
@@ -331,11 +350,11 @@ def _print_pairing(mtracks, ordered, reasons):
     click.secho("\nMatched local tracks to the metadata source:", fg="yellow", bold=True)
     for mtrack, btrack, why in zip(mtracks, ordered, reasons, strict=False):
         if btrack is None:
-            click.secho(f"  {mtrack['track#']:>3}. {mtrack['title']} -> (no local track)", fg="red")
+            click.secho(f"  {mtrack['track#']:>3}. {folded_title(mtrack)} -> (no local track)", fg="red")
             continue
         moved = str(btrack["track#"]) != str(mtrack["track#"])
         click.secho(
-            f"  {mtrack['track#']:>3}. {mtrack['title']} <- {btrack['title']} "
+            f"  {mtrack['track#']:>3}. {folded_title(mtrack)} <- {folded_title(btrack)} "
             f"(was track {btrack['track#']}, matched on {why})",
             fg="red" if why == "position" else ("yellow" if moved else "green"),
         )
@@ -389,27 +408,13 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
         for _num, track in _sorted_naturally(tracks.items()):
             btrack = next(paired_btracks)
 
-            if (
-                # Use unidecode comparison when there are accents in the title
-                re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"]))
-                and btrack["title"] is not None
-            ) and (
-                btrack["title"]
-                and track["title"]
-                # Allow replacement if the base title is part of the meta title (e.g., remix scenario)
-                and re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))
-            ):
-                btrack["title"] = track["title"]
-
-            if btrack["title"] is None:
-                btrack["title"] = track["title"]
-
-            # Scraped title is the same than title when ignoring metadatas, and it contains accents and special
-            # characters, prefer that one.
-            if re_strip(track["title"]) != re_strip(unidecode(track["title"])) and re_strip(
-                unidecode(track["title"])
-            ) == re_strip(unidecode(btrack["title"])):
-                btrack["title"] = track["title"]
+            if _untitled(btrack["title"]):
+                # The base names no title (a ripper's "Track 01", or a store's): the first store that names it does, and
+                # the stores after pair by that name. Gathered, not decided: _decide_titles writes it as that store's.
+                btrack["title"], btrack["version"] = track["title"], track.get("version")
+                btrack["placeholder_from"] = store
+            # Each store's title and version beside the base's, for _decide_titles once the last store is merged.
+            btrack.setdefault("store_titles", []).append((track["title"], track.get("version")))
 
             base_artists = {(comparable(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
@@ -428,7 +433,7 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                 btrack["artists"].append(a)
 
             if _reads_title_remixers(track, store, meta_has_remixer):
-                remixers = _extract_remixers_from_title(track["title"])
+                remixers = _extract_remixers_from_title(folded_title(track))
                 for remixer in remixers:
                     if (comparable(remixer[0]), remixer[1]) not in base_artists:
                         btrack["artists"].append(remixer)
@@ -448,7 +453,6 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                 btrack["isrc"] = track["isrc"]
             if not btrack["replay_gain"]:
                 btrack["replay_gain"] = track["replay_gain"]
-                btrack["title"] = track["title"]
             # A source whose numbering is not 1..n on each disc has no totals to give either.
             if usable and not btrack["tracktotal"]:
                 btrack["tracktotal"] = track["tracktotal"]
@@ -503,6 +507,154 @@ def _store_claims(credits, variations, base_credits, source, guessed):
         matched = named.get((comparable(name), role)) or (anv and named.get((comparable(anv), role))) or name
         claims.append(Claim(source, matched, anv or name, role, assumed=_assumed(source, (name, role), guessed)))
     return claims
+
+
+# A ripper's placeholder: "Track 01", "Audio Track 1", and its French, Spanish, Italian, German, Portuguese words.
+_RE_PLACEHOLDER_TITLE = re.compile(r"\s*(?:audio\s*)?(?:track|piste|pista|traccia|titel|faixa)\s*\d+\s*", re.IGNORECASE)
+
+
+def _untitled(title):
+    """Whether a base track's title names nothing: none, or a ripper's placeholder ("Track 01")."""
+    return not title or bool(_RE_PLACEHOLDER_TITLE.fullmatch(title))
+
+
+def _decide_titles(tracks, base_source):
+    """Write each track's one title, from its own and each store's beside it (`store_titles`), in place."""
+    for disc in tracks.values():
+        for track in disc.values():
+            track["title"], _why = _written_title(track, base_source == "files", _credited(track))
+
+
+def _credited(track):
+    """Who a featuring clause may name as already credited, by comparable: the track's performers, not its producer
+    or composer, whose credit says nothing of a guest."""
+    return {comparable(name) for name, role in track.get("artists") or () if role in {"main", "guest"}}
+
+
+def written_files_title(title, track):
+    """A files title as the merge writes it for `track` (`_files_title`): "Song (feat. B)" is "Song" where the track
+    credits B. The retagger knows each file by it."""
+    return _files_title(title, _credited(track))
+
+
+def _written_title(track, files, credited):
+    """The track's title and its reason: which text it is, then what changed it. A placeholder the merge named from a
+    store is that store's title, the files' title is written as it is (`_files_title`), a store's with its version
+    (`_store_title`), each with the accents a store restores. What changed it is read from what is written: the title
+    written without that step differs. The reason is for the tests, and for saying why a title is as it is when that is
+    wanted."""
+    title, stores = track["title"], track.get("store_titles", [])
+    if not title:
+        return title, "no title"
+    if "placeholder_from" in track:
+        own, why = False, f"{track['placeholder_from'] or 'a store'}'s title, for a placeholder"
+    elif files:
+        own, why = True, "the files' title"
+    else:
+        own, why = False, "the store's title and version"
+
+    version = track.get("version")  # a files track holds one only once a placeholder took a store's title
+
+    def write(text, kept, names):
+        return _files_title(text, names) if own else _store_title(text, kept, names)
+
+    accented, accented_version = _accented(title, version, stores)
+    written = write(accented, accented_version, credited)
+    if written != write(title, version, credited):
+        why += ", with a store's accents"
+    if written != write(accented, accented_version, set()):
+        why += ", without a credited featuring clause"
+    return written, why
+
+
+def _accented(title, version, stores):
+    """The title and version with the accents a store restores (`_with_store_accents`), the two read together as the
+    store folds them, so a version's accents come back too ("Tiesto Remix" beside a store's "Tiësto Remix")."""
+    if version:
+        folded = f"{title} ({version})"
+        accented = _with_store_accents(folded, stores)
+        # Restoring keeps each letter's place in the composed text it gives, so it splits back where it was joined.
+        composed = unicodedata.normalize("NFC", title)
+        if len(accented) == len(unicodedata.normalize("NFC", folded)):
+            return accented[: len(composed)], accented[len(composed) + 2 : -1]
+    return _with_store_accents(title, stores), version
+
+
+def _files_title(title, credited):
+    """The files' title as it is, but for a trailing featuring clause under strip_useless_versions that names only
+    artists the track credits (`credited`, by comparable), as the credit says it already. What the release says is not
+    trimmed otherwise, and no store's version is added."""
+    clause = featuring_clause(title)
+    if cfg.upload.formatting.strip_useless_versions and clause and _names_only(clause[1], credited):
+        return clause[0]
+    return title
+
+
+def _store_title(title, version, credited):
+    """A store's title written with its version by strip_useless_versions (title_with_version), a featuring clause in
+    its title (as `_files_title`, "ft." too) or its version ("ft. Mary J Blige") going only as the files' does: when
+    the track credits them."""
+    guests = featuring_clause(f"({bare})") if (bare := unbracketed(version)) else None
+    return title_with_version(
+        _files_title(title, credited),
+        version,
+        keep_featuring=not (guests and _names_only(guests[1], credited)),
+        keep_title_featuring=True,
+    )
+
+
+# What separates two names in a featuring clause, besides a comma.
+_SEPARATORS = r"[&+/;|＆、]"
+
+
+def _names_only(names, credited):
+    """Whether `names` ("A & B", a featuring clause's) are only artists in `credited` (by comparable), however they're
+    joined: "Tyler, The Creator" is one. A joining word ("and", "with", "x") joins only between two credited names,
+    with no separator beside it but a comma before it ("A, B, and C"), so the "X" of "Alice & X" and of
+    "Alice & X & Bob" is a name. A name's own marks beside it are no separator ("M.I.A. and Bob", "Wham! x Bob")."""
+    parts = re.split(r"(\W+)", names)  # words, with what separates them between
+    found = [
+        (word, parts[at - 1] if at else "", parts[at + 1] if at + 1 < len(parts) else "")
+        for at in range(0, len(parts), 2)
+        if (word := comparable(parts[at]))
+    ]
+    words = [word for word, _, _ in found]
+    pieces, start = [], 0
+    while start < len(words):
+        # The longest run of words from here that is a credited name, "" for it ("Tyler, The Creator" is three).
+        end = next((end for end in range(len(words), start, -1) if "".join(words[start:end]) in credited), None)
+        word, before, after = found[start]
+        joins = (
+            word in {"and", "with", "x"}
+            and not re.search(_SEPARATORS, before)
+            and not re.search(f",|{_SEPARATORS}", after)
+        )
+        pieces.append("" if end else "+" if joins else word)
+        start = end or start + 1
+    return bool(pieces) and pieces[0] == pieces[-1] == "" and set(pieces) <= {"", "+"}
+
+
+def _bare_head(title):
+    """The title without the bracketed versions it ends in: "Song (Live) [2011]" is "Song"."""
+    return re.sub(r"(?:\s*[\(\[][^()\[\]]*[\)\]])+\s*$", "", title) or title
+
+
+def _with_store_accents(title, stores):
+    """The title with the accents the first store to give them restores, letter by letter: the whole title first, as
+    the store folds it or as it gives it ("Song (Tiesto Remix)" and "Song", "Tiësto Remix"), then each without the
+    versions it ends in ("Ny Batteri (Live)" and "Ný batterí (Remastered)")."""
+    for store_title, store_version in stores:
+        if not store_title:
+            continue
+        # A version as given or out of the brackets it may come in ("(Rehearsal)"), as the title holds it.
+        folded = [f"{store_title} ({given})" for given in (unbracketed(store_version), store_version) if given]
+        for theirs in dict.fromkeys((*folded, store_title)):
+            if (accented := restore_accents(title, theirs)) != title:
+                return accented
+        head = _bare_head(title)
+        if (accented := restore_accents(head, _bare_head(store_title))) != head:
+            return accented + title[len(head) :]
+    return title
 
 
 def _decide_credits(tracks, claims, base_source):
@@ -561,6 +713,7 @@ def decide_alone(metadata, source):
     """Decide a scrape used alone as a merge of that one source, in place (no disputes to print): each track's
     credits from its claims, then the release's from the tracks."""
     _decide_credits(metadata["tracks"], {}, source)
+    _decide_titles(metadata["tracks"], source)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 
 

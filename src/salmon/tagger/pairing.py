@@ -13,7 +13,7 @@ import re
 
 from unidecode import unidecode
 
-from salmon.common import re_strip
+from salmon.common.strings import title_key
 
 # Seconds two tracks may differ by and still be taken for the same recording.
 DURATION_TOLERANCE = 2
@@ -25,7 +25,13 @@ BY_ISRC_OR_TITLE = frozenset({"isrc", "title", "partial title"})
 
 def norm_title(title):
     """Normalise a title the way the merge in combine.py compares them."""
-    return re_strip(unidecode(title)) if title else ""
+    return title_key(title) if title else ""
+
+
+def _norm_titles(track, *keys):
+    """The track's ``title`` and the titles under ``keys`` (each a sequence), as an exact-title pass compares them."""
+    titles = [track.get("title"), *(title for key in keys for title in track.get(key) or ())]
+    return frozenset(filter(None, map(norm_title, titles)))
 
 
 def title_words(title):
@@ -47,7 +53,9 @@ def pair_by_content(locals_, metas, *, numbered=False):
     """Work out which local track belongs to each scraped track.
 
     Both arguments are sequences of mappings with ``title``, ``isrc`` and ``duration`` keys; a missing or empty
-    one is skipped as a signal.
+    one is skipped as a signal. A track's ``titles``, when given, are other titles it is
+    known by, which the exact-title pass takes beside its ``title``; its ``written_titles``, a second exact-title
+    pass takes too, for the tracks still waiting.
 
     Passes run in confidence order: ISRC, exact title, then a local title found as whole words in the scraped
     one ("Django" in "Django (Original Mix)", but not "Work" in "Homework"). A pass only pairs a scraped track and
@@ -107,8 +115,16 @@ def pair_by_content(locals_, metas, *, numbered=False):
 
     run_pass(
         "title",
-        lambda m: norm_title(m.get("title")),
-        lambda t, want: norm_title(t.get("title")) == want,
+        lambda m: _norm_titles(m, "titles"),
+        lambda t, want: not _norm_titles(t, "titles").isdisjoint(want),
+        duration_breaks_ties=True,
+    )
+    # Then by its titles as written too, for those still waiting ("Song" for "Song", "Remastered"), after the titles
+    # it is known by, so "Intro (feat. Bob)" has paired before it could also want an "Intro".
+    run_pass(
+        "title",
+        lambda m: _norm_titles(m, "titles", "written_titles"),
+        lambda t, want: not _norm_titles(t, "titles", "written_titles").isdisjoint(want),
         duration_breaks_ties=True,
     )
 

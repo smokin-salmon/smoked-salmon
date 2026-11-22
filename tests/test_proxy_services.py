@@ -37,6 +37,7 @@ from salmon.sources import (
     DiscogsBase,
     QobuzBase,
     TidalBase,
+    musicbrainz,
 )
 from salmon.sources.base import BaseScraper
 from salmon.sources.beatport import TokenStorage
@@ -60,11 +61,7 @@ def test_every_scraper_names_its_proxy_service() -> None:
     scrapers = _subclasses(BaseScraper)
     assert len(scrapers) > 20
     for scraper in scrapers:
-        if issubclass(scraper, MusicBrainzBase):
-            # musicbrainzngs, not aiohttp: not proxied.
-            assert scraper.proxy_service is None
-        else:
-            assert scraper.proxy_service in SERVICES, scraper
+        assert scraper.proxy_service in SERVICES, scraper
 
 
 def test_every_image_host_names_its_proxy_service() -> None:
@@ -115,6 +112,8 @@ CALLS: list[tuple[str, Callable[[], Awaitable[Any]], str]] = [
     ("beatport", lambda: BeatportBase().initial_setup(), "api.beatport.com"),
     ("discogs", lambda: DiscogsBase().get_json("/releases/1"), "api.discogs.com"),
     ("apple_music", lambda: AppleMusicBase._get_token(), "music.apple.com"),
+    ("musicbrainz", lambda: MusicBrainzBase().get_json("/release/1"), "musicbrainz.org"),
+    ("musicbrainz", lambda: MusicBrainzBase().fetch_cover_art("1"), "coverartarchive.org"),
 ]
 
 
@@ -124,6 +123,8 @@ def test_a_store_request_goes_through_its_services_proxy(
     monkeypatch: pytest.MonkeyPatch, service: str, call: Callable[[], Awaitable[Any]], site: str
 ) -> None:
     _set_credentials(monkeypatch)
+    # MusicBrainz retries a refused connection once: without its wait.
+    monkeypatch.setattr(musicbrainz, "RETRY_WAIT", 0)
     proxy = FakeProxy("socks5", refuse=True)
 
     async def main() -> None:
