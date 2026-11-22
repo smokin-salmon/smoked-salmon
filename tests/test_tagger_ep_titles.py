@@ -87,3 +87,98 @@ def test_qobuz_explicit_ep_title_follows_the_setting(monkeypatch, strip: bool, t
     monkeypatch.setattr(cfg.upload.formatting, "strip_ep_from_title", strip)
 
     assert QobuzScraper().determine_rls_type({"title": title, "rls_type": "EP"}) == (expected, "EP")
+
+
+def twelve_tracks(title: str) -> dict:
+    """A store's release of 12 tracks the store calls an album: only its title can say otherwise."""
+    tracks = {"1": {str(n): {"title": f"Track {n}"} for n in range(1, 13)}}
+    return {"title": title, "rls_type": "Album", "tracks": tracks, "artists": [("An Artist", "main")]}
+
+
+@pytest.mark.parametrize("title", ["Space (Single)", "Space [Single]", "Space (single)", "Space – Single"])
+def test_a_single_set_apart_ending_the_title_is_cut_and_says_the_type(title: str) -> None:
+    assert AppleMusicScraper().determine_rls_type(twelve_tracks(title)) == ("Space", "Single")
+
+
+@pytest.mark.parametrize("title", ["Forever Single", "Wholesingle", "Single", "- Single"])
+def test_a_single_not_set_apart_is_part_of_the_name(title: str) -> None:
+    assert AppleMusicScraper().determine_rls_type(twelve_tracks(title)) == (title, "Album")
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Space - Single", ("Space", "Single")),
+        ("Space -Single", ("Space", "Single")),
+        ("The Singles", ("The Singles", "Album")),
+        ("Forever Single Mothers", ("Forever Single Mothers", "Album")),
+    ],
+)
+def test_as_before_a_title_ending_in_a_dash_and_single_is_a_single(title: str, expected: tuple[str, str]) -> None:
+    assert AppleMusicScraper().determine_rls_type(twelve_tracks(title)) == expected
+
+
+def apple_type(name: str) -> str:
+    return AppleMusicScraper().parse_release_type({"album": {"name": name, "trackCount": 12}})
+
+
+def test_apple_reads_the_type_from_a_single_set_apart_and_not_from_a_name() -> None:
+    assert [apple_type(name) for name in ("Space (Single)", "Space – Single", "Forever Single")] == [
+        "Single",
+        "Single",
+        "Album",
+    ]
+
+
+def test_as_before_apple_reads_the_type_from_a_dash_and_single() -> None:
+    assert [apple_type(name) for name in ("Space - Single", "Space")] == ["Single", "Album"]
+
+
+def qobuz_title_and_type(title: str) -> tuple[str, str]:
+    soup = {"release_type": "", "title": title, "tracks_count": 12}
+    rls_type = QobuzScraper().parse_release_type(soup)
+    return soup["title"], rls_type
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Space (Single)", ("Space", "Single")),
+        ("Space – Single", ("Space", "Single")),
+        ("Space - Single", ("Space", "Single")),
+        ("Forever Single", ("Forever Single", "Album")),
+    ],
+)
+def test_qobuz_cuts_a_single_set_apart_and_keeps_one_in_the_name(title: str, expected: tuple[str, str]) -> None:
+    assert qobuz_title_and_type(title) == expected
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Space (Deluxe Edition) – Single",
+        "Space (Deluxe Edition) (EP)",
+        "Space (Deluxe Edition) [Single]",
+        "Space (Deluxe Edition) EP",
+    ],
+)
+def test_qobuz_finds_the_edition_before_any_release_type_marker(title: str) -> None:
+    assert QobuzScraper().parse_edition_title({"title": title}) == "Deluxe Edition"
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Space (Deluxe Edition) - Single", "Deluxe Edition"),
+        ("Space (Deluxe Edition)", "Deluxe Edition"),
+        ("Space (EP)", None),
+        ("Space - Single", None),
+    ],
+)
+def test_as_before_qobuz_finds_the_edition_ending_the_title(title: str, expected: str | None) -> None:
+    assert QobuzScraper().parse_edition_title({"title": title}) == expected
+
+
+@pytest.mark.parametrize("title", ["Space - Single", "Space (Single)"])
+def test_as_before_an_ep_cut_leaves_a_single_marker_alone(title: str) -> None:
+    assert QobuzScraper().determine_rls_type({"title": title, "rls_type": "EP"}) == (title, "EP")

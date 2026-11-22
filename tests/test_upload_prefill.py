@@ -207,6 +207,20 @@ def test_a_store_suffix_on_the_title_and_a_joint_artist_credit_still_match() -> 
     assert metadata_mod.suggest_choice(choices, results, rls_data, 2, None) == "1"
 
 
+@pytest.mark.parametrize("album", ["Album – EP", "Album \u2014 Single", "Album - E.P.", "Album (E.P.)"])
+def test_a_result_whose_title_ends_in_any_release_type_marker_matches(album: str) -> None:
+    choices, results = _search(("Apple Music", "am", _ident(album=album)))
+
+    assert metadata_mod.suggest_choice(choices, results, _rls_data(), 2, None) == "1"
+
+
+@pytest.mark.parametrize(("album", "matches"), [("Album (Single)", True), ("Album [EP]", True), ("Album EP", False)])
+def test_as_before_a_bracketed_marker_matches_and_a_bare_ep_is_a_name(album: str, matches: bool) -> None:
+    choices, results = _search(("Apple Music", "am", _ident(album=album)))
+
+    assert metadata_mod.suggest_choice(choices, results, _rls_data(), 2, None) == ("1" if matches else None)
+
+
 @pytest.mark.parametrize(
     "ident",
     [
@@ -398,6 +412,20 @@ def test_names_match_as_the_tracker_escapes_them_and_credits_joint_artists() -> 
 )
 def test_no_single_matching_group_leaves_a_new_group_the_default(results, release) -> None:
     assert dupe_checker.suggest_group(results, release) == ""
+
+
+@pytest.mark.parametrize(
+    ("ours", "group"),
+    [("Album - EP", "Album"), ("Album (EP)", "Album"), ("Album – Single", "Album"), ("Album", "Album (Single)")],
+)
+def test_a_release_type_set_apart_at_the_end_of_either_title_is_no_part_of_it(ours: str, group: str) -> None:
+    assert dupe_checker.suggest_group([_result(1, name=group)], _rls_data(title=ours)) == "1"
+
+
+@pytest.mark.parametrize(("ours", "group"), [("Album EP", "Album"), ("Album", "Album Single"), ("Album E.P.", "Album")])
+def test_as_before_a_bare_release_type_is_part_of_the_title(ours: str, group: str) -> None:
+    # A bare "EP" or "Single" may be the name's own word: the group is listed, and a new group is the default.
+    assert dupe_checker.suggest_group([_result(1, name=group)], _rls_data(title=ours)) == ""
 
 
 def test_a_remaster_defaults_to_the_group_of_its_original_year() -> None:

@@ -18,6 +18,7 @@ from salmon.common.strings import (
     comparable,
     composer_title_forms,
     numeric_id,
+    split_type_marker,
 )
 from salmon.errors import AbortAndDeleteFolder, RequestError, SkipTracker
 from salmon.trackers.base import hold_request_messages
@@ -104,9 +105,9 @@ def _title_words(title: str | None) -> set[str]:
     Returns:
         The set of normalized words in the title, empty if there is no title.
     """
-    album = _sanitize_album_for_dupe_check(title)
-    # Not _RE_TYPE_SUFFIX, which takes a type only at the end: here it goes wherever it follows a space, so it is seldom
-    # the one word two different titles share. These words are only compared, never searched.
+    album = split_type_marker(_sanitize_album_for_dupe_check(title)).title
+    # And a bare type wherever it follows a space, so it is seldom the one word two different titles share. These words
+    # are only compared, never searched.
     album = re.sub(r" ?(- )? (EP|Single)\b", "", album)
     album = re.sub(r"\(?[Ff]eat(\.|uring)? [^\)]+\)?", "", album)
     normalized = re_strip(album, filter_nonscrape=False)
@@ -682,7 +683,8 @@ def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
     pairs = list(release.get("artists") or [])
     composers = [name for name, role in pairs if role == "composer"]
     performers = [name for name, role in pairs if role == "main"]
-    titles = composer_title_forms(release.get("title"), composers)
+    # A type set apart ("Album - EP") is no part of either title; a bare one may be.
+    titles = composer_title_forms(split_type_marker(release.get("title"), bare=False).title, composers)
     artists = artist_keys(pairs)
     year = str(release.get("group_year") or release.get("year") or "").strip()
     if not titles or not artists or not year:
@@ -691,7 +693,7 @@ def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
         str(number)
         for number, result in enumerate(results, 1)
         if result.get("groupId") is not None
-        and titles & composer_title_forms(result.get("groupName"), composers)
+        and titles & composer_title_forms(split_type_marker(result.get("groupName"), bare=False).title, composers)
         and (
             comparable(html.unescape(str(result.get("artist") or ""))) in artists
             or classical_artist_matches(result.get("artist"), composers, performers)

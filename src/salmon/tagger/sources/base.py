@@ -6,7 +6,13 @@ from typing import Any
 
 from salmon import cfg
 from salmon.common import RE_USELESS_VERSION, fetch_genre, less_uppers, normalize_accents, split_genre
-from salmon.common.strings import join_artists, names_no_artist, reaches_various_threshold, unbracketed
+from salmon.common.strings import (
+    join_artists,
+    names_no_artist,
+    reaches_various_threshold,
+    split_type_marker,
+    unbracketed,
+)
 from salmon.errors import GenreNotInWhitelist, ScrapeError
 
 
@@ -179,8 +185,8 @@ class MetadataMixin(ABC):
         # --- Title-based overrides ---
         if re.search(r"\bE\.?P\.?\b", title, re.IGNORECASE):
             return strip_ep_suffix(title), "EP"
-        if re.search(r"-? *Single$", title, re.IGNORECASE):
-            return re.sub(r"-? *Single$", "", title, flags=re.IGNORECASE).strip(), "Single"
+        if (marked := split_type_marker(title, bare=False)).rls_type == "Single":
+            return marked.title.strip(), "Single"
         elif re.search(r"original.*soundtrack", data["title"], flags=re.IGNORECASE):
             return data["title"], "Soundtrack"
 
@@ -332,18 +338,9 @@ def folded_title(track) -> str | None:
     return f"{title} ({version})" if title and version else title
 
 
-# What a store appends to a title to say the release is an EP: "Title - EP" (any dash, with a space before it, so
-# "MAX-EP" stays a name), "Title (EP)", "Title [EP]".
-RE_EP_STORE_SUFFIX = re.compile(
-    r"(?:\s+[-‐-―]\s*E\.?P\.?|\s*\(\s*E\.?P\.?\s*\)|\s*\[\s*E\.?P\.?\s*\])\s*$", re.IGNORECASE
-)
-# "EP" ending the title itself: "Title EP".
-RE_EP_TITLE_SUFFIX = re.compile(r"\s+E\.?P\.?\s*$", re.IGNORECASE)
-
-
 def ends_with_ep(title):
     """Whether an EP marker ends the title, a store's or a bare "EP", whatever strip_ep_from_title says."""
-    return bool(RE_EP_STORE_SUFFIX.search(title) or RE_EP_TITLE_SUFFIX.search(title))
+    return split_type_marker(title).rls_type == "EP"
 
 
 def strip_ep_suffix(title):
@@ -354,10 +351,8 @@ def strip_ep_suffix(title):
     title ("Title EP") goes only with strip_ep_from_title, as it is often part of the
     release's name. An "EP" inside the title ("The EP Sessions") is part of it and stays.
     """
-    stripped = RE_EP_STORE_SUFFIX.sub("", title)
-    if stripped == title and cfg.upload.formatting.strip_ep_from_title:
-        stripped = RE_EP_TITLE_SUFFIX.sub("", title)
-    return stripped.strip() or title
+    stripped, rls_type = split_type_marker(title, bare=cfg.upload.formatting.strip_ep_from_title)
+    return (stripped if rls_type == "EP" else title).strip() or title
 
 
 def label_names_a_main_artist(label: str, artists) -> bool:

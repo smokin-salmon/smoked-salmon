@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 
 from salmon.common import RE_FEAT, parse_copyright
+from salmon.common.strings import split_type_marker
 from salmon.errors import ScrapeError
 from salmon.sources import AppleMusicBase
 from salmon.tagger.sources.base import MetadataMixin, add_track
@@ -81,7 +82,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
 
             if re.search(r"\bE\.?P\.?\b", name, re.IGNORECASE):
                 return "EP"
-            if re.search(r"-? *Single$", name, re.IGNORECASE):
+            if split_type_marker(name, bare=False).rls_type == "Single":
                 return "Single"
 
             if attrs.get("isSingle"):

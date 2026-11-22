@@ -326,6 +326,32 @@ def test_named_trackers_get_ups_dupe_search_and_their_do_not_upload_list(album, 
     ]
 
 
+class SearchingTracker(FakeTracker):
+    """A tracker whose search finds GROUP only for the search that names it, "artist album"."""
+
+    async def _handle(self, request: web.Request) -> web.Response:
+        if request.query.get("action") == "browse":
+            self.sent.append((request.method, request.path, dict(request.query)))
+            found = [GROUP] if request.query.get("searchstr") == "artist album" else []
+            return web.json_response({"status": "success", "response": {"results": found}})
+        return await super()._handle(request)
+
+
+def test_a_release_type_in_brackets_is_left_out_of_the_dupe_search(album, monkeypatch, tmp_path):
+    for track in album.glob("*.flac"):
+        tags = FLAC(track)
+        tags["album"] = "Album (EP)"
+        tags.save()
+    trackers = {"RED": FakeTracker([]), "OPS": SearchingTracker([])}
+
+    result = _run_with_trackers(monkeypatch, tmp_path, album, trackers, UNMATCHED)
+
+    assert result.exit_code == 0, result.output
+    browses = [query["searchstr"] for _method, _path, query in trackers["OPS"].sent if query["action"] == "browse"]
+    assert browses == ["artist album"]
+    assert _rows(result.output)["Dupe (OPS)"] == "WARN"
+
+
 @pytest.mark.parametrize(
     "browse",
     [
