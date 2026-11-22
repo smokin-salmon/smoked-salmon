@@ -200,6 +200,17 @@ def test_each_claim_of_a_joined_part_keeps_its_flag(
     assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", role)]
 
 
+def test_a_guessed_claim_completes_a_join_beside_a_stated_part_in_another_role(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The files state Ava as main and Max as guest; Deezer guesses Max as main. The repair joins over every source's
+    claims, guesses included, so Ava Max is credited in main and the files' Max stays a guest (#1109)."""
+    stores_stating(monkeypatch, stating=(), assuming=("Deezer",))
+    files = two_tracks([("Ava", "main"), ("Max", "guest")], [("Ava Max", "composer")])
+
+    combined = combine_metadatas(("Deezer", two_tracks([("Max", "main")], [])), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", "main"), ("Max", "guest")]
+
+
 def test_as_before_one_title_naming_two_spellings_of_a_remixer_keeps_both() -> None:
     files, deezer = release(("Bob", "main")), release(("Bob", "main"))
     for meta in (files, deezer):
