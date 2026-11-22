@@ -183,17 +183,19 @@ def test_a_scrape_used_alone_has_its_titles_written_before_a_split_name_is_joine
     decide_alone(alone, "Deezer")
 
     assert alone["tracks"]["1"]["1"]["title"] == "Song"
+    assert alone["tracks"]["1"]["1"]["artists"] == [("Bob", "main"), ("Ava Max", "guest")]
 
 
-def test_a_guess_that_agrees_with_a_kept_claim_follows_it_and_disputes_nothing(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+@pytest.mark.parametrize("store", ["Deezer", "Qobuz"], ids=["a store's guess", "a store's stated guest"])
+def test_a_claim_that_agrees_with_a_kept_claim_follows_it_and_disputes_nothing(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture, store: str
 ) -> None:
-    # Review on #1164: Deezer's guessed guest loses to the files' main for Max, but agrees with the files' own guest
-    # credit of Max, which stays: it is a claim of that credit, not of the whole name the main is joined into.
-    stores_stating(monkeypatch, (), ("Deezer",))
+    # Review on #1164: the store's guest loses to the files' main for Max, but agrees with the files' own guest credit
+    # of Max, which stays: it is a claim of that credit, not of the whole name the main is joined into.
+    stores_stating(monkeypatch, ("Qobuz",), ("Deezer",))
     files = two_tracks([("Ava", "main"), ("Max", "main"), ("Max", "guest")], [("Ava Max", "composer")])
 
-    combined = combine_metadatas(("Deezer", two_tracks([("Max", "guest")], [("Ava Max", "composer")])), base=files)
+    combined = combine_metadatas((store, two_tracks([("Max", "guest")], [("Ava Max", "composer")])), base=files)
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", "main"), ("Max", "guest")]
     assert "Kept" not in capsys.readouterr().out

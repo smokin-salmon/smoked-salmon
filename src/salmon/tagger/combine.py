@@ -724,9 +724,9 @@ def _join_split_names(claims, to_replace):
     when that one is joined, and loses to it again. One that agrees with a claim the decision keeps (the files' own
     guest beside their main) follows that one."""
     overruled = _overruled(claims)
-    kept = list(dict.fromkeys((claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled))
+    kept = dict.fromkeys((claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled)
     joined = {}
-    fix_artists_list(list(kept), to_replace, joined)
+    fix_artists_list(list(kept), to_replace, joined)  # a list of its own: the repair changes the one it is given
     renamed = []
     for at, claim in enumerate(claims):
         key = (claim.name, claim.role if (claim.name, claim.role) in kept else overruled[at])
