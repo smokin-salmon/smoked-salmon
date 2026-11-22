@@ -465,10 +465,11 @@ def test_combine_tracks_merges_each_scraped_track_onto_its_own_local_track():
 
     combined = combine_tracks(deepcopy(base), deepcopy(meta), True)
 
-    assert {num: (track["peak"], track["title"], track["isrc"]) for num, track in combined["1"].items()} == {
-        "1": ("0.7", "Work (Original Mix)", "GBAAA2600001"),
-        "2": ("0.5", "Django (Original Mix)", "GBAAA2600002"),
-        "3": ("0.6", "I Walk (Original Mix)", "GBAAA2600003"),
+    # Pairing alone: titles are decided once the last store is merged (combine_metadatas).
+    assert {num: (track["peak"], track["isrc"]) for num, track in combined["1"].items()} == {
+        "1": ("0.7", "GBAAA2600001"),
+        "2": ("0.5", "GBAAA2600002"),
+        "3": ("0.6", "GBAAA2600003"),
     }
 
 

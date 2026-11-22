@@ -3,7 +3,7 @@ from collections import defaultdict
 from html import unescape
 
 from salmon.common import RE_FEAT, parse_copyright, re_split
-from salmon.common.strings import guests_from_title
+from salmon.common.strings import guests_from_title, unbracketed
 from salmon.sources import DeezerBase
 from salmon.tagger.sources.base import MetadataMixin, add_track, label_names_a_main_artist
 
@@ -54,7 +54,8 @@ class Scraper(DeezerBase, MetadataMixin):
                 trackno=track["TRACK_NUMBER"],
                 discno=track["DISK_NUMBER"],
                 artists=self.parse_artists(track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"]),
-                title=self.parse_title(track["SNG_TITLE"], track.get("VERSION", None)),
+                title=track["SNG_TITLE"],
+                version=unbracketed(track.get("VERSION")),
                 isrc=track["ISRC"],
                 explicit=track["EXPLICIT_LYRICS"],
                 stream_id=track["SNG_ID"],

@@ -51,11 +51,17 @@ TrackMetadata = TypedDict(
         "stream_id": NotRequired[str | int | None],
         "md5_origin": NotRequired[str | None],
         "media_version": NotRequired[str | None],
+        "version": NotRequired[str | None],  # the track's version as the store gives it apart, beside its title
         "lossless": NotRequired[bool | None],
         "mp3_320": NotRequired[bool | None],
         "credited_remixers": NotRequired[list[str]],
         "artist_variations": NotRequired[list[dict[str, str]]],
         "assumed_artists": NotRequired[list[Credit]],  # a stating store's guesses, among its artists
+        # Merge-only: each store's (title, version) beside the base track's, for the merge to decide the title.
+        "store_titles": NotRequired[list[tuple[str | None, str | None]]],
+        # Merge-only: the store whose title the merge took for the base's placeholder ("Track 01"), None when
+        # combine_tracks is given no sources.
+        "placeholder_from": NotRequired[str | None],
         # The files' only.
         "numbered": NotRequired[bool],
     },
