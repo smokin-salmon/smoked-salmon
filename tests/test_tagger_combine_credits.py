@@ -8,12 +8,13 @@ from copy import deepcopy
 import msgspec
 import pytest
 from helpers.tagger_combine import make_tracks, one_track, stating, stores_stating
+from test_common_credits import files_claim, store_claim
 
 from salmon import cfg
 from salmon.common.credits import Claim
-from salmon.tagger.combine import _decide_credits, combine_metadatas, combine_tracks, decide_alone
+from salmon.tagger.combine import _decide_credits, _join_split_names, combine_metadatas, combine_tracks, decide_alone
 from salmon.tagger.retagger import create_remixer_list
-from salmon.tagger.sources.base import generate_artists
+from salmon.tagger.sources.base import construct_replacement_list, generate_artists
 
 
 def release(*artists: tuple[str, str], label: str | None = None) -> dict:
@@ -128,6 +129,283 @@ def test_as_before_a_fragment_the_merge_drops_stays_dropped() -> None:
     combined = combine_metadatas(("Deezer", release(("Ava", "main"))), base=release(("Ava Daniel", "main")))
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Daniel", "main")]
+
+
+def test_a_badly_split_name_is_joined_back_before_the_decision_weighs_it() -> None:
+    # #1109: deciding first took Max's main away, as Max is also a guest, and the repair then had no Max to join Ava to.
+    files = two_tracks([("Max", "guest"), ("Ava", "main"), ("Max", "main")], [("Ava Max", "composer")])
+
+    combined = combine_metadatas(("Deezer", two_tracks([], [])), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Max", "guest"), ("Ava Max", "main")]
+
+
+def decided(claims: list[Claim], *others: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Track 1's credits as the merge decides them from these claims, the release's other tracks credited `others`
+    (stated, by the files)."""
+    tracks = make_tracks({"1": [str(num) for num in range(1, len(others) + 2)]}, isrc_prefix=None)
+    first = tracks["1"]["1"]
+    first["artists"] = list(dict.fromkeys((claim.name, claim.role) for claim in claims))
+    for num, artists in enumerate(others, 2):
+        tracks["1"][str(num)]["artists"] = artists
+    _decide_credits(tracks, {id(first): claims}, "files")
+    return first["artists"]
+
+
+@pytest.mark.parametrize("store", ["Deezer", "Qobuz"], ids=["a store's guess", "a store's stated main"])
+def test_a_claim_the_decision_overrules_completes_no_join(monkeypatch: pytest.MonkeyPatch, store: str) -> None:
+    # statelycurmudgeon on #1164: the files' stated guest beats the store's main for Max, so that main is not there to
+    # join Ava to, as before the repair ran first.
+    stores_stating(monkeypatch, ("Qobuz",), ("Deezer",))
+    files = two_tracks([("Ava", "main"), ("Max", "guest")], [("Ava & Max", "main")])
+    theirs = two_tracks([("Ava", "main"), ("Max", "main")], [("Ava & Max", "main")])
+
+    combined = combine_metadatas((store, theirs), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava", "main"), ("Max", "guest")]
+    assert combined["artists"] == [("Ava", "main"), ("Max", "guest"), ("Ava & Max", "main")]
+
+
+def test_a_scrape_used_alone_joins_no_part_its_first_guess_overrules(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Deezer guesses Max as a guest, then as a main: the first guess wins, so Max's main is not there to join Ava to.
+    stores_stating(monkeypatch, (), ("Deezer",))
+    alone = two_tracks([("Max", "guest"), ("Ava", "main"), ("Max", "main")], [("Ava Max", "composer")])
+
+    decide_alone(alone, "Deezer")
+
+    assert alone["tracks"]["1"]["1"]["artists"] == [("Max", "guest"), ("Ava", "main")]
+
+
+def test_a_scrape_used_alone_has_its_titles_written_before_a_split_name_is_joined(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Review on #1164: the featuring clause names Max as the store credits him, before Ava and Max are joined back.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    alone = two_tracks([("Bob", "main"), ("Ava", "guest"), ("Max", "guest")], [("Ava Max", "composer")])
+    alone["tracks"]["1"]["1"]["title"] = "Song (feat. Max)"
+
+    decide_alone(alone, "Deezer")
+
+    assert alone["tracks"]["1"]["1"]["title"] == "Song"
+    assert alone["tracks"]["1"]["1"]["artists"] == [("Bob", "main"), ("Ava Max", "guest")]
+
+
+@pytest.mark.parametrize("store", ["Deezer", "Qobuz"], ids=["a store's guess", "a store's stated guest"])
+def test_a_claim_that_agrees_with_a_kept_claim_follows_it_and_disputes_nothing(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture, store: str
+) -> None:
+    # Review on #1164: the store's guest loses to the files' main for Max, but agrees with the files' own guest credit
+    # of Max, which stays: it is a claim of that credit, not of the whole name the main is joined into.
+    stores_stating(monkeypatch, ("Qobuz",), ("Deezer",))
+    files = two_tracks([("Ava", "main"), ("Max", "main"), ("Max", "guest")], [("Ava Max", "composer")])
+
+    combined = combine_metadatas((store, two_tracks([("Max", "guest")], [("Ava Max", "composer")])), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", "main"), ("Max", "guest")]
+    out = capsys.readouterr().out
+    assert "Kept" not in out
+
+
+@pytest.mark.parametrize(
+    ("claims", "expected"),
+    [
+        (
+            [files_claim("Ava"), files_claim("Max"), store_claim("Deezer", "Ava", "main")],
+            [("Ava Max", "main")],
+        ),
+        (
+            [
+                files_claim("Ava"),
+                files_claim("Max"),
+                store_claim("Deezer", "Ava", "main"),
+                store_claim("Deezer", "Max", "guest"),
+            ],
+            [("Ava Max", "main")],
+        ),
+        (
+            [
+                files_claim("Ava", "guest"),
+                files_claim("Max"),
+                store_claim("Deezer", "Ava", "main"),
+                store_claim("Deezer", "Max", "main"),
+            ],
+            [("Ava", "guest"), ("Max", "main")],
+        ),
+        (
+            [files_claim("Ava"), files_claim("Max", "guest"), store_claim("Deezer", "Max", "main")],
+            [("Ava", "main"), ("Max", "guest")],
+        ),
+    ],
+    ids=[
+        "one source's part is joined too",
+        "an overruled part follows the whole name and loses again",
+        "a guess against a stated role completes no join",
+        "a guess beside a stated part in another role completes no join",
+    ],
+)
+def test_a_name_is_joined_back_from_the_claims_the_decision_keeps(
+    claims: list[Claim], expected: list[tuple[str, str]]
+) -> None:
+    """The parts are joined over every source's claims on the track, role by role, as the repair joins a track's
+    credits, but for a claim the decision overrules: it joins nothing, and follows the claim that beat it. The credits
+    are then those of deciding first and joining after, but for one source's part in two roles (#1109)."""
+    assert decided(claims, [("Ava Max", "composer")]) == expected
+
+
+@pytest.mark.parametrize(
+    ("claims", "expected"),
+    [
+        ([files_claim("Ava"), files_claim("Max"), files_claim("Ray")], [("Ava Max Ray", "main")]),
+        (
+            [
+                files_claim("Ava", "guest"),
+                files_claim("Max", "guest"),
+                files_claim("Ava"),
+                files_claim("Max"),
+                files_claim("Ray"),
+            ],
+            [("Ava Max", "guest"), ("Ava Max Ray", "main")],
+        ),
+    ],
+    ids=["in one role", "the shorter name in another role stays"],
+)
+def test_a_name_split_in_three_is_joined_back_whole(claims: list[Claim], expected: list[tuple[str, str]]) -> None:
+    """ "Ava Max" is joined, then "Ava Max" and "Ray": each part's claim is a claim of the longest name in its role."""
+    assert decided(claims, [("Ava Max", "composer")], [("Ava Max Ray", "composer")]) == expected
+
+
+def test_each_claim_of_a_joined_part_keeps_its_source_and_flag() -> None:
+    """Deezer's guessed guests lose to Qobuz's mains, so they follow them into the whole name, as guests."""
+    claims = [
+        store_claim("Qobuz", "Ava", "main", assumed=False),
+        store_claim("Qobuz", "Max", "main"),
+        store_claim("Deezer", "Ava", "guest"),
+        store_claim("Deezer", "Max", "guest"),
+    ]
+
+    to_replace = construct_replacement_list([("Ava", "main"), ("Max", "main"), ("Ava Max", "composer")])
+
+    joined = _join_split_names(claims, to_replace)
+
+    assert [(claim.source, claim.name, claim.role, claim.assumed) for claim in joined] == [
+        ("Qobuz", "Ava Max", "main", False),
+        ("Qobuz", "Ava Max", "main", True),
+        ("Deezer", "Ava Max", "guest", True),
+        ("Deezer", "Ava Max", "guest", True),
+    ]
+
+
+def test_claims_the_decision_overrules_are_not_credited_beside_the_name_that_beat_them() -> None:
+    """Deezer's guesses of Ava and Max as guests come first, so Qobuz's guessed mains lose: they follow Deezer's
+    claims into the whole name, and are not left as mains of their own."""
+    claims = [
+        store_claim("Deezer", "Ava", "guest"),
+        store_claim("Deezer", "Max", "guest"),
+        store_claim("Qobuz", "Ava", "main"),
+        store_claim("Qobuz", "Max", "main"),
+    ]
+
+    assert decided(claims, [("Ava Max", "composer")]) == [("Ava Max", "guest")]
+
+
+def test_a_split_name_is_joined_back_under_the_spelling_its_artist_takes() -> None:
+    # #1109 and #1131 together: "Ava" and "Max" join into the one artist "The Ava Max" / "Ava Max" is, spelled once.
+    files, deezer = release(), release()
+    files["tracks"] = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    deezer["tracks"] = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    files["tracks"]["1"]["1"]["artists"] = [("Ava", "main"), ("Max", "main")]
+    files["tracks"]["1"]["2"]["artists"] = [("The Ava Max", "composer")]
+    files["tracks"]["1"]["3"]["artists"] = [("Ava Max", "composer")]
+    for track in deezer["tracks"]["1"].values():
+        track["artists"] = []
+
+    combined = combine_metadatas(("Deezer", deezer), base=files)
+
+    assert [combined["tracks"]["1"][num]["artists"] for num in ("1", "2", "3")] == [
+        [("The Ava Max", "main")],
+        [("The Ava Max", "composer")],
+        [("The Ava Max", "composer")],
+    ]
+
+
+def test_as_before_a_featuring_clause_naming_a_dropped_fragment_stays(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The store's "Simon" is a fragment of "Simon & Garfunkel" and goes, so nothing credits the clause's Simon.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    files = release(("Simon & Garfunkel", "main"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. Simon)"
+
+    combined = combine_metadatas(("Deezer", release(("Simon & Garfunkel", "main"), ("Simon", "guest"))), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song (feat. Simon)"
+
+
+@pytest.mark.parametrize(
+    ("written", "expected"),
+    [("Herbaliser", "Herbaliser X"), ("The Herbaliser", "Herbaliser")],
+    ids=["the files' spelling, which salmon writes", "a store's spelling, which it doesn't"],
+)
+def test_a_corrected_artist_is_one_credit_under_every_spelling(
+    monkeypatch: pytest.MonkeyPatch, written: str, expected: str
+) -> None:
+    # A correction names the spelling salmon writes, and the artist's other spellings follow it: one credit either way.
+    stores_stating(monkeypatch, ("Qobuz",), ())
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {written: "Herbaliser X"})
+
+    combined = combine_metadatas(("Qobuz", release(("The Herbaliser", "main"))), base=release(("Herbaliser", "main")))
+
+    assert credits(combined) == [[(expected, "main")]]
+
+
+def test_a_correction_is_not_shown_as_a_join(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    stores_stating(monkeypatch, ("Qobuz",), ())
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {"Herbaliser": "Herbaliser X"})
+
+    combine_metadatas(("Qobuz", release(("The Herbaliser", "main"))), base=release(("Herbaliser", "main")))
+
+    out = capsys.readouterr().out
+    assert "Herbaliser: The Herbaliser (Qobuz)" in out
+    assert "Herbaliser X:" not in out
+
+
+def test_a_remixer_discogs_credits_under_another_name_takes_its_correction(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Discogs' credited name is a REMIXER name of its own, not a credit on the track: the correction still reaches it.
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {"Herbalizer": "Herbaliser X"})
+    discogs = credited_as(
+        release(("Bob", "main"), ("The Herbaliser", "remixer")), "The Herbaliser", "remixer", "Herbalizer"
+    )
+    discogs["tracks"]["1"]["1"]["credited_remixers"] = ["The Herbaliser", "Herbalizer"]  # as the parser lists them
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Bob", "main")))
+
+    assert combined["tracks"]["1"]["1"]["credited_remixers"] == ["The Herbaliser", "Herbaliser X"]
+
+
+def test_a_corrected_artist_keeps_the_name_discogs_credits_it_as(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {"Roger Taylor": "Roger Meddows Taylor"})
+    discogs = credited_as(
+        release(("Queen", "main"), ("Roger Taylor", "producer")), "Roger Taylor", "producer", "Taylor"
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Queen", "main"), ("Taylor", "guest")))
+
+    assert credits(combined) == [[("Queen", "main"), ("Taylor", "guest"), ("Taylor", "producer")]]
+
+
+def test_a_featuring_clause_naming_discogs_name_for_a_credited_name_goes(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Discogs credits "The Groove Unit Collective" as the files' "The Groove Unit": the clause names the guest.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    files = release(("Bob", "main"), ("Groove Unit", "guest"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. The Groove Unit Collective)"
+    discogs = credited_as(
+        release(("Bob", "main"), ("The Groove Unit Collective", "guest")),
+        "The Groove Unit Collective",
+        "guest",
+        "The Groove Unit",
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song"
 
 
 def test_one_title_naming_a_remixer_in_two_spellings_gives_one_remixer() -> None:

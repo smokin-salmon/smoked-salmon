@@ -1,7 +1,7 @@
 album = "Queen, Greatest Hits"
-why = "A one-artist compilation (#971 item 1): the release artist is the band, not 'Various'. Discogs' main release is the US edition with another tracklist, and its parse loses Queen as an artist."
+why = "A one-artist compilation (#971 item 1): the release artist is the band, not 'Various'. Discogs' main release is the US edition with another tracklist."
 edition = "EMI 2011 remaster, 17 tracks (Deezer 1007459321 = MusicBrainz b524d296 by barcode); Discogs 1158595 is master 78096's main release: the 1992 Hollywood Records US CD, a different tracklist"
-known_wrong = ["Discogs parse: Queen only as producer (with Mack, Roy Thomas Baker), no main artist, ALBUMARTIST '' and ARTIST '' on every track"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]
@@ -24,7 +24,7 @@ release = ["Queen (main)"]
 tracks = 17
 
 [today.discogs]
-release = ["Queen (producer)", "Mack (producer)", "Roy Thomas Baker (producer)"]
+release = ["Queen (main)", "Queen (producer)", "Mack (producer)", "Roy Thomas Baker (producer)"]
 tracks = 17
 
 [today.qobuz]

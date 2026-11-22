@@ -124,3 +124,45 @@ def test_an_artist_corrected_twice_in_two_cases_is_refused() -> None:
     # Both would match the same names, so one of them would be silently dropped.
     with pytest.raises(ValueError, match="twice"):
         Corrections(artists={"Ryuichi Sakamoto": "坂本龍一", "ryuichi sakamoto ": "Sakamoto"})
+
+
+def test_a_corrected_part_of_a_split_name_is_not_joined_back_under_its_old_name(corrections) -> None:
+    # CodeRabbit on #1164: the join of "Ava" and "Max" ran before the correction and kept "Ava Max" as one main.
+    corrections({"Max": "Morgan"})
+
+    metadata = _combined([("Ava", "main"), ("Max", "main")], [("Ava Max", "composer")])
+
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("Ava", "main"), ("Morgan", "main")]
+
+
+def test_a_correction_chain_is_followed_one_step_as_before(corrections) -> None:
+    # Each name is corrected once: "Max" is written "Morgan", not "Mo".
+    corrections({"Max": "Morgan", "Morgan": "Mo"})
+
+    metadata = _combined([("Ava", "main"), ("Max", "main")], [("Ava Max", "composer")])
+
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("Ava", "main"), ("Morgan", "main")]
+
+
+def test_a_track_no_store_pairs_is_corrected_once(corrections) -> None:
+    # CodeRabbit on #1164: its claims, built from its corrected credits, were corrected again ("Morgan" to "Mo"), no
+    # longer matched its credit, and its only artist was dropped.
+    corrections({"Max": "Morgan", "Morgan": "Mo"})
+    files = _scraped([("Ava", "main")], [("Max", "main")])
+
+    metadata = _combine_scraped(["Qobuz"], [_scraped([("Ava", "main")])], files, None)
+
+    assert metadata["tracks"]["1"]["2"]["artists"] == [("Morgan", "main")]
+
+
+def test_a_featuring_clause_naming_a_corrected_guest_is_still_left_out(monkeypatch, corrections) -> None:
+    # CodeRabbit on #1164: the title was written from the corrected credits, which no longer name "Max".
+    corrections({"Max": "Morgan"})
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    files = _scraped([("Ava", "main"), ("Max", "guest")])
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. Max)"
+
+    metadata = _combine_scraped(["Qobuz"], [_scraped([("Ava", "main"), ("Max", "guest")])], files, None)
+
+    assert metadata["tracks"]["1"]["1"]["title"] == "Song"
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("Ava", "main"), ("Morgan", "guest")]

@@ -17,8 +17,10 @@ from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
 from salmon.tagger.sources.base import (
     artist_spellings,
+    construct_replacement_list,
     determine_label_type,
     featuring_clause,
+    fix_artists_list,
     folded_title,
     generate_artists,
     standardize_genres,
@@ -163,13 +165,15 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     if "url" in base:
         del base["url"]
 
-    decisions, joined, performers = _decide_credits(base["tracks"], claims, base_source)
-    _decide_titles(base["tracks"], base_source, performers)
+    _drop_fragments(base["tracks"], claims)
+    # The titles first, from the performers as the sources credited them, before the decision corrects their names and
+    # joins split ones: a featuring clause names them that way, and deciding changes only their roles.
+    _decide_titles(base["tracks"], base_source, claims)
+    decisions, joined = _decide_credits(base["tracks"], claims, base_source, corrected=True)
     # After the decision: a base track no store paired is decided from its own marks.
     without_merge_only_keys(base)
     _print_joined(joined)
     _print_disputes(decisions)
-    _correct_artists(base["tracks"])
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
     base["genres"] = standardize_genres(_correct_genres(base["genres"]))
     base["label"] = determine_label_type(base["label"], base["artists"])
@@ -180,18 +184,8 @@ def _correction_key(name):
     return name.strip().casefold()
 
 
-def _correct_artists(tracks):
-    """Rename each track artist that [metadata.corrections] artists names, keeping its role."""
-    corrections = {_correction_key(name): to for name, to in cfg.metadata.corrections.artists.items()}
-    if not corrections:
-        return
-    for disc in tracks.values():
-        for track in disc.values():
-            track["artists"] = [(corrections.get(_correction_key(name), name), role) for name, role in track["artists"]]
-            if "credited_remixers" in track:
-                track["credited_remixers"] = [
-                    corrections.get(_correction_key(name), name) for name in track["credited_remixers"]
-                ]
+def _artist_corrections():
+    return {_correction_key(name): to for name, to in cfg.metadata.corrections.artists.items()}
 
 
 def _correct_genres(genres):
@@ -513,13 +507,22 @@ def _untitled(title):
     return not title or bool(_RE_PLACEHOLDER_TITLE.fullmatch(title))
 
 
-def _decide_titles(tracks, base_source, performers):
+def _decide_titles(tracks, base_source, claims):
     """Write each track's one title, from its own and each store's beside it (`store_titles`), in place. A featuring
-    clause may name a performer under any name its sources gave it (`performers`, from _decide_credits)."""
-    for disc_no, disc in tracks.items():
-        for num, track in disc.items():
-            credited = _credited(track) | performers.get((disc_no, num), set())
-            track["title"], _why = _written_title(track, base_source == "files", credited)
+    clause may name a performer under any name a source gave it, Discogs' credited name (ANV) included."""
+    for disc in tracks.values():
+        for track in disc.values():
+            own = claims.get(id(track)) or _claims_of(track, base_source)
+            # Only an artist still credited on the track: a fragment the merge dropped performs nothing.
+            keys = {same_artist_key(name) for name, _ in track["artists"]}
+            performers = {
+                comparable(name)
+                for claim in own
+                if claim.role in {"main", "guest"}
+                and {same_artist_key(claim.name), same_artist_key(claim.credited_as)} & keys
+                for name in (claim.name, claim.credited_as)
+            }
+            track["title"], _why = _written_title(track, base_source == "files", _credited(track) | performers)
 
 
 def _credited(track):
@@ -654,49 +657,69 @@ def _with_store_accents(title, stores):
     return title
 
 
-def _decide_credits(tracks, claims, base_source):
-    """Decide each track's credits from its claims (ADR 0007), in place. Returns the reasons, the names read as one
-    artist beyond what `comparable` joins (_print_joined), and each track's performers under every name its sources gave
-    them, by comparable (what a featuring clause in its title may name).
+def _drop_fragments(tracks, claims):
+    """Drop each paired track's fragments (#1112), once, after the last store, so the guard sees every name Discogs
+    credits on the track."""
+    for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
+        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()))
 
-    Before anything else, each track a store paired drops its fragments (#1112), with every store's credited names in.
+
+def _decide_credits(tracks, claims, base_source, corrected=False):
+    """Decide each track's credits from its claims (ADR 0007), in place. Returns the reasons and the names read as one
+    artist beyond what `comparable` joins (_print_joined).
 
     Each claim first takes its artist's spelling (_artist_classes), so two spellings of one artist are one name to
-    decide on. A claim whose artist the check dropped in that role (a fragment of another name) is left out. Every kept
-    credit has a claim: the merge claims each credit it adds to a track. A credited remixer takes its artist's spelling
-    too, so the REMIXER tag still finds it. A performer is every name a kept main or guest claim gives, as printed or
-    as credited (Discogs' ANV).
+    decide on. With `corrected`, the configured artist corrections apply to that spelling, once, so a corrected artist
+    keeps every spelling it had, and a corrected part joins under its new name, as it did when the repair ran after the
+    corrections. A claim
+    whose artist the merge dropped in that role (a fragment of another name) is left out. Every kept credit has a
+    claim: the merge claims each credit it adds to a track. The track's badly split names are joined back over every
+    source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). A credited remixer takes its
+    artist's spelling too, so the REMIXER tag still finds it.
     """
-    for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
-        # After the last store, so the guard sees every name Discogs credits on the track (#1112).
-        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()))
-    spelled = _artist_classes(tracks, claims, base_source)
-    by_track, joined, performers = {}, {}, {}
+    own = {
+        (disc, num): claims.get(id(track)) or _claims_of(track, base_source)
+        for disc, disc_tracks in tracks.items()
+        for num, track in disc_tracks.items()
+    }
+    corrections = _artist_corrections() if corrected else {}
+    shown = _artist_classes(tracks, own)
+    spelled = {
+        key: {name: corrections.get(_correction_key(as_)) or as_ for name, as_ in spelling.items()}
+        for key, spelling in shown.items()
+    }
+    to_replace = construct_replacement_list(
+        [
+            (spelled[disc, num][name], role)
+            for disc, disc_tracks in tracks.items()
+            for num, track in disc_tracks.items()
+            for name, role in track["artists"]
+        ]
+    )
+    by_track, joined = {}, {}
     for disc, disc_tracks in tracks.items():
         for num, track in disc_tracks.items():
             spelling = spelled[disc, num]
             kept = {(spelling[name], role) for name, role in track["artists"]}
-            own = claims.get(id(track)) or _claims_of(track, base_source)
-            stays = [claim for claim in own if (spelling[claim.name], claim.role) in kept]
-            by_track[disc, num] = [msgspec.structs.replace(claim, name=spelling[claim.name]) for claim in stays]
-            _note_joins(joined, stays, spelling)
-            performers[disc, num] = {
-                comparable(name)
-                for claim in stays
-                if claim.role in {"main", "guest"}
-                for name in (claim.name, claim.credited_as)
-            }
+            stays = [claim for claim in own[disc, num] if (spelling[claim.name], claim.role) in kept]
+            by_track[disc, num] = _join_split_names(
+                [msgspec.structs.replace(claim, name=spelling[claim.name]) for claim in stays], to_replace
+            )
+            _note_joins(joined, stays, shown[disc, num])
             if "credited_remixers" in track:
                 track["credited_remixers"] = list(
-                    dict.fromkeys(spelling.get(name, name) for name in track["credited_remixers"])
+                    dict.fromkeys(
+                        spelling.get(name) or corrections.get(_correction_key(name), name)
+                        for name in track["credited_remixers"]
+                    )
                 )
     decided = resolve_credits(by_track)
     for (disc, num), credits in decided.items():
         tracks[disc][num]["artists"] = [credit for credit, _ in credits]
-    return [decision for credits in decided.values() for decision in credits], joined, performers
+    return [decision for credits in decided.values() for decision in credits], joined
 
 
-def _artist_classes(tracks, claims, base_source):
+def _artist_classes(tracks, own):
     """Which names on each track are one artist, and how that artist is spelled (#1131): each track's
     {name: spelling} for every name its credits and claims give.
 
@@ -714,13 +737,12 @@ def _artist_classes(tracks, claims, base_source):
     spelled = {}
     for disc_no, disc in tracks.items():
         for num, track in disc.items():
-            own = claims.get(id(track)) or _claims_of(track, base_source)
             joins = _credited_joins(track.get("artist_variations", ()))
             spelling_of = {}
             for name, _ in track["artists"]:
                 spelling_of.setdefault(_joined(joins, same_artist_key(name)), first[same_artist_key(name)])
             spelling = spelled[disc_no, num] = {}
-            for name in [*(name for name, _ in track["artists"]), *(claim.name for claim in own)]:
+            for name in [*(name for name, _ in track["artists"]), *(claim.name for claim in own[disc_no, num])]:
                 spelled_as = spelling_of.get(_joined(joins, same_artist_key(name)), name)
                 spelling[name] = spellings.get(normalize_accents(spelled_as.lower()), spelled_as)
     return spelled
@@ -762,12 +784,52 @@ def _joined(joins, key):
     return key
 
 
+def _join_split_names(claims, to_replace):
+    """A track's claims with its badly split names joined back, as generate_artists' repair joins a track's credits
+    (fix_artists_list, with `to_replace` from the release's names), over the claims of every source: in a role where
+    every part of a name is claimed, each claim of a part becomes a claim of the whole name, keeping its source and
+    whether it is assumed. Run before the decision, so that a part one source also claims in another role does not
+    lose a role the whole name keeps (#1109).
+
+    A claim the decision overrules (`_overruled`) joins nothing: it follows the claim that beat it, into the whole name
+    when that one is joined, and loses to it again. One that agrees with a claim the decision keeps (the files' own
+    guest beside their main) follows that one."""
+    overruled = _overruled(claims)
+    kept = dict.fromkeys((claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled)
+    joined = {}
+    fix_artists_list(list(kept), to_replace, joined)  # a list of its own: the repair changes the one it is given
+    renamed = []
+    for at, claim in enumerate(claims):
+        key = (claim.name, claim.role if (claim.name, claim.role) in kept else overruled[at])
+        renamed.append(msgspec.structs.replace(claim, name=joined[key]) if key in joined else claim)
+    return renamed
+
+
+def _overruled(claims):
+    """The claims the decision overrules, by their place in `claims`, each with the performing role it loses to: a
+    guess, and another source's claim that loses to the first. A source's stated claim beside its own claim of the
+    role kept is not overruled: the files may credit one artist as main and as guest (#1109)."""
+    won = {
+        name: (role, reason.from_sources)
+        for (name, role), reason in resolve_credits({None: claims})[None]
+        if role in {"main", "guest"}
+    }
+    return {
+        at: won[claim.name][0]
+        for at, claim in enumerate(claims)
+        if claim.role in {"main", "guest"}
+        and won[claim.name][0] != claim.role
+        and (claim.assumed or claim.source not in won[claim.name][1])
+    }
+
+
 def decide_alone(metadata, source):
     """Decide a scrape used alone as a merge of that one source, in place (no disputes to print, but the names it
-    reads as one artist): each track's credits from its claims, then the release's from the tracks."""
-    _, joined, performers = _decide_credits(metadata["tracks"], {}, source)
+    reads as one artist): each track's titles, from the names as the store credits them, as in combine_metadatas;
+    then each track's credits from its claims, and the release's from the tracks."""
+    _decide_titles(metadata["tracks"], source, {})
+    _, joined = _decide_credits(metadata["tracks"], {}, source)
     _print_joined(joined)
-    _decide_titles(metadata["tracks"], source, performers)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 
 
