@@ -9,7 +9,279 @@
    "joinphrase": ", ",
    "artist": {
     "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
-    "name": "Antonín Dvořák"
+    "name": "Antonín Dvořák",
+    "aliases": [
+     {
+      "name": "A. Dvorak",
+      "sort-name": "A. Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Anton Dvorak",
+      "sort-name": "Anton Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Anton Dvorák",
+      "sort-name": "Anton Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvorak",
+      "sort-name": "Dvorak, Antonin",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Antonin Dvorak",
+      "sort-name": "Antonin Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvorák",
+      "sort-name": "Antonin Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvoŕàk",
+      "sort-name": "Antonin Dvoŕàk",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvořák",
+      "sort-name": "Antonin Dvořák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonmn Dvorak",
+      "sort-name": "Antonmn Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín DvoYák",
+      "sort-name": "Antonín DvoYák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvorak",
+      "sort-name": "Antonín Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvorák",
+      "sort-name": "Antonín Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvorák (1841 - 1904)",
+      "sort-name": "Antonín Dvorák (1841 - 1904)",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvo·ák",
+      "sort-name": "Antonín Dvo·ák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvořák",
+      "sort-name": "Dvořák, Antonín",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "cs",
+      "primary": true
+     },
+     {
+      "name": "Antonín Dvořák",
+      "sort-name": "Dvořák, Antonín",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Antonín Dvořák",
+      "sort-name": "Dvořák, Antonín",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sv",
+      "primary": true
+     },
+     {
+      "name": "Antonín Leopold Dvořák",
+      "sort-name": "Dvořák, Antonín Leopold",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "cs",
+      "primary": false
+     },
+     {
+      "name": "Antonín Leopold Dvořák",
+      "sort-name": "Dvořák, Antonín Leopold",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "sv",
+      "primary": false
+     },
+     {
+      "name": "Devorak",
+      "sort-name": "Devorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvirak",
+      "sort-name": "Dvirak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorak",
+      "sort-name": "Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorak, Antonin (1841-1904)",
+      "sort-name": "Dvorak, Antonin (1841-1904)",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorzak",
+      "sort-name": "Dvorzak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorák",
+      "sort-name": "Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvořák",
+      "sort-name": "Dvořák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "アントニン・ドヴォルザーク",
+      "sort-name": "アントニン・ドヴォルザーク",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "ドボルザーク",
+      "sort-name": "ドボルザーク",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ドヴォルザック",
+      "sort-name": "ドヴォルザック",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ドヴォルザーク",
+      "sort-name": "ドヴォルザーク",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -17,7 +289,162 @@
    "joinphrase": "; ",
    "artist": {
     "id": "c70d12a2-24fe-4f83-a6e6-57d84f8efb51",
-    "name": "Johannes Brahms"
+    "name": "Johannes Brahms",
+    "aliases": [
+     {
+      "name": "Brahams",
+      "sort-name": "Brahams",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Brahms",
+      "sort-name": "Brahms",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Brahms Johannes",
+      "sort-name": "Brahms Johannes",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Brahms, Johannes (1833 - 1897)",
+      "sort-name": "Brahms, Johannes (1833 - 1897)",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "J Brahm",
+      "sort-name": "J Brahm",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "J. Brahms",
+      "sort-name": "Brahms, J.",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Johannes Brahm",
+      "sort-name": "Johannes Brahm",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Johannes Brahms",
+      "sort-name": "Brahms, Johannes",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Johanness Brāmss",
+      "sort-name": "Johanness Brāmss",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Иоганнес Брамс",
+      "sort-name": "Brahms, Johannes",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ru",
+      "primary": true
+     },
+     {
+      "name": "ヨハネス・ブラームス",
+      "sort-name": "ヨハネス・ブラームス",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     },
+     {
+      "name": "布拉姆斯",
+      "sort-name": "布拉姆斯",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "約翰內斯·布拉姆斯",
+      "sort-name": "約翰內斯·布拉姆斯",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "約翰尼斯·布拉姆斯",
+      "sort-name": "約翰尼斯·布拉姆斯",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "约翰内斯·勃拉姆斯",
+      "sort-name": "约翰内斯·勃拉姆斯",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "约翰内斯·布拉姆斯",
+      "sort-name": "约翰内斯·布拉姆斯",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "브람스",
+      "sort-name": "브람스",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -25,7 +452,27 @@
    "joinphrase": "",
    "artist": {
     "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
-    "name": "Fritz Reiner"
+    "name": "Fritz Reiner",
+    "aliases": [
+     {
+      "name": "Frederick Martin Reiner",
+      "sort-name": "Reiner, Frederick Martin",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Fritz Reiner",
+      "sort-name": "Reiner, Fritz",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],
@@ -108,7 +555,144 @@
         "joinphrase": ", ",
         "artist": {
          "id": "d770374d-05e9-4ed3-a068-3fbd4e6e4dd6",
-         "name": "Wiener Philharmoniker"
+         "name": "Wiener Philharmoniker",
+         "aliases": [
+          {
+           "name": "Orchestre Philarmonique de Vienne",
+           "sort-name": "Orchestre Philarmonique de Vienne",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Orchestre philarmonique de Vienne",
+           "sort-name": "Orchestre philarmonique de Vienne",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Orchestre philharmonique de Vienne",
+           "sort-name": "Orchestre philharmonique de Vienne",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "fr",
+           "primary": true
+          },
+          {
+           "name": "Orquesta Filarmónica de Viena",
+           "sort-name": "Orquesta Filarmónica de Viena",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "es",
+           "primary": true
+          },
+          {
+           "name": "The Vienna Philharmonic Orchestra",
+           "sort-name": "Vienna Philharmonic Orchestra, The",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "en",
+           "primary": false
+          },
+          {
+           "name": "VPO",
+           "sort-name": "VPO",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Vienna Philarmonica",
+           "sort-name": "Vienna Philarmonica",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Vienna Philharmonic",
+           "sort-name": "Vienna Philharmonic",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "en",
+           "primary": true
+          },
+          {
+           "name": "Vienna Philharmonic Orchestra",
+           "sort-name": "Vienna Philharmonic Orchestra",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Weiner Philharmoniker",
+           "sort-name": "Weiner Philharmoniker",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Wiener Hofoper Orchestra",
+           "sort-name": "Wiener Hofoper Orchestra",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Wiener Philarmoniker",
+           "sort-name": "Wiener Philarmoniker",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Wiener Philharmonic",
+           "sort-name": "Wiener Philharmonic",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Wiener Philharmoniker",
+           "sort-name": "Wiener Philharmoniker",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": "de",
+           "primary": true
+          },
+          {
+           "name": "ウィーン・フィルハーモニー管弦楽団",
+           "sort-name": "ウィーン・フィルハーモニーかんげんがくだん",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": "ja",
+           "primary": true
+          }
+         ]
         }
        },
        {

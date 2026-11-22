@@ -9,7 +9,36 @@
    "joinphrase": "",
    "artist": {
     "id": "0383dadf-2a4e-4d10-a46a-e9e041da8eb3",
-    "name": "Queen"
+    "name": "Queen",
+    "aliases": [
+     {
+      "name": "Queen",
+      "sort-name": "Queen",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "クイーン",
+      "sort-name": "クイーン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     },
+     {
+      "name": "皇后乐队",
+      "sort-name": "皇后乐队",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh_Hans_CN",
+      "primary": true
+     }
+    ]
    }
   }
  ],

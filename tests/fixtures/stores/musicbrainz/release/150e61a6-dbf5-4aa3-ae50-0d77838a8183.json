@@ -9,7 +9,27 @@
    "joinphrase": "",
    "artist": {
     "id": "d0630a08-3b40-4cb4-9f48-7d525262c1f6",
-    "name": "Bill Evans Trio"
+    "name": "Bill Evans Trio",
+    "aliases": [
+     {
+      "name": "The Bill Evans Trio",
+      "sort-name": "The Bill Evans Trio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ビル・エヴァンス・トリオ",
+      "sort-name": "ビル・エヴァンス・トリオ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],
@@ -35,7 +55,18 @@
     "joinphrase": "",
     "artist": {
      "id": "97cc902a-2850-4db8-8218-186f3b5a1ea5",
-     "name": "Scott LaFaro"
+     "name": "Scott LaFaro",
+     "aliases": [
+      {
+       "name": "Scott La Faro",
+       "sort-name": "Scott La Faro",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      }
+     ]
     }
    }
   ]

@@ -9,7 +9,36 @@
    "joinphrase": ", ",
    "artist": {
     "id": "1d543e07-d0d2-4834-a8db-d65c50c2a856",
-    "name": "Dolly Parton"
+    "name": "Dolly Parton",
+    "aliases": [
+     {
+      "name": "Dolly Parton and Friends",
+      "sort-name": "Dolly Parton and Friends",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dolly Rebecca Parton",
+      "sort-name": "Parton, Dolly Rebecca",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Parton, Dolly",
+      "sort-name": "Parton, Dolly",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -17,7 +46,54 @@
    "joinphrase": " & ",
    "artist": {
     "id": "498f2581-be21-4eef-8756-fbb89d79b1c0",
-    "name": "Linda Ronstadt"
+    "name": "Linda Ronstadt",
+    "aliases": [
+     {
+      "name": "Linda Maria Ronstadt",
+      "sort-name": "Ronstadt, Linda Maria",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Linda Rondstadt",
+      "sort-name": "Linda Rondstadt",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Linda Ronstad",
+      "sort-name": "Linda Ronstad",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Linda Ronstat",
+      "sort-name": "Linda Ronstat",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "リンダ・ロンシュタット",
+      "sort-name": "リンダ・ロンシュタット",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   },
   {
@@ -25,7 +101,27 @@
    "joinphrase": "",
    "artist": {
     "id": "35ef61ca-43db-4772-ba27-0489e9ebcb69",
-    "name": "Emmylou Harris"
+    "name": "Emmylou Harris",
+    "aliases": [
+     {
+      "name": "Emmilou Harris",
+      "sort-name": "Emmilou Harris",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Harris, Emmylou Harris",
+      "sort-name": "Harris, Emmylou Harris",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],

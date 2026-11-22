@@ -9,7 +9,63 @@
    "joinphrase": "",
    "artist": {
     "id": "7dc8f5bd-9d0b-4087-9f73-dc164950bbd8",
-    "name": "Queens of the Stone Age"
+    "name": "Queens of the Stone Age",
+    "aliases": [
+     {
+      "name": "Gamma Ray",
+      "sort-name": "Gamma Ray",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": true,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "QOTSA",
+      "sort-name": "QOTSA",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Queen of Stoneage",
+      "sort-name": "Queen of Stoneage",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Queens of the Stoneage",
+      "sort-name": "Queens of the Stoneage",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "クイーンズ・オブ・ザ・ストーン・エイジ",
+      "sort-name": "クイーンズ・オブ・ザ・ストーン・エイジ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     },
+     {
+      "name": "퀸스 오브 더 스톤 에이지",
+      "sort-name": "퀸스 오브 더 스톤 에이지",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ko",
+      "primary": true
+     }
+    ]
    }
   }
  ],

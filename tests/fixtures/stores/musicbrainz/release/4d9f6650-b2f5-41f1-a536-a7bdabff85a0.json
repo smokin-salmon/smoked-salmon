@@ -9,7 +9,45 @@
    "joinphrase": ", ",
    "artist": {
     "id": "509c772e-1164-4457-8d09-0553cfa77d64",
-    "name": "Chicago Symphony Orchestra"
+    "name": "Chicago Symphony Orchestra",
+    "aliases": [
+     {
+      "name": "CSO",
+      "sort-name": "CSO",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Orchestre symphonique de chicago",
+      "sort-name": "Orchestre symphonique de chicago",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "The Sinfonia Orchestra of Chicago",
+      "sort-name": "The Sinfonia Orchestra of Chicago",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "シカゴ交響楽団",
+      "sort-name": "シカゴ交響楽団",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     }
+    ]
    }
   },
   {
@@ -17,7 +55,27 @@
    "joinphrase": "",
    "artist": {
     "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
-    "name": "Fritz Reiner"
+    "name": "Fritz Reiner",
+    "aliases": [
+     {
+      "name": "Frederick Martin Reiner",
+      "sort-name": "Reiner, Frederick Martin",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Fritz Reiner",
+      "sort-name": "Reiner, Fritz",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],
@@ -33,7 +91,234 @@
     "joinphrase": ", ",
     "artist": {
      "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
-     "name": "Johann Strauss"
+     "name": "Johann Strauss",
+     "aliases": [
+      {
+       "name": "J.Štrauss",
+       "sort-name": "Štrauss, J.",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "lv",
+       "primary": false
+      },
+      {
+       "name": "J.シュトラウス II",
+       "sort-name": "J.シュトラウス II",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      },
+      {
+       "name": "J.シュトラウスII",
+       "sort-name": "J.シュトラウスII",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      },
+      {
+       "name": "Joh",
+       "sort-name": "Joh",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Johan",
+       "sort-name": "Johan",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Johann Baptist Strauss II",
+       "sort-name": "Strauss, Johann Baptist II",
+       "type": "Legal name",
+       "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Johann Sebastian Strauss",
+       "sort-name": "Strauss, Johann Sebastian",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (II)",
+       "sort-name": "Strauss, Johann, (II)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (Sohn)",
+       "sort-name": "Strauss, Johann, (Sohn)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (Son)",
+       "sort-name": "Strauss, Johann, (Son)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (fils)",
+       "sort-name": "Strauss, Johann, (fils)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "fr",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss II",
+       "sort-name": "Strauss, Johann, II",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": true
+      },
+      {
+       "name": "Johann Strauss the Younger",
+       "sort-name": "Strauss, Johann, Younger, the",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss, Jr.",
+       "sort-name": "Strauss, Johann, Jr.",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauß",
+       "sort-name": "Strauß, Johann",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauß Jr.",
+       "sort-name": "Strauß, Johann, Jr.",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": false
+      },
+      {
+       "name": "Johans Štrauss",
+       "sort-name": "Štrauss, Johans",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "lv",
+       "primary": true
+      },
+      {
+       "name": "Staruss",
+       "sort-name": "Staruss",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Straus",
+       "sort-name": "Straus",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Strauss",
+       "sort-name": "Strauss",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Straussii",
+       "sort-name": "Straussii",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Иоганн Штраус (сын)",
+       "sort-name": "Штраус, Иоганн, (сын)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ru",
+       "primary": true
+      },
+      {
+       "name": "ヨハン・シュトラウス",
+       "sort-name": "ヨハン・シュトラウス",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      },
+      {
+       "name": "ヨハン・シュトラウス2世",
+       "sort-name": "ヨハン・シュトラウス2世",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": true
+      },
+      {
+       "name": "스트라우스",
+       "sort-name": "스트라우스",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ko",
+       "primary": false
+      }
+     ]
     }
    },
    {
@@ -41,7 +326,99 @@
     "joinphrase": ", ",
     "artist": {
      "id": "c2d17829-1424-435b-9386-c77d3a920abe",
-     "name": "Carl Maria von Weber"
+     "name": "Carl Maria von Weber",
+     "aliases": [
+      {
+       "name": "C.M.von Weber",
+       "sort-name": "C.M.von Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Carl Maria von Weber",
+       "sort-name": "Weber, Carl Maria von",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Carl Weber",
+       "sort-name": "Carl Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "K. M. Vēbers",
+       "sort-name": "Vēbers, K. M.",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "lv",
+       "primary": false
+      },
+      {
+       "name": "Karl Maria von Weber",
+       "sort-name": "Karl Maria von Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Karl Weber",
+       "sort-name": "Karl Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Weber",
+       "sort-name": "Weber",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "К. М. Вебер",
+       "sort-name": "Вебер, К. М.",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "ru",
+       "primary": false
+      },
+      {
+       "name": "ウェーバー",
+       "sort-name": "ウェーバー",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "カール・マリア・フォン・ウェーバー",
+       "sort-name": "カール・マリア・フォン・ウェーバー",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      }
+     ]
     }
    },
    {
@@ -49,7 +426,81 @@
     "joinphrase": " / ",
     "artist": {
      "id": "4cb43d82-824e-4034-b03d-1a98f36f6e16",
-     "name": "Richard Strauss"
+     "name": "Richard Strauss",
+     "aliases": [
+      {
+       "name": "R. Strauss",
+       "sort-name": "R. Strauss",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "R.シュトラウス",
+       "sort-name": "R.シュトラウス",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Richard Georg Strauss",
+       "sort-name": "Richard Georg Strauss",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Richard Straus",
+       "sort-name": "Richard Straus",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Richard Strauss",
+       "sort-name": "Strauss, Richard",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": true
+      },
+      {
+       "name": "Richard Strauss",
+       "sort-name": "Strauss, Richard",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": true
+      },
+      {
+       "name": "リヒャルト・シュトラウス",
+       "sort-name": "リヒャルト・シュトラウス",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "ja",
+       "primary": true
+      },
+      {
+       "name": "리하르트 슈트라우스",
+       "sort-name": "슈트라우스, 리하르트",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ko",
+       "primary": true
+      }
+     ]
     }
    },
    {
@@ -258,7 +709,45 @@
        "joinphrase": "",
        "artist": {
         "id": "9942ef92-91a2-46f7-aff4-32389df33c9e",
-        "name": "Josef Strauss"
+        "name": "Josef Strauss",
+        "aliases": [
+         {
+          "name": "Josef Strauß",
+          "sort-name": "Josef Strauß",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Joseph Strauss",
+          "sort-name": "Joseph Strauss",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Strauss, Josef",
+          "sort-name": "Strauss, Josef",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "ヨーゼフ・シュトラウス",
+          "sort-name": "ヨーゼフ・シュトラウス",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         }
+        ]
        }
       }
      ],

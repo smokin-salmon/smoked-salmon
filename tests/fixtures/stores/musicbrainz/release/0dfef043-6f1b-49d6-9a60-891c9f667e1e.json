@@ -9,7 +9,8 @@
    "joinphrase": "",
    "artist": {
     "id": "8b22acd6-20e6-4463-a75c-c14b5cfdb666",
-    "name": "Earl Sweatshirt"
+    "name": "Earl Sweatshirt",
+    "aliases": []
    }
   }
  ],
@@ -655,7 +656,18 @@
        "joinphrase": "",
        "artist": {
         "id": "e8362d53-c891-47f4-8cd8-813184ec95d1",
-        "name": "SK La’Flare"
+        "name": "SK La’Flare",
+        "aliases": [
+         {
+          "name": "SK La' Flare",
+          "sort-name": "SK La' Flare",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -702,7 +714,27 @@
        "joinphrase": "",
        "artist": {
         "id": "78e854b8-9713-4ff2-9218-6b3784893bff",
-        "name": "Vince Staples"
+        "name": "Vince Staples",
+        "aliases": [
+         {
+          "name": "Vincent Jamal Staples",
+          "sort-name": "Staples, Vincent Jamal",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Vincent Staples",
+          "sort-name": "Staples, Vincent",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -749,7 +781,8 @@
        "joinphrase": "",
        "artist": {
         "id": "0ad99596-cbec-4726-af16-138e2a9268a1",
-        "name": "Domo Genesis"
+        "name": "Domo Genesis",
+        "aliases": []
        }
       }
      ],
@@ -796,7 +829,36 @@
        "joinphrase": "",
        "artist": {
         "id": "e520459c-dff4-491d-a6e4-c97be35e0044",
-        "name": "Frank Ocean"
+        "name": "Frank Ocean",
+        "aliases": [
+         {
+          "name": "Christopher Francis Ocean",
+          "sort-name": "Christopher Francis Ocean",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "フランクオーシャン",
+          "sort-name": "Ocean, Frank",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         },
+         {
+          "name": "フランク・オーシャン",
+          "sort-name": "Ocean, Frank",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         }
+        ]
        }
       }
      ],
@@ -851,7 +913,18 @@
        "joinphrase": "",
        "artist": {
         "id": "67c6a1f0-7910-4c52-a651-2b7ec819e647",
-        "name": "Casey Veggies"
+        "name": "Casey Veggies",
+        "aliases": [
+         {
+          "name": "Casey Joseph Jones",
+          "sort-name": "Jones, Casey Joseph",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -937,7 +1010,72 @@
        "joinphrase": "",
        "artist": {
         "id": "f6beac20-5dfe-4d1f-ae02-0b0a740aafd6",
-        "name": "Tyler, The Creator"
+        "name": "Tyler, The Creator",
+        "aliases": [
+         {
+          "name": "T. Okonma",
+          "sort-name": "Okonma, T.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Tyler Gregory Okonma",
+          "sort-name": "Okonma, Tyler Gregory",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Tyler Okonma",
+          "sort-name": "Okonma, Tyler",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Tyler The Creator",
+          "sort-name": "Tyler The Creator",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Tyler, The Creator",
+          "sort-name": "Tyler, The Creator",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": true
+         },
+         {
+          "name": "Wolf Haley",
+          "sort-name": "Haley, Wolf",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "タイラー・ザ・クリエイター",
+          "sort-name": "タイラー・ザ・クリエイター",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       }
      ],
@@ -1093,7 +1231,27 @@
        "joinphrase": "",
        "artist": {
         "id": "a0e8a1b1-5f8f-475a-a253-17415c17d0ff",
-        "name": "Mac Miller"
+        "name": "Mac Miller",
+        "aliases": [
+         {
+          "name": "Easy Mac",
+          "sort-name": "Mac, Easy",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Malcolm James McCormick",
+          "sort-name": "McCormick, Malcolm James",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -1140,7 +1298,180 @@
        "joinphrase": "",
        "artist": {
         "id": "29c28ac3-27c5-4822-8eb6-0af89a3a7240",
-        "name": "RZA"
+        "name": "RZA",
+        "aliases": [
+         {
+          "name": "(The) Abbott",
+          "sort-name": "Abbott, (The)",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bob the Builder",
+          "sort-name": "Bob the Builder",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Boulders",
+          "sort-name": "Bobby Boulders",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Digital",
+          "sort-name": "Bobby Digital",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Dynamite",
+          "sort-name": "Bobby Dynamite",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Steels",
+          "sort-name": "Bobby Steels",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Wasabi",
+          "sort-name": "Bobby Wasabi",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Diggs",
+          "sort-name": "Diggs",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Fitzgerald Diggs",
+          "sort-name": "Fitzgerald Diggs",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Prince Delight",
+          "sort-name": "Prince Delight",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Prince Rakeem",
+          "sort-name": "Prince Rakeem",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "RZA",
+          "sort-name": "RZA",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "RZArector",
+          "sort-name": "RZArector",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Diggs",
+          "sort-name": "Robert Diggs",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Fitzgerald",
+          "sort-name": "Robert Fitzgerald",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Fitzgerald Diggs",
+          "sort-name": "Diggs, Robert Fitzgerald",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Ruler Zig-Zag-Zig Allah",
+          "sort-name": "Ruler Zig-Zag-Zig Allah",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The RZA",
+          "sort-name": "RZA, The",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The Scientist",
+          "sort-name": "Scientist, The",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],

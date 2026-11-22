@@ -9,7 +9,108 @@
    "joinphrase": "; ",
    "artist": {
     "id": "fd14da1b-3c2d-4cc8-9ca6-fc8c62ce6988",
-    "name": "Bartók Béla"
+    "name": "Bartók Béla",
+    "aliases": [
+     {
+      "name": "B. Bartók",
+      "sort-name": "Bartók, B.",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "B.Bartok",
+      "sort-name": "B.Bartok",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Bartok",
+      "sort-name": "Bartok",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Bartok, Bela (1881-1945)",
+      "sort-name": "Bartok, Bela (1881-1945)",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Bartòk",
+      "sort-name": "Bartòk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Bartók",
+      "sort-name": "Bartók",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Bartók Béla",
+      "sort-name": "Bartók, Béla",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "hu",
+      "primary": true
+     },
+     {
+      "name": "Bela Bartok",
+      "sort-name": "Bartok, Bela",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Bela Bartóck",
+      "sort-name": "Bartóck, Bela",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Béla Bartok",
+      "sort-name": "Bartok, Béla",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Béla Bartók",
+      "sort-name": "Bartók, Béla",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     }
+    ]
    }
   },
   {
@@ -17,7 +118,27 @@
    "joinphrase": "",
    "artist": {
     "id": "fd20e8ed-0736-44db-8d97-530fbf00e813",
-    "name": "Emerson String Quartet"
+    "name": "Emerson String Quartet",
+    "aliases": [
+     {
+      "name": "Emerson Quartet",
+      "sort-name": "Emerson Quartet",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "エマーソン弦楽四重奏団",
+      "sort-name": "エマーソン弦楽四重奏団",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],
@@ -625,7 +746,8 @@
         "joinphrase": ", ",
         "artist": {
          "id": "2aad66f9-f0c3-40cb-9e15-ebe3777a293f",
-         "name": "David Finckel"
+         "name": "David Finckel",
+         "aliases": []
         }
        },
        {
@@ -633,7 +755,8 @@
         "joinphrase": ", ",
         "artist": {
          "id": "d1305102-8ede-4055-802d-ba8bcde5bb92",
-         "name": "Eugene Drucker"
+         "name": "Eugene Drucker",
+         "aliases": []
         }
        },
        {
@@ -641,7 +764,8 @@
         "joinphrase": ", ",
         "artist": {
          "id": "3615ed12-e7e6-4aba-8569-103ac4b262e1",
-         "name": "Lawrence Dutton"
+         "name": "Lawrence Dutton",
+         "aliases": []
         }
        },
        {
@@ -657,7 +781,18 @@
         "joinphrase": "",
         "artist": {
          "id": "b821c9a5-897d-49e6-be04-a688da76531d",
-         "name": "Philip Setzer"
+         "name": "Philip Setzer",
+         "aliases": [
+          {
+           "name": "Phillip Setzer",
+           "sort-name": "Setzer, Phillip",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        }
       ]

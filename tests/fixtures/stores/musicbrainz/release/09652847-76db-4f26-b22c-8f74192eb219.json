@@ -9,7 +9,108 @@
    "joinphrase": "",
    "artist": {
     "id": "535afeda-2538-435d-9dd1-5e10be586774",
-    "name": "Earth, Wind & Fire"
+    "name": "Earth, Wind & Fire",
+    "aliases": [
+     {
+      "name": "Earth , Win and Fire",
+      "sort-name": "Earth , Win and Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Earth Wind & Fire",
+      "sort-name": "Earth Wind & Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Earth Wind and Fire",
+      "sort-name": "Earth Wind and Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Earth, Wind + Fire",
+      "sort-name": "Earth, Wind + Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Earth, Wind and Fire",
+      "sort-name": "Earth, Wind and Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Earth, Wind, and Fire",
+      "sort-name": "Earth, Wind, and Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Earth,Wind & Fire",
+      "sort-name": "Earth,Wind & Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Earth,Wind,Fire",
+      "sort-name": "Earth,Wind,Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Heart, Wind & Fire",
+      "sort-name": "Heart, Wind & Fire",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "アース・ウィンド＆ファイア",
+      "sort-name": "アース・ウィンド＆ファイア",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "アース・ウインド&ファイアー",
+      "sort-name": "アース・ウインド&ファイアー",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],

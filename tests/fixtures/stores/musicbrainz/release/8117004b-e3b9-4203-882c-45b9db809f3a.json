@@ -9,7 +9,8 @@
    "joinphrase": "",
    "artist": {
     "id": "ae65c507-d9a0-4d42-9a6c-2b1f82158b9f",
-    "name": "Disclosure"
+    "name": "Disclosure",
+    "aliases": []
    }
   }
  ],
@@ -132,7 +133,45 @@
        "joinphrase": "",
        "artist": {
         "id": "5a85c140-dcf9-4dd2-b2c8-aff0471549f3",
-        "name": "Sam Smith"
+        "name": "Sam Smith",
+        "aliases": [
+         {
+          "name": "Samuel Frederick Smith",
+          "sort-name": "Smith, Samuel Frederick",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "サム・スミス",
+          "sort-name": "サム・スミス",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja_JP",
+          "primary": true
+         },
+         {
+          "name": "샘 스미스",
+          "sort-name": "샘 스미스",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ko",
+          "primary": true
+         },
+         {
+          "name": "샘스미스",
+          "sort-name": "샘스미스",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -210,7 +249,18 @@
        "joinphrase": "",
        "artist": {
         "id": "e9da3ed5-eb9a-4f70-a0ed-4e59e380601f",
-        "name": "AlunaGeorge"
+        "name": "AlunaGeorge",
+        "aliases": [
+         {
+          "name": "Aluna George",
+          "sort-name": "Aluna George",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -257,7 +307,27 @@
        "joinphrase": "",
        "artist": {
         "id": "d12be11b-265b-4786-96ed-87af455efaa5",
-        "name": "Ed MacFarlane"
+        "name": "Ed MacFarlane",
+        "aliases": [
+         {
+          "name": "Ed Mac",
+          "sort-name": "Ed Mac",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Edward MacFarlane",
+          "sort-name": "MacFarlane, Edward",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -335,7 +405,8 @@
        "joinphrase": "",
        "artist": {
         "id": "c2b7f5ad-0db8-4e6d-b228-5598d6b17717",
-        "name": "Sasha Keable"
+        "name": "Sasha Keable",
+        "aliases": []
        }
       }
      ],
@@ -444,7 +515,54 @@
        "joinphrase": "",
        "artist": {
         "id": "c45c1037-5469-420c-ac21-83841efd815d",
-        "name": "Eliza"
+        "name": "Eliza",
+        "aliases": [
+         {
+          "name": "Eliza",
+          "sort-name": "Eliza",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en_GB",
+          "primary": true
+         },
+         {
+          "name": "Eliza",
+          "sort-name": "Eliza",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Eliza Doolittle",
+          "sort-name": "Eliza Doolittle",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Eliza Sophie Caird",
+          "sort-name": "Eliza Sophie Caird",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": "en_GB",
+          "primary": false
+         },
+         {
+          "name": "Eliza Sophie Caird",
+          "sort-name": "Caird, Eliza Sophie",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -491,7 +609,8 @@
        "joinphrase": "",
        "artist": {
         "id": "62564a24-1b7e-4485-88d1-0c2dc0a749b6",
-        "name": "Jamie Woon"
+        "name": "Jamie Woon",
+        "aliases": []
        }
       }
      ],
@@ -538,7 +657,36 @@
        "joinphrase": "",
        "artist": {
         "id": "6ed40778-8d03-4a5c-ad35-93cf814627c9",
-        "name": "Jessie Ware"
+        "name": "Jessie Ware",
+        "aliases": [
+         {
+          "name": "Jesse Ware",
+          "sort-name": "Jesse Ware",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jessica Lois Ware",
+          "sort-name": "Ware, Jessica Lois",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jessie Ware",
+          "sort-name": "Ware, Jessie",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -585,7 +733,8 @@
        "joinphrase": "",
        "artist": {
         "id": "4dbe08c1-b40a-43b3-ab89-210000bd8ab2",
-        "name": "London Grammar"
+        "name": "London Grammar",
+        "aliases": []
        }
       }
      ],
@@ -632,7 +781,18 @@
        "joinphrase": "",
        "artist": {
         "id": "61da3e0b-9f96-4f46-b8b6-50aed52f6845",
-        "name": "Sinéad Harnett"
+        "name": "Sinéad Harnett",
+        "aliases": [
+         {
+          "name": "Sinead Monica Harnett",
+          "sort-name": "Harnett, Sinead Monica",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -1609,7 +1769,27 @@
        "joinphrase": " & ",
        "artist": {
         "id": "c6d571dd-c0ae-4ac8-9500-780b1b9b25e5",
-        "name": "Nile Rodgers"
+        "name": "Nile Rodgers",
+        "aliases": [
+         {
+          "name": "Nile Gregory Rodgers",
+          "sort-name": "Nile Gregory Rodgers",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Nile Rogers",
+          "sort-name": "Nile Rogers",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -1617,7 +1797,36 @@
        "joinphrase": "",
        "artist": {
         "id": "b4b4c19f-021f-4d3c-b11a-911d4c95cd1b",
-        "name": "Jimmy Napes"
+        "name": "Jimmy Napes",
+        "aliases": [
+         {
+          "name": "James John Napier",
+          "sort-name": "Napier, James John",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "James Napier",
+          "sort-name": "Napier, James",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jimmy Napes",
+          "sort-name": "Jimmy Napes",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -1680,7 +1889,81 @@
        "joinphrase": "",
        "artist": {
         "id": "db76c5ca-d555-4f09-b1db-baa1b713d875",
-        "name": "Mary J. Blige"
+        "name": "Mary J. Blige",
+        "aliases": [
+         {
+          "name": "Blidge, Mary J.",
+          "sort-name": "Blidge, Mary J.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Mary J Blige",
+          "sort-name": "Mary J Blige",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Mary J. Blige & Friends",
+          "sort-name": "Mary J. Blige & Friends",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Mary J. Blige.",
+          "sort-name": "Mary J. Blige.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Mary J.Blidge",
+          "sort-name": "Mary J.Blidge",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Mary J.Blige",
+          "sort-name": "Mary J.Blige",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Mary Jane Blige",
+          "sort-name": "Blige, Mary Jane",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "May J. Blige",
+          "sort-name": "May J. Blige",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],

@@ -9,7 +9,45 @@
    "joinphrase": "",
    "artist": {
     "id": "f6f2326f-6b25-4170-b89d-e235b25508e8",
-    "name": "Sigur Rós"
+    "name": "Sigur Rós",
+    "aliases": [
+     {
+      "name": "Sigur Ros",
+      "sort-name": "Sigur Ros",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Sìgur Ros",
+      "sort-name": "Sìgur Ros",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Sìgur Rós",
+      "sort-name": "Sìgur Rós",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "シガー・ロス",
+      "sort-name": "シガー・ロス",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     }
+    ]
    }
   }
  ],
