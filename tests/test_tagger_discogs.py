@@ -53,6 +53,40 @@ def test_discogs_artist_who_arranged_their_own_track_stays_its_main_artist() -> 
     assert parse_artists([], track) == [("Main Artist", "main"), ("Main Artist", "arranger")]
 
 
+@pytest.mark.parametrize(
+    ("mains", "extras", "expected"),
+    [
+        (["Queen"], [("Queen", "Producer")], [("Queen", "main"), ("Queen", "producer")]),
+        (["Ava"], [("Ava", "Remix")], [("Ava", "main"), ("Ava", "remixer")]),
+        (["Ava"], [("Ava", "Vocals")], [("Ava", "main"), ("Ava", "guest")]),
+        (["Ava"], [("Ava", "Composed By")], [("Ava", "main"), ("Ava", "composer")]),
+        (
+            ["Ava", "Max"],
+            [("Ava", "Producer"), ("Max", "Producer")],
+            [("Ava", "main"), ("Max", "main"), ("Ava", "producer"), ("Max", "producer")],
+        ),
+        (["Ava", "Max"], [("Max", "Producer")], [("Ava", "main"), ("Max", "main"), ("Max", "producer")]),
+    ],
+    ids=["produced it", "remixed it", "sang on it", "wrote it", "both produced it", "one of two produced it"],
+)
+def test_discogs_main_artist_credited_in_another_role_stays_main(
+    mains: list[str], extras: list[tuple[str, str]], expected: list[tuple[str, str]]
+) -> None:
+    track = {
+        "artists": [artist(name, "&") for name in mains],
+        "extraartists": [{"name": name, "role": role} for name, role in extras],
+    }
+
+    assert parse_artists([], track) == expected
+
+
+def test_discogs_release_artist_credited_in_another_role_stays_main() -> None:
+    # A track with no artists of its own takes the release's.
+    track = {"extraartists": [{"name": "Queen", "role": "Producer"}]}
+
+    assert parse_artists([{"name": "Queen"}], track) == [("Queen", "main"), ("Queen", "producer")]
+
+
 def test_discogs_multi_disc_positions_without_headings_split_by_disc() -> None:
     scraper = Scraper()
     soup = make_soup(
