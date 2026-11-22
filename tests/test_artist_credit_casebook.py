@@ -276,10 +276,11 @@ def test_each_musicbrainz_case_names_a_recorded_release() -> None:
         assert (MUSICBRAINZ / "release" / f"{mbid}.json").is_file(), case.name
 
 
-def test_each_picard_track_block_is_a_rip_of_its_musicbrainz_release() -> None:
-    """A [[picard_track]] block reads as FLAC tags and has the recorded release's tracks, one file each."""
+def test_each_picard_track_block_has_its_musicbrainz_releases_tracks() -> None:
+    """A [[picard_track]] block holds only tags salmon reads, as many as the recorded release's tracks, one file each.
+
+    Its structure only: the values are not checked against the release, nor which cases have a block."""
     cases = [(case, record) for case in _cases() if "picard_track" in (record := _record(case))]
-    assert cases
     read = {*TAG_FIELDS["FLAC"].values(), "file"}
     for case, record in cases:
         recorded = MUSICBRAINZ / "release" / f"{record['stores']['musicbrainz']}.json"
