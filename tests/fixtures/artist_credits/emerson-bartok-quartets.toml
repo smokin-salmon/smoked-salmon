@@ -272,6 +272,266 @@ album = ["Bartók: The String Quartets"]
 albumartist = ["Emerson String Quartet"]
 date = ["1988-09-07"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 1, op. 7, Sz 40: I. Lento - attacca:"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 1, op. 7, Sz 40: II. Poco a poco accellerato all'Allegretto -"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 1, op. 7, Sz 40: II. Introduzione. Allegro - attacca: / III. Allegro Vivace"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 3, Sz 85: Prima parte: Moderato - attacca:"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 3, Sz 85: Seconda parte: Allegro - attacca: / Ricapitulazione della prima parte: Moderato"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 3, Sz 85: Coda: Allegro molto"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 5, Sz 102: I. Allegro"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 5, Sz 102: II. Adagio molto"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 5, Sz 102: III. Scherzo. Alla bulgarese"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 5, Sz 102: IV. Andante"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Streichquartett nr. 5, Sz 102: V. Finale. Allegro vivace"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["1"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 2, op. 17, Sz 67: I. Moderato"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["2"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 2, op. 17, Sz 67: II. Allegro molto capriccioso"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["3"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 2, op. 17, Sz 67: III. Lento"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "15.flac"
+tracknumber = ["4"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 4, Sz 91: I. Allegro"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "16.flac"
+tracknumber = ["5"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 4, Sz 91: II. Prestissimo, con sordino"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "17.flac"
+tracknumber = ["6"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 4, Sz 91: III. Non troppo lento"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "18.flac"
+tracknumber = ["7"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 4, Sz 91: IV. Allegretto pizzicato"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "19.flac"
+tracknumber = ["8"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 4, Sz 91: V. Allegro molto"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "20.flac"
+tracknumber = ["9"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 6, Sz 114: I. Mesto - Più mosso, pesante - Vivace"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "21.flac"
+tracknumber = ["10"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 6, Sz 114: II. Mesto - Marcia"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "22.flac"
+tracknumber = ["11"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 6, Sz 114: III. Mesto - Burletta"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
+[[picard_track]]
+file = "23.flac"
+tracknumber = ["12"]
+discnumber = ["2"]
+title = ["Streichquartett nr. 6, Sz 114: IV. Mesto"]
+artist = ["Bartók Béla"]
+artists = ["Bartók Béla"]
+album = ["Die 6 Streichquartette"]
+albumartist = ["Bartók Béla; Emerson String Quartet"]
+date = ["1988"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

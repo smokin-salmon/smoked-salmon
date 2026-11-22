@@ -22,6 +22,10 @@ Each `<album>.toml` holds, in this order:
   comment above them names the store and the shape). Nobody's real files.
 - `[salmon_tags]` (optional): each track's ARTIST and TITLE as salmon itself writes them, the other tags as in
   `[[track]]`. A control for the tags' shape: `today.output-salmon-tags` is the output from those files.
+- `[[picard_track]]` (optional, after `[[track]]`): the files tagged a second way, as Picard 3.0.5's default
+  settings tag a CD rip from the case's MusicBrainz release (the comment above them names the settings), limited to
+  the tags salmon reads. A case has them where they differ from `[[track]]` and the MusicBrainz release has the same
+  tracks. No stage reads them yet (#1133).
 - `[stores]`: what each store sent (`deezer`, `musicbrainz`, `discogs`, `qobuz`, and `bandcamp` where the album is
   there), as the response's text, trimmed to the fields salmon's parser reads (the parse is the same as from the full
   response). Qobuz's also keeps the credits Qobuz sends beyond what the parser reads: the album's `artists[]`,

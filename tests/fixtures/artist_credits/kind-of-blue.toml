@@ -91,6 +91,68 @@ album = ["Kind Of Blue"]
 albumartist = ["Miles Davis"]
 date = ["2021-05-01"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["So What"]
+artist = ["Miles Davis"]
+artists = ["Miles Davis"]
+album = ["Kind of Blue"]
+albumartist = ["Miles Davis"]
+date = ["2011-11-08"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Freddie Freeloader"]
+artist = ["Miles Davis"]
+artists = ["Miles Davis"]
+album = ["Kind of Blue"]
+albumartist = ["Miles Davis"]
+date = ["2011-11-08"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Blue in Green"]
+artist = ["Miles Davis"]
+artists = ["Miles Davis"]
+album = ["Kind of Blue"]
+albumartist = ["Miles Davis"]
+date = ["2011-11-08"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["All Blues"]
+artist = ["Miles Davis"]
+artists = ["Miles Davis"]
+album = ["Kind of Blue"]
+albumartist = ["Miles Davis"]
+date = ["2011-11-08"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Flamenco Sketches"]
+artist = ["Miles Davis"]
+artists = ["Miles Davis"]
+album = ["Kind of Blue"]
+albumartist = ["Miles Davis"]
+date = ["2011-11-08"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

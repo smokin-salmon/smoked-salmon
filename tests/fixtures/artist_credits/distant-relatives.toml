@@ -186,6 +186,156 @@ album = ["Distant Relatives"]
 albumartist = ["Damian Marley"]
 date = ["2010-05-18"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["As We Enter"]
+artist = ["Nas & Damian “Jr. Gong” Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Tribes at War"]
+artist = ["Nas & Damian “Jr. Gong” Marley feat. K’naan"]
+artists = ["Nas", "Damian “Jr. Gong” Marley", "K’naan"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Strong Will Continue"]
+artist = ["Nas & Damian “Jr. Gong” Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Leaders"]
+artist = ["Nas & Damian “Jr. Gong” Marley feat. Stephen Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley", "Stephen Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Friends"]
+artist = ["Nas & Damian “Jr. Gong” Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Count Your Blessings"]
+artist = ["Nas & Damian “Jr. Gong” Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Dispear"]
+artist = ["Nas & Damian “Jr. Gong” Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Land of Promise"]
+artist = ["Nas & Damian “Jr. Gong” Marley feat. Dennis Brown"]
+artists = ["Nas", "Damian “Jr. Gong” Marley", "Dennis Brown"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["In His Own Words"]
+artist = ["Nas & Damian “Jr. Gong” Marley feat. Stephen Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley", "Stephen Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Nah Mean"]
+artist = ["Nas & Damian “Jr. Gong” Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Patience"]
+artist = ["Nas & Damian “Jr. Gong” Marley"]
+artists = ["Nas", "Damian “Jr. Gong” Marley"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["My Generation"]
+artist = ["Nas & Damian “Jr. Gong” Marley feat. Lil Wayne & Joss Stone"]
+artists = ["Nas", "Damian “Jr. Gong” Marley", "Lil Wayne", "Joss Stone"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Africa Must Wake Up"]
+artist = ["Nas & Damian “Jr. Gong” Marley feat. K’naan"]
+artists = ["Nas", "Damian “Jr. Gong” Marley", "K’naan"]
+album = ["Distant Relatives"]
+albumartist = ["Nas & Damian “Jr. Gong” Marley"]
+date = ["2010-05-18"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

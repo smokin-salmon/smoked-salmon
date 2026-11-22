@@ -104,6 +104,79 @@ album = ["Relaxin' With The Miles Davis Quintet"]
 albumartist = ["Miles Davis"]
 date = ["2011-03-08"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["If I Were a Bell"]
+artist = ["Miles Davis Quintet"]
+artists = ["Miles Davis Quintet"]
+album = ["Relaxin' With the Miles Davis Quintet"]
+albumartist = ["Miles Davis Quintet"]
+date = ["2006-03-21"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["You're My Everything"]
+artist = ["Miles Davis Quintet"]
+artists = ["Miles Davis Quintet"]
+album = ["Relaxin' With the Miles Davis Quintet"]
+albumartist = ["Miles Davis Quintet"]
+date = ["2006-03-21"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["I Could Write a Book"]
+artist = ["Miles Davis Quintet"]
+artists = ["Miles Davis Quintet"]
+album = ["Relaxin' With the Miles Davis Quintet"]
+albumartist = ["Miles Davis Quintet"]
+date = ["2006-03-21"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Oleo"]
+artist = ["Miles Davis Quintet"]
+artists = ["Miles Davis Quintet"]
+album = ["Relaxin' With the Miles Davis Quintet"]
+albumartist = ["Miles Davis Quintet"]
+date = ["2006-03-21"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["It Could Happen to You"]
+artist = ["Miles Davis Quintet"]
+artists = ["Miles Davis Quintet"]
+album = ["Relaxin' With the Miles Davis Quintet"]
+albumartist = ["Miles Davis Quintet"]
+date = ["2006-03-21"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Woody'n You"]
+artist = ["Miles Davis Quintet"]
+artists = ["Miles Davis Quintet"]
+album = ["Relaxin' With the Miles Davis Quintet"]
+albumartist = ["Miles Davis Quintet"]
+date = ["2006-03-21"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

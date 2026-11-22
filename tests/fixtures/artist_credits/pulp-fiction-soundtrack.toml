@@ -241,6 +241,233 @@ album = ["Pulp Fiction (Music From The Motion Picture)"]
 albumartist = ["Various Artists"]
 date = ["2019-03-15"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Pumpkin and Honey Bunny"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Misirlou (single version)"]
+artist = ["Dick Dale and His Del‐Tones"]
+artists = ["Dick Dale and His Del‐Tones"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Royale With Cheese"]
+artist = ["Samuel L. Jackson and John Travolta"]
+artists = ["Samuel L. Jackson", "John Travolta"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Jungle Boogie"]
+artist = ["Kool & the Gang"]
+artists = ["Kool & the Gang"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Let’s Stay Together"]
+artist = ["Al Green"]
+artists = ["Al Green"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Bustin’ Surfboards (single version)"]
+artist = ["The Tornadoes"]
+artists = ["The Tornadoes"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Lonesome Town"]
+artist = ["Ricky Nelson"]
+artists = ["Ricky Nelson"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Son of a Preacher Man"]
+artist = ["Dusty Springfield"]
+artists = ["Dusty Springfield"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Zed’s Dead Baby"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Bullwinkle, Part 2"]
+artist = ["The Centurions"]
+artists = ["The Centurions"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Jack Rabbit Slims Twist Contest"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["You Never Can Tell (1964 single version) [mono]"]
+artist = ["Chuck Berry"]
+artists = ["Chuck Berry"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Girl, You’ll Be a Woman Soon"]
+artist = ["Urge Overkill"]
+artists = ["Urge Overkill"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["If Love Is a Red Dress (Hang Me in Rags)"]
+artist = ["Maria McKee"]
+artists = ["Maria McKee"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Bring Out the Gimp"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["Comanche (single version)"]
+artist = ["The Revels"]
+artists = ["The Revels"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["Flowers on the Wall"]
+artist = ["The Statler Brothers"]
+artists = ["The Statler Brothers"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "18.flac"
+tracknumber = ["18"]
+discnumber = ["1"]
+title = ["Personality Goes a Long Way"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "19.flac"
+tracknumber = ["19"]
+discnumber = ["1"]
+title = ["Surf Rider"]
+artist = ["The Lively Ones"]
+artists = ["The Lively Ones"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "20.flac"
+tracknumber = ["20"]
+discnumber = ["1"]
+title = ["Ezekiel 25:17"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

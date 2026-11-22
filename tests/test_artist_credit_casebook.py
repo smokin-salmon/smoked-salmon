@@ -41,7 +41,7 @@ from salmon.tagger.retagger import (
     metadata_to_track_list,
 )
 from salmon.tagger.sources import METASOURCES
-from salmon.tagger.tagfile import TagFile
+from salmon.tagger.tagfile import TAG_FIELDS, TagFile
 
 CASES = Path(__file__).parent / "fixtures" / "artist_credits"
 MUSICBRAINZ = Path(__file__).parent / "fixtures" / "stores" / "musicbrainz"
@@ -274,6 +274,20 @@ def test_each_musicbrainz_case_names_a_recorded_release() -> None:
             continue
         assert MBID.fullmatch(mbid), case.name
         assert (MUSICBRAINZ / "release" / f"{mbid}.json").is_file(), case.name
+
+
+def test_each_picard_track_block_is_a_rip_of_its_musicbrainz_release() -> None:
+    """A [[picard_track]] block reads as FLAC tags and has the recorded release's tracks, one file each."""
+    cases = [(case, record) for case in _cases() if "picard_track" in (record := _record(case))]
+    assert cases
+    read = {*TAG_FIELDS["FLAC"].values(), "file"}
+    for case, record in cases:
+        recorded = MUSICBRAINZ / "release" / f"{record['stores']['musicbrainz']}.json"
+        release = json.loads(recorded.read_text(encoding="utf-8"))
+        tracks = record["picard_track"]
+        assert len(tracks) == sum(len(medium["tracks"]) for medium in release["media"]), case.name
+        assert all(set(track) <= read for track in tracks), case.name
+        assert sum(len(disc) for disc in files(tracks)["tracks"].values()) == len(tracks), case.name
 
 
 def test_a_name_holding_a_separator_is_judged_whole() -> None:

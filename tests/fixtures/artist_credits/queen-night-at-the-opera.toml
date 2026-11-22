@@ -161,6 +161,145 @@ album = ["A Night At The Opera"]
 albumartist = ["Queen"]
 date = ["2005-11-22"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Death on Two Legs (Dedicated to…)"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Lazing on a Sunday Afternoon"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["I’m in Love With My Car"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["You’re My Best Friend"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["’39"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Sweet Lady"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Seaside Rendezvous"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["The Prophet’s Song"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Love of My Life"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Good Company"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Bohemian Rhapsody"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["God Save the Queen"]
+artist = ["Queen"]
+artists = ["Queen"]
+album = ["A Night at the Opera"]
+albumartist = ["Queen"]
+date = ["2011"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

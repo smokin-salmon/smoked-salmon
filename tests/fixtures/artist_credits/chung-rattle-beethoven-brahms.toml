@@ -116,6 +116,90 @@ album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
 albumartist = ["Kyung-Wha Chung"]
 date = ["2001-09-03"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Symphony no. 5 in C minor, op. 67: I. Allegro con brio"]
+artist = ["Ludwig van Beethoven"]
+artists = ["Ludwig van Beethoven"]
+album = ["Brahms: Violinkonzert / Beethoven: Symphonie 5"]
+albumartist = ["Johannes Brahms, Ludwig van Beethoven; 정경화, Wiener Philharmoniker, Simon Rattle"]
+date = ["2001-09-03"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Symphony no. 5 in C minor, op. 67: II. Andante con moto"]
+artist = ["Ludwig van Beethoven"]
+artists = ["Ludwig van Beethoven"]
+album = ["Brahms: Violinkonzert / Beethoven: Symphonie 5"]
+albumartist = ["Johannes Brahms, Ludwig van Beethoven; 정경화, Wiener Philharmoniker, Simon Rattle"]
+date = ["2001-09-03"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Symphony no. 5 in C minor, op. 67: III. Allegro -"]
+artist = ["Ludwig van Beethoven"]
+artists = ["Ludwig van Beethoven"]
+album = ["Brahms: Violinkonzert / Beethoven: Symphonie 5"]
+albumartist = ["Johannes Brahms, Ludwig van Beethoven; 정경화, Wiener Philharmoniker, Simon Rattle"]
+date = ["2001-09-03"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Symphony No. 5 in C minor, op. 67: IV. Allegro"]
+artist = ["Ludwig van Beethoven"]
+artists = ["Ludwig van Beethoven"]
+album = ["Brahms: Violinkonzert / Beethoven: Symphonie 5"]
+albumartist = ["Johannes Brahms, Ludwig van Beethoven; 정경화, Wiener Philharmoniker, Simon Rattle"]
+date = ["2001-09-03"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Concerto for Violin and Orchestra in D major, op. 77: I. Allegro non troppo"]
+artist = ["Johannes Brahms"]
+artists = ["Johannes Brahms"]
+album = ["Brahms: Violinkonzert / Beethoven: Symphonie 5"]
+albumartist = ["Johannes Brahms, Ludwig van Beethoven; 정경화, Wiener Philharmoniker, Simon Rattle"]
+date = ["2001-09-03"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Concerto for Violin and Orchestra in D major, op. 77: II. Adagio"]
+artist = ["Johannes Brahms"]
+artists = ["Johannes Brahms"]
+album = ["Brahms: Violinkonzert / Beethoven: Symphonie 5"]
+albumartist = ["Johannes Brahms, Ludwig van Beethoven; 정경화, Wiener Philharmoniker, Simon Rattle"]
+date = ["2001-09-03"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Concerto for Violin and Orchestra in D major, op. 77: III. Allegro giocoso, ma non troppo vivace - Poco più presto"]
+artist = ["Johannes Brahms"]
+artists = ["Johannes Brahms"]
+album = ["Brahms: Violinkonzert / Beethoven: Symphonie 5"]
+albumartist = ["Johannes Brahms, Ludwig van Beethoven; 정경화, Wiener Philharmoniker, Simon Rattle"]
+date = ["2001-09-03"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
