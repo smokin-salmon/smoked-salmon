@@ -513,8 +513,8 @@ def _decide_titles(tracks, base_source, claims):
     for disc in tracks.values():
         for track in disc.values():
             own = claims.get(id(track)) or _claims_of(track, base_source)
-            # Only an artist still credited on the track: a fragment the merge dropped performs nothing.
-            keys = {same_artist_key(name) for name, _ in track["artists"]}
+            # Only an artist still credited as a performer on the track: a fragment the merge dropped performs nothing.
+            keys = {same_artist_key(name) for name, role in track["artists"] if role in {"main", "guest"}}
             performers = {
                 comparable(name)
                 for claim in own
@@ -702,15 +702,23 @@ def _decide_credits(tracks, claims, base_source, corrected=False):
             spelling = spelled[disc, num]
             kept = {(spelling[name], role) for name, role in track["artists"]}
             stays = [claim for claim in own[disc, num] if (spelling[claim.name], claim.role) in kept]
-            by_track[disc, num] = _join_split_names(
-                [msgspec.structs.replace(claim, name=spelling[claim.name]) for claim in stays], to_replace
-            )
+            respelled = [msgspec.structs.replace(claim, name=spelling[claim.name]) for claim in stays]
+            by_track[disc, num] = _join_split_names(respelled, to_replace)
             _note_joins(joined, stays, shown[disc, num])
             if "credited_remixers" in track:
+                # A remixer split and joined back is credited under the whole name, so REMIXER finds it.
+                whole = {
+                    part.name: claim.name
+                    for part, claim in zip(respelled, by_track[disc, num], strict=True)
+                    if part.role == "remixer"
+                }
                 track["credited_remixers"] = list(
                     dict.fromkeys(
-                        spelling.get(name) or corrections.get(_correction_key(name), name)
-                        for name in track["credited_remixers"]
+                        whole.get(written, written)
+                        for written in (
+                            spelling.get(name) or corrections.get(_correction_key(name), name)
+                            for name in track["credited_remixers"]
+                        )
                     )
                 )
     decided = resolve_credits(by_track)

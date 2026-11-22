@@ -408,6 +408,32 @@ def test_a_featuring_clause_naming_discogs_name_for_a_credited_name_goes(monkeyp
     assert combined["tracks"]["1"]["1"]["title"] == "Song"
 
 
+def test_remixers_split_and_joined_back_keep_their_remixer_tag() -> None:
+    # "Simon" and "Garfunkel" join into "Simon and Garfunkel" as remixer: the credited remixer follows, for REMIXER.
+    files = two_tracks(
+        [("Bob", "main"), ("Simon", "remixer"), ("Garfunkel", "remixer")], [("Simon and Garfunkel", "composer")]
+    )
+    files["tracks"]["1"]["1"]["credited_remixers"] = ["Simon", "Garfunkel"]
+
+    track = combine_metadatas(("Deezer", two_tracks([], [])), base=files)["tracks"]["1"]["1"]
+
+    assert track["artists"] == [("Bob", "main"), ("Simon and Garfunkel", "remixer")]
+    assert create_remixer_list(track) == ["Simon and Garfunkel"]
+
+
+def test_as_before_a_featuring_clause_is_not_admitted_by_a_producer_of_the_same_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The guest "Herbaliser" is a fragment of the main and goes; the producer "The Herbaliser" performs nothing.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    files = release(("Herbaliser Collective", "main"), ("Herbaliser", "guest"), ("The Herbaliser", "producer"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. Herbaliser)"
+
+    combined = combine_metadatas(("Deezer", release()), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song (feat. Herbaliser)"
+
+
 def test_one_title_naming_a_remixer_in_two_spellings_gives_one_remixer() -> None:
     files, deezer = release(("Bob", "main")), release(("Bob", "main"))
     for meta in (files, deezer):
@@ -725,7 +751,8 @@ def test_one_artist_in_two_spellings_and_two_roles_is_one_credit_the_files_state
     combined = combine_metadatas(("Deezer", release(("JAY Z", "guest"))), base=release(("JAŸ-Z", "main")))
 
     assert credits(combined) == [[("JAŸ-Z", "main")]]
-    assert "Read as one artist" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out
 
 
 def test_names_read_as_one_artist_beyond_case_accents_and_punctuation_are_shown(capsys: pytest.CaptureFixture) -> None:
@@ -769,7 +796,8 @@ def test_a_scrape_used_alone_shows_the_names_it_reads_as_one_artist(capsys: pyte
     decide_alone(meta, "Qobuz")
 
     assert credits(meta) == [[("Miles Davis Quintet", "main")]] * 3
-    assert "Read as one artist:\n  Miles Davis Quintet: The Miles Davis Quintet (Qobuz)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Read as one artist:\n  Miles Davis Quintet: The Miles Davis Quintet (Qobuz)\n" in out
 
 
 def test_names_discogs_credits_under_one_another_on_a_track_are_one_artist() -> None:
@@ -803,7 +831,8 @@ def test_a_name_only_a_dropped_credit_gave_is_not_shown(capsys: pytest.CaptureFi
     combined = combine_metadatas(("Discogs", discogs), base=release(("Bob Smith Band", "main")))
 
     assert credits(combined) == [[("Bob Smith Band", "main")]]
-    assert "Read as one artist" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out
 
 
 def test_spellings_one_by_comparable_are_shown_once(capsys: pytest.CaptureFixture) -> None:
@@ -815,7 +844,8 @@ def test_spellings_one_by_comparable_are_shown_once(capsys: pytest.CaptureFixtur
         base=release(("Andrew Watt", "main")),
     )
 
-    assert "Read as one artist:\n  Andrew Watt: WATT (Deezer, Qobuz)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Read as one artist:\n  Andrew Watt: WATT (Deezer, Qobuz)\n" in out
 
 
 def test_an_artist_and_their_own_remix_spelled_with_the_article_keep_both_credits() -> None:
@@ -834,7 +864,8 @@ def test_a_stated_main_beside_a_store_s_guest_spelled_with_the_article_is_kept_a
     combined = combine_metadatas(("Deezer", release(("The Herbaliser", "guest"))), base=release(("Herbaliser", "main")))
 
     assert credits(combined) == [[("Herbaliser", "main")]]
-    assert "\n  Herbaliser (guest at Deezer)\n" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "\n  Herbaliser (guest at Deezer)\n" in out
 
 
 def test_a_featuring_clause_naming_a_guest_as_a_store_spells_them_goes_from_the_title(
@@ -994,7 +1025,8 @@ def test_as_before_two_artists_whose_names_look_alike_stay_two(capsys: pytest.Ca
         [("Stevie Nicks", "main"), ("Carlos Santana", "main"), ("Stevie Wonder", "guest")],
         [("Santana", "main")],
     ]
-    assert "Read as one artist" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out
 
 
 def test_as_before_a_review_keeps_two_spellings_the_user_kept_apart() -> None:
@@ -1013,4 +1045,5 @@ def test_as_before_a_name_only_discogs_credits_an_artist_as_is_not_shown(capsys:
 
     combine_metadatas(("Discogs", discogs), base=release(("Larry Dunn", "main")))
 
-    assert "Read as one artist" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out
