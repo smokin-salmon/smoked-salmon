@@ -216,6 +216,22 @@ class Answer(_Answering):
         return web.json_response({"status": "success", "response": {"torrentid": torrent_id, **self._response}})
 
 
+class GroupReadFails(FakeTracker):
+    """Answers 502 to every torrentgroup read of one site, told apart by its API key, or of all (#1009)."""
+
+    def __init__(self, site: str | None = None) -> None:
+        super().__init__()
+        self._key = API_KEYS[site] if site else None
+
+    async def _handle(self, request: web.Request) -> web.StreamResponse:
+        if request.query.get("action") == "torrentgroup" and (
+            self._key is None or request.headers.get("Authorization") == self._key
+        ):
+            self.sent.append(Sent(request.method, request.path, dict(request.query), []))
+            return web.Response(status=502, text="Bad gateway")
+        return await super()._handle(request)
+
+
 class NoStatus(_Answering):
     def _answer(self, request: web.Request) -> web.StreamResponse | None:
         return web.json_response({"unexpected": True})
@@ -496,6 +512,9 @@ AS_BEFORE = {
     ),
     "no_group_id_nothing_wanted": Row(
         0, 1, "No group id came back", kept=False, tracker=Answer, args=("--conversions", "none")
+    ),
+    "group_read_fails_nothing_wanted": Row(
+        0, 1, "no conversions are offered", kept=False, tracker=GroupReadFails, args=("--conversions", "none")
     ),
     # Asked, and declined
     "offered_then_done": Row(0, 3, "Done with this release.", kept=False, trackers=(), setup=_offered, stdin="\nn\n"),
@@ -813,6 +832,19 @@ CHANGED = {
     ),
     "no_group_id_conversion_wanted": Row(
         3, 1, "No group id came back", kept=False, tracker=Answer, args=("--conversions", "V0")
+    ),
+    "group_read_fails_conversion_wanted": Row(
+        3, 1, "no conversions are offered", kept=False, tracker=GroupReadFails, args=("--conversions", "V0")
+    ),
+    "group_read_fails_on_red_then_ops_goes_on": Row(
+        # RED: the FLAC only. OPS: the FLAC and its V0.
+        3,
+        3,
+        "no conversions are offered",
+        kept=False,
+        trackers=TWO,
+        tracker=lambda: GroupReadFails("RED"),
+        args=("--conversions", "V0"),
     ),
     "conversion_not_made_then_skip": Row(
         3,
