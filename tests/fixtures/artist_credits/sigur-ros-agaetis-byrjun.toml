@@ -39,11 +39,11 @@ credits = ["1.1: Sigur Rós (main)", "1.2: Sigur Rós (main)", "1.3: Sigur Rós 
 
 [today.output]
 albumartist = "Sigur Rós"
-tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný Batterí", "Sigur Rós | Hjartað Hamast (Bamm Bamm Bamm)", "Sigur Rós | Viðrar Vel Til Loftárása", "Sigur Rós | Olsen Olsen", "Sigur Rós | Ágætis Byrjun", "Sigur Rós | Avalon"]
+tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný batterí", "Sigur Rós | Hjartað hamast (bamm bamm bamm)", "Sigur Rós | Viðrar vel til loftárása", "Sigur Rós | Olsen olsen", "Sigur Rós | Ágætis byrjun", "Sigur Rós | Avalon"]
 
 [today."output-guests-in-title"]
 albumartist = "Sigur Rós"
-tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný Batterí", "Sigur Rós | Hjartað Hamast (Bamm Bamm Bamm)", "Sigur Rós | Viðrar Vel Til Loftárása", "Sigur Rós | Olsen Olsen", "Sigur Rós | Ágætis Byrjun", "Sigur Rós | Avalon"]
+tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný batterí", "Sigur Rós | Hjartað hamast (bamm bamm bamm)", "Sigur Rós | Viðrar vel til loftárása", "Sigur Rós | Olsen olsen", "Sigur Rós | Ágætis byrjun", "Sigur Rós | Avalon"]
 
 
 # The files' tags.

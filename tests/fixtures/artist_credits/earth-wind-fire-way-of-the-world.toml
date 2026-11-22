@@ -39,11 +39,11 @@ credits = ["1.1: Earth, Wind & Fire (main), Larry Dunn (composer), Maurice White
 
 [today.output]
 albumartist = "Earth, Wind & Fire"
-tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's The Way Of The World", "Earth, Wind & Fire (feat. Maurice White) | Happy Feelin'", "Earth, Wind & Fire (feat. Maurice White) | All About Love", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire (feat. Maurice White) | Reasons", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See The Light"]
+tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's the Way of the World", "Earth, Wind & Fire (feat. Maurice White) | Happy Feelin'", "Earth, Wind & Fire (feat. Maurice White) | All About Love (First Impression)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire (feat. Maurice White) | Reasons", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See the Light"]
 
 [today."output-guests-in-title"]
 albumartist = "Earth, Wind & Fire"
-tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's The Way Of The World", "Earth, Wind & Fire | Happy Feelin' (feat. Maurice White)", "Earth, Wind & Fire | All About Love (feat. Maurice White)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire | Reasons (feat. Maurice White)", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See The Light"]
+tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's the Way of the World", "Earth, Wind & Fire | Happy Feelin' (feat. Maurice White)", "Earth, Wind & Fire | All About Love (First Impression) (feat. Maurice White)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire | Reasons (feat. Maurice White)", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See the Light"]
 
 
 # The files' tags.

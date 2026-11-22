@@ -147,6 +147,15 @@ place, following the `strip_useless_versions` setting, and a remixer is read fro
 two title cases left open by #947 ("Heroic Feat", and "Song (feat. B)" with guest C) are decided in that
 same place, from the guests `resolve_credits` gives.
 
+*Amended 2026-11-18 (#869 step 3b): Qobuz and Deezer keep the version apart in one PR, as neither alone can say
+which store names the title (#1077). The merge records each store's title and version and writes each track's title
+once, after the last store: the files' title as they give it, with the accents a store restores and, by
+`strip_useless_versions`, without a trailing featuring clause that names only artists the track credits; a files'
+title that names nothing ("Track 01") takes the first store's. With no files, the first store's title and version,
+by `strip_useless_versions`, whatever the store. A store's version isn't added to the files' title. The remixer read
+stays on the store's title with its version folded back in: a remix can sit in a title rather than its version
+(DJ-Kicks on Qobuz).*
+
 ### 4. Where it runs, and what stays
 
 - **Step 2:** as the merge pairs each store's tracks with the base's, it records which source gave each
