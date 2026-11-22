@@ -671,6 +671,40 @@ def test_a_stated_credit_discogs_credits_under_a_longer_name_is_no_fragment_of_i
     assert credits(combined) == [[("Queen", "main"), ("Taylor", "guest"), ("Taylor", "producer")]]
 
 
+@pytest.mark.parametrize("source_url", [None, DISCOGS_FIRST], ids=["by preference", "Discogs chosen"])
+def test_a_stated_credit_discogs_credits_under_a_longer_name_stays_whichever_store_comes_first(
+    source_url: str | None,
+) -> None:
+    """By preference MusicBrainz merges first, with "Roger Taylor" and no credited name: the files' guest "Taylor"
+    waits for Discogs' "Taylor" before the fragment check weighs it."""
+    discogs = credited_as(
+        release(("Queen", "main"), ("Roger Taylor", "producer")), "Roger Taylor", "producer", "Taylor"
+    )
+    musicbrainz = release(("Queen", "main"), ("Roger Taylor", "producer"))
+
+    combined = combine_metadatas(
+        ("MusicBrainz", musicbrainz),
+        ("Discogs", discogs),
+        base=release(("Queen", "main"), ("Taylor", "guest")),
+        source_url=source_url,
+    )
+
+    assert credits(combined) == [[("Queen", "main"), ("Taylor", "guest"), ("Taylor", "producer")]]
+
+
+def test_a_name_credited_through_a_chain_of_discogs_names_is_no_fragment() -> None:
+    """Discogs credits Robert Taylor as "Bob Taylor", and Bob Taylor as "Taylor": the files' "Taylor" is one artist
+    with both, so it is no fragment of "Robert Taylor"."""
+    discogs = release(("Queen", "main"), ("Robert Taylor", "producer"), ("Bob Taylor", "remixer"))
+    discogs = credited_as(
+        credited_as(discogs, "Robert Taylor", "producer", "Bob Taylor"), "Bob Taylor", "remixer", "Taylor"
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Queen", "main"), ("Taylor", "guest")))
+
+    assert ("Taylor", "guest") in credits(combined)[0]
+
+
 def test_as_before_two_artists_whose_names_look_alike_stay_two(capsys: pytest.CaptureFixture) -> None:
     """On two tracks: on one, the merge's fragment check drops "Santana" beside "Carlos Santana" (#1112)."""
     files = two_tracks([("Stevie Nicks", "main"), ("Carlos Santana", "main")], [("Santana", "main")])

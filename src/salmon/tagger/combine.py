@@ -442,7 +442,6 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                 if own is not None:
                     own += _store_claims(remixers, {}, store, guessed=remixers)
 
-            btrack["artists"] = check_for_artist_fragments(btrack["artists"], btrack.get("artist_variations", ()))
             btrack["credited_remixers"] = list(
                 dict.fromkeys([*btrack.get("credited_remixers", []), *track.get("credited_remixers", [])])
             )
@@ -660,12 +659,17 @@ def _decide_credits(tracks, claims, base_source):
     artist beyond what `comparable` joins (_print_joined), and each track's performers under every name its sources gave
     them, by comparable (what a featuring clause in its title may name).
 
+    Before anything else, each track a store paired drops its fragments (#1112), with every store's credited names in.
+
     Each claim first takes its artist's spelling (_artist_classes), so two spellings of one artist are one name to
-    decide on. A claim whose artist the merge dropped in that role (a fragment of another name) is left out. Every kept
+    decide on. A claim whose artist the check dropped in that role (a fragment of another name) is left out. Every kept
     credit has a claim: the merge claims each credit it adds to a track. A credited remixer takes its artist's spelling
     too, so the REMIXER tag still finds it. A performer is every name a kept main or guest claim gives, as printed or
     as credited (Discogs' ANV).
     """
+    for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
+        # After the last store, so the guard sees every name Discogs credits on the track (#1112).
+        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()))
     spelled = _artist_classes(tracks, claims, base_source)
     by_track, joined, performers = {}, {}, {}
     for disc, disc_tracks in tracks.items():
@@ -711,13 +715,7 @@ def _artist_classes(tracks, claims, base_source):
     for disc_no, disc in tracks.items():
         for num, track in disc.items():
             own = claims.get(id(track)) or _claims_of(track, base_source)
-            # Each key to the one it is credited as on this track: Discogs' name to its ANV, through any chain.
-            joins = {}
-            for variation in track.get("artist_variations", ()):
-                name = _joined(joins, same_artist_key(variation["name"]))
-                anv = _joined(joins, same_artist_key(variation["anv"]))
-                if name != anv:
-                    joins[name] = anv
+            joins = _credited_joins(track.get("artist_variations", ()))
             spelling_of = {}
             for name, _ in track["artists"]:
                 spelling_of.setdefault(_joined(joins, same_artist_key(name)), first[same_artist_key(name)])
@@ -744,6 +742,17 @@ def _note_joins(joined, claims, spelling):
 
 def _shown(name):
     return comparable(re.sub(r"\s*&\s*", " and ", name))
+
+
+def _credited_joins(variations):
+    """Each key to the one it is credited as on a track: Discogs' name to its ANV, through any chain."""
+    joins = {}
+    for variation in variations:
+        name = _joined(joins, same_artist_key(variation["name"]))
+        anv = _joined(joins, same_artist_key(variation["anv"]))
+        if name != anv:
+            joins[name] = anv
+    return joins
 
 
 def _joined(joins, key):
@@ -800,15 +809,15 @@ def _print_disputes(decisions):
 def check_for_artist_fragments(artists, variations=()):
     """Check for artists that may be a fragment of another artist in the release. Two spellings of one artist are no
     fragment of each other, the decision joins them: one `same_artist_key` ("Herbaliser", "The Herbaliser"), or a name
-    and the name Discogs credits it as on the track (`variations`: "Roger Taylor" as "Taylor")."""
-    names = [(_comparable_words(a), same_artist_key(a)) for a, _ in artists]
-    credited = {frozenset((same_artist_key(v["name"]), same_artist_key(v["anv"]))) for v in variations}
+    and the name Discogs credits it as on the track, through any chain (`variations`: "Roger Taylor" as "Taylor")."""
+    joins = _credited_joins(variations)
+    names = [(_comparable_words(a), _joined(joins, same_artist_key(a))) for a, _ in artists]
     for a, i in artists.copy():
-        words, key = _comparable_words(a), same_artist_key(a)
+        words, key = _comparable_words(a), _joined(joins, same_artist_key(a))
         if len("".join(words)) <= 1:
             continue
         for other, other_key in names:
-            one = key == other_key or frozenset((key, other_key)) in credited
+            one = key == other_key
             if words != other and not one and _is_word_run(words, other) and (a, i) in artists:
                 artists.remove((a, i))
     return artists
