@@ -671,11 +671,10 @@ def _decide_credits(tracks, claims, base_source, corrected=False):
     Each claim first takes its artist's spelling (_artist_classes), so two spellings of one artist are one name to
     decide on. With `corrected`, the configured artist corrections apply to that spelling, once, so a corrected artist
     keeps every spelling it had, and a corrected part joins under its new name, as it did when the repair ran after the
-    corrections. A claim
-    whose artist the merge dropped in that role (a fragment of another name) is left out. Every kept credit has a
-    claim: the merge claims each credit it adds to a track. The track's badly split names are joined back over every
-    source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). A credited remixer takes its
-    artist's spelling too, so the REMIXER tag still finds it.
+    corrections. A claim whose artist the merge dropped in that role (a fragment of another name) is left out. Every
+    kept credit has a claim: the merge claims each credit it adds to a track. The track's badly split names are joined
+    back over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). A credited
+    remixer takes its artist's spelling too, so the REMIXER tag still finds it.
     """
     own = {
         (disc, num): claims.get(id(track)) or _claims_of(track, base_source)
