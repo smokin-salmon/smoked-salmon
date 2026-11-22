@@ -1,7 +1,7 @@
 album = "Various Artists, Pulp Fiction (soundtrack)"
-why = "A various-artists soundtrack with dialogue tracks: Deezer and MusicBrainz credit the actors; Discogs has 'No Artist' and makes some performers producers."
+why = "A various-artists soundtrack with dialogue tracks: Deezer and MusicBrainz credit the actors; Discogs has 'No Artist' and credits some performers as producers too."
 edition = "Geffen 2019 digital, 20 tracks (Deezer 89920242 = MusicBrainz 729642fc by barcode); Discogs 1347833 is master 17468's main release (1994 MCA CD, 16 tracks)"
-known_wrong = ["Discogs parse: 'No Artist (main)' on the dialogue tracks; Urge Overkill, Maria McKee and Ricky Nelson as producers only, so their tracks have no performing artist"]
+known_wrong = ["Discogs parse: 'No Artist (main)' on the dialogue tracks"]
 files_from = "deezer"
 
 [sources]
@@ -24,7 +24,7 @@ release = ["Tim Roth (main)", "Amanda Plummer (main)", "Dick Dale and His Del‐
 tracks = 20
 
 [today.discogs]
-release = ["No Artist (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "The Centurions (main)", "Bob Keene (producer)", "Chuck Berry (main)", "Kramer (producer)", "Urge Overkill (producer)", "Bruce Brody (producer)", "Maria McKee (producer)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
+release = ["No Artist (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Ricky Nelson (main)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "The Centurions (main)", "Bob Keene (producer)", "Chuck Berry (main)", "Urge Overkill (main)", "Kramer (producer)", "Urge Overkill (producer)", "Maria McKee (main)", "Bruce Brody (producer)", "Maria McKee (producer)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
 tracks = 20
 
 [today.qobuz]
