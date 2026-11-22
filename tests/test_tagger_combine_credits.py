@@ -198,7 +198,8 @@ def test_a_claim_that_agrees_with_a_kept_claim_follows_it_and_disputes_nothing(
     combined = combine_metadatas((store, two_tracks([("Max", "guest")], [("Ava Max", "composer")])), base=files)
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", "main"), ("Max", "guest")]
-    assert "Kept" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Kept" not in out
 
 
 @pytest.mark.parametrize(
