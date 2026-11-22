@@ -6,8 +6,9 @@ from copy import deepcopy
 import pytest
 from helpers.tagger_combine import make_tracks, one_track, stating, stores_stating
 
-from salmon.common.credits import Claim
-from salmon.tagger.combine import _decide_credits, combine_metadatas, combine_tracks
+from salmon.common.credits import Claim, Role
+from salmon.tagger.combine import _decide_credits, _join_split_names, combine_metadatas, combine_tracks
+from salmon.tagger.sources.base import construct_replacement_list
 
 
 def release(*artists: tuple[str, str], label: str | None = None) -> dict:
@@ -133,82 +134,101 @@ def test_a_badly_split_name_is_joined_back_before_the_decision_weighs_it() -> No
     assert combined["tracks"]["1"]["1"]["artists"] == [("Max", "guest"), ("Ava Max", "main")]
 
 
+def decided(claims: list[Claim], *others: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Track 1's credits as the merge decides them from these claims, the release's other tracks credited `others`
+    (stated, by the files)."""
+    tracks = make_tracks({"1": [str(num) for num in range(1, len(others) + 2)]}, isrc_prefix=None)
+    first = tracks["1"]["1"]
+    first["artists"] = list(dict.fromkeys((claim.name, claim.role) for claim in claims))
+    for num, artists in enumerate(others, 2):
+        tracks["1"][str(num)]["artists"] = artists
+    _decide_credits(tracks, {id(first): claims}, "files")
+    return first["artists"]
+
+
+def files(name: str, role: Role) -> Claim:
+    return Claim("files", name, name, role, assumed=False)
+
+
+def deezer(name: str, role: Role) -> Claim:
+    return Claim("Deezer", name, name, role, assumed=True)
+
+
 @pytest.mark.parametrize(
-    ("files", "deezer", "expected"),
+    ("claims", "expected"),
     [
-        ([("Ava", "main"), ("Max", "main")], [("Ava", "main")], [("Ava Max", "main")]),
+        ([files("Ava", "main"), files("Max", "main"), deezer("Ava", "main")], [("Ava Max", "main")]),
         (
-            [("Ava", "main"), ("Max", "main")],
-            [("Ava", "main"), ("Max", "guest")],
+            [files("Ava", "main"), files("Max", "main"), deezer("Ava", "main"), deezer("Max", "guest")],
             [("Ava Max", "main"), ("Max", "guest")],
         ),
         (
-            [("Ava", "guest"), ("Max", "main")],
-            [("Ava", "main"), ("Max", "main")],
+            [files("Ava", "guest"), files("Max", "main"), deezer("Ava", "main"), deezer("Max", "main")],
             [("Ava", "guest"), ("Ava Max", "main")],
         ),
+        (
+            [files("Ava", "main"), files("Max", "guest"), deezer("Max", "main")],
+            [("Ava Max", "main"), ("Max", "guest")],
+        ),
     ],
-    ids=["one source's part is joined too", "a part in another role stays", "a part another source joins"],
+    ids=[
+        "one source's part is joined too",
+        "a part in another role stays",
+        "a part another source joins",
+        "a guess completes a join beside a stated part in another role",
+    ],
 )
 def test_a_name_joined_back_from_every_source_s_claims_is_one_credit_in_its_role(
-    files: list[tuple[str, str]], deezer: list[tuple[str, str]], expected: list[tuple[str, str]]
+    claims: list[Claim], expected: list[tuple[str, str]]
 ) -> None:
-    """The parts are joined over every source's claims on the track, role by role, as the repair joins a track's
-    credits: never the whole name beside one of its parts in the same role. A part in a role that holds only some of
-    the parts stays (#1106)."""
-    combined = combine_metadatas(("Deezer", two_tracks(deezer, [])), base=two_tracks(files, [("Ava Max", "composer")]))
-
-    assert combined["tracks"]["1"]["1"]["artists"] == expected
+    """The parts are joined over every source's claims on the track, role by role, guesses included, as the repair
+    joins a track's credits: never the whole name beside one of its parts in the same role. A part in a role that
+    holds only some of the parts stays (#1106)."""
+    assert decided(claims, [("Ava Max", "composer")]) == expected
 
 
 def test_a_name_split_in_three_is_joined_back_whole() -> None:
     """ "Ava Max" is joined, then "Ava Max" and "Ray": each part's claim is a claim of the longest name."""
-    files, deezer = release(), release()
-    for meta in (files, deezer):
-        meta["tracks"] = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
-        for track in meta["tracks"]["1"].values():
-            track["artists"] = []
-    credits = (
-        [("Ava", "main"), ("Max", "main"), ("Ray", "main")],
-        [("Ava Max", "composer")],
-        [("Ava Max Ray", "composer")],
-    )
-    for num, artists in zip(("1", "2", "3"), credits, strict=True):
-        files["tracks"]["1"][num]["artists"] = artists
+    claims = [files("Ava", "main"), files("Max", "main"), files("Ray", "main")]
 
-    combined = combine_metadatas(("Deezer", deezer), base=files)
+    assert decided(claims, [("Ava Max", "composer")], [("Ava Max Ray", "composer")]) == [("Ava Max Ray", "main")]
 
-    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max Ray", "main")]
+
+def test_each_claim_of_a_joined_part_keeps_its_source_and_flag() -> None:
+    claims = [
+        deezer("Ava", "guest"),
+        deezer("Max", "guest"),
+        Claim("Qobuz", "Ava", "Ava", "main", assumed=False),
+        Claim("Qobuz", "Max", "Max", "main", assumed=True),
+    ]
+
+    to_replace = construct_replacement_list([("Ava", "main"), ("Max", "main"), ("Ava Max", "composer")])
+
+    joined = _join_split_names(claims, to_replace)
+
+    assert [(claim.source, claim.name, claim.role, claim.assumed) for claim in joined] == [
+        ("Deezer", "Ava Max", "guest", True),
+        ("Deezer", "Ava Max", "guest", True),
+        ("Qobuz", "Ava Max", "main", False),
+        ("Qobuz", "Ava Max", "main", True),
+    ]
 
 
 @pytest.mark.parametrize(
-    ("guessed", "role"),
-    [((("Max", "main"),), "main"), ((("Ava", "main"), ("Max", "main")), "guest")],
+    ("max_assumed", "role"),
+    [(False, "main"), (True, "guest")],
     ids=["a part stated: stated, beats an assumed guest", "every part guessed: a guess, loses to the first"],
 )
-def test_each_claim_of_a_joined_part_keeps_its_flag(
-    monkeypatch: pytest.MonkeyPatch, guessed: tuple[tuple[str, str], ...], role: str
-) -> None:
-    """Deezer assumes Ava and Max as guests, Qobuz claims them as mains, guessing one or both: each part's claim
-    becomes a claim of "Ava Max", stated or guessed as the part's was."""
-    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Deezer",))
-    deezer = two_tracks([("Ava", "guest"), ("Max", "guest")], [("Ava Max", "composer")])
-    qobuz = stating(two_tracks([("Ava", "main"), ("Max", "main")], [("Ava Max", "composer")]), *guessed)
+def test_a_joined_name_is_stated_when_one_of_its_parts_claims_was(max_assumed: bool, role: str) -> None:
+    """Deezer assumes Ava and Max as guests, Qobuz claims them as mains, guessing Ava and maybe Max."""
+    claims = [
+        deezer("Ava", "guest"),
+        deezer("Max", "guest"),
+        Claim("Qobuz", "Ava", "Ava", "main", assumed=True),
+        Claim("Qobuz", "Max", "Max", "main", assumed=max_assumed),
+    ]
 
-    combined = combine_metadatas(("Deezer", deezer), ("Qobuz", qobuz))
-
-    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", role)]
-
-
-def test_a_guessed_claim_completes_a_join_beside_a_stated_part_in_another_role(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The files state Ava as main and Max as guest; Deezer guesses Max as main. The repair joins over every source's
-    claims, guesses included, so Ava Max is credited in main and the files' Max stays a guest (#1109)."""
-    stores_stating(monkeypatch, stating=(), assuming=("Deezer",))
-    files = two_tracks([("Ava", "main"), ("Max", "guest")], [("Ava Max", "composer")])
-
-    combined = combine_metadatas(("Deezer", two_tracks([("Max", "main")], [])), base=files)
-
-    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", "main"), ("Max", "guest")]
+    assert decided(claims, [("Ava Max", "composer")]) == [("Ava Max", role)]
 
 
 def test_as_before_one_title_naming_two_spellings_of_a_remixer_keeps_both() -> None:
