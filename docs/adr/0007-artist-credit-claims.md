@@ -179,6 +179,8 @@ stays on the store's title with its version folded back in: a remix can sit in a
 - **What stays, on purpose:** a review edit has no sources to weigh, so it doesn't go through
   `resolve_credits` (#854). A rule about reading one source stays in that source's parser, such as
   Tidal's inference. The name repairs stay where they are.
+  *Amended 2026-11-22 (#1109): the bad-split repair also runs on each track's claims, over every
+  source, before the decision; `generate_artists` still runs it after.*
 
 ### 5. What each step proves
 
