@@ -5,7 +5,7 @@ from html import unescape
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.common.strings import guests_from_title, unbracketed
 from salmon.sources import DeezerBase
-from salmon.tagger.sources.base import MetadataMixin, label_names_a_main_artist
+from salmon.tagger.sources.base import MetadataMixin, add_track, label_names_a_main_artist
 
 RECORD_TYPES = {
     "album": "Album",
@@ -50,7 +50,7 @@ class Scraper(DeezerBase, MetadataMixin):
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
-            tracks[str(track["DISK_NUMBER"])][str(track["TRACK_NUMBER"])] = self.generate_track(
+            new_track = self.generate_track(
                 trackno=track["TRACK_NUMBER"],
                 discno=track["DISK_NUMBER"],
                 artists=self.parse_artists(track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"]),
@@ -64,6 +64,7 @@ class Scraper(DeezerBase, MetadataMixin):
                 lossless=True,
                 mp3_320=True,
             )
+            add_track(tracks, str(track["DISK_NUMBER"]), str(track["TRACK_NUMBER"]), new_track)
         return dict(tracks)
 
     def process_label(self, data):

@@ -8,7 +8,7 @@ from salmon.common import RE_FEAT_JOIN
 from salmon.errors import ScrapeError
 from salmon.sources import MusicBrainzBase, is_placeholder_catno
 from salmon.sources.musicbrainz import NotFoundError
-from salmon.tagger.sources.base import MetadataMixin
+from salmon.tagger.sources.base import MetadataMixin, add_track
 
 RELEASE_TYPES = {
     "Album": "Album",
@@ -154,13 +154,14 @@ class Scraper(MusicBrainzBase, MetadataMixin):
                             credited_remixers.append(relation["artist"]["name"])
                             artists.append((relation["artist"]["name"], "remixer"))
 
-                    tracks[str(disc["position"])][str(track["number"])] = self.generate_track(
+                    new_track = self.generate_track(
                         trackno=track["number"],
                         discno=disc["position"],
                         artists=artists,
                         credited_remixers=credited_remixers,
                         title=track["title"] if "title" in track else track["recording"]["title"],
                     )
+                    add_track(tracks, str(disc["position"]), str(track["number"]), new_track)
                 except (ValueError, IndexError) as e:
                     raise ScrapeError("Could not parse tracks.") from e
         return dict(tracks)

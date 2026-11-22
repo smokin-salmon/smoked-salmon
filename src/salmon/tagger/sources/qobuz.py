@@ -12,7 +12,7 @@ from salmon.common.credits import EXTRA_ROLES, Credit, Role
 from salmon.common.strings import comparable, guests_from_title
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, standardize_genres, strip_ep_suffix
+from salmon.tagger.sources.base import MetadataMixin, add_track, ends_with_ep, standardize_genres, strip_ep_suffix
 from salmon.tagger.tags import is_classical_genre
 
 # ------------------------------------------------------------------------------
@@ -388,7 +388,7 @@ class Scraper(QobuzBase, MetadataMixin):
             track_number = str(track.get("track_number", 1))
             artists, guessed = _track_credits(track, album_mains, featured, album_names, extra)
 
-            tracks[disc_number][track_number] = self.generate_track(
+            new_track = self.generate_track(
                 trackno=track_number,
                 discno=disc_number,
                 artists=list(artists),
@@ -398,7 +398,8 @@ class Scraper(QobuzBase, MetadataMixin):
                 isrc=track.get("isrc"),
                 explicit=track.get("parental_warning", False),
             )
-            tracks[disc_number][track_number]["assumed_artists"] = guessed
+            new_track["assumed_artists"] = guessed
+            add_track(tracks, disc_number, track_number, new_track)
 
         return dict(tracks)
 
