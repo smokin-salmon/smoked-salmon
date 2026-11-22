@@ -165,7 +165,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     if "url" in base:
         del base["url"]
 
-    decisions = _decide_credits(base["tracks"], claims, base_source)
+    decisions = _decide_credits(base["tracks"], claims, base_source, corrected=True)
     _decide_titles(base["tracks"], base_source)
     # After the decision: a base track no store paired is decided from its own marks.
     without_merge_only_keys(base)
@@ -181,9 +181,13 @@ def _correction_key(name):
     return name.strip().casefold()
 
 
+def _artist_corrections():
+    return {_correction_key(name): to for name, to in cfg.metadata.corrections.artists.items()}
+
+
 def _correct_artists(tracks):
     """Rename each track artist that [metadata.corrections] artists names, keeping its role."""
-    corrections = {_correction_key(name): to for name, to in cfg.metadata.corrections.artists.items()}
+    corrections = _artist_corrections()
     if not corrections:
         return
     for disc in tracks.values():
@@ -657,14 +661,19 @@ def _with_store_accents(title, stores):
     return title
 
 
-def _decide_credits(tracks, claims, base_source):
+def _decide_credits(tracks, claims, base_source, corrected=False):
     """Decide each track's credits from its claims (ADR 0007), in place, and return the reasons.
 
     Each name first takes the spelling generate_artists gives it, so deciding never changes a spelling. A claim whose
     credit the merge dropped (a fragment of another name) is left out. Every kept credit has a claim: the merge claims
     each credit it adds to a track, under the name it adds it as. The track's badly split names are then joined back
-    over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109).
+    over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). With `corrected`,
+    the configured artist corrections apply to the tracks' credits and the claims first, so a corrected part joins
+    under its new name, as it did before the repair ran after the corrections.
     """
+    corrections = _artist_corrections() if corrected else {}
+    if corrections:
+        _correct_artists(tracks)
     spellings = artist_spellings(tracks)
     to_replace = construct_replacement_list(
         [(spellings[normalize_accents(name.lower())], role) for name, role in _release_credits(tracks)]
@@ -677,7 +686,7 @@ def _decide_credits(tracks, claims, base_source):
             by_track[disc, num] = _join_split_names(
                 [
                     msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
-                    for claim in own
+                    for claim in (_corrected_claim(claim, corrections) for claim in own)
                     if (claim.name, claim.role) in kept
                 ],
                 to_replace,
@@ -686,6 +695,11 @@ def _decide_credits(tracks, claims, base_source):
     for (disc, num), credits in decided.items():
         tracks[disc][num]["artists"] = [credit for credit, _ in credits]
     return [decision for credits in decided.values() for decision in credits]
+
+
+def _corrected_claim(claim, corrections):
+    to = corrections.get(_correction_key(claim.name))
+    return msgspec.structs.replace(claim, name=to) if to else claim
 
 
 def _release_credits(tracks):
