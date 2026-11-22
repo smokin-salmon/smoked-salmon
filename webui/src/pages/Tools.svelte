@@ -2,6 +2,7 @@
   import { apiPost } from '../lib/api'
   import { copyText } from '../lib/clipboard'
   import ImagePicker from '../lib/ImagePicker.svelte'
+  import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
   import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
@@ -9,6 +10,42 @@
 
   let options = $state<ToolsOptions | null>(null)
   let optionsError = $state('')
+
+  let reportTarget = $state('')
+  let reportTracker = $state('')
+  let reportComment = $state('')
+  let reportSource = $state('')
+  let reportFolder = $state('')
+  let reportFolderUsable = $state(false)
+  let reportDryRun = $state(false)
+  let reportStarting = $state(false)
+  let reportError = $state('')
+  let reportJobId = $state<string | null>(null)
+  const reportJob = $derived(reportJobId ? jobStore.get(reportJobId) : undefined)
+
+  async function prepareReport() {
+    reportStarting = true
+    reportError = ''
+    try {
+      const job = await apiPost<Job>('/jobs', {
+        kind: 'lossy_report',
+        dry_run: reportDryRun,
+        params: {
+          target: reportTarget,
+          tracker: reportTracker || null,
+          comment: reportComment || null,
+          source_url: reportSource.trim(),
+          folder: reportFolder.trim() || null,
+        } satisfies import('../lib/tools').LossyReportParams,
+      })
+      reportJobId = job.id
+      void jobStore.show(job.id)
+    } catch (e) {
+      reportError = String(e)
+    } finally {
+      reportStarting = false
+    }
+  }
 
   // Description generator
   let descUrls = $state('')
@@ -97,10 +134,54 @@
 <h1>Tools</h1>
 <p class="lead">
   Build a tracklist description from store URLs, as <span class="mono">salmon descgen</span> does, and upload images,
-  as <span class="mono">salmon images up</span> does.
+  as <span class="mono">salmon images up</span> does. Request lossy approval for existing torrents with
+  <span class="mono">salmon report</span>.
+</p>
+<p class="muted">
+  These tools contact external services when you run them: the description generator fetches store pages,
+  and image upload sends the selected images to the chosen host. Approval reports contact the selected tracker
+  only after you confirm the lookup, then ask for confirmation of the eligible FLAC before submitting the report.
+  Print only makes no tracker requests. No local audio is changed by these tools.
 </p>
 
 {#if optionsError}<div class="card"><p class="error">{optionsError}</p></div>{/if}
+
+<div class="card">
+  <h2>Lossy approval report</h2>
+  <p class="muted">Temporary conservative safeguard for RED and OPS: submit only the explicitly selected FLAC uploaded by your authenticated account. Lossy transcodes and other matching editions are not automatically reported. Unverifiable ownership or source metadata prevents submission. These restrictions are not confirmed tracker rules.</p>
+  <div class="row options">
+    <label>Torrent ID or permalink<input type="text" class="mono" bind:value={reportTarget} placeholder="12345 or https://…" /></label>
+    <label>Tracker<select bind:value={reportTracker}>
+      <option value="">From permalink or ask</option>
+      {#each (options?.trackers ?? []).filter((t) => ['RED', 'OPS'].includes(t.code)) as t (t.code)}
+        <option value={t.code}>{t.code}</option>
+      {/each}
+    </select></label>
+    <label>Source URL (optional)<input type="text" class="mono" bind:value={reportSource} placeholder="https://…" /></label>
+  </div>
+  <div class="field folder">
+    <span class="label">Album folder (optional)</span>
+    <FolderPicker bind:value={reportFolder} bind:usable={reportFolderUsable} empty="no local spectrals" />
+  </div>
+  <label class="field">Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
+  <p class="muted">Provide a comment or source URL. With an album folder, salmon uploads full and zoomed spectral images for each track to the tracker's configured image host before final confirmation. Leave the folder empty to report without local audio. Print only checks the folder and skips image generation and upload.</p>
+  <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>
+  <p class="muted">Print only prepares text to copy for manual reporting. It cannot verify ownership or FLAC eligibility.</p>
+  <div class="row actions"><button class="btn" onclick={prepareReport}
+    disabled={!reportTarget.trim() || (!!reportFolder && !reportFolderUsable) || reportStarting || (reportJob && !FINISHED.includes(reportJob.status))}>Prepare report</button></div>
+  {#if reportError}<p class="error">{reportError}</p>{/if}
+  {#if reportJob}
+    <JobStatus job={reportJob} />
+    {#if reportJob.status === 'done'}
+      {@const text = (reportJob.result as { text: string }).text}
+      <pre class="result mono">{text}</pre>
+      <button class="btn small" onclick={() => copy('Report', text)}>Copy report</button>
+      <span class="muted">{copied}</span>
+    {:else if !FINISHED.includes(reportJob.status)}
+      <JobActivity job={reportJob} />
+    {/if}
+  {/if}
+</div>
 
 <div class="card">
   <h2>Description generator</h2>
@@ -220,12 +301,16 @@
     flex-wrap: wrap;
     align-items: flex-end;
   }
-  .options label {
+  .options label,
+  .field {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
     font-size: 0.85rem;
     color: var(--text-dim);
+  }
+  .folder {
+    margin-top: 0.8rem;
   }
   .error {
     color: var(--err);
