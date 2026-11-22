@@ -5,7 +5,7 @@ from html import unescape
 
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.sources import TidalBase
-from salmon.tagger.sources.base import MetadataMixin, label_names_a_main_artist
+from salmon.tagger.sources.base import MetadataMixin, add_track, label_names_a_main_artist
 
 RECORD_TYPES = {
     "ALBUM": "Album",
@@ -62,7 +62,7 @@ class Scraper(TidalBase, MetadataMixin):
             artists, credited_remixers = self.parse_artists(
                 track["artists"], track["title"], track["version"], album_artists
             )
-            tracks[str(track["volumeNumber"])][str(track["trackNumber"])] = self.generate_track(
+            new_track = self.generate_track(
                 trackno=track["trackNumber"],
                 discno=track["volumeNumber"],
                 artists=artists,
@@ -73,6 +73,7 @@ class Scraper(TidalBase, MetadataMixin):
                 stream_id=track["id"],
                 credited_remixers=credited_remixers,
             )
+            add_track(tracks, str(track["volumeNumber"]), str(track["trackNumber"]), new_track)
         return dict(tracks)
 
     def process_label(self, data):

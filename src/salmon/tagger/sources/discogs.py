@@ -4,7 +4,7 @@ from collections import defaultdict
 from salmon.common import RE_FEAT_JOIN
 from salmon.common.strings import strip_numbered_suffix
 from salmon.sources import DiscogsBase
-from salmon.tagger.sources.base import MetadataMixin
+from salmon.tagger.sources.base import MetadataMixin, add_track
 
 VALID_EDITION_TITLES = {
     "Remastered",
@@ -274,7 +274,7 @@ class Scraper(DiscogsBase, MetadataMixin):
                 disc_str = str(disc_num)
 
                 artists, variations = parse_credits(soup["artists"], track)
-                tracks[disc_str][track_num] = self.generate_track(
+                new_track = self.generate_track(
                     trackno=track_num,
                     discno=disc_num,
                     artists=artists,
@@ -287,7 +287,8 @@ class Scraper(DiscogsBase, MetadataMixin):
                     ],
                 )
                 # Only the merge reads this, to match tag artists spelled the way the release credits them.
-                tracks[disc_str][track_num]["artist_variations"] = variations
+                new_track["artist_variations"] = variations
+                add_track(tracks, disc_str, track_num, new_track)
         return dict(tracks)
 
 

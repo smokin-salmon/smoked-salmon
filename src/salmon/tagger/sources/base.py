@@ -7,7 +7,7 @@ from typing import Any
 from salmon import cfg
 from salmon.common import RE_USELESS_VERSION, fetch_genre, less_uppers, normalize_accents, split_genre
 from salmon.common.strings import join_artists, names_no_artist, reaches_various_threshold, same_artist_key, unbracketed
-from salmon.errors import GenreNotInWhitelist
+from salmon.errors import GenreNotInWhitelist, ScrapeError
 
 
 class MetadataMixin(ABC):
@@ -541,6 +541,17 @@ def append_remixers_to_track_titles(data):
                     data[dnum][tnum]["title"] += f" ({join_artists(remix_artists)} Remix)"
 
     return data
+
+
+def add_track(tracks, disc, number, track):
+    """Put a track at its place on the disc. A store answer with two tracks at one place is refused, as keeping either
+    would lose the other (#968)."""
+    if number in tracks[disc]:
+        # Discogs writes "-" for an entry with no number.
+        if any(char.isalnum() for char in str(number)):
+            raise ScrapeError(f"Disc {disc} has two tracks numbered {number}.")
+        raise ScrapeError(f"Disc {disc} has two tracks with no number.")
+    tracks[disc][number] = track
 
 
 def assign_track_totals(data):
