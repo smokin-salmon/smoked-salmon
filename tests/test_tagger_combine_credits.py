@@ -7,6 +7,7 @@ import pytest
 from helpers.tagger_combine import make_tracks, one_track, stating, stores_stating
 from test_common_credits import files_claim, store_claim
 
+from salmon import cfg
 from salmon.common.credits import Claim
 from salmon.tagger.combine import _decide_credits, _join_split_names, combine_metadatas, combine_tracks, decide_alone
 from salmon.tagger.sources.base import construct_replacement_list
@@ -169,6 +170,33 @@ def test_a_scrape_used_alone_joins_no_part_its_first_guess_overrules(monkeypatch
     decide_alone(alone, "Deezer")
 
     assert alone["tracks"]["1"]["1"]["artists"] == [("Max", "guest"), ("Ava", "main")]
+
+
+def test_a_scrape_used_alone_has_its_titles_written_before_a_split_name_is_joined(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Review on #1164: the featuring clause names Max as the store credits him, before Ava and Max are joined back.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    alone = two_tracks([("Bob", "main"), ("Ava", "guest"), ("Max", "guest")], [("Ava Max", "composer")])
+    alone["tracks"]["1"]["1"]["title"] = "Song (feat. Max)"
+
+    decide_alone(alone, "Deezer")
+
+    assert alone["tracks"]["1"]["1"]["title"] == "Song"
+
+
+def test_a_guess_that_agrees_with_a_kept_claim_follows_it_and_disputes_nothing(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    # Review on #1164: Deezer's guessed guest loses to the files' main for Max, but agrees with the files' own guest
+    # credit of Max, which stays: it is a claim of that credit, not of the whole name the main is joined into.
+    stores_stating(monkeypatch, (), ("Deezer",))
+    files = two_tracks([("Ava", "main"), ("Max", "main"), ("Max", "guest")], [("Ava Max", "composer")])
+
+    combined = combine_metadatas(("Deezer", two_tracks([("Max", "guest")], [("Ava Max", "composer")])), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava Max", "main"), ("Max", "guest")]
+    assert "Kept" not in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(

@@ -721,14 +721,15 @@ def _join_split_names(claims, to_replace):
     lose a role the whole name keeps (#1109).
 
     A claim the decision overrules (`_overruled`) joins nothing: it follows the claim that beat it, into the whole name
-    when that one is joined, and loses to it again."""
+    when that one is joined, and loses to it again. One that agrees with a claim the decision keeps (the files' own
+    guest beside their main) follows that one."""
     overruled = _overruled(claims)
-    kept = [(claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled]
+    kept = list(dict.fromkeys((claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled))
     joined = {}
-    fix_artists_list(list(dict.fromkeys(kept)), to_replace, joined)
+    fix_artists_list(list(kept), to_replace, joined)
     renamed = []
     for at, claim in enumerate(claims):
-        key = (claim.name, overruled.get(at, claim.role))
+        key = (claim.name, claim.role if (claim.name, claim.role) in kept else overruled[at])
         renamed.append(msgspec.structs.replace(claim, name=joined[key]) if key in joined else claim)
     return renamed
 
@@ -753,9 +754,10 @@ def _overruled(claims):
 
 def decide_alone(metadata, source):
     """Decide a scrape used alone as a merge of that one source, in place (no disputes to print): each track's
-    credits from its claims, then the release's from the tracks."""
-    _decide_credits(metadata["tracks"], {}, source)
+    titles, from the names as the store credits them, as in combine_metadatas; then each track's credits from its
+    claims, and the release's from the tracks."""
     _decide_titles(metadata["tracks"], source)
+    _decide_credits(metadata["tracks"], {}, source)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 
 
