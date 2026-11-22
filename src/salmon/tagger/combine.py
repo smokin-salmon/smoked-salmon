@@ -165,12 +165,13 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     if "url" in base:
         del base["url"]
 
-    decisions = _decide_credits(base["tracks"], claims, base_source, corrected=True)
+    # The titles first, from the performers as the sources credited them, before the decision corrects their names and
+    # joins split ones: a featuring clause names them that way, and deciding changes only their roles.
     _decide_titles(base["tracks"], base_source)
+    decisions = _decide_credits(base["tracks"], claims, base_source, corrected=True)
     # After the decision: a base track no store paired is decided from its own marks.
     without_merge_only_keys(base)
     _print_disputes(decisions)
-    _correct_artists(base["tracks"])
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
     base["genres"] = standardize_genres(_correct_genres(base["genres"]))
     base["label"] = determine_label_type(base["label"], base["artists"])
@@ -668,9 +669,15 @@ def _decide_credits(tracks, claims, base_source, corrected=False):
     credit the merge dropped (a fragment of another name) is left out. Every kept credit has a claim: the merge claims
     each credit it adds to a track, under the name it adds it as. The track's badly split names are then joined back
     over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). With `corrected`,
-    the configured artist corrections apply to the tracks' credits and the claims first, so a corrected part joins
-    under its new name, as it did before the repair ran after the corrections.
+    the configured artist corrections apply to the tracks' credits and the claims first, once each, so a corrected
+    part joins under its new name, as it did when the repair ran after the corrections.
     """
+    # Each track's claims before the corrections, so that each name is corrected once, as its credit is.
+    own = {
+        (disc, num): claims.get(id(track)) or _claims_of(track, base_source)
+        for disc, disc_tracks in tracks.items()
+        for num, track in disc_tracks.items()
+    }
     corrections = _artist_corrections() if corrected else {}
     if corrections:
         _correct_artists(tracks)
@@ -682,11 +689,10 @@ def _decide_credits(tracks, claims, base_source, corrected=False):
     for disc, disc_tracks in tracks.items():
         for num, track in disc_tracks.items():
             kept = {tuple(credit) for credit in track["artists"]}
-            own = claims.get(id(track)) or _claims_of(track, base_source)
             by_track[disc, num] = _join_split_names(
                 [
                     msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
-                    for claim in (_corrected_claim(claim, corrections) for claim in own)
+                    for claim in (_corrected_claim(claim, corrections) for claim in own[disc, num])
                     if (claim.name, claim.role) in kept
                 ],
                 to_replace,
@@ -711,16 +717,38 @@ def _join_split_names(claims, to_replace):
     """A track's claims with its badly split names joined back, as generate_artists' repair joins a track's credits
     (fix_artists_list, with `to_replace` from the release's names), over the claims of every source: in a role where
     every part of a name is claimed, each claim of a part becomes a claim of the whole name, keeping its source and
-    whether it is assumed. Run before the decision, so that a part also claimed in another role does not lose a role
-    the whole name keeps (#1109)."""
+    whether it is assumed. Run before the decision, so that a part one source also claims in another role does not
+    lose a role the whole name keeps (#1109).
+
+    A claim the decision overrules (`_overruled`) joins nothing: it follows the claim that beat it, into the whole name
+    when that one is joined, and loses to it again."""
+    overruled = _overruled(claims)
+    kept = [(claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled]
     joined = {}
-    fix_artists_list(list(dict.fromkeys((claim.name, claim.role) for claim in claims)), to_replace, joined)
-    return [
-        msgspec.structs.replace(claim, name=joined[claim.name, claim.role])
-        if (claim.name, claim.role) in joined
-        else claim
-        for claim in claims
-    ]
+    fix_artists_list(list(dict.fromkeys(kept)), to_replace, joined)
+    renamed = []
+    for at, claim in enumerate(claims):
+        key = (claim.name, overruled.get(at, claim.role))
+        renamed.append(msgspec.structs.replace(claim, name=joined[key]) if key in joined else claim)
+    return renamed
+
+
+def _overruled(claims):
+    """The claims the decision overrules, by their place in `claims`, each with the performing role it loses to: a
+    guess, and another source's claim that loses to the first. A source's stated claim beside its own claim of the
+    role kept is not overruled: the files may credit one artist as main and as guest (#1109)."""
+    won = {
+        name: (role, reason.from_sources)
+        for (name, role), reason in resolve_credits({None: claims})[None]
+        if role in {"main", "guest"}
+    }
+    return {
+        at: won[claim.name][0]
+        for at, claim in enumerate(claims)
+        if claim.role in {"main", "guest"}
+        and won[claim.name][0] != claim.role
+        and (claim.assumed or claim.source not in won[claim.name][1])
+    }
 
 
 def decide_alone(metadata, source):

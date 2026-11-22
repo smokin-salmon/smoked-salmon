@@ -5,9 +5,10 @@ from copy import deepcopy
 
 import pytest
 from helpers.tagger_combine import make_tracks, one_track, stating, stores_stating
+from test_common_credits import files_claim, store_claim
 
-from salmon.common.credits import Claim, Role
-from salmon.tagger.combine import _decide_credits, _join_split_names, combine_metadatas, combine_tracks
+from salmon.common.credits import Claim
+from salmon.tagger.combine import _decide_credits, _join_split_names, combine_metadatas, combine_tracks, decide_alone
 from salmon.tagger.sources.base import construct_replacement_list
 
 
@@ -146,60 +147,105 @@ def decided(claims: list[Claim], *others: list[tuple[str, str]]) -> list[tuple[s
     return first["artists"]
 
 
-def files(name: str, role: Role) -> Claim:
-    return Claim("files", name, name, role, assumed=False)
+@pytest.mark.parametrize("store", ["Deezer", "Qobuz"], ids=["a store's guess", "a store's stated main"])
+def test_a_claim_the_decision_overrules_completes_no_join(monkeypatch: pytest.MonkeyPatch, store: str) -> None:
+    # statelycurmudgeon on #1164: the files' stated guest beats the store's main for Max, so that main is not there to
+    # join Ava to, as before the repair ran first.
+    stores_stating(monkeypatch, ("Qobuz",), ("Deezer",))
+    files = two_tracks([("Ava", "main"), ("Max", "guest")], [("Ava & Max", "main")])
+    theirs = two_tracks([("Ava", "main"), ("Max", "main")], [("Ava & Max", "main")])
+
+    combined = combine_metadatas((store, theirs), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ava", "main"), ("Max", "guest")]
+    assert combined["artists"] == [("Ava", "main"), ("Max", "guest"), ("Ava & Max", "main")]
 
 
-def deezer(name: str, role: Role) -> Claim:
-    return Claim("Deezer", name, name, role, assumed=True)
+def test_a_scrape_used_alone_joins_no_part_its_first_guess_overrules(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Deezer guesses Max as a guest, then as a main: the first guess wins, so Max's main is not there to join Ava to.
+    stores_stating(monkeypatch, (), ("Deezer",))
+    alone = two_tracks([("Max", "guest"), ("Ava", "main"), ("Max", "main")], [("Ava Max", "composer")])
+
+    decide_alone(alone, "Deezer")
+
+    assert alone["tracks"]["1"]["1"]["artists"] == [("Max", "guest"), ("Ava", "main")]
 
 
 @pytest.mark.parametrize(
     ("claims", "expected"),
     [
-        ([files("Ava", "main"), files("Max", "main"), deezer("Ava", "main")], [("Ava Max", "main")]),
         (
-            [files("Ava", "main"), files("Max", "main"), deezer("Ava", "main"), deezer("Max", "guest")],
-            [("Ava Max", "main"), ("Max", "guest")],
+            [files_claim("Ava"), files_claim("Max"), store_claim("Deezer", "Ava", "main")],
+            [("Ava Max", "main")],
         ),
         (
-            [files("Ava", "guest"), files("Max", "main"), deezer("Ava", "main"), deezer("Max", "main")],
-            [("Ava", "guest"), ("Ava Max", "main")],
+            [
+                files_claim("Ava"),
+                files_claim("Max"),
+                store_claim("Deezer", "Ava", "main"),
+                store_claim("Deezer", "Max", "guest"),
+            ],
+            [("Ava Max", "main")],
         ),
         (
-            [files("Ava", "main"), files("Max", "guest"), deezer("Max", "main")],
-            [("Ava Max", "main"), ("Max", "guest")],
+            [
+                files_claim("Ava", "guest"),
+                files_claim("Max"),
+                store_claim("Deezer", "Ava", "main"),
+                store_claim("Deezer", "Max", "main"),
+            ],
+            [("Ava", "guest"), ("Max", "main")],
+        ),
+        (
+            [files_claim("Ava"), files_claim("Max", "guest"), store_claim("Deezer", "Max", "main")],
+            [("Ava", "main"), ("Max", "guest")],
         ),
     ],
     ids=[
         "one source's part is joined too",
-        "a part in another role stays",
-        "a part another source joins",
-        "a guess completes a join beside a stated part in another role",
+        "an overruled part follows the whole name and loses again",
+        "a guess against a stated role completes no join",
+        "a guess beside a stated part in another role completes no join",
     ],
 )
-def test_a_name_joined_back_from_every_source_s_claims_is_one_credit_in_its_role(
+def test_a_name_is_joined_back_from_the_claims_the_decision_keeps(
     claims: list[Claim], expected: list[tuple[str, str]]
 ) -> None:
-    """The parts are joined over every source's claims on the track, role by role, guesses included, as the repair
-    joins a track's credits: never the whole name beside one of its parts in the same role. A part in a role that
-    holds only some of the parts stays (#1106)."""
+    """The parts are joined over every source's claims on the track, role by role, as the repair joins a track's
+    credits, but for a claim the decision overrules: it joins nothing, and follows the claim that beat it. The credits
+    are then those of deciding first and joining after, but for one source's part in two roles (#1109)."""
     assert decided(claims, [("Ava Max", "composer")]) == expected
 
 
-def test_a_name_split_in_three_is_joined_back_whole() -> None:
-    """ "Ava Max" is joined, then "Ava Max" and "Ray": each part's claim is a claim of the longest name."""
-    claims = [files("Ava", "main"), files("Max", "main"), files("Ray", "main")]
-
-    assert decided(claims, [("Ava Max", "composer")], [("Ava Max Ray", "composer")]) == [("Ava Max Ray", "main")]
+@pytest.mark.parametrize(
+    ("claims", "expected"),
+    [
+        ([files_claim("Ava"), files_claim("Max"), files_claim("Ray")], [("Ava Max Ray", "main")]),
+        (
+            [
+                files_claim("Ava", "guest"),
+                files_claim("Max", "guest"),
+                files_claim("Ava"),
+                files_claim("Max"),
+                files_claim("Ray"),
+            ],
+            [("Ava Max", "guest"), ("Ava Max Ray", "main")],
+        ),
+    ],
+    ids=["in one role", "the shorter name in another role stays"],
+)
+def test_a_name_split_in_three_is_joined_back_whole(claims: list[Claim], expected: list[tuple[str, str]]) -> None:
+    """ "Ava Max" is joined, then "Ava Max" and "Ray": each part's claim is a claim of the longest name in its role."""
+    assert decided(claims, [("Ava Max", "composer")], [("Ava Max Ray", "composer")]) == expected
 
 
 def test_each_claim_of_a_joined_part_keeps_its_source_and_flag() -> None:
+    """Deezer's guessed guests lose to Qobuz's mains, so they follow them into the whole name, as guests."""
     claims = [
-        deezer("Ava", "guest"),
-        deezer("Max", "guest"),
-        Claim("Qobuz", "Ava", "Ava", "main", assumed=False),
-        Claim("Qobuz", "Max", "Max", "main", assumed=True),
+        store_claim("Qobuz", "Ava", "main", assumed=False),
+        store_claim("Qobuz", "Max", "main"),
+        store_claim("Deezer", "Ava", "guest"),
+        store_claim("Deezer", "Max", "guest"),
     ]
 
     to_replace = construct_replacement_list([("Ava", "main"), ("Max", "main"), ("Ava Max", "composer")])
@@ -207,28 +253,24 @@ def test_each_claim_of_a_joined_part_keeps_its_source_and_flag() -> None:
     joined = _join_split_names(claims, to_replace)
 
     assert [(claim.source, claim.name, claim.role, claim.assumed) for claim in joined] == [
-        ("Deezer", "Ava Max", "guest", True),
-        ("Deezer", "Ava Max", "guest", True),
         ("Qobuz", "Ava Max", "main", False),
         ("Qobuz", "Ava Max", "main", True),
+        ("Deezer", "Ava Max", "guest", True),
+        ("Deezer", "Ava Max", "guest", True),
     ]
 
 
-@pytest.mark.parametrize(
-    ("max_assumed", "role"),
-    [(False, "main"), (True, "guest")],
-    ids=["a part stated: stated, beats an assumed guest", "every part guessed: a guess, loses to the first"],
-)
-def test_a_joined_name_is_stated_when_one_of_its_parts_claims_was(max_assumed: bool, role: str) -> None:
-    """Deezer assumes Ava and Max as guests, Qobuz claims them as mains, guessing Ava and maybe Max."""
+def test_claims_the_decision_overrules_are_not_credited_beside_the_name_that_beat_them() -> None:
+    """Deezer's guesses of Ava and Max as guests come first, so Qobuz's guessed mains lose: they follow Deezer's
+    claims into the whole name, and are not left as mains of their own."""
     claims = [
-        deezer("Ava", "guest"),
-        deezer("Max", "guest"),
-        Claim("Qobuz", "Ava", "Ava", "main", assumed=True),
-        Claim("Qobuz", "Max", "Max", "main", assumed=max_assumed),
+        store_claim("Deezer", "Ava", "guest"),
+        store_claim("Deezer", "Max", "guest"),
+        store_claim("Qobuz", "Ava", "main"),
+        store_claim("Qobuz", "Max", "main"),
     ]
 
-    assert decided(claims, [("Ava Max", "composer")]) == [("Ava Max", role)]
+    assert decided(claims, [("Ava Max", "composer")]) == [("Ava Max", "guest")]
 
 
 def test_as_before_one_title_naming_two_spellings_of_a_remixer_keeps_both() -> None:
