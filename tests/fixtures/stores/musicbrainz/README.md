@@ -55,5 +55,9 @@ and they are there for deciding whether aliases are worth a later step (#1131):
 | artist | aliases (name, sort name, type and its id, ended, locale, primary), on the artist's first appearance in the file only: each later appearance leaves them out |
 | release and release group relations | composer, conductor and remixer relations to an artist: type and its id, direction, credited name, attributes, the artist |
 
+An artist's aliases sit on one of its credits only, so look them up by the artist's id across the whole file: read from
+each credit's own artist, the later credits seem to have none. None of the casebook's releases has a composer,
+conductor or remixer relation of its own yet; a recording's composers come from its works, which are not recorded.
+
 To add or refresh a release, fetch it and trim it the same way. If the
 casebook's `today` changes, say why in the commit.
