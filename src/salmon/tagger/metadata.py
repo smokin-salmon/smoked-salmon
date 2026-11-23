@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from copy import copy, deepcopy
+from copy import deepcopy
 from dataclasses import dataclass
 from itertools import islice
 from typing import Any
@@ -20,6 +20,7 @@ from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES, without_tracking
 from salmon.tagger.sources.base import generate_artists, standardize_genres
 from salmon.tagger.tag_urls import tag_urls
+from salmon.tagger.tags import is_classical_genre
 
 
 @dataclass
@@ -560,18 +561,40 @@ def remove_various_artists(metadata):
 
 
 def clean_metadata(metadata):
-    for disc, tracks in metadata["tracks"].items():
-        for num, track in tracks.items():
-            for artist, importance in copy(track["artists"]):
-                guest_artists = {re_strip(a) for a, i in track["artists"] if i in {"guest", "remixer"}}
-                if re_strip(artist) in guest_artists and importance == "main":
-                    if sum("main" in item for item in metadata["tracks"][disc][num]["artists"]) == 1:
-                        pass
-                    else:
-                        metadata["tracks"][disc][num]["artists"].remove((artist, importance))
+    classical = any(is_classical_genre(genre) for genre in metadata.get("genres") or [])
+    for tracks in metadata["tracks"].values():
+        for track in tracks.values():
+            for credit, _why in _mains_to_drop(track["artists"], classical):
+                track["artists"].remove(credit)
 
     _dedupe_catno_against_upc(metadata)
     return metadata
+
+
+def _mains_to_drop(artists, classical):
+    """The track's mains that its other credits show aren't its main artists, each with why (ADR 0007, decision 3).
+
+    A main who is also the track's guest or remixer loses main, one after another while another main is left (an artist
+    remixing their own track keeps it). On a classical release, a main also credited composer or conductor loses main,
+    as the files' classical rule takes them out of ARTIST, unless every main left is one: a track keeps a main."""
+    drops = []
+    left = sum("main" in credit for credit in artists)
+    guests = {re_strip(name) for name, role in artists if role in {"guest", "remixer"}}
+    for credit in artists:
+        if credit[1] == "main" and re_strip(credit[0]) in guests and left > 1:
+            drops.append((credit, "also its guest or remixer"))
+            left -= 1
+    if classical:
+        dropped = {credit for credit, _why in drops}
+        mains = [credit for credit in artists if credit[1] == "main" and credit not in dropped]
+        roles = {}  # each name's first role of the two, which its reason names
+        for name, role in artists:
+            if role in {"composer", "conductor"}:
+                roles.setdefault(re_strip(name), role)
+        named = [credit for credit in mains if re_strip(credit[0]) in roles]
+        if len(named) < len(mains):
+            drops += [(credit, f"also its {roles[re_strip(credit[0])]}, on a classical release") for credit in named]
+    return drops
 
 
 def _dedupe_catno_against_upc(metadata: dict[str, Any]) -> None:
