@@ -12,8 +12,8 @@ qobuz = "the API's album in the API's shape: what the parser reads, plus the cre
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
-not_main = ["No Artist"]
-how_we_know = "'No Artist' is Discogs' placeholder for a track with no artist; no other store has it"
+not_main = ["No Artist", "[dialogue]"]
+how_we_know = "'No Artist' is Discogs' placeholder for a track with no artist; no other store has it; '[dialogue]' is MusicBrainz's special-purpose artist for a dialogue track, which Picard writes into ARTIST"
 
 [today.deezer]
 release = ["Tim Roth (main)", "Amanda Plummer (main)", "Dick Dale And His Del-Tones (main)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool & The Gang (main)", "Al Green (main)", "The Tornadoes (main)", "Ricky Nelson (main)", "Dusty Springfield (main)", "Maria De Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Maria McKee (main)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "The Statler Brothers (main)", "The Lively Ones (main)"]

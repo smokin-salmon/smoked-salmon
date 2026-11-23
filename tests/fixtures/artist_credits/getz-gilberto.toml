@@ -16,7 +16,8 @@ tags = "constructed from the store data named in the comment above [[track]], ne
 
 [right]
 release_main = ["Stan Getz", "João Gilberto"]
-how_we_know = "Qobuz's album artists (both main-artist), MusicBrainz, Discogs and Deezer's album contributors agree"
+not_main = ["João Gilberto Quintet"]
+how_we_know = "Qobuz's album artists (both main-artist), MusicBrainz, Discogs and Deezer's album contributors agree; the João Gilberto Quintet, which Deezer credits as a main beside Stan Getz on 1.7 and 1.15 (Qobuz as a guest), is not one of the release's mains"
 open = "Antônio Carlos Jobim (piano, composer): guest, or nothing? Astrud Gilberto on two tracks: guest (feat.)"
 
 [today.deezer]
