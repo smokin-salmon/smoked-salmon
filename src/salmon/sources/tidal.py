@@ -118,6 +118,8 @@ class TidalBase(BaseScraper):
         retries = 0
         token_replaced = False
         while True:
+            # A token refresh is no answer of this scrape's: a failure there must not show an earlier status.
+            self.last_answer = None
             token = await self._ensure_token()
             auth_headers = {
                 **(headers or {}),

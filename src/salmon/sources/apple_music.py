@@ -117,6 +117,8 @@ class AppleMusicBase(BaseScraper):
             qs = parse_qs(urlparse(url).query)
             lang = qs.get("l", ["en-US"])[0]
 
+        # The token bootstrap is no answer of this scrape's: a failure there must not show an earlier status.
+        self.last_answer = None
         token = await self._get_token()
         request_headers = {
             "Authorization": f"Bearer {token}",

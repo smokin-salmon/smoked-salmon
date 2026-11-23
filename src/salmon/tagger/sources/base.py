@@ -28,6 +28,9 @@ def scrape_error_with_context(scraper: Any, url: str, error: ScrapeError) -> Scr
         title = f', page titled "{answer.title}"' if answer.title else ""
         seen = f" (HTTP {answer.status}{title})"
     reason = str(error).strip().removeprefix(f"{store}: ") or type(error).__name__
+    # The store's status line says what the parenthesis already does.
+    if answer and reason == f"HTTP {answer.status}.":
+        return ScrapeError(f"{store}: could not read the release at {bare}{seen}.", error.payload)
     return ScrapeError(f"{store}: could not read the release at {bare}{seen}: {reason}", error.payload)
 
 

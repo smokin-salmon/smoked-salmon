@@ -3,6 +3,7 @@
 The stores are a fake on 127.0.0.1 (helpers.ssrf.FakeStore); no real store is reached.
 """
 
+import types
 from typing import Any
 
 import anyio
@@ -12,7 +13,8 @@ from helpers.ssrf import LOOPBACK, FakeStore
 
 from salmon import ssrf
 from salmon.errors import ScrapeError
-from salmon.tagger.sources import bandcamp, deezer
+from salmon.sources.base import Answer
+from salmon.tagger.sources import apple_music, bandcamp, deezer, tidal
 from salmon.tagger.sources.base import scrape_error_with_context
 
 
@@ -67,13 +69,13 @@ def test_a_404_names_the_store_the_url_and_the_status() -> None:
 
     url, message = _scrape(store)
 
-    assert message == f'Bandcamp: could not read the release at {url} (HTTP 404, page titled "Not Found"): HTTP 404.'
+    assert message == f'Bandcamp: could not read the release at {url} (HTTP 404, page titled "Not Found").'
 
 
 def test_a_page_with_no_title_leaves_the_title_out() -> None:
     url, message = _scrape(Answering(status=404, body="<html><body>gone</body></html>"))
 
-    assert message == f"Bandcamp: could not read the release at {url} (HTTP 404): HTTP 404."
+    assert message == f"Bandcamp: could not read the release at {url} (HTTP 404)."
 
 
 def test_a_long_title_is_trimmed_and_capped() -> None:
@@ -187,3 +189,60 @@ def test_a_scraper_with_no_store_name_is_named_by_its_class() -> None:
     error = scrape_error_with_context(Nameless(), "https://u:p@x.test/a/b?q=1#f", ScrapeError("boom"))
 
     assert str(error) == "Nameless: could not read the release at https://x.test/a/b: boom"
+
+
+def test_a_reason_that_is_only_the_status_line_is_not_said_twice() -> None:
+    answer = Answer(404)
+    scraper = types.SimpleNamespace(store="Discogs", last_answer=answer)
+
+    error = scrape_error_with_context(scraper, "https://www.discogs.com/release/1", ScrapeError("Discogs: HTTP 404."))
+
+    assert str(error) == "Discogs: could not read the release at https://www.discogs.com/release/1 (HTTP 404)."
+
+
+def test_a_status_line_of_another_status_is_kept() -> None:
+    scraper = types.SimpleNamespace(store="Discogs", last_answer=Answer(200))
+
+    error = scrape_error_with_context(scraper, "https://www.discogs.com/release/1", ScrapeError("Discogs: HTTP 404."))
+
+    assert str(error).endswith("(HTTP 200): HTTP 404.")
+
+
+def _tidal_scraper_after_an_answer() -> tidal.Scraper:
+    scraper = tidal.Scraper()
+    scraper.record_answer(401)
+    return scraper
+
+
+def test_a_failed_tidal_token_refresh_shows_no_status(monkeypatch) -> None:
+    async def refused(cls: Any) -> str:
+        raise ScrapeError("Tidal authentication failed (HTTP 500).")
+
+    monkeypatch.setattr(tidal.Scraper, "_ensure_token", classmethod(refused))
+    scraper = _tidal_scraper_after_an_answer()
+
+    async def run() -> None:
+        await scraper.scrape_release("https://listen.tidal.com/album/1", rls_id="1")
+
+    with pytest.raises(ScrapeError) as excinfo:
+        anyio.run(run)
+
+    assert str(excinfo.value).startswith("Tidal: could not read the release at https://listen.tidal.com/album/1: ")
+
+
+def test_a_failed_apple_music_token_bootstrap_shows_no_status(monkeypatch) -> None:
+    async def refused(cls: Any) -> str:
+        raise ScrapeError("Failed to load Apple Music homepage")
+
+    monkeypatch.setattr(apple_music.Scraper, "_get_token", classmethod(refused))
+    scraper = apple_music.Scraper()
+    scraper.record_answer(200)
+    url = "https://music.apple.com/us/album/x/1"
+
+    async def run() -> None:
+        await scraper.scrape_release(url, rls_id=("us", "en-US", "1"))
+
+    with pytest.raises(ScrapeError) as excinfo:
+        anyio.run(run)
+
+    assert str(excinfo.value).startswith(f"Apple Music: could not read the release at {url}: ")

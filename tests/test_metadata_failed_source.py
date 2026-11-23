@@ -212,7 +212,7 @@ def test_a_number_and_a_url_that_fail_the_same_way_print_the_same_line(monkeypat
     _code, out, _tracker, _store = _up(monkeypatch, capsys, dirs, lambda _store: [first, "a"], yyy=False)
 
     assert _scrape_error_line(out) == (
-        "Scrape error: Discogs: could not read the release at https://www.discogs.com/release/1 (HTTP 404): HTTP 404."
+        "Scrape error: Discogs: could not read the release at https://www.discogs.com/release/1 (HTTP 404)."
     )
 
 
