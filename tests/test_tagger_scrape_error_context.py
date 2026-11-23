@@ -85,6 +85,13 @@ def test_a_long_title_is_trimmed_and_capped() -> None:
     assert "\n" not in title
 
 
+def test_a_title_with_control_characters_is_quoted_without_them() -> None:
+    _, message = _scrape(Answering(status=404, body="<title>a\x1b[2Jb\x07c</title>"))
+
+    assert 'page titled "a[2Jbc"' in message
+    assert "\x1b" not in message
+
+
 def test_a_json_store_answering_something_else_names_the_status_and_no_title(monkeypatch) -> None:
     store = Answering(body="<title>Not JSON</title>", content_type="text/plain")
 

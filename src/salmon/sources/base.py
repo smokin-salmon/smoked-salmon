@@ -35,8 +35,9 @@ class Answer(NamedTuple):
 
 
 def _tidy_title(title: str | None) -> str | None:
-    """A <title> on one line, at most TITLE_CAP characters; None if it has no text."""
-    return " ".join((title or "").split())[:TITLE_CAP] or None
+    """A <title> on one line, at most TITLE_CAP characters, without control characters; None if it has no text."""
+    printable = "".join(c for c in title or "" if c.isprintable() or c.isspace())
+    return " ".join(printable.split())[:TITLE_CAP] or None
 
 
 class IdentData(msgspec.Struct, frozen=True):
