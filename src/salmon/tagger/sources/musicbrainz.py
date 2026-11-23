@@ -54,9 +54,11 @@ class Scraper(MusicBrainzBase, MetadataMixin):
     ) -> dict[str, Any]:
         release = await super().fetch_data(url, params, headers, follow_redirects, rls_id)
         release_answer = self.last_answer
-        release[FRONT_COVER] = await self.front_cover(release)
-        # A later parse error is the release's, not the Cover Art Archive's (#980).
-        self.last_answer = release_answer
+        try:
+            release[FRONT_COVER] = await self.front_cover(release)
+        finally:
+            # A later error is the release's, not the Cover Art Archive's (#980).
+            self.last_answer = release_answer
         return release
 
     async def front_cover(self, release: dict[str, Any]) -> str | None:
