@@ -288,7 +288,8 @@ def test_each_picard_track_block_has_its_musicbrainz_releases_tracks() -> None:
         tracks = record["picard_track"]
         assert len(tracks) == sum(len(medium["tracks"]) for medium in release["media"]), case.name
         assert all(set(track) <= read for track in tracks), case.name
-        assert sum(len(disc) for disc in files(tracks)["tracks"].values()) == len(tracks), case.name
+        built = files(tracks)
+        assert sum(len(disc) for disc in built["tracks"].values()) == len(tracks), case.name
 
 
 def test_a_name_holding_a_separator_is_judged_whole() -> None:
