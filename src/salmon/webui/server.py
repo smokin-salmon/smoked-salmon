@@ -44,6 +44,7 @@ from salmon.webui.egress import Redactor, config_secrets
 from salmon.webui.interaction import Picked
 from salmon.webui.jobs import FINISHED, KINDS, QUEUED, CredentialsSource, Job, JobError, JobManager
 from salmon.webui.security import DEV_ORIGINS, host_allowed, is_loopback, origin_allowed
+from salmon.webui.settings import add_routes as add_settings_routes
 
 STATIC_DIR = Path(__file__).parent / "static"
 # The routes a browser reaches before logging in.
@@ -59,7 +60,6 @@ JOBS = web.AppKey("jobs", JobManager)
 REDACTOR = web.AppKey("redactor", Redactor)
 SOCKETS = web.AppKey("sockets", weakref.WeakSet[web.WebSocketResponse])
 STORE_LOCK = web.AppKey("store_lock", asyncio.Lock)
-CONFIG_PATH = web.AppKey("config_path", Path)
 
 # The longest search query and metadata URL taken.
 MAX_QUERY_LENGTH = 200
@@ -615,7 +615,6 @@ def create_app(
     app[DEV] = dev
     app[BUILD_FILES] = build_files(STATIC_DIR)
     app[REDACTOR] = Redactor([*config_secrets(cfg), token])
-    app[CONFIG_PATH] = config_path
     app[JOBS] = JobManager(
         max_jobs or cfg.web.max_jobs, app[REDACTOR], credentials_source or partial(read_credentials, config_path)
     )
@@ -645,6 +644,7 @@ def create_app(
     app.router.add_post("/api/jobs/{job_id}/discard", discard_job)
     app.router.add_get("/api/jobs/{job_id}/spectrals/{name}", job_spectral)
     app.router.add_get("/api/ws", job_events)
+    add_settings_routes(app, config_path=config_path, redactor=app[REDACTOR])
     app.router.add_route("*", "/api/{tail:.*}", api_not_found)
     app.router.add_get("/{tail:.*}", front_end)
     return app
