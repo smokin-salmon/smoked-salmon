@@ -662,7 +662,7 @@ def _drop_fragments(tracks, claims):
     """Drop each paired track's fragments (#1112), once, after the last store, so the guard sees every name Discogs
     credits on the track."""
     for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
-        guesses = _guesses(track["artists"], claims[id(track)])
+        guesses = _guesses(track["artists"], claims[id(track)], track.get("artist_variations", ()))
         track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()), guesses)
 
 
@@ -897,20 +897,22 @@ def check_for_artist_fragments(artists, variations=(), guesses: Collection[tuple
     return artists
 
 
-def _guesses(artists, claims):
+def _guesses(artists, claims, variations=()):
     """The track's credits that no source states (ADR 0007): every claim of each is assumed. A claim is of a credit in
-    its role under any spelling the merge reads as one artist (`same_artist_key`, or the name a source credits it as):
-    the track keeps the first source's spelling, and a store stating "Beyoncé" states the base's "Beyonce"."""
-    keys = {(key, claim.role, claim.assumed) for claim in claims for key in _claim_keys(claim)}
+    its role under any spelling the merge reads as one artist, as the fragment check reads them (`same_artist_key`,
+    the name a source credits it as, Discogs' credited names on the track through any chain): the track keeps the
+    first source's spelling, and a store stating "Beyoncé" states the base's "Beyonce"."""
+    joins = _credited_joins(variations)
+    keys = {
+        (_joined(joins, same_artist_key(spelling)), claim.role, claim.assumed)
+        for claim in claims
+        for spelling in (claim.name, claim.credited_as)
+    }
     return {
         (name, role)
         for name, role in artists
-        if (same_artist_key(name), role, True) in keys and (same_artist_key(name), role, False) not in keys
+        if (key := _joined(joins, same_artist_key(name)), role, True) in keys and (key, role, False) not in keys
     }
-
-
-def _claim_keys(claim):
-    return {same_artist_key(claim.name), same_artist_key(claim.credited_as)}
 
 
 def _comparable_words(name):

@@ -11,10 +11,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from helpers.tagger_combine import make_tracks, one_track, stating
 
+from salmon.common.credits import Claim
 from salmon.common.numbers import natural_key
 from salmon.common.strings import same_artist_key
 from salmon.errors import TrackCombineError
 from salmon.tagger.combine import (
+    _drop_fragments,
     _extract_remixers_from_title,
     _new_track_numbers,
     _refuse_renumbering_that_loses_a_track,
@@ -264,10 +266,11 @@ def test_fragment_check_matches_words_ignoring_case_and_punctuation():
 
 
 def test_fragment_check_follows_a_chain_of_credited_names():
-    artists = [("Taylor", "guest"), ("Robert Taylor", "producer"), ("Bob Taylor", "remixer")]
+    # One role: a name in another is no fragment of it (#1112), so the chain would not be needed.
+    artists = [("Taylor", "main"), ("Robert Taylor", "main"), ("Bob Taylor", "main")]
     variations = [
-        {"name": "Robert Taylor", "role": "producer", "anv": "Bob Taylor"},
-        {"name": "Bob Taylor", "role": "remixer", "anv": "Taylor"},
+        {"name": "Robert Taylor", "role": "main", "anv": "Bob Taylor"},
+        {"name": "Bob Taylor", "role": "main", "anv": "Taylor"},
     ]
 
     assert check_for_artist_fragments(list(artists), variations) == artists
@@ -275,7 +278,8 @@ def test_fragment_check_follows_a_chain_of_credited_names():
 
 def test_fragment_check_keeps_every_name_discogs_credits_one_artist_as():
     # Roger Taylor credited as "Taylor" in one role and "R. Taylor" in another: the second doesn't replace the first.
-    artists = [("Taylor", "guest"), ("Roger Taylor", "producer"), ("Roger Taylor", "remixer")]
+    # "Taylor" is in the first's role, where it would be a fragment of "Roger Taylor" (#1112).
+    artists = [("Taylor", "producer"), ("Roger Taylor", "producer"), ("Roger Taylor", "remixer")]
     variations = [
         {"name": "Roger Taylor", "role": "producer", "anv": "Taylor"},
         {"name": "Roger Taylor", "role": "remixer", "anv": "R. Taylor"},
@@ -534,6 +538,26 @@ def test_a_credit_a_store_states_in_another_spelling_is_no_guess():
     combined = combine_metadatas(("Tidal", tidal), ("Qobuz", qobuz))
 
     assert ("Beyonce", "main") in combined["tracks"]["1"]["1"]["artists"]
+
+
+def test_a_credit_stated_under_the_name_discogs_credits_it_as_is_no_guess():
+    # Discogs credits Roger Taylor as "Taylor" on the track; Qobuz states Roger Taylor, so the track's "Taylor" is
+    # stated, and the guessed "Taylor Band" does not drop it.
+    track = {
+        "artists": [("Taylor", "main"), ("Roger Taylor", "main"), ("Taylor Band", "main")],
+        "artist_variations": [{"name": "Roger Taylor", "role": "main", "anv": "Taylor"}],
+    }
+    claims = {
+        id(track): [
+            Claim("Tidal", "Taylor", "Taylor", "main", assumed=True),
+            Claim("Qobuz", "Roger Taylor", "Roger Taylor", "main", assumed=False),
+            Claim("Tidal", "Taylor Band", "Taylor Band", "main", assumed=True),
+        ]
+    }
+
+    _drop_fragments({"1": {"1": track}}, claims)
+
+    assert ("Taylor", "main") in track["artists"]
 
 
 def test_as_before_the_files_credit_removes_a_store_s_guess_it_names():
