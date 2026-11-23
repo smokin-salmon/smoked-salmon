@@ -662,7 +662,7 @@ def _drop_fragments(tracks, claims):
     """Drop each paired track's fragments (#1112), once, after the last store, so the guard sees every name Discogs
     credits on the track."""
     for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
-        guesses = _guesses(claims[id(track)])
+        guesses = _guesses(track["artists"], claims[id(track)])
         track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()), guesses)
 
 
@@ -897,10 +897,20 @@ def check_for_artist_fragments(artists, variations=(), guesses: Collection[tuple
     return artists
 
 
-def _guesses(claims):
-    """The credits among a track's `claims` that no source states: every claim of each is assumed (ADR 0007)."""
-    stated = {(claim.name, claim.role) for claim in claims if not claim.assumed}
-    return {(claim.name, claim.role) for claim in claims} - stated
+def _guesses(artists, claims):
+    """The track's credits that no source states (ADR 0007): every claim of each is assumed. A claim is of a credit in
+    its role under any spelling the merge reads as one artist (`same_artist_key`, or the name a source credits it as):
+    the track keeps the first source's spelling, and a store stating "Beyoncé" states the base's "Beyonce"."""
+    keys = {(key, claim.role, claim.assumed) for claim in claims for key in _claim_keys(claim)}
+    return {
+        (name, role)
+        for name, role in artists
+        if (same_artist_key(name), role, True) in keys and (same_artist_key(name), role, False) not in keys
+    }
+
+
+def _claim_keys(claim):
+    return {same_artist_key(claim.name), same_artist_key(claim.credited_as)}
 
 
 def _comparable_words(name):

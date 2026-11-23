@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from helpers.tagger_combine import make_tracks, one_track, stating
 
 from salmon.common.numbers import natural_key
+from salmon.common.strings import same_artist_key
 from salmon.errors import TrackCombineError
 from salmon.tagger.combine import (
     _extract_remixers_from_title,
@@ -218,13 +219,22 @@ def test_fragment_check_weighs_guesses(artists, guesses, kept):
     assert check_for_artist_fragments(list(artists), guesses=guesses) == kept
 
 
-_FRAGMENT_NAMES = ["Alice", "Bob", "Alice & Bob", "Alice Bob Carol", "Bob Carol", "Carol", "The Bob"]
+_FRAGMENT_NAMES = ["Alice", "Bob", "Bobby", "Alice & Bob", "Alice Bob Carol", "Bob Carol", "Carol", "The Bob"]
 _FRAGMENT_ROLES = ["main", "guest", "conductor", "remixer"]
 
 
-def test_fragment_check_drops_a_credit_only_for_a_name_in_its_role_that_no_guess_gives_over_a_stated_one():
-    """Over generated credits: each credit the check drops has, in its own role, a name it is whole words of, and
-    a stated credit only a stated one."""
+def _words(name: str) -> list[str]:
+    return name.lower().replace("&", "").split()
+
+
+def _whole_words_of(name: str, other: str) -> bool:
+    words, others = _words(name), _words(other)
+    return words != others and any(others[at : at + len(words)] == words for at in range(len(others)))
+
+
+def test_fragment_check_drops_exactly_the_names_held_in_their_role_by_a_credit_that_may_drop_them():
+    """Over generated credits: a credit goes exactly when another in its role holds its name as whole words, is not
+    a spelling of the same artist, and is stated or holds a guess."""
     rng = random.Random(1112)
     for _ in range(2000):
         pool = [(name, role) for name in _FRAGMENT_NAMES for role in _FRAGMENT_ROLES]
@@ -233,16 +243,16 @@ def test_fragment_check_drops_a_credit_only_for_a_name_in_its_role_that_no_guess
 
         kept = check_for_artist_fragments(list(artists), guesses=guesses)
 
-        for name, role in set(artists) - set(kept):
-            words = name.replace("&", "").split()
-            holders = [
-                (other, other_role)
-                for other, other_role in artists
-                if other_role == role and other != name and " ".join(words) in " ".join(other.replace("&", "").split())
-            ]
-            if (name, role) not in guesses:
-                holders = [holder for holder in holders if holder not in guesses]
-            assert holders, (artists, guesses, kept, (name, role))
+        dropped = {
+            (name, role)
+            for name, role in artists
+            for other, other_role in artists
+            if other_role == role
+            and _whole_words_of(name, other)
+            and same_artist_key(name) != same_artist_key(other)
+            and ((name, role) in guesses or (other, other_role) not in guesses)
+        }
+        assert kept == [credit for credit in artists if credit not in dropped], (artists, guesses)
 
 
 def test_fragment_check_matches_words_ignoring_case_and_punctuation():
@@ -513,6 +523,17 @@ def test_a_store_s_guess_leaves_a_stated_credit_it_names():
     combined = combine_metadatas(("Qobuz", qobuz), ("Deezer", deezer), base=files)
 
     assert ("Bob", "remixer") in combined["tracks"]["1"]["1"]["artists"]
+
+
+def test_a_credit_a_store_states_in_another_spelling_is_no_guess():
+    # The track keeps the base's "Beyonce"; Qobuz states her as "Beyoncé", which the merge reads as the same credit.
+    deezer = credited([("Beyonce", "main"), ("Beyonce & Jay-Z", "main")])
+    qobuz = stating(credited([("Beyoncé", "main")]))
+
+    # No files (descgen, salmon web): the first store, Deezer, is the base.
+    combined = combine_metadatas(("Deezer", deezer), ("Qobuz", qobuz), source_url="https://www.deezer.com/album/1")
+
+    assert ("Beyonce", "main") in combined["tracks"]["1"]["1"]["artists"]
 
 
 def test_as_before_the_files_credit_removes_a_store_s_guess_it_names():
