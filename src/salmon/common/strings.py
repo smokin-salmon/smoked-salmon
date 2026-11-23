@@ -52,6 +52,33 @@ def comparable(text: object) -> str:
     return "".join(char for char in plain if char.isalnum())
 
 
+# What same_artist_key drops before `comparable`, one fold per row, each with the case that asked for it (#1131). A new
+# spelling of one artist is a row here and a pair in tests/fixtures/name_pairs.toml. The rows run in order, on the name
+# as `comparable` reads it (unescaped, accents dropped), between spaces or any dash.
+_SEPARATOR = r"[\s\-\u2010-\u2015\u2212]+"
+_ARTIST_FOLDS = (
+    # The word "and" between two names, as "&" is dropped: "Dick Dale & His Del-Tones" (Pulp Fiction).
+    (re.compile(rf"(?<=\S){_SEPARATOR}and{_SEPARATOR}(?=\S)", flags=re.IGNORECASE), " "),
+    # A leading "The": "The Ahmad Jamal Trio" (MusicBrainz), "The-Dream".
+    (re.compile(rf"^\W*the{_SEPARATOR}", flags=re.IGNORECASE), ""),
+)
+
+
+def same_artist_key(name: str) -> str:
+    """The key two names share when they are one artist across a release: `comparable` after _ARTIST_FOLDS; when the
+    folds leave no letters or digits, `comparable` alone ("The "), and the name itself when it has none ("!!!" is not
+    "???")."""
+    # An invisible character between two words ("The\u200bDream") parts them, as a space would.
+    folded = "".join(
+        " " if unicodedata.category(char) == "Cf" else char
+        for char in unicodedata.normalize("NFKD", html.unescape(name))
+        if not unicodedata.combining(char)
+    )
+    for pattern, replacement in _ARTIST_FOLDS:
+        folded = pattern.sub(replacement, folded)
+    return comparable(folded) or comparable(name) or name.strip()
+
+
 _REPLACED_CATEGORIES = frozenset({"Zs", "Zl", "Zp"})
 _REMOVED_CATEGORIES = frozenset({"Cf", "Cc"})
 

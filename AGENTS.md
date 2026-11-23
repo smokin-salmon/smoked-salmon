@@ -131,6 +131,11 @@ Several rules in this file have a test, named next to the rule (`tests/test_rule
   carry `# noqa: C901` and are listed in `tests/test_complexity.py`, each with a small margin: splitting one is
   welcome, as a change of its own. When that test or ruff fails on a PR, split the function rather than adding a
   `# noqa: C901` or raising its entry. Raise it only when the code belongs there, and say why in the PR description.
+- Where a parser or the merge decides something (where a disc starts, which credits a track has, how its title is
+  written), one function decides and returns each decision with a short reason, and the code around it only applies
+  them: `resolve_credits` (ADR 0007), Discogs' `_disc_starts` (#1145), the merge's `_written_title` (#1162). A rule
+  found on a real release is one more check in that function, not a branch in the loop that builds the output. What
+  the rules promise is tested as properties over generated input, beside the cases (#1154).
 - Keep PRs to one logical change. Maintainers squash-merge.
 - Image hosts that only display for one tracker's members (RED's) must never be usable through a
   setting shared by all trackers. See [ADR 0002](docs/adr/0002-per-tracker-cover-host.md).

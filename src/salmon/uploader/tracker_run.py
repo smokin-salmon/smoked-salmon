@@ -114,6 +114,15 @@ async def _upload_edition(
     return metadata
 
 
+def _conversions_lost(run: TrackerRun, gazelle_site: "BaseGazelleApi", release: ReleaseToUpload) -> None:
+    """Count the tracker as failed when conversions were wanted and cannot be offered for it."""
+    if _applicable_conversions(
+        get_downconversion_options(release.rls_data, release.track_data, quiet=True),
+        release.conversions,
+    ):
+        run.failed_trackers.append(gazelle_site.site_string)
+
+
 async def upload_to_tracker(
     release: ReleaseToUpload,
     gazelle_site: "BaseGazelleApi",
@@ -201,22 +210,28 @@ async def upload_to_tracker(
             if not group_id:
                 # Conversions sent with no group id would each start a new group beside this one.
                 click.secho(f"\nNo group id came back for {url}: no conversions are offered for it.", fg="yellow")
-                if _applicable_conversions(
-                    get_downconversion_options(release.rls_data, release.track_data, quiet=True),
-                    release.conversions,
-                ):
-                    run.failed_trackers.append(gazelle_site.site_string)
+                _conversions_lost(run, gazelle_site, release)
             elif not dryrun.active():
-                group = await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
-                # Read from the group just printed: no request of its own.
-                held = _held_conversions(
-                    group,
-                    metadata,
-                    {"id": torrent_id},
-                    release.rls_data,
-                    release.track_data,
-                    same_edition=True,
-                )
+                try:
+                    group = await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+                except click.Abort:
+                    # Only the group read raises it, and said so. The upload stands: the rest of the turn goes on.
+                    group_id = None
+                    click.secho(
+                        f"\nThe group could not be read: no conversions are offered for {gazelle_site.site_string}.",
+                        fg="yellow",
+                    )
+                    _conversions_lost(run, gazelle_site, release)
+                else:
+                    # Read from the group just printed: no request of its own.
+                    held = _held_conversions(
+                        group,
+                        metadata,
+                        {"id": torrent_id},
+                        release.rls_data,
+                        release.track_data,
+                        same_edition=True,
+                    )
 
             if run.spectrals_after:
                 # Once, on the first torrent up, whether or not the run goes on to another tracker.
