@@ -53,6 +53,9 @@ Options considered:
    the release notes list it with the line that keeps the old behaviour, and the PR that changes it says
    so.
 6. **salmon never rewrites the user's config file.**
+   *Amended by [0008](0008-web-tracker-credentials.md): salmon web's Settings page writes a tracker's session
+   cookie and API key there, when the user saves them, and nothing else; salmon still never rewrites the file by
+   itself.*
 7. **Two shipped files.** `config.default.toml` is the short file a new user starts from.
    `config.reference.toml` documents every key, commented out, under uncommented section headers, so an
    uncommented key always lands in its own table. A test uncomments every key, decodes the result against

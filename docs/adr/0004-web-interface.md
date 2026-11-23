@@ -139,6 +139,9 @@ jobs in threads, every tracker request on one loop
   and writing only into a folder of the job's own. Its turn stops the preparation; the job takes each file's
   result if the file is unchanged, and checks the rest as before (`salmon.prepared`).
 
+- *Amended by [0008](0008-web-tracker-credentials.md): each job reads the tracker session cookies and API keys
+  from `config.toml` when it starts, and builds its tracker clients with them; `cfg` is still never written.*
+
 ### 2. Prompts go through one interface; output is captured per job
 
 - A new `salmon.interaction` module defines what a command can ask: `prompt`, `confirm`, `edit`,
@@ -185,6 +188,8 @@ jobs in threads, every tracker request on one loop
 - The web deletes or changes nothing by itself. Folders change only through the steps the CLI runs, on the
   folder `staged_source` gives (#531), and every delete checks `cfg.directory.protects()`. A library album
   is never changed.
+- *Amended by [0008](0008-web-tracker-credentials.md): the one file the web writes is `config.toml`, through
+  `POST /api/settings/trackers/{code}` only, when the user saves a tracker's session cookie or API key.*
 - Image uploads from the browser take image files only, from inside the roots.
 - Every event that leaves the server (log lines, questions, job results and errors, websocket messages)
   goes through one redaction filter where it is emitted: `redact_tracker_text` with every secret the
