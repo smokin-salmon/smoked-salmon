@@ -1,5 +1,6 @@
 <script lang="ts">
   import { apiGet, apiPost } from '../lib/api'
+  import { checksOf, problems, type TrackerCheck } from '../lib/connectionCheck'
   import { FINISHED, QUEUED, jobStore, type Job } from '../lib/jobs.svelte'
 
   interface Space {
@@ -16,18 +17,6 @@
     max_jobs: number
     config_warnings: string[]
     config_path: string | null
-  }
-
-  /** What the connection check found for one tracker (`salmon checkconf -t`). */
-  interface TrackerCheck {
-    tracker: string
-    ok: boolean
-    cookie: 'ok' | 'failed' | 'not_checked'
-    cookie_error: string | null
-    key: 'ok' | 'failed' | 'not_set' | 'not_checked'
-    key_error: string | null
-    tls_error: string | null
-    checked_at: string
   }
 
   let overview = $state<Overview | null>(null)
@@ -77,10 +66,7 @@
   const checking = $derived(checkJobs.find((j) => !FINISHED.includes(j.status)) ?? null)
   const lastRun = $derived<Job | null>(checkJobs.find((j) => FINISHED.includes(j.status)) ?? null)
   // The latest finished run only: a newer run that failed or was cancelled does not show an older run's rows.
-  const checks = $derived<TrackerCheck[]>(
-    ((lastRun?.status === 'done' ? (lastRun.result as { trackers?: TrackerCheck[] } | null)?.trackers : null) ??
-      []) as TrackerCheck[],
-  )
+  const checks = $derived<TrackerCheck[]>(lastRun?.status === 'done' ? checksOf(lastRun.result) : [])
 
   async function checkConnections() {
     starting = true
@@ -96,14 +82,6 @@
 
   function when(iso: string): string {
     return new Date(iso).toLocaleString()
-  }
-
-  function problems(check: TrackerCheck): string[] {
-    if (check.tls_error) return [check.tls_error]
-    return [
-      check.cookie_error ? `Session cookie: ${check.cookie_error}` : '',
-      check.key_error ? `API key: ${check.key_error}` : '',
-    ].filter(Boolean)
   }
 
   // Live, from the job events.

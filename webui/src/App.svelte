@@ -7,6 +7,7 @@
   import Jobs from './pages/Jobs.svelte'
   import Login from './pages/Login.svelte'
   import Search from './pages/Search.svelte'
+  import Settings from './pages/Settings.svelte'
   import Spectrals from './pages/Spectrals.svelte'
   import Tag from './pages/Tag.svelte'
   import Tools from './pages/Tools.svelte'
@@ -83,6 +84,7 @@
     <a href="#/convert" class:active={router.page === 'convert'}>Convert</a>
     <a href="#/search" class:active={router.page === 'search'}>Search</a>
     <a href="#/tools" class:active={router.page === 'tools'}>Tools</a>
+    <a href="#/settings" class:active={router.page === 'settings'}>Settings</a>
     <a href="#/jobs" class:active={router.page === 'jobs'}>
       Jobs
       {#if active > 0}<span class="chip {asking ? 'warn' : 'run'}">{active}</span>{/if}
@@ -111,6 +113,8 @@
       <Tools />
     {:else if router.page === 'search'}
       <Search />
+    {:else if router.page === 'settings'}
+      <Settings />
     {:else}
       <Jobs />
     {/if}
