@@ -68,7 +68,7 @@ class BaseScraper:
     store: str | None = None
     # The last answer this scraper instance received, status checked or not: what a failed scrape reports. An
     # instance serves one scrape, so it is safe state; None until a store answers, and again as each request is sent
-    # (_session), so it only ever holds the answer to the latest request.
+    # (see _session), so a request that gets no answer never reports the one before.
     last_answer: Answer | None = None
 
     def record_answer(self, status: int, title: str | None = None) -> None:
@@ -80,7 +80,8 @@ class BaseScraper:
         """_class_session for this scraper's own requests: each one it sends first forgets last_answer.
 
         So a request that fails before any answer (a dropped connection, a timeout) never shows the status of the
-        request before it (#980). Every request a scraper instance sends goes through here.
+        request before it (#980). The requests that do not go through here clear last_answer themselves: Tidal's
+        token and Apple Music's bootstrap (classmethods, on _class_session) and Bandcamp's retry as a browser (curl).
         """
 
         async def forget(*_: object) -> None:

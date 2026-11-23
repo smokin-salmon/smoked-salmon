@@ -3,10 +3,9 @@
 The stores are a fake on 127.0.0.1 (helpers.ssrf.FakeStore); no real store is reached.
 """
 
-import contextlib
 import time
 import types
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from typing import Any
 
 import anyio
@@ -254,28 +253,12 @@ def test_a_failed_apple_music_token_bootstrap_shows_no_status(monkeypatch) -> No
     assert str(excinfo.value).startswith(f"Apple Music: could not read the release at {url}: ")
 
 
-class FirstAnswered:
-    """A store on 127.0.0.1 that answers its first request, any method and path, with `first`, then drops each one.
-
-    With no `first`, it drops every request.
-    """
+class FirstAnswered(FakeStore):
+    """A store that answers its first request, any path, with `first`, then drops each one; with no `first`, all."""
 
     def __init__(self, first: tuple[int, str, dict[str, str]] | None) -> None:
+        super().__init__()
         self.first = first
-        self.requests: list[str] = []
-
-    @contextlib.asynccontextmanager
-    async def serving(self) -> AsyncIterator[str]:
-        """Serve, yielding the base URL."""
-        app = web.Application()
-        app.router.add_route("*", "/{tail:.*}", self._answer)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        await web.TCPSite(runner, "127.0.0.1", 0).start()
-        try:
-            yield f"http://127.0.0.1:{runner.addresses[0][1]}"
-        finally:
-            await runner.cleanup()
 
     async def _answer(self, request: web.Request) -> web.StreamResponse:
         self.requests.append(request.path)
@@ -367,8 +350,8 @@ def _scrape_answered_then_dropped(monkeypatch: pytest.MonkeyPatch, name: str) ->
     store = FirstAnswered(first)
 
     async def run() -> str:
-        async with store.serving() as base:
-            scraper, url, rls_id = point(monkeypatch, base)
+        async with store.serving():
+            scraper, url, rls_id = point(monkeypatch, store.url(""))
             if first is None:
                 scraper.record_answer(200)
             with anyio.fail_after(10), pytest.raises(ScrapeError) as excinfo:
@@ -378,23 +361,10 @@ def _scrape_answered_then_dropped(monkeypatch: pytest.MonkeyPatch, name: str) ->
     return anyio.run(run), store.requests
 
 
-def test_deezers_internal_page_dropped_after_its_api_answered_shows_no_status(monkeypatch) -> None:
-    message, requests = _scrape_answered_then_dropped(monkeypatch, "Deezer")
-
-    assert list(dict.fromkeys(requests)) == ["/api/album/1", "/album/1"]
-    assert message == "Deezer: could not read the release at https://www.deezer.com/album/1: Failed to grab metadata."
-
-
-def test_beatports_scraper_dropped_after_a_failed_token_refresh_shows_no_status(monkeypatch) -> None:
-    message, requests = _scrape_answered_then_dropped(monkeypatch, "Beatport")
-
-    assert list(dict.fromkeys(requests)) == ["/v4/auth/o/token/", "/release/x/1"]
-    assert message.startswith("Beatport: could not read the release at http://127.0.0.1:")
-    assert "(HTTP" not in message
-
-
 @pytest.mark.parametrize("name", list(STORES))
 def test_a_request_dropped_after_an_answer_never_shows_that_answers_status(monkeypatch, name: str) -> None:
+    # Deezer: its API answers, its internal page drops. Beatport: the token refresh answers, the scraper's page drops.
+    # MusicBrainz: a 503, then its retry drops. Apple Music, Tidal: the album answers, its next track page drops.
     message, requests = _scrape_answered_then_dropped(monkeypatch, name)
 
     assert len(requests) >= (2 if STORES[name][1] else 1)
