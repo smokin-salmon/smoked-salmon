@@ -1,12 +1,12 @@
 {
- "id": "3ed4147f-4161-4ee1-9be6-4f3ddfbe1137",
+ "id": "bacb03db-9dd7-441f-be1b-e940ddec0623",
  "title": "Getz/Gilberto",
- "date": null,
- "barcode": "00602567831792",
+ "date": "2014-05-27",
+ "barcode": "602567832690",
  "artist-credit": [
   {
    "name": "Stan Getz",
-   "joinphrase": " & ",
+   "joinphrase": " / ",
    "artist": {
     "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
     "name": "Stan Getz",
@@ -52,7 +52,7 @@
   },
   {
    "name": "João Gilberto",
-   "joinphrase": "",
+   "joinphrase": " featuring ",
    "artist": {
     "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
     "name": "João Gilberto",
@@ -113,6 +113,124 @@
      }
     ]
    }
+  },
+  {
+   "name": "Antônio Carlos Jobim",
+   "joinphrase": "",
+   "artist": {
+    "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+    "name": "Antônio Carlos Jobim",
+    "aliases": [
+     {
+      "name": "A. C. Jobim",
+      "sort-name": "A. C. Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "A. Carlos Jobim",
+      "sort-name": "Jobim, A. Carlos",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "A.C. Jochim",
+      "sort-name": "Jochim, A.C.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "AC Jobim",
+      "sort-name": "AC Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonio Carlos Jobim",
+      "sort-name": "Jobim, Antonio Carlos",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antônio Carlos Brasileiro de Almeida Jobim",
+      "sort-name": "Jobim, Antônio Carlos Brasileiro de Almeida",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antônio Jobim",
+      "sort-name": "Jobim, Antônio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "C. Jobin",
+      "sort-name": "Jobin, C.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Jobim",
+      "sort-name": "Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Jobin",
+      "sort-name": "Jobin",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Tom Jobim",
+      "sort-name": "Tom Jobim",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "アントニオ・カルロス・ジョビン",
+      "sort-name": "アントニオ・カルロス・ジョビン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
   }
  ],
  "release-group": {
@@ -143,122 +261,16 @@
     "joinphrase": "",
     "artist": {
      "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
-     "name": "Antônio Carlos Jobim",
-     "aliases": [
-      {
-       "name": "A. C. Jobim",
-       "sort-name": "A. C. Jobim",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": null,
-       "primary": null
-      },
-      {
-       "name": "A. Carlos Jobim",
-       "sort-name": "Jobim, A. Carlos",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": "en",
-       "primary": false
-      },
-      {
-       "name": "A.C. Jochim",
-       "sort-name": "Jochim, A.C.",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": "en",
-       "primary": false
-      },
-      {
-       "name": "AC Jobim",
-       "sort-name": "AC Jobim",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": null,
-       "primary": null
-      },
-      {
-       "name": "Antonio Carlos Jobim",
-       "sort-name": "Jobim, Antonio Carlos",
-       "type": "Artist name",
-       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
-       "ended": false,
-       "locale": null,
-       "primary": null
-      },
-      {
-       "name": "Antônio Carlos Brasileiro de Almeida Jobim",
-       "sort-name": "Jobim, Antônio Carlos Brasileiro de Almeida",
-       "type": "Legal name",
-       "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
-       "ended": false,
-       "locale": null,
-       "primary": null
-      },
-      {
-       "name": "Antônio Jobim",
-       "sort-name": "Jobim, Antônio",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": null,
-       "primary": null
-      },
-      {
-       "name": "C. Jobin",
-       "sort-name": "Jobin, C.",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": "en",
-       "primary": false
-      },
-      {
-       "name": "Jobim",
-       "sort-name": "Jobim",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": "en",
-       "primary": false
-      },
-      {
-       "name": "Jobin",
-       "sort-name": "Jobin",
-       "type": null,
-       "type-id": null,
-       "ended": false,
-       "locale": "en",
-       "primary": false
-      },
-      {
-       "name": "Tom Jobim",
-       "sort-name": "Tom Jobim",
-       "type": "Artist name",
-       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
-       "ended": false,
-       "locale": null,
-       "primary": null
-      },
-      {
-       "name": "アントニオ・カルロス・ジョビン",
-       "sort-name": "アントニオ・カルロス・ジョビン",
-       "type": "Artist name",
-       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
-       "ended": false,
-       "locale": "ja",
-       "primary": true
-      }
-     ]
+     "name": "Antônio Carlos Jobim"
     }
    }
   ]
  },
- "release-events": null,
+ "release-events": [
+  {
+   "date": "2014-05-27"
+  }
+ ],
  "cover-art-archive": {
   "front": true
  },
@@ -266,7 +278,7 @@
   {
    "catalog-number": null,
    "label": {
-    "name": "Verve"
+    "name": "Verve Reissues"
    }
   }
  ],
@@ -276,17 +288,33 @@
    "format": "Digital Media",
    "tracks": [
     {
-     "id": "1f9e8f26-46dd-4e4e-8f49-1694cad1e0b1",
+     "id": "c22da99d-2437-4b28-85b2-1ede093c190f",
      "position": 1,
      "number": "1",
      "title": "The Girl From Ipanema",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": "",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
        }
       }
      ],
@@ -323,14 +351,14 @@
      }
     },
     {
-     "id": "e4860e28-49a7-44b8-9717-e4caa90cf3a3",
+     "id": "b2645326-b686-450b-86b3-468516fb2f8b",
      "position": 2,
      "number": "2",
-     "title": "Doralice",
+     "title": "Doralice (stereo version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -338,14 +366,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -386,14 +414,14 @@
      }
     },
     {
-     "id": "2bf8634b-65a4-4e73-8b1c-fe12cbec0a1d",
+     "id": "b194281b-887d-47c4-a5d4-676401bf17a0",
      "position": 3,
      "number": "3",
-     "title": "Para machuchar meu coracao",
+     "title": "Para Machuchar Meu Coracao",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -401,14 +429,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -449,14 +477,14 @@
      }
     },
     {
-     "id": "d4a1a489-aa2a-4aad-a225-d96ffbd62907",
+     "id": "56044999-95a6-453f-8030-50c3f1467139",
      "position": 4,
      "number": "4",
      "title": "Desafinado",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -464,10 +492,18 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": "",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
        }
       }
      ],
@@ -504,14 +540,14 @@
      }
     },
     {
-     "id": "0a932c79-6108-4e50-a04e-11c94a19beda",
+     "id": "10303894-f1e3-45f9-af8d-fd0ef6bcfd15",
      "position": 5,
      "number": "5",
      "title": "Corcovado (Quiet Nights of Quiet Stars)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -519,87 +555,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": ", ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Astrud Gilberto",
-       "joinphrase": " & ",
-       "artist": {
-        "id": "8d08cabf-03a3-4f38-a815-8197a0984f19",
-        "name": "Astrud Gilberto",
-        "aliases": [
-         {
-          "name": "Astrad Gilberto",
-          "sort-name": "Astrad Gilberto",
-          "type": null,
-          "type-id": null,
-          "ended": false,
-          "locale": null,
-          "primary": null
-         },
-         {
-          "name": "Astrid Gilberto",
-          "sort-name": "Astrid Gilberto",
-          "type": null,
-          "type-id": null,
-          "ended": false,
-          "locale": null,
-          "primary": null
-         },
-         {
-          "name": "Astrud Evangelina Weinert",
-          "sort-name": "Weinert, Astrud Evangelina",
-          "type": "Legal name",
-          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
-          "ended": false,
-          "locale": null,
-          "primary": null
-         },
-         {
-          "name": "Astrud Giberto",
-          "sort-name": "Astrud Giberto",
-          "type": null,
-          "type-id": null,
-          "ended": false,
-          "locale": null,
-          "primary": null
-         },
-         {
-          "name": "Astud Gilberto",
-          "sort-name": "Astud Gilberto",
-          "type": null,
-          "type-id": null,
-          "ended": false,
-          "locale": null,
-          "primary": null
-         },
-         {
-          "name": "Gilberto",
-          "sort-name": "Gilberto",
-          "type": null,
-          "type-id": null,
-          "ended": false,
-          "locale": "en",
-          "primary": false
-         },
-         {
-          "name": "アストラッド・ジルベルト",
-          "sort-name": "アストラッド・ジルベルト",
-          "type": "Artist name",
-          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
-          "ended": false,
-          "locale": "ja",
-          "primary": true
-         }
-        ]
-       }
-      },
-      {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -640,14 +603,14 @@
      }
     },
     {
-     "id": "e12670c0-8257-405c-b61e-c9eb5cc8817b",
+     "id": "f4badb83-192d-428b-a72e-046f43c6af09",
      "position": 6,
      "number": "6",
-     "title": "Só danço samba",
+     "title": "Só Danço Samba (stereo version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -655,14 +618,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -703,14 +666,14 @@
      }
     },
     {
-     "id": "216544a3-8ea4-42a5-8c48-8e3b64bc27ad",
+     "id": "1dd08b09-470d-4eca-b66d-e596949ed00c",
      "position": 7,
      "number": "7",
-     "title": "O grande amor",
+     "title": "O Grande Amor",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -718,14 +681,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -766,14 +729,14 @@
      }
     },
     {
-     "id": "4baf36cd-e94c-458e-b1fe-337f58039b3e",
+     "id": "4e1ab700-1af7-4181-8921-7f72888de0a2",
      "position": 8,
      "number": "8",
-     "title": "Vivo sonhando",
+     "title": "Vivo Sohando (stereo version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -781,14 +744,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -829,14 +792,14 @@
      }
     },
     {
-     "id": "52336b98-82e9-4ae3-a237-1c031be0cd65",
+     "id": "aefeb9c2-80ee-48ee-9e50-d80b4a1fe8f0",
      "position": 9,
      "number": "9",
      "title": "The Girl From Ipanema (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -844,26 +807,18 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": ", ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
-       "joinphrase": " & ",
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
         "name": "Antônio Carlos Jobim"
-       }
-      },
-      {
-       "name": "Astrud Gilberto",
-       "joinphrase": "",
-       "artist": {
-        "id": "8d08cabf-03a3-4f38-a815-8197a0984f19",
-        "name": "Astrud Gilberto"
        }
       }
      ],
@@ -900,14 +855,14 @@
      }
     },
     {
-     "id": "bc35f1c0-9aec-49db-8d67-c66dfee77e57",
+     "id": "2dd64f1a-245c-49e5-8450-7bdfea72c536",
      "position": 10,
      "number": "10",
      "title": "Doralice (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -915,14 +870,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -963,14 +918,14 @@
      }
     },
     {
-     "id": "204cc281-4729-44fb-890b-fb66eda53f34",
+     "id": "3d81edcb-4b5b-4fad-bf61-767bf10bb59e",
      "position": 11,
      "number": "11",
-     "title": "Para machuchar meu coracao (mono version)",
+     "title": "Para Machuchar Meu Coracao (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -978,14 +933,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -1026,14 +981,14 @@
      }
     },
     {
-     "id": "c3a19429-d0db-4415-8759-47d9ed76590b",
+     "id": "24729bfd-ae85-4c98-9bf3-259961c9347c",
      "position": 12,
      "number": "12",
      "title": "Desafinado (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -1041,14 +996,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -1089,14 +1044,14 @@
      }
     },
     {
-     "id": "8576de7f-ac7e-45ba-a7ed-47238a1f4a58",
+     "id": "13a2ae8b-4ff5-4cd1-8665-bb8b8d446dda",
      "position": 13,
      "number": "13",
      "title": "Corcovado (Quiet Nights of Quiet Stars) (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -1104,22 +1059,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": ", ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Astrud Gilberto",
-       "joinphrase": " & ",
-       "artist": {
-        "id": "8d08cabf-03a3-4f38-a815-8197a0984f19",
-        "name": "Astrud Gilberto"
-       }
-      },
-      {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -1160,14 +1107,14 @@
      }
     },
     {
-     "id": "d5ed41c6-5799-40b3-bfa1-e5ccd2e9f1bb",
+     "id": "d848ae27-3798-4fb6-8a1f-875fb936e70f",
      "position": 14,
      "number": "14",
-     "title": "Só danço samba (mono version)",
+     "title": "Só Danço Samba (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -1175,14 +1122,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -1223,14 +1170,14 @@
      }
     },
     {
-     "id": "76fbd323-adf0-42eb-a7f0-c917003de8db",
+     "id": "85b4e8fc-39ee-4a8e-a1cc-509dbb5da938",
      "position": 15,
      "number": "15",
-     "title": "O grande amor (mono version)",
+     "title": "O Grande Amor (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -1238,14 +1185,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -1286,14 +1233,14 @@
      }
     },
     {
-     "id": "28d0167e-0588-427e-a810-a32075b0c1ac",
+     "id": "2a6e3826-9dfa-4c60-b64c-0f395eec4072",
      "position": 16,
      "number": "16",
-     "title": "Vivo sonhando (mono version)",
+     "title": "Vivo Sohando (mono version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -1301,14 +1248,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": " & ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -1349,14 +1296,14 @@
      }
     },
     {
-     "id": "71348cf4-6d7f-43c8-b1cf-adb68394e200",
+     "id": "f9eeb2e6-b217-4fc4-a04e-00833bd656b1",
      "position": 17,
      "number": "17",
      "title": "The Girl From Ipanema (single version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -1364,22 +1311,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": ", ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Astrud Gilberto",
-       "joinphrase": " & ",
-       "artist": {
-        "id": "8d08cabf-03a3-4f38-a815-8197a0984f19",
-        "name": "Astrud Gilberto"
-       }
-      },
-      {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
@@ -1420,14 +1359,14 @@
      }
     },
     {
-     "id": "cb0cc86c-4de9-4869-81f3-14ee8273ea42",
+     "id": "cc81ef7d-ea1c-4901-9902-3d88c07543fc",
      "position": 18,
      "number": "18",
      "title": "Corcovado (Quiet Nights of Quiet Stars) (single version)",
      "artist-credit": [
       {
        "name": "Stan Getz",
-       "joinphrase": " & ",
+       "joinphrase": " / ",
        "artist": {
         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
         "name": "Stan Getz"
@@ -1435,22 +1374,14 @@
       },
       {
        "name": "João Gilberto",
-       "joinphrase": ", ",
+       "joinphrase": " featuring ",
        "artist": {
         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
         "name": "João Gilberto"
        }
       },
       {
-       "name": "Astrud Gilberto",
-       "joinphrase": " & ",
-       "artist": {
-        "id": "8d08cabf-03a3-4f38-a815-8197a0984f19",
-        "name": "Astrud Gilberto"
-       }
-      },
-      {
-       "name": "Antonio Carlos Jobim",
+       "name": "Antônio Carlos Jobim",
        "joinphrase": "",
        "artist": {
         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",

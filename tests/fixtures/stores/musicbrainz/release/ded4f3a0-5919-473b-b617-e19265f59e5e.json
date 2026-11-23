@@ -1,8 +1,8 @@
 {
- "id": "075029f6-7057-46ba-a9ec-c80dd5eb9d45",
- "title": "Thelonious Monk With John Coltrane",
- "date": "2016-02-12",
- "barcode": "888072390232",
+ "id": "ded4f3a0-5919-473b-b617-e19265f59e5e",
+ "title": "Thelonious Monk with John Coltrane",
+ "date": "2010",
+ "barcode": "888072319899",
  "artist-credit": [
   {
    "name": "Thelonious Monk",
@@ -250,27 +250,33 @@
  },
  "release-events": [
   {
-   "date": "2016-02-12"
+   "date": "2010"
   }
  ],
  "cover-art-archive": {
-  "front": true
+  "front": false
  },
  "label-info": [
   {
-   "catalog-number": null,
+   "catalog-number": "0888072319899",
    "label": {
     "name": "Jazzland"
+   }
+  },
+  {
+   "catalog-number": "0888072319899",
+   "label": {
+    "name": "Original Jazz Classics"
    }
   }
  ],
  "media": [
   {
    "position": 1,
-   "format": "Digital Media",
+   "format": "CD",
    "tracks": [
     {
-     "id": "893f3750-e81c-43b1-a8ba-7f424c791709",
+     "id": "c5dc86c1-560b-467c-ae68-041983535282",
      "position": 1,
      "number": "1",
      "title": "Ruby, My Dear",
@@ -317,7 +323,7 @@
      }
     },
     {
-     "id": "a46bb923-a30e-47cc-8f41-df8a725404b8",
+     "id": "81d932f6-deeb-4131-89db-9543133dd37b",
      "position": 2,
      "number": "2",
      "title": "Trinkle, Tinkle",
@@ -364,7 +370,7 @@
      }
     },
     {
-     "id": "1a6ea480-2b76-4f47-9bc5-8277a6595983",
+     "id": "0d274a2b-0e98-4c5d-86a1-a8759ad0aa25",
      "position": 3,
      "number": "3",
      "title": "Off Minor (take 4)",
@@ -411,7 +417,7 @@
      }
     },
     {
-     "id": "f46f920d-8186-4ae0-a016-436f88ddb847",
+     "id": "db7cf70d-5375-4d67-9c15-0e443338ef7b",
      "position": 4,
      "number": "4",
      "title": "Nutty",
@@ -458,7 +464,7 @@
      }
     },
     {
-     "id": "8aab9503-9f0b-47d6-ad5c-eee248f3c24a",
+     "id": "c0c1ee1a-63e5-4f7d-8395-015afe00e039",
      "position": 5,
      "number": "5",
      "title": "Epistrophy (alternate take)",
@@ -505,10 +511,10 @@
      }
     },
     {
-     "id": "504d0e83-d3d5-479c-a290-2c83dd9d42cb",
+     "id": "944d600e-52f0-412a-9d5e-1ba87880ed1d",
      "position": 6,
      "number": "6",
-     "title": "Functional (take 1)",
+     "title": "Functional (alternate take)",
      "artist-credit": [
       {
        "name": "Thelonious Monk",
@@ -544,10 +550,10 @@
      }
     },
     {
-     "id": "bc783110-e6fb-4915-96f2-d2114666f953",
+     "id": "ed59ad18-6556-46a2-95b1-7902c1ba2531",
      "position": 7,
      "number": "7",
-     "title": "Monk’s Mood",
+     "title": "Monk's Mood",
      "artist-credit": [
       {
        "name": "Thelonious Monk",

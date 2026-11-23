@@ -3,8 +3,8 @@ why = "One conductor and orchestra, four composers on one album (COMPOSER per tr
 edition = "RCA Living Stereo hybrid SACD (Deezer 8298628, MusicBrainz 4d9f6650 with its three layers, Discogs 5831655); Qobuz w6xss4wpaqt9a, UPC 0886445157598, a later issue"
 known_wrong = ["MusicBrainz parse: 30 tracks, the hybrid SACD's three layers counted as three discs", "Qobuz parse: the album lists only Reiner (main-artist, conductor); the orchestra, a main-artist on some tracks only, becomes a guest; Reiner main beside conductor", "merge: Johann Strauss composer twice on his tracks, Qobuz's 'Johann Strauss II' beside Discogs' 'Johann Strauss Jr.'"]
 files_from = "deezer"
-# The release Picard tags these files from: the SACD as 10 tracks on one disc (828767161525), as a
-# Picard user holding them would. stores.musicbrainz stays the entry listing its three layers as 30 tracks.
+# The release Picard tags these files from: the SACD as 10 tracks on one disc (828767161525). No
+# release has the files' barcode (828767161556). stores.musicbrainz stays the entry listing its three layers as 30 tracks.
 picard_release = "c4b9f80d-d9cd-4a49-a1eb-9ec842d295a3"
 
 [sources]
