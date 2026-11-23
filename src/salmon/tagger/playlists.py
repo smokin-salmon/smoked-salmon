@@ -192,14 +192,15 @@ def _rewrite_lines(
         except UnicodeEncodeError:
             outcome.unwritable.append(entry)
             continue
+        # A folder rename moves every entry under it, even one whose file was renamed too, and names it wrongly
+        # when the sheet was misread: the new path names no file. Test the unquoted path.
+        misread = unsure and not new_entry.isascii() and not any(map(os.path.lexists, _candidates(new_entry, folder)))
         if cue and not before.endswith('"') and " " in new_entry:
             # A bare name with a space needs its quotes.
             new_entry = f'"{new_entry}"'
         outcome.lines[index] = before + new_entry + after
         outcome.changed = True
-        # A folder rename moves every entry under it, even one whose file was renamed too, and names it wrongly
-        # when the sheet was misread: the new path names no file.
-        if unsure and not new_entry.isascii() and not any(map(os.path.lexists, _candidates(new_entry, folder))):
+        if misread:
             outcome.misread.append(entry)
     return outcome
 

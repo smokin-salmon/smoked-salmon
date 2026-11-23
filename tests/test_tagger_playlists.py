@@ -189,9 +189,23 @@ def test_as_before_a_cue_is_not_warned_about_where_a_folder_rename_moved_a_file_
     cue = tmp_path / "a.cue"
     cue.write_bytes('FILE "AC?DC\\01 é.flac" WAVE\r\n'.encode("cp1252"))
 
-    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("AC?DC", "AC_DC")))
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("AC?DC", "AC_DC"), ("Ö/02.flac", "Ö/02_.flac")))
 
     assert cue.read_bytes() == 'FILE "AC_DC\\01 é.flac" WAVE\r\n'.encode("cp1252")
+    assert capsys.readouterr().out == ""
+
+
+def test_as_before_a_cue_is_not_warned_about_where_a_folder_rename_moved_a_bare_entry_that_gained_a_space(
+    tmp_path, capsys
+) -> None:
+    """A bare entry renamed to a path with a space is quoted; the existence check uses the unquoted path."""
+    _tracks(tmp_path, "Café/01 é.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_bytes("FILE Café\\01 é.flac WAVE\r\n".encode("cp1252"))
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("Café", "Café Album")))
+
+    assert cue.read_bytes() == 'FILE "Café Album\\01 é.flac" WAVE\r\n'.encode("cp1252")
     assert capsys.readouterr().out == ""
 
 
