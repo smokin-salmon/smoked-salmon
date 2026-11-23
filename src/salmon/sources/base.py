@@ -67,24 +67,45 @@ class BaseScraper:
     # class's name.
     store: str | None = None
     # The last answer this scraper instance received, status checked or not: what a failed scrape reports. An
-    # instance serves one scrape, so it is safe state; None until a store answers.
+    # instance serves one scrape, so it is safe state; None until a store answers, and again as each request is sent
+    # (_session), so it only ever holds the answer to the latest request.
     last_answer: Answer | None = None
 
     def record_answer(self, status: int, title: str | None = None) -> None:
         """Remember the answer just received (see last_answer)."""
         self.last_answer = Answer(status, _tidy_title(title))
 
+    @asynccontextmanager
+    async def _session(self, timeout: float | None = None) -> AsyncIterator[aiohttp.ClientSession]:
+        """_class_session for this scraper's own requests: each one it sends first forgets last_answer.
+
+        So a request that fails before any answer (a dropped connection, a timeout) never shows the status of the
+        request before it (#980). Every request a scraper instance sends goes through here.
+        """
+
+        async def forget(*_: object) -> None:
+            self.last_answer = None
+
+        trace = aiohttp.TraceConfig()
+        trace.on_request_start.append(forget)
+        async with self._class_session(timeout, trace_configs=[trace]) as session:
+            yield session
+
     @classmethod
     @asynccontextmanager
-    async def _session(cls, timeout: float | None = None) -> AsyncIterator[aiohttp.ClientSession]:
+    async def _class_session(
+        cls, timeout: float | None = None, trace_configs: list[aiohttp.TraceConfig] | None = None
+    ) -> AsyncIterator[aiohttp.ClientSession]:
         """An aiohttp session with the store's timeout and proxy; its aiohttp errors and timeouts become ScrapeError.
 
         It adds no headers, parameters or status checks: each caller keeps its own. A ScrapeError raised inside
         passes through. aiohttp puts the request URL, query included, in some of its error texts, so a message
-        names the error type, except a refused internal address, which names the host.
+        names the error type, except a refused internal address, which names the host. A scraper instance uses
+        _session; this is for a classmethod, which has no last_answer to forget.
 
         Args:
             timeout: Seconds for each request in all; ``timeout`` (10) when None.
+            trace_configs: aiohttp's request hooks for the session.
 
         Raises:
             ScrapeError: If a request in the session fails or times out.
@@ -93,7 +114,9 @@ class BaseScraper:
         name = cls.store or cls.__name__
         try:
             async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=total), **session_kwargs(cls.proxy_service)
+                timeout=aiohttp.ClientTimeout(total=total),
+                trace_configs=trace_configs,
+                **session_kwargs(cls.proxy_service),
             ) as session:
                 yield session
         except ssrf.NonPublicAddressError as e:

@@ -3,7 +3,10 @@
 The stores are a fake on 127.0.0.1 (helpers.ssrf.FakeStore); no real store is reached.
 """
 
+import contextlib
+import time
 import types
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 import anyio
@@ -13,8 +16,11 @@ from helpers.ssrf import LOOPBACK, FakeStore
 
 from salmon import ssrf
 from salmon.errors import ScrapeError
+from salmon.sources import apple_music as apple_music_sources
+from salmon.sources import beatport as beatport_sources
+from salmon.sources import musicbrainz as musicbrainz_sources
 from salmon.sources.base import Answer
-from salmon.tagger.sources import apple_music, bandcamp, deezer, tidal
+from salmon.tagger.sources import apple_music, bandcamp, beatport, deezer, discogs, musicbrainz, qobuz, tidal
 from salmon.tagger.sources.base import scrape_error_with_context
 
 
@@ -246,3 +252,151 @@ def test_a_failed_apple_music_token_bootstrap_shows_no_status(monkeypatch) -> No
         anyio.run(run)
 
     assert str(excinfo.value).startswith(f"Apple Music: could not read the release at {url}: ")
+
+
+class FirstAnswered:
+    """A store on 127.0.0.1 that answers its first request, any method and path, with `first`, then drops each one.
+
+    With no `first`, it drops every request.
+    """
+
+    def __init__(self, first: tuple[int, str, dict[str, str]] | None) -> None:
+        self.first = first
+        self.requests: list[str] = []
+
+    @contextlib.asynccontextmanager
+    async def serving(self) -> AsyncIterator[str]:
+        """Serve, yielding the base URL."""
+        app = web.Application()
+        app.router.add_route("*", "/{tail:.*}", self._answer)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        await web.TCPSite(runner, "127.0.0.1", 0).start()
+        try:
+            yield f"http://127.0.0.1:{runner.addresses[0][1]}"
+        finally:
+            await runner.cleanup()
+
+    async def _answer(self, request: web.Request) -> web.StreamResponse:
+        self.requests.append(request.path)
+        if len(self.requests) == 1 and self.first:
+            status, body, headers = self.first
+            return web.Response(status=status, text=body, headers=headers)
+        if request.transport is not None:
+            request.transport.abort()
+        return web.Response()
+
+
+JSON = {"Content-Type": "application/json"}
+Pointed = tuple[Any, str, Any]  # The scraper, the release URL and the rls_id to scrape it with
+
+
+def _point_deezer(monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    monkeypatch.setattr(deezer.Scraper, "url", base + "/api")
+    monkeypatch.setattr(deezer.Scraper, "site_url", base)
+    return deezer.Scraper(), "https://www.deezer.com/album/1", None
+
+
+def _point_beatport(monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    expired = beatport_sources.TokenStorage(bearer="b", expires=time.time() - 60, refresh_token="r", client_id="c")
+    monkeypatch.setattr(beatport.Scraper, "url", base + "/v4")
+    monkeypatch.setattr(beatport_sources.TokenStorage, "load", classmethod(lambda _cls: expired))
+    monkeypatch.setattr(beatport_sources.TokenStorage, "_save", lambda _self: None)
+    return beatport.Scraper(), base + "/release/x/1", None
+
+
+def _point_musicbrainz(monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    monkeypatch.setattr(musicbrainz.Scraper, "api_url", base)
+    monkeypatch.setattr(musicbrainz_sources, "RETRY_WAIT", 0)
+    return musicbrainz.Scraper(), "https://musicbrainz.org/release/0a1b2c3d-0000-4000-8000-000000000001", None
+
+
+def _point_tidal(monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    async def token(_cls: Any) -> str:
+        return "t"
+
+    monkeypatch.setattr(tidal.Scraper, "_ensure_token", classmethod(token))
+    monkeypatch.setattr(tidal.Scraper, "url", base)
+    return tidal.Scraper(), "https://listen.tidal.com/album/1", ("US", "1")
+
+
+def _point_apple_music(monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    async def token(_cls: Any) -> str:
+        return "t"
+
+    monkeypatch.setattr(apple_music.Scraper, "_get_token", classmethod(token))
+    monkeypatch.setattr(apple_music_sources, "AMP_API_URL", base)
+    return apple_music.Scraper(), "https://music.apple.com/us/album/x/1", ("us", "en-US", "1")
+
+
+def _point_bandcamp(_monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    return bandcamp.Scraper(), base + "/album/x", None
+
+
+def _point_discogs(monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    monkeypatch.setattr(discogs.Scraper, "url", base)
+    return discogs.Scraper(), "https://www.discogs.com/release/1", None
+
+
+def _point_qobuz(monkeypatch: pytest.MonkeyPatch, base: str) -> Pointed:
+    monkeypatch.setattr(qobuz.Scraper, "configured", staticmethod(lambda: False))
+    monkeypatch.setattr(qobuz, "PUBLIC_PAGE", base + "/album/{album_id}")
+    return qobuz.Scraper(), "https://www.qobuz.com/gb-en/album/x/abc1", None
+
+
+TIDAL_FIRST_PAGE = '{"data": {"relationships": {"items": {"links": {"meta": {"nextCursor": "c"}}}}}}'
+APPLE_FIRST_PAGE = '{"data": [{"relationships": {"tracks": {"next": "/n"}}}]}'
+
+# Each store pointed at the fake, and the answer its first request gets so that it sends a second; None for a store
+# whose scrape sends one request: an answer is recorded before it instead, as an earlier request's would be.
+STORES: dict[str, tuple[Callable[[pytest.MonkeyPatch, str], Pointed], tuple[int, str, dict[str, str]] | None]] = {
+    "Deezer": (_point_deezer, (200, "{}", JSON)),
+    "Beatport": (_point_beatport, (200, "{}", JSON)),
+    "MusicBrainz": (_point_musicbrainz, (503, "", {"Retry-After": "0"})),
+    "Tidal": (_point_tidal, (200, TIDAL_FIRST_PAGE, JSON)),
+    "Apple Music": (_point_apple_music, (200, APPLE_FIRST_PAGE, JSON)),
+    "Bandcamp": (_point_bandcamp, None),
+    "Discogs": (_point_discogs, None),
+    "Qobuz": (_point_qobuz, None),
+}
+
+
+def _scrape_answered_then_dropped(monkeypatch: pytest.MonkeyPatch, name: str) -> tuple[str, list[str]]:
+    """The message of the ScrapeError `name`'s scrape raised against FirstAnswered, and the paths it asked for."""
+    point, first = STORES[name]
+    store = FirstAnswered(first)
+
+    async def run() -> str:
+        async with store.serving() as base:
+            scraper, url, rls_id = point(monkeypatch, base)
+            if first is None:
+                scraper.record_answer(200)
+            with anyio.fail_after(10), pytest.raises(ScrapeError) as excinfo:
+                await scraper.scrape_release(url, rls_id=rls_id)
+            return str(excinfo.value)
+
+    return anyio.run(run), store.requests
+
+
+def test_deezers_internal_page_dropped_after_its_api_answered_shows_no_status(monkeypatch) -> None:
+    message, requests = _scrape_answered_then_dropped(monkeypatch, "Deezer")
+
+    assert list(dict.fromkeys(requests)) == ["/api/album/1", "/album/1"]
+    assert message == "Deezer: could not read the release at https://www.deezer.com/album/1: Failed to grab metadata."
+
+
+def test_beatports_scraper_dropped_after_a_failed_token_refresh_shows_no_status(monkeypatch) -> None:
+    message, requests = _scrape_answered_then_dropped(monkeypatch, "Beatport")
+
+    assert list(dict.fromkeys(requests)) == ["/v4/auth/o/token/", "/release/x/1"]
+    assert message.startswith("Beatport: could not read the release at http://127.0.0.1:")
+    assert "(HTTP" not in message
+
+
+@pytest.mark.parametrize("name", list(STORES))
+def test_a_request_dropped_after_an_answer_never_shows_that_answers_status(monkeypatch, name: str) -> None:
+    message, requests = _scrape_answered_then_dropped(monkeypatch, name)
+
+    assert len(requests) >= (2 if STORES[name][1] else 1)
+    assert message.startswith(f"{name}: could not read the release at ")
+    assert "(HTTP" not in message

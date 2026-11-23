@@ -52,7 +52,7 @@ class AppleMusicBase(BaseScraper):
             return cls._token
 
         # The homepage and its JS bundle may take 15 s each
-        async with cls._session(timeout=15) as session:
+        async with cls._class_session(timeout=15) as session:
             async with session.get(APPLE_MUSIC_URL, allow_redirects=True) as resp:
                 if resp.status != 200:
                     raise ScrapeError("Failed to load Apple Music homepage")

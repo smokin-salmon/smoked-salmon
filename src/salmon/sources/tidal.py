@@ -78,7 +78,7 @@ class TidalBase(BaseScraper):
             if TidalBase._access_token and monotonic() < TidalBase._token_expiry - 60:
                 return TidalBase._access_token
             async with (
-                cls._session() as session,
+                cls._class_session() as session,
                 session.post(
                     cls.token_url,
                     data={
