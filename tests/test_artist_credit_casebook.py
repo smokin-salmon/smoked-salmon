@@ -346,6 +346,21 @@ def test_a_picard_stage_is_recorded_only_where_it_differs() -> None:
     )
 
 
+def test_the_scoreboard_judges_every_picard_case() -> None:
+    stages = ("deezer", "merge", "output-salmon-tags", "merge-picard", "output-picard")
+    assert [_group(s) for s in stages] == [
+        "parse and merge",
+        "parse and merge",
+        "output",
+        "picard merge",
+        "picard output",
+    ]
+    today = {"merge": {"m": 1}, "output": {"o": 1}, "output-guests-in-title": {"g": 1}}
+    judged = _judged({"stores": {}, "picard_track": [{}], "output": True, "today": today})
+    assert judged["merge-picard"] == {"m": 1}
+    assert judged["output-picard"] == {"o": 1}
+
+
 def test_a_name_holding_a_separator_is_judged_whole() -> None:
     right = {"release_main": ["Tyler, The Creator"], "not_main": ["Earth, Wind & Fire"]}
     output = {"albumartist": "Tyler, The Creator", "tracks": ["Tyler, The Creator", "Tyler, The Creator & Kali Uchis"]}
@@ -354,18 +369,34 @@ def test_a_name_holding_a_separator_is_judged_whole() -> None:
     assert judge(right, guest_as_main) == ["a never-main name in a track's ARTIST"]
 
 
+def _group(stage: str) -> str:
+    """The scoreboard's tally a stage counts in."""
+    if stage in PICARD:
+        return f"picard {PICARD[stage]}"
+    return "output" if stage.startswith("output") else "parse and merge"
+
+
+def _judged(record: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Each stage the case runs and its value today, a Picard stage's recorded or the Deezer stage it equals."""
+    today = record["today"]
+    return {stage: picard_today(today, stage) if stage in PICARD else today[stage] for stage in _stages(record)}
+
+
 def test_scoreboard() -> None:
     """Today against right, per case and stage, grouped by what is wrong. Printed, never failing on wrongness.
 
-    The output stages are counted apart from the parse and merge stages: an output mostly repeats its merge."""
+    The output stages are counted apart from the parse and merge stages: an output mostly repeats its merge. The
+    Picard stages are counted apart again, over every case with Picard-tagged files, recorded or not."""
     lines, kinds = [], Counter()
-    tallies = {"parse and merge": [0, 0], "output": [0, 0]}  # right, judged
+    tallies = {
+        group: [0, 0] for group in ("parse and merge", "output", "picard merge", "picard output")
+    }  # right, judged
     for case in _cases():
         record = _record(case)
-        verdicts = {stage: judge(record["right"], today) for stage, today in record["today"].items()}
+        verdicts = {stage: judge(record["right"], today) for stage, today in _judged(record).items()}
         for stage, wrong in verdicts.items():
             if wrong is not None:
-                tally = tallies["output" if stage.startswith("output") else "parse and merge"]
+                tally = tallies[_group(stage)]
                 tally[0] += not wrong
                 tally[1] += 1
                 kinds.update(wrong)

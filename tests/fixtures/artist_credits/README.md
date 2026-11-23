@@ -53,7 +53,8 @@ Each `<album>.toml` holds, in this order:
 `pytest -s tests/test_artist_credit_casebook.py::test_scoreboard` prints each case and stage as right, open
 (nothing settled) or what is wrong ("a right main missing", "an extra main", ...), then "right on N of M" by what is
 settled, once for the parse and merge stages and once for the output stages (an output mostly repeats its merge's
-defects, so it is counted apart), and the count of each kind. Right means right on what `[right]` settles; guests are not judged yet. It
+defects, so it is counted apart), and once each for the Picard merge and output stages, over every case with
+`[[picard_track]]` whether its Picard stage is recorded or the same as the Deezer one, and the count of each kind. Right means right on what `[right]` settles; guests are not judged yet. It
 never fails on a wrong credit. An output stage is judged on ALBUMARTIST and each track's ARTIST before its "(feat. ...)": the one
 release main there, and no `not_main` name.
 
