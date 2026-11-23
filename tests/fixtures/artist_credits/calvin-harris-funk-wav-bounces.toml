@@ -162,6 +162,123 @@ album = ["Funk Wav Bounces Vol.1"]
 albumartist = ["Calvin Harris"]
 date = ["2017-06-30"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Slide"]
+artist = ["Calvin Harris feat. Frank Ocean & Migos"]
+artists = ["Calvin Harris", "Frank Ocean", "Migos"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Cash Out"]
+artist = ["Calvin Harris feat. ScHoolboy Q, PARTYNEXTDOOR & D.R.A.M."]
+artists = ["Calvin Harris", "ScHoolboy Q", "PARTYNEXTDOOR", "D.R.A.M."]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Heatstroke"]
+artist = ["Calvin Harris feat. Young Thug, Pharrell Williams & Ariana Grande"]
+artists = ["Calvin Harris", "Young Thug", "Pharrell Williams", "Ariana Grande"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Rollin"]
+artist = ["Calvin Harris feat. Future & Khalid"]
+artists = ["Calvin Harris", "Future", "Khalid"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Prayers Up"]
+artist = ["Calvin Harris feat. Travis Scott & A‐Trak"]
+artists = ["Calvin Harris", "Travis Scott", "A‐Trak"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Holiday"]
+artist = ["Calvin Harris feat. Snoop Dogg, John Legend & Takeoff"]
+artists = ["Calvin Harris", "Snoop Dogg", "John Legend", "Takeoff"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Skrt on Me"]
+artist = ["Calvin Harris feat. Nicki Minaj"]
+artists = ["Calvin Harris", "Nicki Minaj"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Feels"]
+artist = ["Calvin Harris feat. Pharrell Williams, Katy Perry & Big Sean"]
+artists = ["Calvin Harris", "Pharrell Williams", "Katy Perry", "Big Sean"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Faking It"]
+artist = ["Calvin Harris feat. Kehlani & Lil Yachty"]
+artists = ["Calvin Harris", "Kehlani", "Lil Yachty"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Hard to Love"]
+artist = ["Calvin Harris feat. Jessie Reyez"]
+artists = ["Calvin Harris", "Jessie Reyez"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

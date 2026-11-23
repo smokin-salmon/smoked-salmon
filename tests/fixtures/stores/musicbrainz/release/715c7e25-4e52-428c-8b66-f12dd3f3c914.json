@@ -9,7 +9,18 @@
    "joinphrase": "",
    "artist": {
     "id": "534ee493-bfac-4575-a44a-0ae41e2c3fe4",
-    "name": "Rush"
+    "name": "Rush",
+    "aliases": [
+     {
+      "name": "ラッシュ",
+      "sort-name": "ラッシュ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],

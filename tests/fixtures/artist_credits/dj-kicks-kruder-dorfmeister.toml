@@ -221,6 +221,183 @@ album = ["DJ-Kicks"]
 albumartist = ["Kruder & Dorfmeister"]
 date = ["1996-08-19"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["A Mother"]
+artist = ["The Herbaliser"]
+artists = ["The Herbaliser"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Livin’ Free"]
+artist = ["Small World"]
+artists = ["Small World"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Spellbound"]
+artist = ["Tango"]
+artists = ["Tango"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Give My Soul"]
+artist = ["Lab Rats"]
+artists = ["Lab Rats"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Revolutionary Pilot"]
+artist = ["Statik Sound System"]
+artists = ["Statik Sound System"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["In Too Deep"]
+artist = ["JMJ & Flytronix"]
+artists = ["JMJ", "Flytronix"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Kauna"]
+artist = ["Aquasky"]
+artists = ["Aquasky"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Never Say?"]
+artist = ["James Bong"]
+artists = ["James Bong"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Dubdope"]
+artist = ["Hardfloor"]
+artists = ["Hardfloor"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Shaolin Satellite"]
+artist = ["Thievery Corporation"]
+artists = ["Thievery Corporation"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["High Noon"]
+artist = ["Kruder & Dorfmeister"]
+artists = ["Kruder & Dorfmeister"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Keep On Believing"]
+artist = ["Beanfield"]
+artists = ["Beanfield"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Que dolor"]
+artist = ["Sapien"]
+artists = ["Sapien"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Bass and Several Cars"]
+artist = ["Shantel"]
+artists = ["Shantel"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Look Up Dere"]
+artist = ["Karma"]
+artists = ["Karma"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["Radio Burning Chrome"]
+artist = ["Showroom Recordings"]
+artists = ["Showroom Recordings"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["Black Baby (DJ‐Kicks)"]
+artist = ["Kruder & Dorfmeister"]
+artists = ["Kruder & Dorfmeister"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

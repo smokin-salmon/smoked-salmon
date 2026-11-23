@@ -9,7 +9,81 @@
    "joinphrase": " & ",
    "artist": {
     "id": "cfbc0924-0035-4d6c-8197-f024653af823",
-    "name": "Nas"
+    "name": "Nas",
+    "aliases": [
+     {
+      "name": "Kid Wave",
+      "sort-name": "Kid Wave",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "N. Jones",
+      "sort-name": "N. Jones",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nas Escobar",
+      "sort-name": "Nas Escobar",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nasir Jones",
+      "sort-name": "Jones, Nasir",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nasir bin Olu Dara Jones",
+      "sort-name": "Jones, Nasir bin Olu Dara",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nass",
+      "sort-name": "Nass",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nasty Nas",
+      "sort-name": "Nasty Nas",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Scarlett",
+      "sort-name": "Scarlett",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -17,7 +91,81 @@
    "joinphrase": "",
    "artist": {
     "id": "cbfb9bcd-c5a0-4d7c-865f-2c641c171e1c",
-    "name": "Damian “Jr. Gong” Marley"
+    "name": "Damian “Jr. Gong” Marley",
+    "aliases": [
+     {
+      "name": "Damian \"Jr. Gong\" Marley",
+      "sort-name": "Damian \"Jr. Gong\" Marley",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Damian JR Gong Marley",
+      "sort-name": "Damian JR Gong Marley",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Damian Marley",
+      "sort-name": "Damian Marley",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Damian Marley \"Jr. Gong\"",
+      "sort-name": "Damian Marley \"Jr. Gong\"",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Damian Robert Nesta Marley",
+      "sort-name": "Marley, Damian Robert Nesta",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Damian “Jr. Gong” Marley",
+      "sort-name": "Marley, Damian “Jr. Gong”",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Damien Marley",
+      "sort-name": "Damien Marley",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Jr. Gong",
+      "sort-name": "Jr. Gong",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],
@@ -147,7 +295,36 @@
        "joinphrase": "",
        "artist": {
         "id": "ee421ee4-f861-405d-8730-29cb512dfdbd",
-        "name": "K’naan"
+        "name": "K’naan",
+        "aliases": [
+         {
+          "name": "K naan",
+          "sort-name": "K naan",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "K'naan Warsame",
+          "sort-name": "K'naan Warsame",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Keinan Abdi Warsame",
+          "sort-name": "Warsame, Keinan Abdi",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -257,7 +434,18 @@
        "joinphrase": "",
        "artist": {
         "id": "99298e13-87d6-4f0c-9334-d327d73f83c0",
-        "name": "Stephen Marley"
+        "name": "Stephen Marley",
+        "aliases": [
+         {
+          "name": "Steve Marley",
+          "sort-name": "Marley, Steve",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -461,7 +649,18 @@
        "joinphrase": "",
        "artist": {
         "id": "24c0aaf3-4ac2-4f9a-9ce6-a1545a96f017",
-        "name": "Dennis Brown"
+        "name": "Dennis Brown",
+        "aliases": [
+         {
+          "name": "D. Brown",
+          "sort-name": "Brown, D.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         }
+        ]
        }
       }
      ],
@@ -681,7 +880,63 @@
        "joinphrase": " & ",
        "artist": {
         "id": "ac9a487a-d9d2-4f27-bb23-0f4686488345",
-        "name": "Lil Wayne"
+        "name": "Lil Wayne",
+        "aliases": [
+         {
+          "name": "D. Carter",
+          "sort-name": "D. Carter",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dwayne Carter",
+          "sort-name": "Carter, Dwayne",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dwayne Michael Carter, Jr.",
+          "sort-name": "Carter, Dwayne Michael, Jr.",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dwayne “The President” Carter",
+          "sort-name": "Carter, Dwayne “The President”",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Lil’ Wayne",
+          "sort-name": "Lil’ Wayne",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "リル・ウェイン",
+          "sort-name": "リル・ウェイン",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       },
       {
@@ -689,7 +944,45 @@
        "joinphrase": "",
        "artist": {
         "id": "dbbc47a5-1338-4830-9298-a8d0b11c0a46",
-        "name": "Joss Stone"
+        "name": "Joss Stone",
+        "aliases": [
+         {
+          "name": "Jocelyn Stoker",
+          "sort-name": "Jocelyn Stoker",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Joscelyn Eve Stoker",
+          "sort-name": "Stoker, Joscelyn Eve",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Joscelyn Stoker",
+          "sort-name": "Stoker, Joscelyn",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Джосс Стоун",
+          "sort-name": "Джосс Стоун",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ru",
+          "primary": true
+         }
+        ]
        }
       }
      ],

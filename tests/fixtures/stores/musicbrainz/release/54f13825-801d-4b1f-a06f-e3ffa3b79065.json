@@ -9,7 +9,90 @@
    "joinphrase": " & ",
    "artist": {
     "id": "54799c0e-eb45-4eea-996d-c4d71a63c499",
-    "name": "Ella Fitzgerald"
+    "name": "Ella Fitzgerald",
+    "aliases": [
+     {
+      "name": "Ella Fitzgerard",
+      "sort-name": "Ella Fitzgerard",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ella Fiztgerald",
+      "sort-name": "Ella Fiztgerald",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ella Fiztgerarld",
+      "sort-name": "Ella Fiztgerarld",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ella Jane Fitzgerald",
+      "sort-name": "Ella Jane Fitzgerald",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "First Lady of Song",
+      "sort-name": "First Lady of Song",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Fitzgerald",
+      "sort-name": "Fitzgerald",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Lady Ella",
+      "sort-name": "Lady Ella",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Queen of Jazz",
+      "sort-name": "Queen of Jazz",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "エラ・フィッツジェラルド",
+      "sort-name": "エラ・フィッツジェラルド",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     }
+    ]
    }
   },
   {
@@ -17,7 +100,171 @@
    "joinphrase": "",
    "artist": {
     "id": "eea8a864-fcda-4602-9569-38ab446decd6",
-    "name": "Louis Armstrong"
+    "name": "Louis Armstrong",
+    "aliases": [
+     {
+      "name": "Armstrong",
+      "sort-name": "Armstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Armstrong Louis",
+      "sort-name": "Armstrong Louis",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Armstrong, Louis",
+      "sort-name": "Armstrong, Louis",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Armstrong, Louis (Satchmo)",
+      "sort-name": "Armstrong, Louis (Satchmo)",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Loius Armstrong",
+      "sort-name": "Loius Armstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Loouis Aemstrong",
+      "sort-name": "Loouis Aemstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louie Armstrong",
+      "sort-name": "Louie Armstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Amstrong",
+      "sort-name": "Louis Amstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Armostrong",
+      "sort-name": "Louis Armostrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Armstrong & The Commanders",
+      "sort-name": "Armstrong, Louis & The Commanders",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Armstrong and His Friends",
+      "sort-name": "Armstrong, Louis and His Friends",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Armstrong with The Commanders",
+      "sort-name": "Louis Armstrong with The Commanders",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Armstrong: Satchmo",
+      "sort-name": "Louis Armstrong: Satchmo",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Arnstrong",
+      "sort-name": "Louis Arnstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louis Daniel Armstrong",
+      "sort-name": "Armstrong, Louis Daniel",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Louise Armstrong",
+      "sort-name": "Louise Armstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Luis Armstrong",
+      "sort-name": "Luis Armstrong",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ルイ・アームストロング",
+      "sort-name": "ルイ・アームストロング",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     }
+    ]
    }
   }
  ],

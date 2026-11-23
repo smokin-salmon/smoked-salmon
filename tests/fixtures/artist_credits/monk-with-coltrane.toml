@@ -4,6 +4,9 @@ edition = "Bandcamp: Craft 2023 remaster, 6 tracks (page UPC 888072479050; Music
 known_wrong = ["Bandcamp parse: UPC None (page has 888072479050); Coltrane nowhere"]
 bandcamp_url = "https://theloniousmonk.bandcamp.com/album/thelonious-monk-with-john-coltrane-remastered-2023"
 files_from = "deezer"
+# The release Picard tags these files from, found by their barcode (888072319899): the 7-track OJC
+# Remasters CD, of three CDs with that barcode. stores.musicbrainz stays the 6-track Bandcamp edition.
+picard_release = "ded4f3a0-5919-473b-b617-e19265f59e5e"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
@@ -115,6 +118,91 @@ artist = ["Thelonious Monk", "John Coltrane"]
 album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
 albumartist = ["Thelonious Monk"]
 date = ["2021-05-31"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the MusicBrainz release recorded as `picard_release` (the
+# edition these files are), not from `stores.musicbrainz`, and not copied
+# from anyone's files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Ruby, My Dear"]
+artist = ["Thelonious Monk with John Coltrane"]
+artists = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane"]
+albumartist = ["Thelonious Monk with John Coltrane"]
+date = ["2010"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Trinkle, Tinkle"]
+artist = ["Thelonious Monk with John Coltrane"]
+artists = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane"]
+albumartist = ["Thelonious Monk with John Coltrane"]
+date = ["2010"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Off Minor (take 4)"]
+artist = ["Thelonious Monk with John Coltrane"]
+artists = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane"]
+albumartist = ["Thelonious Monk with John Coltrane"]
+date = ["2010"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Nutty"]
+artist = ["Thelonious Monk with John Coltrane"]
+artists = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane"]
+albumartist = ["Thelonious Monk with John Coltrane"]
+date = ["2010"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Epistrophy (alternate take)"]
+artist = ["Thelonious Monk with John Coltrane"]
+artists = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane"]
+albumartist = ["Thelonious Monk with John Coltrane"]
+date = ["2010"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Functional (alternate take)"]
+artist = ["Thelonious Monk with John Coltrane"]
+artists = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane"]
+albumartist = ["Thelonious Monk with John Coltrane"]
+date = ["2010"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Monk's Mood"]
+artist = ["Thelonious Monk with John Coltrane"]
+artists = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane"]
+albumartist = ["Thelonious Monk with John Coltrane"]
+date = ["2010"]
 
 # What each store sent, trimmed as [sources] says.
 [stores]

@@ -9,7 +9,8 @@
    "joinphrase": "",
    "artist": {
     "id": "955bc3c8-36d4-47e8-9648-f6728c613583",
-    "name": "Marcus King"
+    "name": "Marcus King",
+    "aliases": []
    }
   }
  ],

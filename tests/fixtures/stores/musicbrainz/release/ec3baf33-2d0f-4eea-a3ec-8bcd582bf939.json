@@ -9,7 +9,783 @@
    "joinphrase": "",
    "artist": {
     "id": "650e7db6-b795-4eb5-a702-5ea2fc46c848",
-    "name": "Lady Gaga"
+    "name": "Lady Gaga",
+    "aliases": [
+     {
+      "name": "Jo Calderone",
+      "sort-name": "Calderone, Jo",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "Lady Ga Ga",
+      "sort-name": "Lady Ga Ga",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ledi Qaqa",
+      "sort-name": "Ledi Qaqa",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "az_Latn",
+      "primary": true
+     },
+     {
+      "name": "Lejdi Gaga",
+      "sort-name": "Lejdi Gaga",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "bs_Latn",
+      "primary": true
+     },
+     {
+      "name": "Lēdija Gāga",
+      "sort-name": "Lēdija Gāga",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "lv",
+      "primary": true
+     },
+     {
+      "name": "S. Germanotta",
+      "sort-name": "Germanotta, S.",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "Stefani Germanotta",
+      "sort-name": "Germanotta, Stefani",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "Stefani Joanne Angelina Germanotta",
+      "sort-name": "Germanotta, Stefani Joanne Angelina",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "Stefanija Džoana Andželina Germanota",
+      "sort-name": "Germanota, Stefanija Džoana Andželina",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "lt",
+      "primary": false
+     },
+     {
+      "name": "Λέιντι Γκάγκα",
+      "sort-name": "Λέιντι Γκάγκα",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "el",
+      "primary": true
+     },
+     {
+      "name": "Στέφανι Τζοάν Αντζελίνα Τζερμανότα",
+      "sort-name": "Στέφανι Τζοάν Αντζελίνα Τζερμανότα",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "el",
+      "primary": false
+     },
+     {
+      "name": "Џо Калдероне",
+      "sort-name": "Џо Калдероне",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sr",
+      "primary": false
+     },
+     {
+      "name": "Джо Кальдероне",
+      "sort-name": "Джо Кальдероне",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ba",
+      "primary": true
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ce",
+      "primary": true
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "cv",
+      "primary": true
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ky",
+      "primary": true
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ru",
+      "primary": true
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sah",
+      "primary": true
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "tt",
+      "primary": true
+     },
+     {
+      "name": "Леди Гага",
+      "sort-name": "Леди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "tyv",
+      "primary": true
+     },
+     {
+      "name": "Леді Гага",
+      "sort-name": "Леді Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "uk",
+      "primary": true
+     },
+     {
+      "name": "Леді Гага",
+      "sort-name": "Леді Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "uk",
+      "primary": false
+     },
+     {
+      "name": "Лейди Гага",
+      "sort-name": "Лейди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "bg",
+      "primary": true
+     },
+     {
+      "name": "Лейди Гага",
+      "sort-name": "Лейди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "tg",
+      "primary": true
+     },
+     {
+      "name": "Лејди Гага",
+      "sort-name": "Lejdi Gaga",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "bs_Cyrl",
+      "primary": true
+     },
+     {
+      "name": "Лејди Гага",
+      "sort-name": "Лејди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "mk",
+      "primary": true
+     },
+     {
+      "name": "Лејди Гага",
+      "sort-name": "Лејди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sr",
+      "primary": true
+     },
+     {
+      "name": "Лэдзі Гага",
+      "sort-name": "Лэдзі Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "be",
+      "primary": true
+     },
+     {
+      "name": "Лэди Гага",
+      "sort-name": "Лэди Гага",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "mn",
+      "primary": true
+     },
+     {
+      "name": "Сте́фани Джоа́нн Анджели́на Джермано́тта",
+      "sort-name": "Сте́фани Джоа́нн Анджели́на Джермано́тта",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "Сте́фані Джоа́н Анджеліна Джермано́тта",
+      "sort-name": "Сте́фані Джоа́н Анджеліна Джермано́тта",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "uk",
+      "primary": false
+     },
+     {
+      "name": "Стефани Џоан Анџелина Џерманота",
+      "sort-name": "Стефани Џоан Анџелина Џерманота",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sr",
+      "primary": false
+     },
+     {
+      "name": "Стефани Жоанн Анжелина Жерманотта",
+      "sort-name": "Стефани Жоанн Анжелина Жерманотта",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "mn",
+      "primary": false
+     },
+     {
+      "name": "Стэфані Джаан Анджэліна Джэрманота",
+      "sort-name": "Стэфані Джаан Анджэліна Джэрманота",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "be",
+      "primary": false
+     },
+     {
+      "name": "Լեդի Գագա",
+      "sort-name": "Լեդի Գագա",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "hy",
+      "primary": true
+     },
+     {
+      "name": "Լէյտի Կակա",
+      "sort-name": "Լէյտի Կակա",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "hy",
+      "primary": false
+     },
+     {
+      "name": "ליידי גאגא",
+      "sort-name": "ליידי גאגא",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "he",
+      "primary": true
+     },
+     {
+      "name": "ליידי גאגא",
+      "sort-name": "ליידי גאגא",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "yi",
+      "primary": true
+     },
+     {
+      "name": "סטפני ג'ואן אנג'לינה ג'רמנוטה",
+      "sort-name": "סטפני ג'ואן אנג'לינה ג'רמנוטה",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "he",
+      "primary": false
+     },
+     {
+      "name": "جوآن استفانی جرمانوتا",
+      "sort-name": "جوآن استفانی جرمانوتا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "fa",
+      "primary": false
+     },
+     {
+      "name": "ستيفاني جيرمانوتا",
+      "sort-name": "ستيفاني جيرمانوتا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ar",
+      "primary": false
+     },
+     {
+      "name": "ليدى جاجا",
+      "sort-name": "ليدى جاجا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ar_EG",
+      "primary": true
+     },
+     {
+      "name": "ليدي غاغا",
+      "sort-name": "ليدي غاغا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ar",
+      "primary": true
+     },
+     {
+      "name": "ليدي ڭاڭا",
+      "sort-name": "ليدي ڭاڭا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ar_MA",
+      "primary": true
+     },
+     {
+      "name": "لیدی قاقا",
+      "sort-name": "Ledi Qaqa",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "az_Arab",
+      "primary": true
+     },
+     {
+      "name": "لیدی گاگا",
+      "sort-name": "لیدی گاگا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "fa",
+      "primary": true
+     },
+     {
+      "name": "لیڈی گاگا",
+      "sort-name": "لیڈی گاگا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ks",
+      "primary": true
+     },
+     {
+      "name": "لیڈی گاگا",
+      "sort-name": "لیڈی گاگا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "skr",
+      "primary": true
+     },
+     {
+      "name": "لیڈی گاگا",
+      "sort-name": "لیڈی گاگا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ur",
+      "primary": true
+     },
+     {
+      "name": "لېيدى گاگا",
+      "sort-name": "لېيدى گاگا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ug",
+      "primary": true
+     },
+     {
+      "name": "لەیدی گاگا",
+      "sort-name": "لەیدی گاگا",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ku",
+      "primary": true
+     },
+     {
+      "name": "लेडी गागा",
+      "sort-name": "लेडी गागा",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "bho",
+      "primary": true
+     },
+     {
+      "name": "लेडी गागा",
+      "sort-name": "लेडी गागा",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "hi",
+      "primary": true
+     },
+     {
+      "name": "लेडी गागा",
+      "sort-name": "लेडी गागा",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "mai",
+      "primary": true
+     },
+     {
+      "name": "लेडी गागा",
+      "sort-name": "लेडी गागा",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "mr",
+      "primary": true
+     },
+     {
+      "name": "लेडी गागा",
+      "sort-name": "लेडी गागा",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ne",
+      "primary": true
+     },
+     {
+      "name": "स्टेफनी जोआन अँजेलिना जर्मानोटा",
+      "sort-name": "स्टेफनी जोआन अँजेलिना जर्मानोटा",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "mr",
+      "primary": false
+     },
+     {
+      "name": "स्टेफनी जोएन एन्जेलिना जर्मनोट्टा",
+      "sort-name": "स्टेफनी जोएन एन्जेलिना जर्मनोट्टा",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ne",
+      "primary": false
+     },
+     {
+      "name": "লেডি গাগা",
+      "sort-name": "লেডি গাগা",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "bn",
+      "primary": true
+     },
+     {
+      "name": "লেডী গাগা",
+      "sort-name": "লেডী গাগা",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "as",
+      "primary": true
+     },
+     {
+      "name": "ਲੇਡੀ ਗਾਗਾ",
+      "sort-name": "ਲੇਡੀ ਗਾਗਾ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "pa",
+      "primary": true
+     },
+     {
+      "name": "ਸਟੇਫ਼ਨੀ ਜੋਐਨ ਏਂਜੇਲੀਨਾ ਜਰਮਨੋਟਾ",
+      "sort-name": "ਸਟੇਫ਼ਨੀ ਜੋਐਨ ਏਂਜੇਲੀਨਾ ਜਰਮਨੋਟਾ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "pa",
+      "primary": false
+     },
+     {
+      "name": "લેડી ગાગા",
+      "sort-name": "લેડી ગાગા",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "gu",
+      "primary": true
+     },
+     {
+      "name": "ଲେଡି ଗାଗା",
+      "sort-name": "ଲେଡି ଗାଗା",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "or",
+      "primary": true
+     },
+     {
+      "name": "லேடி காகா",
+      "sort-name": "லேடி காகா",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ta",
+      "primary": true
+     },
+     {
+      "name": "లేడీ గాగా",
+      "sort-name": "లేడీ గాగా",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "te",
+      "primary": true
+     },
+     {
+      "name": "ಲೇಡಿ ಗಾಗಾ",
+      "sort-name": "ಲೇಡಿ ಗಾಗಾ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "kn",
+      "primary": true
+     },
+     {
+      "name": "ലേഡി ഗാഗ",
+      "sort-name": "ലേഡി ഗാഗ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ml",
+      "primary": true
+     },
+     {
+      "name": "ලේඩි ගාගා",
+      "sort-name": "ලේඩි ගාගා",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "si",
+      "primary": true
+     },
+     {
+      "name": "สเตฟานี โจแอนน์ แอนเจลินา เจอร์มาน็อตตา",
+      "sort-name": "สเตฟานี โจแอนน์ แอนเจลินา เจอร์มาน็อตตา",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "th",
+      "primary": false
+     },
+     {
+      "name": "เลดีกากา",
+      "sort-name": "เลดีกากา",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "th",
+      "primary": true
+     },
+     {
+      "name": "ເລດີ້ ກາກ້າ",
+      "sort-name": "ເລດີ້ ກາກ້າ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "lo",
+      "primary": true
+     },
+     {
+      "name": "လေဒီဂါဂါ",
+      "sort-name": "လေဒီဂါဂါ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "my",
+      "primary": true
+     },
+     {
+      "name": "ლედი გაგა",
+      "sort-name": "ლედი გაგა",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ka",
+      "primary": true
+     },
+     {
+      "name": "ስቲፋኒ ጆአኒ አንጀሊና ጀርማኖታ",
+      "sort-name": "ስቲፋኒ ጆአኒ አንጀሊና ጀርማኖታ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "am",
+      "primary": false
+     },
+     {
+      "name": "በሌዲ ጋጋ",
+      "sort-name": "በሌዲ ጋጋ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "am",
+      "primary": true
+     },
+     {
+      "name": "ឡេឌី ហ្គាហ្គា",
+      "sort-name": "ឡេឌី ហ្គាហ្គា",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "km",
+      "primary": true
+     },
+     {
+      "name": "ᱞᱮᱰᱤ ᱜᱟᱜᱟ",
+      "sort-name": "ᱞᱮᱰᱤ ᱜᱟᱜᱟ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sat",
+      "primary": true
+     },
+     {
+      "name": "ステファニー・ジョアン・アンジェリーナ・ジャーマノッタ",
+      "sort-name": "ステファニー・ジョアン・アンジェリーナ・ジャーマノッタ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "レディー・ガガ",
+      "sort-name": "レディー・ガガ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     },
+     {
+      "name": "史蒂芬妮·乔安妮·安吉丽娜·杰尔马诺塔",
+      "sort-name": "史蒂芬妮·乔安妮·安吉丽娜·杰尔马诺塔",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh",
+      "primary": false
+     },
+     {
+      "name": "嘎嘎小姐",
+      "sort-name": "嘎嘎小姐",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh_Hant",
+      "primary": false
+     },
+     {
+      "name": "女神卡卡",
+      "sort-name": "女神卡卡",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh",
+      "primary": true
+     },
+     {
+      "name": "레이디 가가",
+      "sort-name": "레이디 가가",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ko",
+      "primary": true
+     },
+     {
+      "name": "스테퍼니 조앤 앤젤리나 제르마노타",
+      "sort-name": "스테퍼니 조앤 앤젤리나 제르마노타",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ko",
+      "primary": false
+     }
+    ]
    }
   }
  ],
@@ -78,7 +854,18 @@
        "joinphrase": "",
        "artist": {
         "id": "d71c2b20-616a-4bb8-a848-e6edac412c3b",
-        "name": "Colby O’Donis"
+        "name": "Colby O’Donis",
+        "aliases": [
+         {
+          "name": "Colby O’Donis Colón",
+          "sort-name": "O’Donis Colón, Colby",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -159,7 +946,135 @@
        "joinphrase": "",
        "artist": {
         "id": "5dfdca28-9ddc-4853-933c-8bc97d87beec",
-        "name": "Marilyn Manson"
+        "name": "Marilyn Manson",
+        "aliases": [
+         {
+          "name": "M. Manson",
+          "sort-name": "M. Manson",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Manson Marilyn",
+          "sort-name": "Manson Marilyn",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Mar1lyn Man5on",
+          "sort-name": "Mar1lyn Man5on",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Marilin Manson",
+          "sort-name": "Marilin Manson",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Marilyn Manson",
+          "sort-name": "Marilyn Manson",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": true
+         },
+         {
+          "name": "Marilyn Manson & The Spooky Kids",
+          "sort-name": "Marilyn Manson & The Spooky Kids",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Marilyn Manson & the Spooky Kids",
+          "sort-name": "Marilyn Manson & the Spooky Kids",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Marilyn Manson and the Spooky Kids",
+          "sort-name": "Marilyn Manson and the Spooky Kids",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Mariyln Manson",
+          "sort-name": "Mariyln Manson",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Marylin Manson",
+          "sort-name": "Marylin Manson",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Omega and the Mechanical Animals",
+          "sort-name": "Omega and the Mechanical Animals",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "The Spooky Kids",
+          "sort-name": "The Spooky Kids",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "marily manson",
+          "sort-name": "marily manson",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "マリリン・マンソン",
+          "sort-name": "マリリン・マンソン",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       }
      ],
@@ -181,7 +1096,45 @@
         "joinphrase": "",
         "artist": {
          "id": "80cadd99-f560-41e3-babd-16292bbd248a",
-         "name": "Marilyn Manson"
+         "name": "Marilyn Manson",
+         "aliases": [
+          {
+           "name": "Brian Hugh Warner",
+           "sort-name": "Warner, Brian Hugh",
+           "type": "Legal name",
+           "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+           "ended": false,
+           "locale": "en",
+           "primary": false
+          },
+          {
+           "name": "Brian Warner",
+           "sort-name": "Warner, Brian",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": "en",
+           "primary": false
+          },
+          {
+           "name": "Marilyn Manson",
+           "sort-name": "Manson, Marilyn",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "en",
+           "primary": true
+          },
+          {
+           "name": "Mr. Manson",
+           "sort-name": "Manson, Mr.",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        }
       ],
@@ -374,7 +1327,126 @@
        "joinphrase": "",
        "artist": {
         "id": "859d0860-d480-4efd-970c-c05d5f1776b8",
-        "name": "Beyoncé"
+        "name": "Beyoncé",
+        "aliases": [
+         {
+          "name": "B1C",
+          "sort-name": "B1C",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Beyonce",
+          "sort-name": "Beyonce",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Beyonce'",
+          "sort-name": "Beyonce'",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Beyoncé",
+          "sort-name": "Beyoncé",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "zh_Hans_CN",
+          "primary": true
+         },
+         {
+          "name": "Beyoncé Giselle Knowles",
+          "sort-name": "Knowles, Beyoncé Giselle",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": true,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Beyoncé Giselle Knowles-Carter",
+          "sort-name": "Knowles-Carter, Beyoncé Giselle",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Beyoncé Knowles",
+          "sort-name": "Knowles, Beyoncé",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Beyoncé Knowles-Carter",
+          "sort-name": "Knowles-Carter, Beyoncé",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Queen Bey",
+          "sort-name": "Queen Bey",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Sasha",
+          "sort-name": "Sasha",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Sasha Fierce",
+          "sort-name": "Fierce, Sasha",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "ビヨンセ",
+          "sort-name": "ビヨンセ",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         },
+         {
+          "name": "碧昂絲",
+          "sort-name": "碧昂絲",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "zh_Hant_TW",
+          "primary": true
+         }
+        ]
        }
       }
      ],

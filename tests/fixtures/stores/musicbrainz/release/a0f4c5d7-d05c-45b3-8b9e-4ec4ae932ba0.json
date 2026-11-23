@@ -9,7 +9,45 @@
    "joinphrase": "; ",
    "artist": {
     "id": "05517043-ff78-4988-9c22-88c68588ebb9",
-    "name": "Paul Simon"
+    "name": "Paul Simon",
+    "aliases": [
+     {
+      "name": "Paul Frederic Simon",
+      "sort-name": "Simon, Paul Frederic",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Paul Kane",
+      "sort-name": "Kane, Paul",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": true,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Paul Simon",
+      "sort-name": "Simon, Paul",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ポール・サイモン",
+      "sort-name": "ポール・サイモン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     }
+    ]
    }
   },
   {
@@ -17,7 +55,81 @@
    "joinphrase": "; ",
    "artist": {
     "id": "5d02f264-e225-41ff-83f7-d9b1f0b1874a",
-    "name": "Simon & Garfunkel"
+    "name": "Simon & Garfunkel",
+    "aliases": [
+     {
+      "name": "Paul Simon and Art Garfunkel",
+      "sort-name": "Paul Simon and Art Garfunkel",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Paul Simon and Art Garfunkle",
+      "sort-name": "Paul Simon and Art Garfunkle",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Paul Simon and Arthur Garfunkel",
+      "sort-name": "Paul Simon and Arthur Garfunkel",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Simon & Garfunkal",
+      "sort-name": "Simon & Garfunkal",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Simon & Garfunkle",
+      "sort-name": "Simon & Garfunkle",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Simon and Garfunkel",
+      "sort-name": "Simon and Garfunkel",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Simon and Garfunkle",
+      "sort-name": "Simon and Garfunkle",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "サイモン&ガーファンクル",
+      "sort-name": "サイモン&ガーファンクル",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     }
+    ]
    }
   },
   {
@@ -25,7 +137,180 @@
    "joinphrase": "",
    "artist": {
     "id": "7915b61a-da59-4e4e-83d3-bde7a24bd1ba",
-    "name": "Dave Grusin"
+    "name": "Dave Grusin",
+    "aliases": [
+     {
+      "name": "Dave Grosin",
+      "sort-name": "Dave Grosin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grushin",
+      "sort-name": "Dave Grushin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grusin",
+      "sort-name": "Grusin, Dave",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grusinch",
+      "sort-name": "Dave Grusinch",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grusind",
+      "sort-name": "Dave Grusind",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grusing",
+      "sort-name": "Dave Grusing",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grusinn",
+      "sort-name": "Dave Grusinn",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grusint",
+      "sort-name": "Dave Grusint",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grussin",
+      "sort-name": "Dave Grussin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Grusyn",
+      "sort-name": "Dave Grusyn",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Gursin",
+      "sort-name": "Dave Gursin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dave Gusin",
+      "sort-name": "Dave Gusin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Davey Grusin",
+      "sort-name": "Davey Grusin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "David Grusin",
+      "sort-name": "David Grusin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Davy Grusin",
+      "sort-name": "Davy Grusin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Grusin",
+      "sort-name": "Grusin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Robert David",
+      "sort-name": "Robert David",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Robert David Grusin",
+      "sort-name": "Grusin, Robert David",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Robert Grusin",
+      "sort-name": "Robert Grusin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],

@@ -11,7 +11,8 @@ serves them from a local server.
 | `caa/<mbid>.json` | the Cover Art Archive's `/release/<mbid>` image list |
 
 The artist-credit casebook (`tests/fixtures/artist_credits/`) names its
-release here by MBID. A search's slug is its query in lower case, each run of
+release here by MBID, in `stores.musicbrainz` and, for the Picard-tagged
+files, `picard_release`. A search's slug is its query in lower case, each run of
 other characters than letters and digits turned into one `-`.
 
 ## How they were fetched
@@ -23,7 +24,8 @@ as MusicBrainz asks.
 
 Includes for a release:
 `artists labels recordings release-groups media artist-credits artist-rels
-recording-level-rels`.
+recording-level-rels`, and for the casebook's releases (both keys) also
+`aliases release-group-level-rels` (#1133).
 
 These answers were first recorded in both of MusicBrainz's formats, XML and
 JSON, fetched one straight after the other. The casebook's `today`, the search
@@ -44,6 +46,19 @@ Each answer keeps only the fields salmon's parsers read:
 | recording | id, title, first release date, artist credit, remixer relations |
 | artist credit | join phrase, credited name, artist id and name |
 | search result | id, title, artist credit, label info, track count, format |
+
+The casebook's releases keep two more parts, which salmon's parsers don't read.
+The casebook's Picard-tagged files (`[[picard_track]]`) are built from them,
+and they are there for deciding whether aliases are worth a later step (#1131):
+
+| Part | Kept |
+| --- | --- |
+| artist | aliases (name, sort name, type and its id, ended, locale, primary), on the artist's first appearance in the file only: each later appearance leaves them out |
+| release and release group relations | composer, conductor and remixer relations to an artist: type and its id, direction, credited name, attributes, the artist |
+
+An artist's aliases sit on one of its credits only, so look them up by the artist's id across the whole file: read from
+each credit's own artist, the later credits seem to have none. None of the casebook's releases has a composer,
+conductor or remixer relation of its own yet; a recording's composers come from its works, which are not recorded.
 
 To add or refresh a release, fetch it and trim it the same way. If the
 casebook's `today` changes, say why in the commit.

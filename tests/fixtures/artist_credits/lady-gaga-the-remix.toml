@@ -148,6 +148,123 @@ album = ["The Remix"]
 albumartist = ["Lady Gaga"]
 date = ["2010-07-22"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Just Dance (Richard Vission remix)"]
+artist = ["Lady Gaga feat. Colby O’Donis"]
+artists = ["Lady Gaga", "Colby O’Donis"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Poker Face (LLG vs. GLG Radio Mix)"]
+artist = ["Lady Gaga"]
+artists = ["Lady Gaga"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["LoveGame (Chew Fu Ghettohouse Fix)"]
+artist = ["Lady Gaga feat. Marilyn Manson"]
+artists = ["Lady Gaga", "Marilyn Manson"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Eh, Eh (Nothing Else I Can Say) (FrankMusik “Cut Snare Edit” remix)"]
+artist = ["Lady Gaga"]
+artists = ["Lady Gaga"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Paparazzi (Stuart Price remix)"]
+artist = ["Lady Gaga"]
+artists = ["Lady Gaga"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["The Fame (Glam as You remix) (radio edit)"]
+artist = ["Lady Gaga"]
+artists = ["Lady Gaga"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Bad Romance (Starsmith remix)"]
+artist = ["Lady Gaga"]
+artists = ["Lady Gaga"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Telephone (Passion Pit remix)"]
+artist = ["Lady Gaga feat. Beyoncé"]
+artists = ["Lady Gaga", "Beyoncé"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Alejandro (The Sound of Arrows remix)"]
+artist = ["Lady Gaga"]
+artists = ["Lady Gaga"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Dance in the Dark (Monarchy ‘Stylites’ remix)"]
+artist = ["Lady Gaga"]
+artists = ["Lady Gaga"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

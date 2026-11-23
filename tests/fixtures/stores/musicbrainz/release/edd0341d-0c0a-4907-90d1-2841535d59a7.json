@@ -9,7 +9,135 @@
    "joinphrase": " with ",
    "artist": {
     "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
-    "name": "Thelonious Monk"
+    "name": "Thelonious Monk",
+    "aliases": [
+     {
+      "name": "Monk",
+      "sort-name": "Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Monk Thelonious",
+      "sort-name": "Monk Thelonious",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Monk, Thelonious",
+      "sort-name": "Monk, Thelonious",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Monk, Thelonius",
+      "sort-name": "Monk, Thelonius",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "T. Monk",
+      "sort-name": "Monk, T.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Th. Monk",
+      "sort-name": "Th. Monk",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Thelenious Monk",
+      "sort-name": "Thelenious Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Thelonios Monk",
+      "sort-name": "Thelonios Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Thelonious Sphere Monk",
+      "sort-name": "Monk, Thelonious Sphere",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Thelonius Monk",
+      "sort-name": "Thelonius Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Theolonius Monk",
+      "sort-name": "Theolonius Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Т. Монк",
+      "sort-name": "Т. Монк",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Телониус Монк",
+      "sort-name": "Монк, Телониус",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ru",
+      "primary": true
+     },
+     {
+      "name": "セロニアス・モンク",
+      "sort-name": "セロニアス・モンク",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   },
   {
@@ -17,7 +145,81 @@
    "joinphrase": "",
    "artist": {
     "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
-    "name": "John Coltrane"
+    "name": "John Coltrane",
+    "aliases": [
+     {
+      "name": "Blue Train",
+      "sort-name": "Blue Train",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Coltrane",
+      "sort-name": "Coltrane",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "J. Coltrane",
+      "sort-name": "J. Coltrane",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "J.Coltrane",
+      "sort-name": "J.Coltrane",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "John Coltraine",
+      "sort-name": "John Coltraine",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "John William Coltrane",
+      "sort-name": "Coltrane, John William",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Trane",
+      "sort-name": "Trane",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ジョン・コルトレーン",
+      "sort-name": "ジョン・コルトレーン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],

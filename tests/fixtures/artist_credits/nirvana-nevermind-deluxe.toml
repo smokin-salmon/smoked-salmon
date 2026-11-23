@@ -743,6 +743,713 @@ album = ["Nevermind (Super Deluxe Edition)"]
 albumartist = ["Nirvana"]
 date = ["2011-09-27"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Smells Like Teen Spirit"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["In Bloom (Nevermind version)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Come as You Are"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Breed"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Lithium"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Polly"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Territorial Pissings"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Drain You"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Lounge Act"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Stay Away"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["On a Plain"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Something in the Way"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Endless, Nameless"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Even in His Youth (B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Aneurysm (B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["Curmudgeon (B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["D‐7 (live at the BBC)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "18.flac"
+tracknumber = ["18"]
+discnumber = ["1"]
+title = ["Been a Son (live at Paramount Theatre B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "19.flac"
+tracknumber = ["19"]
+discnumber = ["1"]
+title = ["School (live at Paramount Theatre B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "20.flac"
+tracknumber = ["20"]
+discnumber = ["1"]
+title = ["Drain You (live at Paramount Theatre B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "21.flac"
+tracknumber = ["21"]
+discnumber = ["1"]
+title = ["Sliver (live at Del Mar B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "22.flac"
+tracknumber = ["22"]
+discnumber = ["1"]
+title = ["Polly (live at Del Mar B‐side)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "23.flac"
+tracknumber = ["1"]
+discnumber = ["2"]
+title = ["In Bloom (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "24.flac"
+tracknumber = ["2"]
+discnumber = ["2"]
+title = ["Immodium (Breed) (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "25.flac"
+tracknumber = ["3"]
+discnumber = ["2"]
+title = ["Lithium (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "26.flac"
+tracknumber = ["4"]
+discnumber = ["2"]
+title = ["Polly (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "27.flac"
+tracknumber = ["5"]
+discnumber = ["2"]
+title = ["Pay to Play (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "28.flac"
+tracknumber = ["6"]
+discnumber = ["2"]
+title = ["Here She Comes Now (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "29.flac"
+tracknumber = ["7"]
+discnumber = ["2"]
+title = ["Dive (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "30.flac"
+tracknumber = ["8"]
+discnumber = ["2"]
+title = ["Sappy (Smart Sessions)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "31.flac"
+tracknumber = ["9"]
+discnumber = ["2"]
+title = ["Smells Like Teen Spirit (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "32.flac"
+tracknumber = ["10"]
+discnumber = ["2"]
+title = ["Verse Chorus Verse (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "33.flac"
+tracknumber = ["11"]
+discnumber = ["2"]
+title = ["Territorial Pissings (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "34.flac"
+tracknumber = ["12"]
+discnumber = ["2"]
+title = ["Lounge Act (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "35.flac"
+tracknumber = ["13"]
+discnumber = ["2"]
+title = ["Come as You Are (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "36.flac"
+tracknumber = ["14"]
+discnumber = ["2"]
+title = ["Old Age (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "37.flac"
+tracknumber = ["15"]
+discnumber = ["2"]
+title = ["Something in the Way (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "38.flac"
+tracknumber = ["16"]
+discnumber = ["2"]
+title = ["On a Plain (Boombox Rehearsals)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "39.flac"
+tracknumber = ["17"]
+discnumber = ["2"]
+title = ["Drain You (live at the BBC)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "40.flac"
+tracknumber = ["18"]
+discnumber = ["2"]
+title = ["Something in the Way (live at the BBC)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "41.flac"
+tracknumber = ["1"]
+discnumber = ["3"]
+title = ["Smells Like Teen Spirit (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "42.flac"
+tracknumber = ["2"]
+discnumber = ["3"]
+title = ["In Bloom (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "43.flac"
+tracknumber = ["3"]
+discnumber = ["3"]
+title = ["Come as You Are (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "44.flac"
+tracknumber = ["4"]
+discnumber = ["3"]
+title = ["Breed (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "45.flac"
+tracknumber = ["5"]
+discnumber = ["3"]
+title = ["Lithium (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "46.flac"
+tracknumber = ["6"]
+discnumber = ["3"]
+title = ["Territorial Pissings (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "47.flac"
+tracknumber = ["7"]
+discnumber = ["3"]
+title = ["Drain You (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "48.flac"
+tracknumber = ["8"]
+discnumber = ["3"]
+title = ["Lounge Act (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "49.flac"
+tracknumber = ["9"]
+discnumber = ["3"]
+title = ["Stay Away (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "50.flac"
+tracknumber = ["10"]
+discnumber = ["3"]
+title = ["On a Plain (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "51.flac"
+tracknumber = ["11"]
+discnumber = ["3"]
+title = ["Something in the Way (Devonshire mix)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "52.flac"
+tracknumber = ["1"]
+discnumber = ["4"]
+title = ["Jesus Doesn’t Want Me for a Sunbeam (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "53.flac"
+tracknumber = ["2"]
+discnumber = ["4"]
+title = ["Aneurysm (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "54.flac"
+tracknumber = ["3"]
+discnumber = ["4"]
+title = ["Drain You (live at the Paramount/1991)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "55.flac"
+tracknumber = ["4"]
+discnumber = ["4"]
+title = ["School (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "56.flac"
+tracknumber = ["5"]
+discnumber = ["4"]
+title = ["Floyd the Barber (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "57.flac"
+tracknumber = ["6"]
+discnumber = ["4"]
+title = ["Smells Like Teen Spirit (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "58.flac"
+tracknumber = ["7"]
+discnumber = ["4"]
+title = ["About a Girl (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "59.flac"
+tracknumber = ["8"]
+discnumber = ["4"]
+title = ["Polly (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "60.flac"
+tracknumber = ["9"]
+discnumber = ["4"]
+title = ["Breed (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "61.flac"
+tracknumber = ["10"]
+discnumber = ["4"]
+title = ["Sliver (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "62.flac"
+tracknumber = ["11"]
+discnumber = ["4"]
+title = ["Love Buzz (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "63.flac"
+tracknumber = ["12"]
+discnumber = ["4"]
+title = ["Lithium (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "64.flac"
+tracknumber = ["13"]
+discnumber = ["4"]
+title = ["Been a Son (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "65.flac"
+tracknumber = ["14"]
+discnumber = ["4"]
+title = ["Negative Creep (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "66.flac"
+tracknumber = ["15"]
+discnumber = ["4"]
+title = ["On a Plain (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "67.flac"
+tracknumber = ["16"]
+discnumber = ["4"]
+title = ["Blew (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "68.flac"
+tracknumber = ["17"]
+discnumber = ["4"]
+title = ["Rape Me (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "69.flac"
+tracknumber = ["18"]
+discnumber = ["4"]
+title = ["Territorial Pissings (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
+[[picard_track]]
+file = "70.flac"
+tracknumber = ["19"]
+discnumber = ["4"]
+title = ["Endless, Nameless (live at the Paramount)"]
+artist = ["Nirvana"]
+artists = ["Nirvana"]
+album = ["Nevermind (super deluxe)"]
+albumartist = ["Nirvana"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

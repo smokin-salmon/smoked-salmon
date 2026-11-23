@@ -140,6 +140,112 @@ album = ["Perfecth"]
 albumartist = ["Queens Of The Stone Age"]
 date = ["2026-10-30"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["It’s Only Love"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Insignificant Other"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Where the Goth Girls At?"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Mono"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["From the Cliff"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Sunday"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Easy Street"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Phantom Limb"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Run Away From the Mob"]
+artist = ["Queens of the Stone Age"]
+artists = ["Queens of the Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens of the Stone Age"]
+date = ["2026-10-30"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

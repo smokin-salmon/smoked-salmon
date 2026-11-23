@@ -1,0 +1,976 @@
+{
+ "id": "c4b9f80d-d9cd-4a49-a1eb-9ec842d295a3",
+ "title": "Vienna",
+ "date": "2006",
+ "barcode": "828767161525",
+ "artist-credit": [
+  {
+   "name": "Chicago Symphony Orchestra",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+    "name": "Chicago Symphony Orchestra",
+    "aliases": [
+     {
+      "name": "CSO",
+      "sort-name": "CSO",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Orchestre symphonique de chicago",
+      "sort-name": "Orchestre symphonique de chicago",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "The Sinfonia Orchestra of Chicago",
+      "sort-name": "The Sinfonia Orchestra of Chicago",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "シカゴ交響楽団",
+      "sort-name": "シカゴ交響楽団",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     }
+    ]
+   }
+  },
+  {
+   "name": "Fritz Reiner",
+   "joinphrase": "",
+   "artist": {
+    "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+    "name": "Fritz Reiner",
+    "aliases": [
+     {
+      "name": "Frederick Martin Reiner",
+      "sort-name": "Reiner, Frederick Martin",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Fritz Reiner",
+      "sort-name": "Reiner, Fritz",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
+   }
+  }
+ ],
+ "release-group": {
+  "id": "073e98db-2159-4cdf-9a51-b6159f9ea7bd",
+  "title": "Vienna",
+  "first-release-date": "1995",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Johann Strauss, Jr.",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+     "name": "Johann Strauss",
+     "aliases": [
+      {
+       "name": "J.Štrauss",
+       "sort-name": "Štrauss, J.",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "lv",
+       "primary": false
+      },
+      {
+       "name": "J.シュトラウス II",
+       "sort-name": "J.シュトラウス II",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      },
+      {
+       "name": "J.シュトラウスII",
+       "sort-name": "J.シュトラウスII",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      },
+      {
+       "name": "Joh",
+       "sort-name": "Joh",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Johan",
+       "sort-name": "Johan",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Johann Baptist Strauss II",
+       "sort-name": "Strauss, Johann Baptist II",
+       "type": "Legal name",
+       "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Johann Sebastian Strauss",
+       "sort-name": "Strauss, Johann Sebastian",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (II)",
+       "sort-name": "Strauss, Johann, (II)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (Sohn)",
+       "sort-name": "Strauss, Johann, (Sohn)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (Son)",
+       "sort-name": "Strauss, Johann, (Son)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss (fils)",
+       "sort-name": "Strauss, Johann, (fils)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "fr",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss II",
+       "sort-name": "Strauss, Johann, II",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": true
+      },
+      {
+       "name": "Johann Strauss the Younger",
+       "sort-name": "Strauss, Johann, Younger, the",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauss, Jr.",
+       "sort-name": "Strauss, Johann, Jr.",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauß",
+       "sort-name": "Strauß, Johann",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": false
+      },
+      {
+       "name": "Johann Strauß Jr.",
+       "sort-name": "Strauß, Johann, Jr.",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": false
+      },
+      {
+       "name": "Johans Štrauss",
+       "sort-name": "Štrauss, Johans",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "lv",
+       "primary": true
+      },
+      {
+       "name": "Staruss",
+       "sort-name": "Staruss",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Straus",
+       "sort-name": "Straus",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Strauss",
+       "sort-name": "Strauss",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Straussii",
+       "sort-name": "Straussii",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Иоганн Штраус (сын)",
+       "sort-name": "Штраус, Иоганн, (сын)",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ru",
+       "primary": true
+      },
+      {
+       "name": "ヨハン・シュトラウス",
+       "sort-name": "ヨハン・シュトラウス",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      },
+      {
+       "name": "ヨハン・シュトラウス2世",
+       "sort-name": "ヨハン・シュトラウス2世",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": true
+      },
+      {
+       "name": "스트라우스",
+       "sort-name": "스트라우스",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ko",
+       "primary": false
+      }
+     ]
+    }
+   },
+   {
+    "name": "Carl Maria von Weber",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "c2d17829-1424-435b-9386-c77d3a920abe",
+     "name": "Carl Maria von Weber",
+     "aliases": [
+      {
+       "name": "C.M.von Weber",
+       "sort-name": "C.M.von Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Carl Maria von Weber",
+       "sort-name": "Weber, Carl Maria von",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": false
+      },
+      {
+       "name": "Carl Weber",
+       "sort-name": "Carl Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "K. M. Vēbers",
+       "sort-name": "Vēbers, K. M.",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "lv",
+       "primary": false
+      },
+      {
+       "name": "Karl Maria von Weber",
+       "sort-name": "Karl Maria von Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Karl Weber",
+       "sort-name": "Karl Weber",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Weber",
+       "sort-name": "Weber",
+       "type": "Search hint",
+       "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "К. М. Вебер",
+       "sort-name": "Вебер, К. М.",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "ru",
+       "primary": false
+      },
+      {
+       "name": "ウェーバー",
+       "sort-name": "ウェーバー",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "カール・マリア・フォン・ウェーバー",
+       "sort-name": "カール・マリア・フォン・ウェーバー",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ja",
+       "primary": false
+      }
+     ]
+    }
+   },
+   {
+    "name": "Richard Strauss",
+    "joinphrase": " / ",
+    "artist": {
+     "id": "4cb43d82-824e-4034-b03d-1a98f36f6e16",
+     "name": "Richard Strauss",
+     "aliases": [
+      {
+       "name": "R. Strauss",
+       "sort-name": "R. Strauss",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "R.シュトラウス",
+       "sort-name": "R.シュトラウス",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Richard Georg Strauss",
+       "sort-name": "Richard Georg Strauss",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Richard Straus",
+       "sort-name": "Richard Straus",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": null,
+       "primary": null
+      },
+      {
+       "name": "Richard Strauss",
+       "sort-name": "Strauss, Richard",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "de",
+       "primary": true
+      },
+      {
+       "name": "Richard Strauss",
+       "sort-name": "Strauss, Richard",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "en",
+       "primary": true
+      },
+      {
+       "name": "リヒャルト・シュトラウス",
+       "sort-name": "リヒャルト・シュトラウス",
+       "type": null,
+       "type-id": null,
+       "ended": false,
+       "locale": "ja",
+       "primary": true
+      },
+      {
+       "name": "리하르트 슈트라우스",
+       "sort-name": "슈트라우스, 리하르트",
+       "type": "Artist name",
+       "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+       "ended": false,
+       "locale": "ko",
+       "primary": true
+      }
+     ]
+    }
+   },
+   {
+    "name": "Fritz Reiner",
+    "joinphrase": " / ",
+    "artist": {
+     "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+     "name": "Fritz Reiner"
+    }
+   },
+   {
+    "name": "Chicago Symphony Orchestra",
+    "joinphrase": "",
+    "artist": {
+     "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+     "name": "Chicago Symphony Orchestra"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2006"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "82876 71615 2",
+   "label": {
+    "name": "RCA Red Seal"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Hybrid SACD",
+   "tracks": [
+    {
+     "id": "6e9437c8-4e7e-49ff-8eee-944ee5df3e6e",
+     "position": 1,
+     "number": "1",
+     "title": "Morning Papers, op. 279",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ea478ad2-2ff3-488c-8ed0-34a47f1117aa",
+      "title": "Morning Papers, op. 279",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5fa73193-cd05-4e9e-94bf-820d51c60cdf",
+     "position": 2,
+     "number": "2",
+     "title": "Emperor Waltz, op. 437",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "eb624863-ae13-4216-8b85-8d8955162d23",
+      "title": "Emperor Waltz, op. 437",
+      "first-release-date": "1996",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0d5a90a0-4cc7-4c21-9693-ae1adcaa7145",
+     "position": 3,
+     "number": "3",
+     "title": "On the Beautiful Blue Danube, op. 314",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "03d877b3-c476-469f-8436-2bba7e2b2fde",
+      "title": "On the Beautiful Blue Danube, op. 314",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a886943e-dca4-4a58-bf3a-a51f1c886513",
+     "position": 4,
+     "number": "4",
+     "title": "Invitation to the Dance, op. 65",
+     "artist-credit": [
+      {
+       "name": "Carl Maria von Weber",
+       "joinphrase": "",
+       "artist": {
+        "id": "c2d17829-1424-435b-9386-c77d3a920abe",
+        "name": "Carl Maria von Weber"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4098adde-8b95-492a-a71b-367bd1f26240",
+      "title": "Invitation to the Dance, op. 65",
+      "first-release-date": "2006-02-07",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "56fc71ce-5e7d-4c3c-853a-b7c29c89ae54",
+     "position": 5,
+     "number": "5",
+     "title": "Village Swallows, op. 164",
+     "artist-credit": [
+      {
+       "name": "Josef Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "9942ef92-91a2-46f7-aff4-32389df33c9e",
+        "name": "Josef Strauss",
+        "aliases": [
+         {
+          "name": "Josef Strauß",
+          "sort-name": "Josef Strauß",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Joseph Strauss",
+          "sort-name": "Joseph Strauss",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Strauss, Josef",
+          "sort-name": "Strauss, Josef",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "ヨーゼフ・シュトラウス",
+          "sort-name": "ヨーゼフ・シュトラウス",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         }
+        ]
+       }
+      }
+     ],
+     "recording": {
+      "id": "c788dd28-3778-4ff8-bac5-c53c5c504304",
+      "title": "Village Swallows, op. 164",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "6f495423-e6fe-4775-ae19-d1651cf51e74",
+     "position": 6,
+     "number": "6",
+     "title": "Der Rosenkavalier: Waltzes",
+     "artist-credit": [
+      {
+       "name": "Richard Strauss",
+       "joinphrase": "",
+       "artist": {
+        "id": "4cb43d82-824e-4034-b03d-1a98f36f6e16",
+        "name": "Richard Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d784a392-8091-4677-b2e5-21c8d254c2dd",
+      "title": "Der Rosenkavalier: Waltzes",
+      "first-release-date": "1997",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9f691798-bc68-4ab2-81d6-349da05d444d",
+     "position": 7,
+     "number": "7",
+     "title": "Vienna Blood, op. 354",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c8f2d618-7ddc-4c45-90ef-99d0c313aa9c",
+      "title": "Vienna Blood, op. 354",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "472ef5c6-ea80-4819-ab34-25bd52dd34ed",
+     "position": 8,
+     "number": "8",
+     "title": "Roses from the South, op. 388",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d4297738-095d-4805-af1c-46231bdd634b",
+      "title": "Roses from the South, op. 388",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e3935fd7-8e21-445e-af06-45d2e13df57b",
+     "position": 9,
+     "number": "9",
+     "title": "Treasure Waltz, op. 418",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "54269a7b-2d9c-43cf-a89a-58c368eed335",
+      "title": "Treasure Waltz, op. 418",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "aaec29c0-90fc-4643-bf2b-f417500bfdde",
+     "position": 10,
+     "number": "10",
+     "title": "Thunder and Lightning, op. 324",
+     "artist-credit": [
+      {
+       "name": "Johann Strauss, Jr.",
+       "joinphrase": "",
+       "artist": {
+        "id": "8255db36-4902-4cf6-8612-0f2b4288bc9a",
+        "name": "Johann Strauss"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b3ccf094-5441-4942-8d38-2cbcd796488d",
+      "title": "Thunder and Lightning, op. 324",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Chicago Symphony Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "509c772e-1164-4457-8d09-0553cfa77d64",
+         "name": "Chicago Symphony Orchestra"
+        }
+       },
+       {
+        "name": "Fritz Reiner",
+        "joinphrase": "",
+        "artist": {
+         "id": "6a720f84-d307-4aa4-a75f-7d85bef56ede",
+         "name": "Fritz Reiner"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

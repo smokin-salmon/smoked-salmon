@@ -185,6 +185,167 @@ album = ["The Graduate"]
 albumartist = ["Simon & Garfunkel"]
 date = ["1968-01-21"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["The Sound of Silence (electric version)"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["The Singleman Party Foxtrot"]
+artist = ["Dave Grusin"]
+artists = ["Dave Grusin"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Mrs. Robinson (version 1)"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Sunporch Cha‐Cha‐Cha"]
+artist = ["Dave Grusin"]
+artists = ["Dave Grusin"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Scarborough Fair / Canticle (interlude)"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["On the Strip"]
+artist = ["Dave Grusin"]
+artists = ["Dave Grusin"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["April Come She Will"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["The Folks"]
+artist = ["Dave Grusin"]
+artists = ["Dave Grusin"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Scarborough Fair / Canticle (extended version)"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["A Great Effect"]
+artist = ["Dave Grusin"]
+artists = ["Dave Grusin"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["The Big Bright Green Pleasure Machine (alternate version)"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Whew"]
+artist = ["Dave Grusin"]
+artists = ["Dave Grusin"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Mrs. Robinson (version 2)"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["The Sound of Silence (reprise)"]
+artist = ["Simon & Garfunkel"]
+artists = ["Simon & Garfunkel"]
+album = ["The Graduate: The Original Sound Track Recording"]
+albumartist = ["Paul Simon; Simon & Garfunkel; Dave Grusin"]
+date = ["2019-05-24"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
