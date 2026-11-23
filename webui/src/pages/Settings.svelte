@@ -2,6 +2,7 @@
   import { ApiError, apiGet, apiPost } from '../lib/api'
   import { checksOf, problems } from '../lib/connectionCheck'
   import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
+  import { sentInClear } from '../lib/transport'
 
   interface Shown {
     set: boolean
@@ -29,6 +30,9 @@
   let saveErrors = $state<Record<string, string>>({})
   // The connection check each save started, per tracker.
   let checkIds = $state<Record<string, string>>({})
+  // Over plain http to another machine, a save sends the cookie unencrypted: it takes a second, explicit click.
+  const inClear = sentInClear()
+  let confirming = $state<Record<string, boolean>>({})
 
   $effect(() => {
     apiGet<Answer>('/settings/trackers')
@@ -58,6 +62,11 @@
   }
 
   function saveTyped(code: string) {
+    if (inClear && !confirming[code]) {
+      confirming[code] = true
+      return
+    }
+    confirming[code] = false
     const body: { session?: string; api_key?: string } = {}
     if (sessions[code]?.trim()) body.session = sessions[code].trim()
     if (keys[code]?.trim()) body.api_key = keys[code].trim()
@@ -97,6 +106,16 @@
 {:else if !answer}
   <p class="muted">Loading…</p>
 {:else}
+  {#if inClear}
+    <div class="card">
+      <p class="small warning">
+        This page is not on HTTPS: a cookie or key you save here crosses the network unencrypted, readable by anyone
+        on the way. Open salmon web through a reverse proxy that does TLS, or through an SSH tunnel to localhost, or
+        edit the config file by hand. On a VPN that encrypts (WireGuard, Tailscale), saving here is safe.
+      </p>
+    </div>
+  {/if}
+
   <div class="card">
     <p class="small">Config file: <span class="mono">{answer.path}</span></p>
     {#if !answer.writable}
@@ -146,8 +165,11 @@
           onclick={() => saveTyped(tracker.code)}
           disabled={!answer.writable || saving[tracker.code] || !(sessions[tracker.code]?.trim() || keys[tracker.code]?.trim())}
         >
-          {saving[tracker.code] ? 'Saving…' : 'Save and check'}
+          {saving[tracker.code] ? 'Saving…' : confirming[tracker.code] ? 'Save over HTTP anyway' : 'Save and check'}
         </button>
+        {#if confirming[tracker.code]}
+          <button class="btn secondary small" onclick={() => (confirming[tracker.code] = false)}>Cancel</button>
+        {/if}
         {#if tracker.api_key?.set}
           <button
             class="btn secondary small"
@@ -158,6 +180,12 @@
           </button>
         {/if}
       </div>
+      {#if confirming[tracker.code]}
+        <p class="small warning">
+          This sends the {sessions[tracker.code]?.trim() ? 'session cookie' : 'API key'} over plain HTTP, unencrypted.
+          Save anyway only if the network between you and salmon is one you trust.
+        </p>
+      {/if}
       {#if saveErrors[tracker.code]}<p class="err-text small">{saveErrors[tracker.code]}</p>{/if}
       {#if job}
         {#if !FINISHED.includes(job.status)}

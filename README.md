@@ -422,7 +422,8 @@ The pages:
 * **Tools** – the description generator (`salmon descgen`) and image uploads (`salmon images up`).
 * **Settings** – each tracker's session cookie and API key: paste a new one, and salmon saves it in your config
   file, keeping its comments, then runs the connection check. Jobs started after a save use it, with no restart. The
-  page shows whether each is set, never the value. Any other change to the config still needs a restart.
+  page shows whether each is set, never the value. Opened over plain HTTP from another machine, it warns that a
+  save sends the cookie unencrypted and asks again before saving. Any other change to the config still needs a restart.
 * **Cross-upload** – `salmon cross-upload`, from torrent IDs or URLs.
 * **Jobs** – every job with its live log, the questions it waits on, and a cancel button.
 

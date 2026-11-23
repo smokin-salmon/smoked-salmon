@@ -71,6 +71,10 @@ rewrites the user's config file").
   anything could repeat it.
 - A request a tracker sends to its login page says, under salmon web, that a new cookie can be pasted on the
   Settings page.
+- salmon web serves plain HTTP (0004 section 3). When the page is open over plain HTTP from another machine (not
+  HTTPS, not loopback such as an SSH tunnel), it says a save would send the cookie or key unencrypted, and a save
+  takes a second, explicit click. Only the browser can tell, before anything is sent. It is not refused: a VPN that
+  encrypts (WireGuard, Tailscale) carries plain HTTP safely.
 - After a save, the page runs the connection check for that tracker as a job: at most two requests, and only because
   the user saved. Nothing is checked on page load.
 
