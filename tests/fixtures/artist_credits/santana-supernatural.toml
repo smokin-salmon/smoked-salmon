@@ -1,7 +1,7 @@
 album = "Santana, Supernatural"
 why = "A band album full of one-track featured singers: Deezer and MusicBrainz agree track by track; Discogs adds band members as guests and a 'No Artist' main."
 edition = "Columbia/Legacy remaster, 14 tracks (Deezer 7040992 = MusicBrainz b43f421d by barcode); Discogs 807636 is master 77696's main release (1999 Arista CD); the Legacy Edition (Deezer 8248624, 24 tracks) left out"
-known_wrong = ["merge: on 6 Lauryn Hill and Cee-Lo main, as the files' plain ARTIST has them, beside the guests 'Ms. Lauryn Hill' and 'CeeLo Green': the files win over Qobuz's guests on the same names, and the other spellings are not read as one"]
+known_wrong = ["merge: on 6 Lauryn Hill and Cee-Lo main, as the files' plain ARTIST has them, beside the guests 'Ms. Lauryn Hill' and 'CeeLo Green': the files win over the stores' guests on the same names, and the other spellings are not read as one"]
 files_from = "deezer"
 
 [sources]

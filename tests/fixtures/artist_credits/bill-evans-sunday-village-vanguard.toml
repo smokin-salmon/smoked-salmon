@@ -1,7 +1,7 @@
 album = "Bill Evans Trio, Sunday at the Village Vanguard"
 why = "A trio under the leader's name with a famous member: MusicBrainz and Discogs make Scott LaFaro a guest (one track / every track), Deezer doesn't."
 edition = "Original Jazz Classics CD, 10 tracks (Deezer 125746 = MusicBrainz 150e61a6 by barcode); Discogs 1220622 'The Bill Evans Trio Featuring Scott LaFaro' is the release MusicBrainz links"
-known_wrong = ["merge: Bill Evans main beside the Bill Evans Trio on 7-10: the files' plain ARTIST, read as stated, names him alone there, and the stores' guess of the Trio removes no stated credit (#1112)"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]
@@ -32,9 +32,9 @@ release = ["Bill Evans Trio (main)"]
 tracks = 6
 
 [today.merge]
-release = ["Bill Evans Trio (main)", "Scott LaFaro (guest)", "Bill Evans (main)"]
+release = ["Bill Evans Trio (main)", "Scott LaFaro (guest)"]
 tracks = 10
-credits = ["1.1: Bill Evans Trio (main), Scott LaFaro (guest)", "1.2: Bill Evans Trio (main), Scott LaFaro (guest)", "1.3: Bill Evans Trio (main), Scott LaFaro (guest)", "1.4: Bill Evans Trio (main), Scott LaFaro (guest)", "1.5: Bill Evans Trio (main), Scott LaFaro (guest)", "1.6: Bill Evans Trio (main), Scott LaFaro (guest)", "1.7: Bill Evans (main), Bill Evans Trio (main), Scott LaFaro (guest)", "1.8: Bill Evans (main), Bill Evans Trio (main), Scott LaFaro (guest)", "1.9: Bill Evans (main), Bill Evans Trio (main), Scott LaFaro (guest)", "1.10: Bill Evans (main), Bill Evans Trio (main), Scott LaFaro (guest)"]
+credits = ["1.1: Bill Evans Trio (main), Scott LaFaro (guest)", "1.2: Bill Evans Trio (main), Scott LaFaro (guest)", "1.3: Bill Evans Trio (main), Scott LaFaro (guest)", "1.4: Bill Evans Trio (main), Scott LaFaro (guest)", "1.5: Bill Evans Trio (main), Scott LaFaro (guest)", "1.6: Bill Evans Trio (main), Scott LaFaro (guest)", "1.7: Bill Evans Trio (main), Scott LaFaro (guest)", "1.8: Bill Evans Trio (main), Scott LaFaro (guest)", "1.9: Bill Evans Trio (main), Scott LaFaro (guest)", "1.10: Bill Evans Trio (main), Scott LaFaro (guest)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

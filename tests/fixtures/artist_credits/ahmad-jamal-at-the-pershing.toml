@@ -1,7 +1,7 @@
 album = "Ahmad Jamal, At the Pershing: But Not for Me"
 why = "A leader whose trio plays throughout: the leader's own group as a credit, or not."
 edition = "Qobuz rx2gtsiik9hjb has the same UPC and the same 8 tracks. Discogs 15510594 is master 59857's main release (1958 LP)."
-known_wrong = ["merge: Ahmad Jamal and the Ahmad Jamal Trio both main on every track: the files and Qobuz state Ahmad Jamal, the other stores guess the Trio, and a guess removes no stated credit (#1112)"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]
@@ -33,9 +33,9 @@ release = ["Ahmad Jamal (main)", "Ahmad Jamal Trio (guest)"]
 tracks = 8
 
 [today.merge]
-release = ["Ahmad Jamal (main)", "Ahmad Jamal Trio (main)"]
+release = ["Ahmad Jamal Trio (main)"]
 tracks = 8
-credits = ["1.1: Ahmad Jamal (main), Ahmad Jamal Trio (main)", "1.2: Ahmad Jamal (main), Ahmad Jamal Trio (main)", "1.3: Ahmad Jamal (main), Ahmad Jamal Trio (main)", "1.4: Ahmad Jamal (main), Ahmad Jamal Trio (main)", "1.5: Ahmad Jamal (main), Ahmad Jamal Trio (main)", "1.6: Ahmad Jamal (main), Ahmad Jamal Trio (main)", "1.7: Ahmad Jamal (main), Ahmad Jamal Trio (main)", "1.8: Ahmad Jamal (main), Ahmad Jamal Trio (main)"]
+credits = ["1.1: Ahmad Jamal Trio (main)", "1.2: Ahmad Jamal Trio (main)", "1.3: Ahmad Jamal Trio (main)", "1.4: Ahmad Jamal Trio (main)", "1.5: Ahmad Jamal Trio (main)", "1.6: Ahmad Jamal Trio (main)", "1.7: Ahmad Jamal Trio (main)", "1.8: Ahmad Jamal Trio (main)"]
 
 
 # The files' tags.

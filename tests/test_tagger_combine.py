@@ -515,32 +515,32 @@ def test_a_joint_name_in_another_role_leaves_the_mains_it_names():
 
 
 def test_a_store_s_guess_leaves_a_stated_credit_it_names():
-    # Lady Gaga's The Remix: Deezer's remixer comes with the remix's name, Qobuz states the remixer alone.
+    # Lady Gaga's The Remix: MusicBrainz's remixer comes with the remix's name, Qobuz states the remixer alone.
     files = credited([("Alice", "main")])
     qobuz = stating(credited([("Alice", "main"), ("Bob", "remixer")]))
-    deezer = credited([("Alice", "main"), ('Bob "Club Edit"', "remixer")])
+    musicbrainz = credited([("Alice", "main"), ('Bob "Club Edit"', "remixer")])
 
-    combined = combine_metadatas(("Qobuz", qobuz), ("Deezer", deezer), base=files)
+    combined = combine_metadatas(("Qobuz", qobuz), ("MusicBrainz", musicbrainz), base=files)
 
     assert ("Bob", "remixer") in combined["tracks"]["1"]["1"]["artists"]
 
 
 def test_a_credit_a_store_states_in_another_spelling_is_no_guess():
     # The track keeps the base's "Beyonce"; Qobuz states her as "Beyoncé", which the merge reads as the same credit.
-    deezer = credited([("Beyonce", "main"), ("Beyonce & Jay-Z", "main")])
+    tidal = credited([("Beyonce", "main"), ("Beyonce & Jay-Z", "main")])
     qobuz = stating(credited([("Beyoncé", "main")]))
 
-    # No files (descgen, salmon web): the first store, Deezer, is the base.
-    combined = combine_metadatas(("Deezer", deezer), ("Qobuz", qobuz), source_url="https://www.deezer.com/album/1")
+    # No files (descgen, salmon web): the first store, Tidal, which states no credits, is the base.
+    combined = combine_metadatas(("Tidal", tidal), ("Qobuz", qobuz))
 
     assert ("Beyonce", "main") in combined["tracks"]["1"]["1"]["artists"]
 
 
 def test_as_before_the_files_credit_removes_a_store_s_guess_it_names():
     files = credited([("Ultra Nate", "main")])
-    deezer = credited([("Nate", "main")])
+    musicbrainz = credited([("Nate", "main")])
 
-    combined = combine_metadatas(("Deezer", deezer), base=files)
+    combined = combine_metadatas(("MusicBrainz", musicbrainz), base=files)
 
     assert combined["tracks"]["1"]["1"]["artists"] == [("Ultra Nate", "main")]
 
