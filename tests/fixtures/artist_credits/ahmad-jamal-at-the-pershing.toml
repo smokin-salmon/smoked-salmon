@@ -33,9 +33,9 @@ release = ["Ahmad Jamal (main)", "Ahmad Jamal Trio (guest)"]
 tracks = 8
 
 [today.merge]
-release = ["Ahmad Jamal Trio (main)", "The Ahmad Jamal Trio (main)"]
+release = ["Ahmad Jamal Trio (main)"]
 tracks = 8
-credits = ["1.1: Ahmad Jamal Trio (main)", "1.2: Ahmad Jamal Trio (main)", "1.3: Ahmad Jamal Trio (main)", "1.4: The Ahmad Jamal Trio (main)", "1.5: Ahmad Jamal Trio (main)", "1.6: Ahmad Jamal Trio (main)", "1.7: Ahmad Jamal Trio (main)", "1.8: Ahmad Jamal Trio (main)"]
+credits = ["1.1: Ahmad Jamal Trio (main)", "1.2: Ahmad Jamal Trio (main)", "1.3: Ahmad Jamal Trio (main)", "1.4: Ahmad Jamal Trio (main)", "1.5: Ahmad Jamal Trio (main)", "1.6: Ahmad Jamal Trio (main)", "1.7: Ahmad Jamal Trio (main)", "1.8: Ahmad Jamal Trio (main)"]
 
 
 # The files' tags.
@@ -122,6 +122,93 @@ artist = ["Ahmad Jamal"]
 album = ["Ahmad Jamal At The Pershing: But Not For Me"]
 albumartist = ["Ahmad Jamal"]
 date = ["1988-05-23"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["But Not for Me"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Surrey With the Fringe on the Top"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Moonlight in Vermont"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Music, Music, Music"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["No Greater Love"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Poinciana"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Woody’n You"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["What’s New"]
+artist = ["The Ahmad Jamal Trio"]
+artists = ["The Ahmad Jamal Trio"]
+album = ["Ahmad Jamal at the Pershing: But Not for Me"]
+albumartist = ["The Ahmad Jamal Trio"]
 
 # What each store sent, trimmed as [sources] says.
 [stores]

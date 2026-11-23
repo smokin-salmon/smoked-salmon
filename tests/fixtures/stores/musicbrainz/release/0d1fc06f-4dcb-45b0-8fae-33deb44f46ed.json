@@ -9,7 +9,135 @@
    "joinphrase": "",
    "artist": {
     "id": "678d88b2-87b0-403b-b63d-5da7465aecc3",
-    "name": "Led Zeppelin"
+    "name": "Led Zeppelin",
+    "aliases": [
+     {
+      "name": "Bootleg Zeppelin",
+      "sort-name": "Bootleg Zeppelin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "LZ",
+      "sort-name": "LZ",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Led Zep",
+      "sort-name": "Led Zep",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Led Zepellin",
+      "sort-name": "Led Zepellin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Led Zeppelin",
+      "sort-name": "Led Zeppelin",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Led Zepplelin",
+      "sort-name": "Led Zepplelin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Led Zepplin",
+      "sort-name": "Led Zepplin",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ledzep",
+      "sort-name": "ledzep",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ゼップ",
+      "sort-name": "ゼップ",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "レッド ツェッペリン",
+      "sort-name": "レッド ツェッペリン",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "レッドゼップ",
+      "sort-name": "レッドゼップ",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "レッドツェッペリン",
+      "sort-name": "レッドツェッペリン",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "レッド・ゼップ",
+      "sort-name": "レッド・ゼップ",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "レッド・ツェッペリン",
+      "sort-name": "レッド・ツェッペリン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],

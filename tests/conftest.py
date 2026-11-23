@@ -170,6 +170,14 @@ def _spectral_image_check(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_musicbrainz_rate_limit(monkeypatch: pytest.MonkeyPatch):
+    """No test waits a second on another's MusicBrainz request. The limiter's own tests build limiters of their own."""
+    from salmon.sources import musicbrainz
+
+    monkeypatch.setattr(musicbrainz, "limiter", musicbrainz.RateLimiter(0))
+
+
+@pytest.fixture(autouse=True)
 def _network_guard(request: pytest.FixtureRequest):
     global _network_allowed
     _network_allowed = request.node.get_closest_marker("network") is not None

@@ -9,7 +9,27 @@
    "joinphrase": "",
    "artist": {
     "id": "9e7ca87b-4e3d-4d14-90f1-a74acb645fe2",
-    "name": "The Ahmad Jamal Trio"
+    "name": "The Ahmad Jamal Trio",
+    "aliases": [
+     {
+      "name": "Ahmad Jamal Trio",
+      "sort-name": "Jamal, Ahmad, Trio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ahmed Jamal Trio",
+      "sort-name": "Ahmed Jamal Trio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],
@@ -78,7 +98,63 @@
         "joinphrase": "",
         "artist": {
          "id": "cf816800-4e0e-4d80-9cca-50a725e93787",
-         "name": "Ahmad Jamal"
+         "name": "Ahmad Jamal",
+         "aliases": [
+          {
+           "name": "Ahmad Jahmal",
+           "sort-name": "Ahmad Jahmal",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Ahmad Jamal With Voices",
+           "sort-name": "Ahmad Jamal With Voices",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Ahmed Jamal",
+           "sort-name": "Ahmed Jamal",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Frederick Russell Jones",
+           "sort-name": "Jones, Frederick Russell",
+           "type": "Legal name",
+           "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+           "ended": true,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Fritz Jones",
+           "sort-name": "Jones, Fritz",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": true,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "アーマッド・ジャマル",
+           "sort-name": "アーマッド・ジャマル",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "ja",
+           "primary": true
+          }
+         ]
         }
        }
       ]

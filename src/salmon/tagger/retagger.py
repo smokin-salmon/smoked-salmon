@@ -34,10 +34,12 @@ from salmon.constants import (
     ARROWS,
 )
 from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
+from salmon.tagger.combine import written_files_title
 from salmon.tagger.mutation import abort_partial
-from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
+from salmon.tagger.pairing import BY_ISRC_OR_TITLE, norm_title, pair_by_content
 from salmon.tagger.playlists import rewrite_playlists
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
+from salmon.tagger.sources.base import featuring_clause
 from salmon.tagger.tagfile import TagFile
 
 
@@ -407,11 +409,36 @@ def _tagset_identity(tagset):
 
     mut = getattr(tagset, "mut", None)
     info = getattr(mut, "info", None)
+    title = tag("title")
+    # The merge writes a files title without a featuring clause it credits ("Song (feat. B)" is "Song"): the file's
+    # tag is matched to that too, in pairing's second title pass.
+    clause = featuring_clause(title) if isinstance(title, str) else None
     return {
-        "title": tag("title"),
+        "title": title,
+        "written_titles": (clause[0],) if clause else (),
         "isrc": tag("isrc"),
         "duration": int(info.length) if info and getattr(info, "length", None) else None,
     }
+
+
+def _known_by_files_titles(tracks, locals_):
+    """Each track with the files' titles the merge writes as its title for it (`written_files_title`) as titles it is
+    known by, for the first title pass: "Song (feat. Bob)" is the "Song" crediting Bob, and not the "Song" crediting
+    Alice, where the two files are otherwise alike. Not a title a track has as its own: that file is that track's."""
+    own = {norm_title(track.get("title")) for track in tracks}
+    titles = dict.fromkeys(local["title"] for local in locals_ if isinstance(local["title"], str))
+    return [
+        {
+            **track,
+            "titles": tuple(
+                title
+                for title in titles
+                if norm_title(title) not in own
+                and norm_title(written_files_title(title, track)) == norm_title(track.get("title"))
+            ),
+        }
+        for track in tracks
+    ]
 
 
 def order_tracks_for_files(items, tracks, *, numbered=False, show=True):
@@ -421,9 +448,10 @@ def order_tracks_for_files(items, tracks, *, numbered=False, show=True):
     zipped with ``tracks``. ``combine_tracks`` already paired the tracks by content, but it
     works on track dicts that carry no filename, so the association is lost by the time tags
     are written. Redo the match here against the files themselves: a track that
-    ``combine_tracks`` paired by ISRC or title now carries that ISRC or the scraped title, and
-    the duration of the local file it was built from (``create_track_list``), which breaks
-    ties between titles that fit two tracks the same way the first match did.
+    ``combine_tracks`` paired by ISRC or title now carries that ISRC or the title the merge
+    wrote (the file's own, perhaps without a featuring clause it credits), and the duration of
+    the local file it was built from (``create_track_list``), which breaks ties between titles
+    that fit two tracks the same way the first match did.
 
     With ``numbered``, the files are in the order of their own track numbers, and only an ISRC
     or an exact title moves one (see ``pair_by_content``). With ``show``, the matches are printed
@@ -436,7 +464,7 @@ def order_tracks_for_files(items, tracks, *, numbered=False, show=True):
     if len(items) != len(tracks):
         return by_position  # Counts disagree: keep the order as it is, and the caller reports the mismatch.
     locals_ = [_tagset_identity(tagset) for _, tagset in items]
-    pairing, reasons = pair_by_content(locals_, tracks, numbered=numbered)
+    pairing, reasons = pair_by_content(locals_, _known_by_files_titles(tracks, locals_), numbered=numbered)
 
     slots: list[dict | None] = [None] * len(items)
     for mi, li in enumerate(pairing):

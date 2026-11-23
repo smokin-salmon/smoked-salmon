@@ -9,7 +9,45 @@
    "joinphrase": " & ",
    "artist": {
     "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
-    "name": "Stan Getz"
+    "name": "Stan Getz",
+    "aliases": [
+     {
+      "name": "Getz Stan",
+      "sort-name": "Getz Stan",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Satn Getz",
+      "sort-name": "Satn Getz",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Stan Gets",
+      "sort-name": "Stan Gets",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Sten Getz",
+      "sort-name": "Sten Getz",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -17,7 +55,63 @@
    "joinphrase": " feat. ",
    "artist": {
     "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
-    "name": "João Gilberto"
+    "name": "João Gilberto",
+    "aliases": [
+     {
+      "name": "Joao",
+      "sort-name": "Joao",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Joao Gilbert",
+      "sort-name": "Joao Gilbert",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Joao Gilberto",
+      "sort-name": "Joao Gilberto",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "João Gilberto",
+      "sort-name": "João Gilberto",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "pt",
+      "primary": true
+     },
+     {
+      "name": "João Gilberto Prado Pereira de Oliveira",
+      "sort-name": "Oliveira, João Gilberto Prado Pereira de",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ジョアン・ジルベルト",
+      "sort-name": "ジョアン・ジルベルト",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   },
   {
@@ -25,7 +119,117 @@
    "joinphrase": "",
    "artist": {
     "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
-    "name": "Antônio Carlos Jobim"
+    "name": "Antônio Carlos Jobim",
+    "aliases": [
+     {
+      "name": "A. C. Jobim",
+      "sort-name": "A. C. Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "A. Carlos Jobim",
+      "sort-name": "Jobim, A. Carlos",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "A.C. Jochim",
+      "sort-name": "Jochim, A.C.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "AC Jobim",
+      "sort-name": "AC Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonio Carlos Jobim",
+      "sort-name": "Jobim, Antonio Carlos",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antônio Carlos Brasileiro de Almeida Jobim",
+      "sort-name": "Jobim, Antônio Carlos Brasileiro de Almeida",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antônio Jobim",
+      "sort-name": "Jobim, Antônio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "C. Jobin",
+      "sort-name": "Jobin, C.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Jobim",
+      "sort-name": "Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Jobin",
+      "sort-name": "Jobin",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Tom Jobim",
+      "sort-name": "Tom Jobim",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "アントニオ・カルロス・ジョビン",
+      "sort-name": "アントニオ・カルロス・ジョビン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],

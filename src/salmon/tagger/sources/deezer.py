@@ -3,9 +3,9 @@ from collections import defaultdict
 from html import unescape
 
 from salmon.common import RE_FEAT, parse_copyright, re_split
-from salmon.common.strings import guests_from_title
+from salmon.common.strings import guests_from_title, unbracketed
 from salmon.sources import DeezerBase
-from salmon.tagger.sources.base import MetadataMixin, label_names_a_main_artist
+from salmon.tagger.sources.base import MetadataMixin, add_track, label_names_a_main_artist
 
 RECORD_TYPES = {
     "album": "Album",
@@ -15,6 +15,8 @@ RECORD_TYPES = {
 
 
 class Scraper(DeezerBase, MetadataMixin):
+    states_credits = True
+
     def parse_release_title(self, soup):
         return RE_FEAT.sub("", soup["title"])
 
@@ -50,11 +52,14 @@ class Scraper(DeezerBase, MetadataMixin):
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
-            tracks[str(track["DISK_NUMBER"])][str(track["TRACK_NUMBER"])] = self.generate_track(
+            artists, guessed = self.parse_artists(track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"])
+            new_track = self.generate_track(
                 trackno=track["TRACK_NUMBER"],
                 discno=track["DISK_NUMBER"],
-                artists=self.parse_artists(track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"]),
-                title=self.parse_title(track["SNG_TITLE"], track.get("VERSION", None)),
+                artists=artists,
+                credited_remixers=[name for name, role in artists if role == "remixer"],
+                title=track["SNG_TITLE"],
+                version=unbracketed(track.get("VERSION")),
                 isrc=track["ISRC"],
                 explicit=track["EXPLICIT_LYRICS"],
                 stream_id=track["SNG_ID"],
@@ -63,6 +68,8 @@ class Scraper(DeezerBase, MetadataMixin):
                 lossless=True,
                 mp3_320=True,
             )
+            new_track["assumed_artists"] = guessed
+            add_track(tracks, str(track["DISK_NUMBER"]), str(track["TRACK_NUMBER"]), new_track)
         return dict(tracks)
 
     def process_label(self, data):
@@ -73,33 +80,31 @@ class Scraper(DeezerBase, MetadataMixin):
         return data["label"]
 
     def parse_artists(self, artists, default_artists, title):
-        """
-        Iterate over all artists and roles, returning a compliant list of
-        artist tuples.
-        """
-        result = []
-        # Each contributor and album artist is one Deezer artist, so its name stays whole ("Earth, Wind & Fire").
+        """The track's credits as Deezer states them, then those salmon only guessed: the guests read from the title
+        that Deezer doesn't state as featuring, and the track's ARTISTS given as mains when it has no contributors."""
+        # Each contributor and track artist is one Deezer artist, so its name stays whole ("Earth, Wind & Fire").
         if artists:
             mains = [name.strip() for name in artists.get("mainartist", []) + artists.get("main_artist", [])]
             featured = [name.strip() for name in artists.get("featuredartist", []) + artists.get("featuring", [])]
+            remixers = [name.strip() for name in artists.get("remixer", [])]
         else:
-            mains, featured = [artist["ART_NAME"].strip() for artist in default_artists], []
+            mains, featured, remixers = [artist["ART_NAME"].strip() for artist in default_artists], [], []
+        result = []
+        for role, names in (("main", mains), ("guest", featured), ("remixer", remixers)):
+            for name in names:
+                if name and (name, role) not in result:
+                    result.append((name, role))
 
         # The title's featured credit lists several names in one string, so it is split. When it names every part
         # of a name a contributor gives whole ("feat. Earth, Wind & Fire"), those parts are that name, not guests.
-        guests = guests_from_title(title)
+        # The rest come after what Deezer states: the merge keeps a name where it was first claimed.
+        guests = list(dict.fromkeys(guests_from_title(title)))
         covered = set()
         for name in mains + featured:
             parts = [unescape(part) for part in re_split(name)]
             if len(parts) > 1 and all(part in guests for part in parts):
                 covered.update(parts)
-        result += [(guest, "guest") for guest in guests if guest not in covered]
-
-        for a in mains:
-            if a and (a, "main") not in result:
-                result.append((a, "main"))
-        for a in featured:
-            if a and (a, "guest") not in result:
-                result.append((a, "guest"))
-
-        return result
+        guessed = [(guest, "guest") for guest in guests if guest not in covered and guest not in featured]
+        if not artists:
+            guessed = [(name, role) for name, role in result if role == "main"] + guessed
+        return result + [credit for credit in guessed if credit not in result], guessed

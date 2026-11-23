@@ -1,0 +1,1427 @@
+{
+ "id": "bacb03db-9dd7-441f-be1b-e940ddec0623",
+ "title": "Getz/Gilberto",
+ "date": "2014-05-27",
+ "barcode": "602567832690",
+ "artist-credit": [
+  {
+   "name": "Stan Getz",
+   "joinphrase": " / ",
+   "artist": {
+    "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+    "name": "Stan Getz",
+    "aliases": [
+     {
+      "name": "Getz Stan",
+      "sort-name": "Getz Stan",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Satn Getz",
+      "sort-name": "Satn Getz",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Stan Gets",
+      "sort-name": "Stan Gets",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Sten Getz",
+      "sort-name": "Sten Getz",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "João Gilberto",
+   "joinphrase": " featuring ",
+   "artist": {
+    "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+    "name": "João Gilberto",
+    "aliases": [
+     {
+      "name": "Joao",
+      "sort-name": "Joao",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Joao Gilbert",
+      "sort-name": "Joao Gilbert",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Joao Gilberto",
+      "sort-name": "Joao Gilberto",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "João Gilberto",
+      "sort-name": "João Gilberto",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "pt",
+      "primary": true
+     },
+     {
+      "name": "João Gilberto Prado Pereira de Oliveira",
+      "sort-name": "Oliveira, João Gilberto Prado Pereira de",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ジョアン・ジルベルト",
+      "sort-name": "ジョアン・ジルベルト",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "Antônio Carlos Jobim",
+   "joinphrase": "",
+   "artist": {
+    "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+    "name": "Antônio Carlos Jobim",
+    "aliases": [
+     {
+      "name": "A. C. Jobim",
+      "sort-name": "A. C. Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "A. Carlos Jobim",
+      "sort-name": "Jobim, A. Carlos",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "A.C. Jochim",
+      "sort-name": "Jochim, A.C.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "AC Jobim",
+      "sort-name": "AC Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonio Carlos Jobim",
+      "sort-name": "Jobim, Antonio Carlos",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antônio Carlos Brasileiro de Almeida Jobim",
+      "sort-name": "Jobim, Antônio Carlos Brasileiro de Almeida",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antônio Jobim",
+      "sort-name": "Jobim, Antônio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "C. Jobin",
+      "sort-name": "Jobin, C.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Jobim",
+      "sort-name": "Jobim",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Jobin",
+      "sort-name": "Jobin",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Tom Jobim",
+      "sort-name": "Tom Jobim",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "アントニオ・カルロス・ジョビン",
+      "sort-name": "アントニオ・カルロス・ジョビン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  }
+ ],
+ "release-group": {
+  "id": "b248d212-aace-3c3e-a23d-e13aaac1f87a",
+  "title": "Getz / Gilberto",
+  "first-release-date": "1964-03",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Stan Getz",
+    "joinphrase": " / ",
+    "artist": {
+     "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+     "name": "Stan Getz"
+    }
+   },
+   {
+    "name": "João Gilberto",
+    "joinphrase": " featuring ",
+    "artist": {
+     "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+     "name": "João Gilberto"
+    }
+   },
+   {
+    "name": "Antônio Carlos Jobim",
+    "joinphrase": "",
+    "artist": {
+     "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+     "name": "Antônio Carlos Jobim"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2014-05-27"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Verve Reissues"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "c22da99d-2437-4b28-85b2-1ede093c190f",
+     "position": 1,
+     "number": "1",
+     "title": "The Girl From Ipanema",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "fd889e33-a067-498f-bbf8-9ffe305bde16",
+      "title": "The Girl From Ipanema",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b2645326-b686-450b-86b3-468516fb2f8b",
+     "position": 2,
+     "number": "2",
+     "title": "Doralice (stereo version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "04c1263e-ff58-40e1-b89b-731e88b606ed",
+      "title": "Doralice",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b194281b-887d-47c4-a5d4-676401bf17a0",
+     "position": 3,
+     "number": "3",
+     "title": "Para Machuchar Meu Coracao",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1b0aea85-d91e-4b87-a3ef-18d4e5da7e4b",
+      "title": "Para machucar meu coração",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "56044999-95a6-453f-8030-50c3f1467139",
+     "position": 4,
+     "number": "4",
+     "title": "Desafinado",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "27306761-31ac-4c12-b03e-ce2e93483e10",
+      "title": "Desafinado",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "10303894-f1e3-45f9-af8d-fd0ef6bcfd15",
+     "position": 5,
+     "number": "5",
+     "title": "Corcovado (Quiet Nights of Quiet Stars)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8ddd0dbd-88af-4c3d-a4c5-e346bfee2e8d",
+      "title": "Corcovado (Quiet Nights of Quiet Stars)",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f4badb83-192d-428b-a72e-046f43c6af09",
+     "position": 6,
+     "number": "6",
+     "title": "Só Danço Samba (stereo version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "975a1efe-cec7-4187-9cff-4fa5994a500e",
+      "title": "Só danço samba",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1dd08b09-470d-4eca-b66d-e596949ed00c",
+     "position": 7,
+     "number": "7",
+     "title": "O Grande Amor",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "48c13fad-258a-40b7-b7f8-eb3ff4bc189a",
+      "title": "O grande amor",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "4e1ab700-1af7-4181-8921-7f72888de0a2",
+     "position": 8,
+     "number": "8",
+     "title": "Vivo Sohando (stereo version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "20632050-b007-41bf-a8b8-981229f88fa8",
+      "title": "Vivo sonhando",
+      "first-release-date": "1964-03",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "aefeb9c2-80ee-48ee-9e50-d80b4a1fe8f0",
+     "position": 9,
+     "number": "9",
+     "title": "The Girl From Ipanema (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d0d7d29f-5cd8-4ba3-8655-615ece393619",
+      "title": "The Girl From Ipanema",
+      "first-release-date": "1984",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2dd64f1a-245c-49e5-8450-7bdfea72c536",
+     "position": 10,
+     "number": "10",
+     "title": "Doralice (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "470957ae-1f70-43de-b409-955df19f5e5e",
+      "title": "Doralice",
+      "first-release-date": "1984",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3d81edcb-4b5b-4fad-bf61-767bf10bb59e",
+     "position": 11,
+     "number": "11",
+     "title": "Para Machuchar Meu Coracao (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "690c7f7d-ab20-46f6-af03-6177409f3f2b",
+      "title": "Para machucar meu coração",
+      "first-release-date": "1984",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "24729bfd-ae85-4c98-9bf3-259961c9347c",
+     "position": 12,
+     "number": "12",
+     "title": "Desafinado (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "dffc7d67-28f7-41df-b855-a64d7ddc2c57",
+      "title": "Desafinado",
+      "first-release-date": "1984",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "13a2ae8b-4ff5-4cd1-8665-bb8b8d446dda",
+     "position": 13,
+     "number": "13",
+     "title": "Corcovado (Quiet Nights of Quiet Stars) (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "18e55a62-376a-4751-ac4f-cec0ba659df2",
+      "title": "Corcovado (Quiet Nights of Quiet Stars) (mono version)",
+      "first-release-date": "2014-05-27",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d848ae27-3798-4fb6-8a1f-875fb936e70f",
+     "position": 14,
+     "number": "14",
+     "title": "Só Danço Samba (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "52f99c07-21b4-4ce9-8d7a-562a3b0c0b62",
+      "title": "Só danço samba",
+      "first-release-date": "1984",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "85b4e8fc-39ee-4a8e-a1cc-509dbb5da938",
+     "position": 15,
+     "number": "15",
+     "title": "O Grande Amor (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3a0cb87a-8b01-41b9-acf5-87a0f6713af8",
+      "title": "O grande amor",
+      "first-release-date": "1984",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2a6e3826-9dfa-4c60-b64c-0f395eec4072",
+     "position": 16,
+     "number": "16",
+     "title": "Vivo Sohando (mono version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5178ae00-92a1-4a72-837f-440929d5b1b2",
+      "title": "Vivo sonhando",
+      "first-release-date": "1984",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f9eeb2e6-b217-4fc4-a04e-00833bd656b1",
+     "position": 17,
+     "number": "17",
+     "title": "The Girl From Ipanema (single version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "43298e81-8d68-4eaa-a908-a86a8fc1641b",
+      "title": "The Girl From Ipanema (45 RPM issue)",
+      "first-release-date": "2014-05-27",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "cc81ef7d-ea1c-4901-9902-3d88c07543fc",
+     "position": 18,
+     "number": "18",
+     "title": "Corcovado (Quiet Nights of Quiet Stars) (single version)",
+     "artist-credit": [
+      {
+       "name": "Stan Getz",
+       "joinphrase": " / ",
+       "artist": {
+        "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+        "name": "Stan Getz"
+       }
+      },
+      {
+       "name": "João Gilberto",
+       "joinphrase": " featuring ",
+       "artist": {
+        "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+        "name": "João Gilberto"
+       }
+      },
+      {
+       "name": "Antônio Carlos Jobim",
+       "joinphrase": "",
+       "artist": {
+        "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+        "name": "Antônio Carlos Jobim"
+       }
+      }
+     ],
+     "recording": {
+      "id": "432528b8-5fcb-40ae-bd35-0191316ce21d",
+      "title": "Corcovado (Quiet Nights of Quiet Stars) (45 rpm issue)",
+      "first-release-date": "1997-05-20",
+      "artist-credit": [
+       {
+        "name": "Stan Getz",
+        "joinphrase": " / ",
+        "artist": {
+         "id": "8f2422ab-0ec6-4c92-80c4-afe9622fab32",
+         "name": "Stan Getz"
+        }
+       },
+       {
+        "name": "João Gilberto",
+        "joinphrase": " featuring ",
+        "artist": {
+         "id": "286ec4c2-b5ca-4f85-b331-280a6d73dd14",
+         "name": "João Gilberto"
+        }
+       },
+       {
+        "name": "Antônio Carlos Jobim",
+        "joinphrase": "",
+        "artist": {
+         "id": "7a8dbe84-f4c0-4457-bfa3-edced1f8cde0",
+         "name": "Antônio Carlos Jobim"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

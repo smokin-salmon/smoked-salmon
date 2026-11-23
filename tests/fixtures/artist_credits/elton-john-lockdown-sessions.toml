@@ -1,7 +1,7 @@
 album = "Elton John, The Lockdown Sessions"
 why = "One artist's album of duets, some of them other artists' songs with him as a guest: tracks 6 (Gorillaz), 8 (Miley Cyrus) and 12 (Lil Nas X) are led by others with Elton John featured, the bonus-track shape. On track 3 the stores disagree: MusicBrainz and Discogs give Surfaces with Elton John featured, Deezer and Qobuz both as main. Track 12 has no Qobuz performers line."
 edition = "EMI 2021, 16 tracks, UPC 602438711611: Deezer 265764282 = MusicBrainz 3a823c2c = Discogs 21373180; Qobuz is UPC 0602438711857, the same 16 tracks in the same order."
-known_wrong = ["qobuz: each duet partner (Dua Lipa, Charlie Puth, Brandi Carlile and nine more) is a guessed guest: Qobuz names both MainArtist, and the album's artists[] lists only Elton John", "qobuz: on 3, where Qobuz names Surfaces and Elton John both MainArtist, Elton John is main and Surfaces a guess; Deezer has both main, MusicBrainz and Discogs Surfaces with Elton John featured", "qobuz: 12 has no performers line, so Elton John is main and its performer, Lil Nas X, a guessed guest", "qobuz: 7's 'Olly Alexander (Years & Years)' is read as one guest's name, where the other stores credit Years & Years as main", "musicbrainz: 8's 'Miley Cyrus feat. WATT, Elton John, Yo-Yo Ma, Robert Trujillo & Chad Smith' is read with every name main, Miley Cyrus as 'MILEY'", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so Elton John is main on 6, 8 and 12 and 6LACK, Andrew Watt, Yo-Yo Ma, Robert Trujillo and Chad Smith main on theirs", "merge: 7 credits 'Olly Alexander (Years & Years)' as a guest, and Years & Years nowhere", "output: ALBUMARTIST is 'Various', not Elton John"]
+known_wrong = ["qobuz: each duet partner (Dua Lipa, Charlie Puth, Brandi Carlile and nine more) is a guessed guest: Qobuz names both MainArtist, and the album's artists[] lists only Elton John", "qobuz: on 3, where Qobuz names Surfaces and Elton John both MainArtist, Elton John is main and Surfaces a guess; Deezer has both main, MusicBrainz and Discogs Surfaces with Elton John featured", "qobuz: 12 has no performers line, so Elton John is main and its performer, Lil Nas X, a guessed guest", "qobuz: 7's 'Olly Alexander (Years & Years)' is read as one guest's name, where the other stores credit Years & Years as main", "musicbrainz: 8's 'Miley Cyrus feat. WATT, Elton John, Yo-Yo Ma, Robert Trujillo & Chad Smith' is read with every name main, Miley Cyrus as 'MILEY'", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so Elton John is main on 6, 8 and 12 and 6LACK, WATT (Andrew Watt), Yo-Yo Ma, Robert Trujillo and Chad Smith main on theirs", "merge: 7 credits 'Olly Alexander (Years & Years)' as a guest, and Years & Years nowhere", "output: ALBUMARTIST is 'Various', not Elton John"]
 files_from = "deezer"
 output = true
 
@@ -17,7 +17,7 @@ how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz agree: Elton John the albu
 open = "Not judged by the test: the release-wide judge reads Elton John's guest credits on 6, 8 and 12 beside his main ones as 'main and guest at once', which here is right, and whether a duet partner is the release's main or guest is RED's call, not the stores'. Per track: 6, 8 and 12 led by their own artists with Elton John a guest; 3 open (Surfaces with Elton John featured, or both main)"
 
 [today.deezer]
-release = ["Elton John (main)", "Dua Lipa (main)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "Elton John (guest)", "6LACK (guest)", "Years & Years (main)", "Miley Cyrus (main)", "WATT (guest)", "Yo-Yo Ma (guest)", "Robert Trujillo (guest)", "Chad Smith (guest)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
+release = ["Elton John (main)", "Dua Lipa (main)", "PNAU (remixer)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "Elton John (guest)", "6LACK (guest)", "Years & Years (main)", "Miley Cyrus (main)", "WATT (guest)", "Yo-Yo Ma (guest)", "Robert Trujillo (guest)", "Chad Smith (guest)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
 tracks = 16
 
 [today.musicbrainz]
@@ -33,17 +33,17 @@ release = ["Elton John (main)", "Dua Lipa (guest)", "PNAU (remixer)", "Young Thu
 tracks = 16
 
 [today.merge]
-release = ["Elton John (main)", "Dua Lipa (main)", "PNAU (remixer)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "6LACK (main)", "Olly Alexander (Years & Years) (guest)", "Miley Cyrus (main)", "Yo-Yo Ma (main)", "Robert Trujillo (main)", "Chad Smith (main)", "Andrew Watt (main)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
+release = ["Elton John (main)", "Dua Lipa (main)", "PNAU (remixer)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "6LACK (main)", "Olly Alexander (Years & Years) (guest)", "Miley Cyrus (main)", "WATT (main)", "Yo-Yo Ma (main)", "Robert Trujillo (main)", "Chad Smith (main)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
 tracks = 16
-credits = ["1.1: Elton John (main), Dua Lipa (main), PNAU (remixer)", "1.2: Elton John (main), Young Thug (main), Nicki Minaj (main)", "1.3: Surfaces (main), Elton John (main)", "1.4: Elton John (main), Charlie Puth (main)", "1.5: Rina Sawayama (main), Elton John (main)", "1.6: Gorillaz (main), Elton John (main), 6LACK (main)", "1.7: Elton John (main), Olly Alexander (Years & Years) (guest)", "1.8: Miley Cyrus (main), Elton John (main), Yo-Yo Ma (main), Robert Trujillo (main), Chad Smith (main), Andrew Watt (main)", "1.9: Elton John (main), SG Lewis (main)", "1.10: Elton John (main), Brandi Carlile (main)", "1.11: Jimmie Allen (main), Elton John (main)", "1.12: Lil Nas X (main), Elton John (main)", "1.13: Elton John (main), Eddie Vedder (main)", "1.14: Elton John (main), Stevie Wonder (main)", "1.15: Elton John (main), Stevie Nicks (main)", "1.16: Glen Campbell (main), Elton John (main)"]
+credits = ["1.1: Elton John (main), Dua Lipa (main), PNAU (remixer)", "1.2: Elton John (main), Young Thug (main), Nicki Minaj (main)", "1.3: Surfaces (main), Elton John (main)", "1.4: Elton John (main), Charlie Puth (main)", "1.5: Rina Sawayama (main), Elton John (main)", "1.6: Gorillaz (main), Elton John (main), 6LACK (main)", "1.7: Elton John (main), Olly Alexander (Years & Years) (guest)", "1.8: Miley Cyrus (main), WATT (main), Elton John (main), Yo-Yo Ma (main), Robert Trujillo (main), Chad Smith (main)", "1.9: Elton John (main), SG Lewis (main)", "1.10: Elton John (main), Brandi Carlile (main)", "1.11: Jimmie Allen (main), Elton John (main)", "1.12: Lil Nas X (main), Elton John (main)", "1.13: Elton John (main), Eddie Vedder (main)", "1.14: Elton John (main), Stevie Wonder (main)", "1.15: Elton John (main), Stevie Nicks (main)", "1.16: Glen Campbell (main), Elton John (main)"]
 
 [today.output]
 albumartist = "Various"
-tracks = ["Elton John & Dua Lipa | Cold Heart (PNAU Remix) | REMIXER PNAU", "Elton John, Young Thug, Nicki Minaj | Always Love You", "Surfaces & Elton John | Learn To Fly", "Elton John & Charlie Puth | After All", "Rina Sawayama & Elton John | Chosen Family", "Gorillaz, Elton John, 6LACK | The Pink Phantom", "Elton John (feat. Olly Alexander (Years & Years)) | It's A Sin", "Miley Cyrus, Elton John, Yo-Yo Ma, Robert Trujillo, Chad Smith, Andrew Watt | Nothing Else Matters", "Elton John & SG Lewis | Orbit", "Elton John & Brandi Carlile | Simple Things", "Jimmie Allen & Elton John | Beauty In The Bones", "Lil Nas X & Elton John | One Of Me", "Elton John & Eddie Vedder | E-Ticket", "Elton John & Stevie Wonder | Finish Line", "Elton John & Stevie Nicks | Stolen Car", "Glen Campbell & Elton John | I'm Not Going To Miss You"]
+tracks = ["Elton John & Dua Lipa | Cold Heart (PNAU Remix) | REMIXER PNAU", "Elton John, Young Thug, Nicki Minaj | Always Love You", "Surfaces & Elton John | Learn To Fly", "Elton John & Charlie Puth | After All", "Rina Sawayama & Elton John | Chosen Family", "Gorillaz, Elton John, 6LACK | The Pink Phantom", "Elton John (feat. Olly Alexander (Years & Years)) | It's a sin (global reach mix)", "Miley Cyrus, WATT, Elton John, Yo-Yo Ma, Robert Trujillo, Chad Smith | Nothing Else Matters", "Elton John & SG Lewis | Orbit", "Elton John & Brandi Carlile | Simple Things", "Jimmie Allen & Elton John | Beauty In The Bones", "Lil Nas X & Elton John | One Of Me", "Elton John & Eddie Vedder | E-Ticket", "Elton John & Stevie Wonder | Finish Line", "Elton John & Stevie Nicks | Stolen Car", "Glen Campbell & Elton John | I'm Not Gonna Miss You"]
 
 [today."output-guests-in-title"]
 albumartist = "Various"
-tracks = ["Elton John & Dua Lipa | Cold Heart (PNAU Remix) | REMIXER PNAU", "Elton John, Young Thug, Nicki Minaj | Always Love You", "Surfaces & Elton John | Learn To Fly", "Elton John & Charlie Puth | After All", "Rina Sawayama & Elton John | Chosen Family", "Gorillaz, Elton John, 6LACK | The Pink Phantom", "Elton John | It's A Sin (feat. Olly Alexander (Years & Years))", "Miley Cyrus, Elton John, Yo-Yo Ma, Robert Trujillo, Chad Smith, Andrew Watt | Nothing Else Matters", "Elton John & SG Lewis | Orbit", "Elton John & Brandi Carlile | Simple Things", "Jimmie Allen & Elton John | Beauty In The Bones", "Lil Nas X & Elton John | One Of Me", "Elton John & Eddie Vedder | E-Ticket", "Elton John & Stevie Wonder | Finish Line", "Elton John & Stevie Nicks | Stolen Car", "Glen Campbell & Elton John | I'm Not Going To Miss You"]
+tracks = ["Elton John & Dua Lipa | Cold Heart (PNAU Remix) | REMIXER PNAU", "Elton John, Young Thug, Nicki Minaj | Always Love You", "Surfaces & Elton John | Learn To Fly", "Elton John & Charlie Puth | After All", "Rina Sawayama & Elton John | Chosen Family", "Gorillaz, Elton John, 6LACK | The Pink Phantom", "Elton John | It's a sin (global reach mix) (feat. Olly Alexander (Years & Years))", "Miley Cyrus, WATT, Elton John, Yo-Yo Ma, Robert Trujillo, Chad Smith | Nothing Else Matters", "Elton John & SG Lewis | Orbit", "Elton John & Brandi Carlile | Simple Things", "Jimmie Allen & Elton John | Beauty In The Bones", "Lil Nas X & Elton John | One Of Me", "Elton John & Eddie Vedder | E-Ticket", "Elton John & Stevie Wonder | Finish Line", "Elton John & Stevie Nicks | Stolen Car", "Glen Campbell & Elton John | I'm Not Gonna Miss You"]
 
 # The files' tags.
 # Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
@@ -210,6 +210,189 @@ album = ["The Lockdown Sessions"]
 albumartist = ["Elton John"]
 date = ["2021-10-22"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Cold Heart (PNAU remix)"]
+artist = ["Elton John & Dua Lipa"]
+artists = ["Elton John", "Dua Lipa"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Always Love You"]
+artist = ["Elton John, Young Thug & Nicki Minaj"]
+artists = ["Elton John", "Young Thug", "Nicki Minaj"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Learn to Fly"]
+artist = ["Surfaces feat. Elton John"]
+artists = ["Surfaces", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["After All"]
+artist = ["Elton John & Charlie Puth"]
+artists = ["Elton John", "Charlie Puth"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Chosen Family"]
+artist = ["Rina Sawayama & Elton John"]
+artists = ["Rina Sawayama", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["The Pink Phantom"]
+artist = ["Gorillaz feat. Elton John & 6LACK"]
+artists = ["Gorillaz", "Elton John", "6LACK"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["It’s a sin (global reach mix)"]
+artist = ["Elton John & Years & Years"]
+artists = ["Elton John", "Years & Years"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Nothing Else Matters"]
+artist = ["Miley Cyrus feat. Andrew Watt, Elton John, Yo‐Yo Ma, Robert Trujillo & Chad Smith"]
+artists = ["Miley Cyrus", "Andrew Watt", "Elton John", "Yo‐Yo Ma", "Robert Trujillo", "Chad Smith"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Orbit"]
+artist = ["Elton John & SG Lewis"]
+artists = ["Elton John", "SG Lewis"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Simple Things"]
+artist = ["Elton John & Brandi Carlile"]
+artists = ["Elton John", "Brandi Carlile"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Beauty in the Bones"]
+artist = ["Jimmie Allen & Elton John"]
+artists = ["Jimmie Allen", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["One of Me"]
+artist = ["Lil Nas X feat. Elton John"]
+artists = ["Lil Nas X", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["E‐Ticket"]
+artist = ["Elton John & Eddie Vedder"]
+artists = ["Elton John", "Eddie Vedder"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Finish Line"]
+artist = ["Elton John & Stevie Wonder"]
+artists = ["Elton John", "Stevie Wonder"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Stolen Car"]
+artist = ["Elton John & Stevie Nicks"]
+artists = ["Elton John", "Stevie Nicks"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
+[[picard_track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["I’m Not Gonna Miss You"]
+artist = ["Glen Campbell & Elton John"]
+artists = ["Glen Campbell", "Elton John"]
+album = ["The Lockdown Sessions"]
+albumartist = ["Elton John"]
+date = ["2021-10-22"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
@@ -242,6 +425,9 @@ deezer = '''
     "main_artist": [
      "Elton John",
      "Dua Lipa"
+    ],
+    "remixer": [
+     "PNAU"
     ]
    },
    "DISK_NUMBER": "1",

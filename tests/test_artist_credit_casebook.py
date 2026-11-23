@@ -26,10 +26,8 @@ from pathlib import Path
 from typing import Any
 
 import msgspec
-import musicbrainzngs
 import pytest
 from bs4 import BeautifulSoup
-from musicbrainzngs import mbxml
 from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg
@@ -43,7 +41,7 @@ from salmon.tagger.retagger import (
     metadata_to_track_list,
 )
 from salmon.tagger.sources import METASOURCES
-from salmon.tagger.tagfile import TagFile
+from salmon.tagger.tagfile import TAG_FIELDS, TagFile
 
 CASES = Path(__file__).parent / "fixtures" / "artist_credits"
 MUSICBRAINZ = Path(__file__).parent / "fixtures" / "stores" / "musicbrainz"
@@ -90,9 +88,8 @@ def parse(record: dict[str, Any], store: str, monkeypatch: pytest.MonkeyPatch) -
     sent = record["stores"][store]
     scraper: Any = METASOURCES[STORES[store]].Scraper()
     if store == "musicbrainz":
-        data = mbxml.parse_message((MUSICBRAINZ / "release" / f"{sent}.xml").read_bytes())["release"]
+        data = json.loads((MUSICBRAINZ / "release" / f"{sent}.json").read_text(encoding="utf-8"))
         url = f"https://musicbrainz.org/release/{data['id']}"
-        monkeypatch.setattr(musicbrainzngs, "get_image_list", lambda *a, **k: {"images": []})
     elif store == "bandcamp":
         data, url = BeautifulSoup(sent, "lxml"), record["bandcamp_url"]
     else:
@@ -276,7 +273,25 @@ def test_each_musicbrainz_case_names_a_recorded_release() -> None:
         if mbid is None:
             continue
         assert MBID.fullmatch(mbid), case.name
-        assert (MUSICBRAINZ / "release" / f"{mbid}.xml").is_file(), case.name
+        assert (MUSICBRAINZ / "release" / f"{mbid}.json").is_file(), case.name
+
+
+def test_each_picard_track_block_has_its_musicbrainz_releases_tracks() -> None:
+    """A [[picard_track]] block holds only tags salmon reads, as many as the recorded release's tracks, one file each.
+
+    The release is `picard_release` where the files are another edition from `stores.musicbrainz`.
+    Its structure only: the values are not checked against the release, nor which cases have a block."""
+    cases = [(case, record) for case in _cases() if "picard_track" in (record := _record(case))]
+    read = {*TAG_FIELDS["FLAC"].values(), "file"}
+    for case, record in cases:
+        mbid = record.get("picard_release", record["stores"].get("musicbrainz"))
+        recorded = MUSICBRAINZ / "release" / f"{mbid}.json"
+        release = json.loads(recorded.read_text(encoding="utf-8"))
+        tracks = record["picard_track"]
+        assert len(tracks) == sum(len(medium["tracks"]) for medium in release["media"]), case.name
+        assert all(set(track) <= read for track in tracks), case.name
+        built = files(tracks)
+        assert sum(len(disc) for disc in built["tracks"].values()) == len(tracks), case.name
 
 
 def test_a_name_holding_a_separator_is_judged_whole() -> None:

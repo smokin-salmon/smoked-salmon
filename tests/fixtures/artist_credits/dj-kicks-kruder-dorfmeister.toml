@@ -1,7 +1,7 @@
 album = "Kruder & Dorfmeister, DJ-Kicks"
 why = "A DJ mix: the DJs' name is the release's artist on every store and each track is by someone else."
 edition = "Studio !K7, 17 tracks, as sold digitally (Deezer 1127108 = MusicBrainz aa2eae9d by barcode); Discogs 2951 is master 252625's main release; Qobuz has the same UPC"
-known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "merge: 'Full Length' read as a remixer from the words of a remix's name", "merge: 'JMJ & Flytronix', Qobuz's guessed guest on 1.6, in place of the files' mains JMJ and Flytronix: the merge's fragment check removes the two before the decision weighs the guess", "merge: 'Herbalizer' (guest) beside 'The Herbaliser' on 1.1 and 'Kama' (guest) beside 'Karma' on 1.15: Qobuz's performers line spells the track's artist differently from its performer field, and no source disputes the guessed guest"]
+known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "merge: 'Full Length' read as a remixer from the words of a remix's name", "merge: 'JMJ & Flytronix', Qobuz's guessed guest on 1.6, in place of the files' mains JMJ and Flytronix: the merge's fragment check removes the two before the decision weighs the guess", "Qobuz parse: 'Herbaliser' and 'Herbalizer' both guests on 1.1, 'KARMA' and 'Kama' on 1.15: its performers line spells the track's artist differently from its performer field; the merge reads them as one only where Discogs credits one as the other"]
 files_from = "deezer"
 output = true
 
@@ -33,17 +33,17 @@ release = ["Kruder & Dorfmeister (main)", "Herbaliser (guest)", "Herbalizer (gue
 tracks = 17
 
 [today.merge]
-release = ["Kruder & Dorfmeister (main)", "Herbalizer (guest)", "The Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ & Flytronix (guest)", "Aquasky (main)", "James Bong (main)", "Big Brothers Dubbing You Full On - Dub Tractor (remixer)", "Full Length (remixer)", "Hardfloor (main)", "Thievery Corporation (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Kama (guest)", "Showroom Recordings (main)"]
+release = ["Herbaliser (main)", "Kruder & Dorfmeister (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ & Flytronix (guest)", "Aquasky (main)", "James Bong (main)", "Big Brothers Dubbing You Full On - Dub Tractor (remixer)", "Full Length (remixer)", "Hardfloor (main)", "Thievery Corporation (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
 tracks = 17
-credits = ["1.1: Kruder & Dorfmeister (main), Herbalizer (guest), The Herbaliser (main)", "1.2: Small World (main), Kruder & Dorfmeister (main)", "1.3: Tango (main), Kruder & Dorfmeister (main)", "1.4: The Lab Rats (main), Kruder & Dorfmeister (main)", "1.5: Statik Sound System (main), Kruder & Dorfmeister (main)", "1.6: Kruder & Dorfmeister (main), JMJ & Flytronix (guest)", "1.7: Aquasky (main), Kruder & Dorfmeister (main)", "1.8: James Bong (main), Big Brothers Dubbing You Full On - Dub Tractor (remixer), Kruder & Dorfmeister (main), Full Length (remixer)", "1.9: Hardfloor (main), Kruder & Dorfmeister (main)", "1.10: Thievery Corporation (main), Kruder & Dorfmeister (main)", "1.11: Kruder & Dorfmeister (main)", "1.12: Beanfield (main), Kruder & Dorfmeister (main)", "1.13: Sapien (main), Kruder & Dorfmeister (main)", "1.14: Shantel (main), Kruder & Dorfmeister (main)", "1.15: Karma (main), Kruder & Dorfmeister (main), Kama (guest)", "1.16: Showroom Recordings (main), Kruder & Dorfmeister (main)", "1.17: Kruder & Dorfmeister (main)"]
+credits = ["1.1: Herbaliser (main), Kruder & Dorfmeister (main)", "1.2: Small World (main), Kruder & Dorfmeister (main)", "1.3: Tango (main), Kruder & Dorfmeister (main)", "1.4: The Lab Rats (main), Kruder & Dorfmeister (main)", "1.5: Statik Sound System (main), Kruder & Dorfmeister (main)", "1.6: Kruder & Dorfmeister (main), JMJ & Flytronix (guest)", "1.7: Aquasky (main), Kruder & Dorfmeister (main)", "1.8: James Bong (main), Big Brothers Dubbing You Full On - Dub Tractor (remixer), Kruder & Dorfmeister (main), Full Length (remixer)", "1.9: Hardfloor (main), Kruder & Dorfmeister (main)", "1.10: Thievery Corporation (main), Kruder & Dorfmeister (main)", "1.11: Kruder & Dorfmeister (main)", "1.12: Beanfield (main), Kruder & Dorfmeister (main)", "1.13: Sapien (main), Kruder & Dorfmeister (main)", "1.14: Shantel (main), Kruder & Dorfmeister (main)", "1.15: Karma (main), Kruder & Dorfmeister (main)", "1.16: Showroom Recordings (main), Kruder & Dorfmeister (main)", "1.17: Kruder & Dorfmeister (main)"]
 
 [today.output]
 albumartist = "Various"
-tracks = ["Kruder & Dorfmeister, The Herbaliser (feat. Herbalizer) | A Mother (For Your Mind)", "Small World, Kruder & Dorfmeister | Livin' Free", "Tango, Kruder & Dorfmeister | Spellbound", "The Lab Rats, Kruder & Dorfmeister | Give My Soul", "Statik Sound System, Kruder & Dorfmeister | Revolutionary Pilot", "Kruder & Dorfmeister (feat. JMJ & Flytronix) | In Too Deep", "Aquasky, Kruder & Dorfmeister | Kauna", "James Bong, Kruder & Dorfmeister | Mr. Kiss Kiss Bong Bong (Big Brother's Dubbing You Full On / Full Length Remix)", "Hardfloor, Kruder & Dorfmeister | Dubdope", "Thievery Corporation, Kruder & Dorfmeister | Shaolin Satellite", "Kruder & Dorfmeister | High Noon", "Beanfield, Kruder & Dorfmeister | Keep On Believing", "Sapien, Kruder & Dorfmeister | Que Dolor (Rude Boy Fandango Mix)", "Shantel, Kruder & Dorfmeister | Bass And Several Cars", "Karma, Kruder & Dorfmeister (feat. Kama) | Look Up Dere", "Showroom Recordings, Kruder & Dorfmeister | Radio Burning Chrome", "Kruder & Dorfmeister | Black Baby (DJ-Kicks)"]
+tracks = ["Herbaliser, Kruder & Dorfmeister | A Mother (Mixed)", "Small World, Kruder & Dorfmeister | Livin' Free (Soundtrack Mix) (Mixed)", "Tango, Kruder & Dorfmeister | Spellbound (Mixed)", "The Lab Rats, Kruder & Dorfmeister | Give My Soul (Mixed)", "Statik Sound System, Kruder & Dorfmeister | Revolutionary Pilot (Mixed)", "Kruder & Dorfmeister (feat. JMJ & Flytronix) | In Too Deep (Mixed)", "Aquasky, Kruder & Dorfmeister | Kauna (Mixed)", "James Bong, Kruder & Dorfmeister | Mr. Kiss Kiss Bong Bong (Big Brothers Dubbing You Full On - Dub Tractor Remix) (Mixed)", "Hardfloor, Kruder & Dorfmeister | Dubdope (Mixed)", "Thievery Corporation, Kruder & Dorfmeister | Shaolin Satellite (Mixed)", "Kruder & Dorfmeister | High Noon (Mixed)", "Beanfield, Kruder & Dorfmeister | Keep On Believing (Mixed)", "Sapien, Kruder & Dorfmeister | Que Dolor (Mixed)", "Shantel, Kruder & Dorfmeister | Bass And Several Cars (Mixed)", "Karma, Kruder & Dorfmeister | Look Up Dere (Mixed)", "Showroom Recordings, Kruder & Dorfmeister | Radio Burning Chrome (Mixed)", "Kruder & Dorfmeister | Black Baby (DJ-Kicks) (Mixed)"]
 
 [today."output-guests-in-title"]
 albumartist = "Various"
-tracks = ["Kruder & Dorfmeister, The Herbaliser | A Mother (For Your Mind) (feat. Herbalizer)", "Small World, Kruder & Dorfmeister | Livin' Free", "Tango, Kruder & Dorfmeister | Spellbound", "The Lab Rats, Kruder & Dorfmeister | Give My Soul", "Statik Sound System, Kruder & Dorfmeister | Revolutionary Pilot", "Kruder & Dorfmeister | In Too Deep (feat. JMJ & Flytronix)", "Aquasky, Kruder & Dorfmeister | Kauna", "James Bong, Kruder & Dorfmeister | Mr. Kiss Kiss Bong Bong (Big Brother's Dubbing You Full On / Full Length Remix)", "Hardfloor, Kruder & Dorfmeister | Dubdope", "Thievery Corporation, Kruder & Dorfmeister | Shaolin Satellite", "Kruder & Dorfmeister | High Noon", "Beanfield, Kruder & Dorfmeister | Keep On Believing", "Sapien, Kruder & Dorfmeister | Que Dolor (Rude Boy Fandango Mix)", "Shantel, Kruder & Dorfmeister | Bass And Several Cars", "Karma, Kruder & Dorfmeister | Look Up Dere (feat. Kama)", "Showroom Recordings, Kruder & Dorfmeister | Radio Burning Chrome", "Kruder & Dorfmeister | Black Baby (DJ-Kicks)"]
+tracks = ["Herbaliser, Kruder & Dorfmeister | A Mother (Mixed)", "Small World, Kruder & Dorfmeister | Livin' Free (Soundtrack Mix) (Mixed)", "Tango, Kruder & Dorfmeister | Spellbound (Mixed)", "The Lab Rats, Kruder & Dorfmeister | Give My Soul (Mixed)", "Statik Sound System, Kruder & Dorfmeister | Revolutionary Pilot (Mixed)", "Kruder & Dorfmeister | In Too Deep (Mixed) (feat. JMJ & Flytronix)", "Aquasky, Kruder & Dorfmeister | Kauna (Mixed)", "James Bong, Kruder & Dorfmeister | Mr. Kiss Kiss Bong Bong (Big Brothers Dubbing You Full On - Dub Tractor Remix) (Mixed)", "Hardfloor, Kruder & Dorfmeister | Dubdope (Mixed)", "Thievery Corporation, Kruder & Dorfmeister | Shaolin Satellite (Mixed)", "Kruder & Dorfmeister | High Noon (Mixed)", "Beanfield, Kruder & Dorfmeister | Keep On Believing (Mixed)", "Sapien, Kruder & Dorfmeister | Que Dolor (Mixed)", "Shantel, Kruder & Dorfmeister | Bass And Several Cars (Mixed)", "Karma, Kruder & Dorfmeister | Look Up Dere (Mixed)", "Showroom Recordings, Kruder & Dorfmeister | Radio Burning Chrome (Mixed)", "Kruder & Dorfmeister | Black Baby (DJ-Kicks) (Mixed)"]
 
 
 # The files' tags.
@@ -220,6 +220,183 @@ artist = ["Kruder & Dorfmeister"]
 album = ["DJ-Kicks"]
 albumartist = ["Kruder & Dorfmeister"]
 date = ["1996-08-19"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["A Mother"]
+artist = ["The Herbaliser"]
+artists = ["The Herbaliser"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Livin’ Free"]
+artist = ["Small World"]
+artists = ["Small World"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Spellbound"]
+artist = ["Tango"]
+artists = ["Tango"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Give My Soul"]
+artist = ["Lab Rats"]
+artists = ["Lab Rats"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Revolutionary Pilot"]
+artist = ["Statik Sound System"]
+artists = ["Statik Sound System"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["In Too Deep"]
+artist = ["JMJ & Flytronix"]
+artists = ["JMJ", "Flytronix"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Kauna"]
+artist = ["Aquasky"]
+artists = ["Aquasky"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Never Say?"]
+artist = ["James Bong"]
+artists = ["James Bong"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Dubdope"]
+artist = ["Hardfloor"]
+artists = ["Hardfloor"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Shaolin Satellite"]
+artist = ["Thievery Corporation"]
+artists = ["Thievery Corporation"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["High Noon"]
+artist = ["Kruder & Dorfmeister"]
+artists = ["Kruder & Dorfmeister"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Keep On Believing"]
+artist = ["Beanfield"]
+artists = ["Beanfield"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Que dolor"]
+artist = ["Sapien"]
+artists = ["Sapien"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Bass and Several Cars"]
+artist = ["Shantel"]
+artists = ["Shantel"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Look Up Dere"]
+artist = ["Karma"]
+artists = ["Karma"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["Radio Burning Chrome"]
+artist = ["Showroom Recordings"]
+artists = ["Showroom Recordings"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
+
+[[picard_track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["Black Baby (DJ‐Kicks)"]
+artist = ["Kruder & Dorfmeister"]
+artists = ["Kruder & Dorfmeister"]
+album = ["DJ‐Kicks: Kruder & Dorfmeister"]
+albumartist = ["Kruder & Dorfmeister"]
 
 # What each store sent, trimmed as [sources] says.
 [stores]

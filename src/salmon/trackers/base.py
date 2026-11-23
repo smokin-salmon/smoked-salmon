@@ -525,6 +525,7 @@ class BaseGazelleApi:
             self.dot_torrents_dir = cfg.directory.dottorrents_dir
 
         self.release_types = RELEASE_TYPES
+        self.account_id: int | None = None
         self.authkey: str | None = None
         self.passkey: str | None = None
         self._authenticated = False
@@ -716,6 +717,7 @@ class BaseGazelleApi:
     async def authenticate(self) -> None:
         """Authenticate with the tracker API and get authkey/passkey."""
         acctinfo = await self.api_call("index")
+        self.account_id = numeric_id(acctinfo.get("id"))
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
         with _learned_secrets_lock:

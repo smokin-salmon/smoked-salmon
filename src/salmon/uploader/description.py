@@ -10,7 +10,9 @@ from salmon.common import re_split
 from salmon.common.dsd import track_dsd_encoding
 from salmon.common.numbers import tag_number, unreadable_number
 from salmon.common.strings import (
+    comparable,
     credit_in_title,
+    join_artists,
     names_no_artist,
     reaches_various_threshold,
     strip_numbered_suffixes,
@@ -70,32 +72,122 @@ def album_credit_names(metadata: dict[str, Any]) -> frozenset[str] | None:
 _REMIX_IN_TITLE = re.compile(r"\bremix(?:e[ds])?\b", flags=re.IGNORECASE)
 
 
-def credits_only_the_album(credits: list[tuple[str, str]], title: str, album: frozenset[str]) -> bool:
-    """Whether a track credits the album's artists and no one else, so its tracklist line can leave them out: its
-    credits, as (name, role), have exactly the album's main artists and conductors (see album_credit_names) and no
-    guest or remixer, and its title credits no feature or remix (nor a remixer salmon reads from a title, as in
-    "Song (X Mix)"). The title is where salmon puts a remixer (REMIXER only names one the store credits) and, with
-    guests_in_track_title, a guest; an AAC file has neither ARTISTS nor REMIXER.
+def bare_title(
+    credits: list[tuple[str, str]], title: str | None, album: frozenset[str], remix_said_once: bool = False
+) -> str | None:
+    """The title a track's tracklist line shows when it leaves the artist out, or None when the line keeps it.
+
+    The line leaves it out when the track's main artists and conductors, as (name, role), are exactly the album's
+    (see album_credit_names), and anyone else it credits is a guest (#971 item 6): the title then names them,
+    "Song (feat. B)". A remix keeps the artist, read from REMIXER or the title (where salmon puts a remixer, and an
+    AAC file has no REMIXER), unless the album's one remixer is said once instead (`remix_said_once`, #971 item 5);
+    so does a title that may credit someone the tags don't ("Song (with B)").
 
     Its other roles (composer, producer, arranger) never show in the tracklist, so they don't count.
     """
-    if any(role in {"guest", "remixer"} for _name, role in credits):
-        return False
     title = title or ""
-    if credit_in_title(title) or _REMIX_IN_TITLE.search(title) or _extract_remixers_from_title(title):
-        return False
-    return _lead_names(credits) == album
+    if not remix_said_once and (_remixers(credits, title) or _REMIX_IN_TITLE.search(title)):
+        return None
+    if _lead_names(credits) != album:
+        return None
+    guests = [name for name, role in credits if role == "guest"]
+    if not guests:
+        return None if credit_in_title(title) else title
+    return _with_guests(title, guests) if title else None
 
 
-def listed_bare(
+# A remix in a title, which a guest goes before: "Song (feat. B) (X Remix)".
+_REMIX_BRACKET = re.compile(r" \([^)]+Remix(?:er)?\)", flags=re.IGNORECASE)
+
+
+def _with_guests(title: str, guests: list[str]) -> str | None:
+    """The title naming its guests, as guests_in_track_title puts them but with every name (the line is where they
+    show): unchanged when its credit names them all and its feat. credit no one else, and None, the line keeping its
+    artist, when not ("Song (feat. B)" for guests B and C, "Song (feat. B & C)" for guest B)."""
+    if credit_in_title(title, guests) or any(_names_each(title, [guest]) for guest in guests):
+        return title if _names_each(title, guests, only=True) else None
+    remix = _REMIX_BRACKET.search(title)
+    head, tail = (title[: remix.start()] + title[remix.end() :], remix[0]) if remix else (title, "")
+    return f"{head} (feat. {join_artists(guests)}){tail}"
+
+
+# A title's credit and the names it holds: "feat. B & C", "(ft. B)", "featuring B", "(with B)", "[vs. B]".
+_RE_TITLE_CREDIT = re.compile(
+    r"(?:(?P<feat>\b(?:feat|ft)\b\.?|\bfeaturing\b)|[(\[]\s*(?:with|vs\.?)\s)\s*(?P<names>[^)\]]*)",
+    flags=re.IGNORECASE,
+)
+
+
+def _names_each(title: str, names: list[str], only: bool = False) -> bool:
+    """Whether a title's credit names each of these, whole, and with `only` its feat. credit no one else: "Song
+    (feat. B & C)" names B and C, "Anniversary (feat. B)" doesn't name Ann, nor "Alice's Song (feat. B)" Alice. A with
+    bracket's other names may be no one ("Song (with Strings)")."""
+    credits = [
+        (credit["feat"], comparable(name))
+        for credit in _RE_TITLE_CREDIT.finditer(title)
+        for name in re_split(credit["names"])
+    ]
+    wanted = {comparable(part) for name in names for part in re_split(name)}
+    others = {name for feat, name in credits if feat} - wanted if only else set()
+    return wanted <= {name for _feat, name in credits} and not others
+
+
+# What a title names before "Remix" when it says which remix, not whose: the kind ("Stereo", "Dolby Atmos", "50th
+# Anniversary", with or without a year) at the end of a name, or a year or one of these words alone.
+_RE_REMIX_KIND = re.compile(
+    r"(?:\s*\b(?:(?:19|20)\d\d\s+)?(?:stereo|mono|quad(?:raphonic)?|surround|(?:dolby\s+)?atmos|binaural"
+    r"|spatial(?:\s+audio)?|[57]\.1|(?:\d+(?:st|nd|rd|th)\s+)?anniversary|(?:digital\s+)?remaster(?:ed)?)"
+    r"(?:\s+(?:19|20)\d\d)?)+$",
+    flags=re.IGNORECASE,
+)
+_RE_NO_ONE = re.compile(
+    r"(?:19|20)\d\d|new|original|single(?: version)?|live|bonus|demo|version|special|deluxe|alternat(?:e|ive)|us|uk",
+    flags=re.IGNORECASE,
+)
+_RE_ARTICLE = re.compile(r"the|an?", flags=re.IGNORECASE)
+
+
+def _remixers(credits: list[tuple[str, str]], title: str | None) -> list[str]:
+    """The remixers a track credits in REMIXER, or with none, as salmon reads them from its title ("Song (X Remix)"),
+    on each track as the merge does for a store that states its credits. A title names a remixer without the kind of
+    remix: "2021" and "Stereo" name no one, "Steven Wilson Stereo" names Steven Wilson, and "The Stereo" The Stereo
+    (the kind is cut only when a name is left)."""
+    if credited := [name for name, role in credits if role == "remixer"]:
+        return list(dict.fromkeys(credited))
+    names = (_without_kind(name) for name, _ in _extract_remixers_from_title(title or ""))
+    return list(dict.fromkeys(name for name in names if name and not _RE_NO_ONE.fullmatch(name)))
+
+
+def _without_kind(name: str) -> str:
+    kept = _RE_REMIX_KIND.sub("", name).strip()
+    return name if _RE_ARTICLE.fullmatch(kept) else kept
+
+
+def album_remixers(tracks: Sequence[tuple[list[tuple[str, str]], str]]) -> list[str] | None:
+    """The remixers every track credits (#971 item 5), as the first names them: None unless there are several tracks
+    and each credits the same ones."""
+    first = _remixers(*tracks[0]) if len(tracks) > 1 else []
+    if first and all(_split_names(_remixers(*track)) == _split_names(first) for track in tracks):
+        return first
+    return None
+
+
+def listed_titles(
     tracks: Sequence[tuple[list[tuple[str, str]], str]], album: frozenset[str] | None, rls_type: str | None
-) -> list[bool]:
-    """For each track, as (its credits, its title), whether its tracklist line leaves its artist out (#895). On a
-    compilation, anthology or DJ mix, either every line does or none does (#971)."""
+) -> tuple[list[str | None], list[str] | None]:
+    """For each track, as (its credits, its title), the title its tracklist line shows without the artist, or None
+    when the line keeps it (#895, see bare_title); and the album's one remixer, said once when every line leaves the
+    artist out (#971 item 5). On a compilation, anthology or DJ mix, either every line leaves it out or none does."""
     if album is None:
-        return [False] * len(tracks)
-    only_album = [credits_only_the_album(credits, title, album) for credits, title in tracks]
-    return [False] * len(tracks) if rls_type in _ALL_LINES_OR_NONE and not all(only_album) else only_album
+        return [None] * len(tracks), None
+    if remixers := album_remixers(tracks):
+        titles = [bare_title(credits, title, album, remix_said_once=True) for credits, title in tracks]
+        if None not in titles:
+            return titles, remixers
+    titles = [bare_title(credits, title, album) for credits, title in tracks]
+    if rls_type in _ALL_LINES_OR_NONE and None in titles:
+        return [None] * len(tracks), None
+    return titles, None
 
 
 def _lead_names(credits: list[tuple[str, str]]) -> frozenset[str]:
@@ -110,13 +202,18 @@ def _tag_credits(tags: Any, album: frozenset[str] | None) -> list[tuple[str, str
     """A file's credits as (name, role), read from its tags as salmon reads them: ARTIST (with a feat. or remix
     credit in it made a guest or remixer), the names in ARTISTS (the main artists, then the guests, as salmon writes
     it), and REMIXER. When ARTIST alone is the album's credit, a plain name in ARTISTS credits no one more: it may be
-    a band's member (#971). No credits at all when the file has no ARTIST."""
+    a band's member (#971), unless the title credits them, as guests_in_track_title writes a guest. No credits at all
+    when the file has no ARTIST."""
     if not tags.artist:
         return []
     credits = parse_artists(tags.artist)
     if artists := getattr(tags, "artists", None):
         artist_is_the_album = _lead_names(credits) == album
-        credits += [credit for credit in parse_artists(artists) if not (artist_is_the_album and credit[1] == "main")]
+        for name, role in parse_artists(artists):
+            if not (artist_is_the_album and role == "main"):
+                credits.append((name, role))
+            elif _names_each(tags.title or "", [name]):
+                credits.append((name, "guest"))
     credits += [(name, "remixer") for name in getattr(tags, "remixer", None) or []]
     return credits
 
@@ -150,8 +247,11 @@ def _clock(seconds: int) -> str:
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
-def tracklist_description(lines: Sequence[TracklistLine], comment: str | None, urls: list[str] | None) -> str:
-    """A group description: the tracklist, its total length, the comment and the links to the release's sources.
+def tracklist_description(
+    lines: Sequence[TracklistLine], comment: str | None, urls: list[str] | None, remixers: list[str] | None = None
+) -> str:
+    """A group description: the tracklist, who remixed every track, its total length, the comment and the links to
+    the release's sources.
 
     It knows nothing of tags or stores: each caller reads its own numbers, artists and lengths into the lines.
 
@@ -159,6 +259,7 @@ def tracklist_description(lines: Sequence[TracklistLine], comment: str | None, u
         lines: The tracklist, in order.
         comment: A note to add after the tracklist, if any.
         urls: The release's source links, if any.
+        remixers: The remixers of every track, said once after the tracklist (#971), if any.
 
     Returns:
         BBCode description string. The total is shown for more than one line, and only when every line has a
@@ -169,6 +270,8 @@ def tracklist_description(lines: Sequence[TracklistLine], comment: str | None, u
         credit = "" if line.artist is None else f"{line.artist} - "
         length = "" if line.seconds is None else f" [i]({_clock(line.seconds)})[/i]"
         description += f"[b]{line.number}.[/b] {credit}{line.title}{length}\n"
+    if remixers:
+        description += f"\nAll tracks remixed by {format_tracklist_artists(remixers)}.\n"
 
     known = [line.seconds for line in lines if line.seconds is not None]
     if len(lines) > 1 and len(known) == len(lines):
@@ -187,9 +290,10 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     """Generate group description with tracklist.
 
     A track whose tags credit only the album's artists is listed without them (#895): on a one-artist album, every
-    track. A track that credits anyone else (another main artist, a guest or remixer, also in its title) keeps its
-    artist, as do all tracks of a various-artists release, or when metadata gives no artists, and all tracks of a
-    compilation, anthology or DJ mix unless every one credits only the album's artists (#971).
+    track. A guest of theirs goes after the title, "Song (feat. B)", and one remixer of every track is said once
+    (#971, see listed_titles). A track that credits anyone else (another main artist, or a remixer, also in its title)
+    keeps its artist, as do all tracks of a various-artists release, or when metadata gives no artists, and all tracks
+    of a compilation, anthology or DJ mix unless every one is listed without it (#971).
 
     Args:
         track_data: Track information.
@@ -206,22 +310,25 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     multi_disc = len(unreadable_discs | (numbered_discs if unreadable_discs else set())) > 1 or any(
         _names_several_discs(t["t"]) for t in track_data.values()
     )
-    bare = listed_bare(
+    titles, remixers = listed_titles(
         [(_tag_credits(track["t"], album), track["t"].title) for track in track_data.values()],
         album,
         metadata.get("rls_type"),
     )
     lines: list[TracklistLine] = []
-    for track, is_bare in zip(track_data.values(), bare, strict=True):
+    for track, bare in zip(track_data.values(), titles, strict=True):
         number = _listed_number(track["t"], "tracknumber")
         if multi_disc:
             # A disc with no number is listed as the first.
             number = f"{_listed_number(track['t'], 'discnumber') or '01'}-{number}"
 
-        artist = None if is_bare else format_tracklist_artists(track["t"].artist)
-        lines.append(TracklistLine(number, track["t"].title, artist, track["duration"]))
+        if bare is None:
+            title, artist = track["t"].title, format_tracklist_artists(track["t"].artist)
+        else:
+            title, artist = bare, None
+        lines.append(TracklistLine(number, title, artist, track["duration"]))
 
-    return tracklist_description(lines, metadata["comment"], metadata["urls"])
+    return tracklist_description(lines, metadata["comment"], metadata["urls"], remixers)
 
 
 def generate_t_description(

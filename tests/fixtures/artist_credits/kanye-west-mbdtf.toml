@@ -1,7 +1,7 @@
 album = "Kanye West, My Beautiful Dark Twisted Fantasy"
 why = "A rapper's album with up to five featured guests on a track, guests who are also the album's writers and producers."
 edition = "Roc-A-Fella 2010, 13 tracks (Deezer 707965 = MusicBrainz ef748325 by barcode; Discogs 9723759, linked from MusicBrainz). Chosen as the standard edition every store has. Qobuz 0060252747446 is the same UPC less its check digit, the same 13 tracks."
-known_wrong = ["MusicBrainz parse: 'Ye' (the artist's later name) as the main, not the credited 'Kanye West'", "merge: 'Kanye West & Ye' on every track, MusicBrainz's 'Ye' beside the stores' 'Kanye West', whatever the files' tag shape", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so every guest is made main and ALBUMARTIST is 'Various'", "merge: Jay-Z main and guest at once in two spellings: 'Kanye West, JAŸ-Z, ... (feat. JAY Z)'"]
+known_wrong = ["MusicBrainz parse: 'Ye' (the artist's later name) as the main, not the credited 'Kanye West'", "merge: 'Kanye West & Ye' on every track, MusicBrainz's 'Ye' beside the stores' 'Kanye West', whatever the files' tag shape", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so every guest is made main and ALBUMARTIST is 'Various'", "merge: 'Prynce Cy Hi' (main) beside 'CyHi Da Prynce' (guest) on 1.7: Discogs credits him as 'Prince Cy Hi', a third spelling, so nothing reads the two as one"]
 files_from = "deezer"
 output = true
 
@@ -35,17 +35,17 @@ release = ["Kanye West (main)", "Kid Cudi (guest)", "Raekwon (guest)", "Jay-Z (g
 tracks = 13
 
 [today.merge]
-release = ["Kanye West (main)", "Ye (main)", "No I.D. (producer)", "RZA (producer)", "Kid Cudi (main)", "Raekwon (main)", "Mike Dean (producer)", "Symbolyc One (producer)", "JAŸ-Z (main)", "Rick Ross (main)", "Nicki Minaj (main)", "Bon Iver (main)", "JAY Z (guest)", "Pusha T (main)", "Prynce Cy Hi (main)", "Swizz Beatz (main)", "RZA (main)", "CyHi Da Prynce (guest)", "Bink! (producer)", "John Legend (main)", "Frank E (producer)", "Justin Vernon (guest)"]
+release = ["Kanye West (main)", "Ye (main)", "No I.D. (producer)", "RZA (producer)", "Kid Cudi (main)", "Raekwon (main)", "Mike Dean (producer)", "Symbolyc One (producer)", "JAŸ-Z (main)", "Rick Ross (main)", "Nicki Minaj (main)", "Bon Iver (main)", "Pusha T (main)", "Prynce Cy Hi (main)", "Swizz Beatz (main)", "RZA (main)", "CyHi Da Prynce (guest)", "Bink! (producer)", "John Legend (main)", "Frank E (producer)", "Justin Vernon (guest)"]
 tracks = 13
-credits = ["1.1: Kanye West (main), Ye (main), No I.D. (producer), RZA (producer)", "1.2: Kanye West (main), Kid Cudi (main), Raekwon (main), Ye (main), Mike Dean (producer), No I.D. (producer)", "1.3: Kanye West (main), Ye (main), Symbolyc One (producer)", "1.4: Kanye West (main), Ye (main)", "1.5: Kanye West (main), Ye (main)", "1.6: Kanye West (main), JAŸ-Z (main), Rick Ross (main), Nicki Minaj (main), Bon Iver (main), JAY Z (guest), Ye (main)", "1.7: Kanye West (main), JAŸ-Z (main), Pusha T (main), Prynce Cy Hi (main), Swizz Beatz (main), RZA (main), JAY Z (guest), Ye (main), CyHi Da Prynce (guest), No I.D. (producer)", "1.8: Kanye West (main), Rick Ross (main), Ye (main), Bink! (producer)", "1.9: Kanye West (main), Pusha T (main), Ye (main)", "1.10: Kanye West (main), Ye (main)", "1.11: Kanye West (main), John Legend (main), Ye (main), Frank E (producer)", "1.12: Kanye West (main), Bon Iver (main), Justin Vernon (guest), Ye (main)", "1.13: Kanye West (main), Ye (main)"]
+credits = ["1.1: Kanye West (main), Ye (main), No I.D. (producer), RZA (producer)", "1.2: Kanye West (main), Kid Cudi (main), Raekwon (main), Ye (main), Mike Dean (producer), No I.D. (producer)", "1.3: Kanye West (main), Ye (main), Symbolyc One (producer)", "1.4: Kanye West (main), Ye (main)", "1.5: Kanye West (main), Ye (main)", "1.6: Kanye West (main), JAŸ-Z (main), Rick Ross (main), Nicki Minaj (main), Bon Iver (main), Ye (main)", "1.7: Kanye West (main), JAŸ-Z (main), Pusha T (main), Prynce Cy Hi (main), Swizz Beatz (main), RZA (main), Ye (main), CyHi Da Prynce (guest), No I.D. (producer)", "1.8: Kanye West (main), Rick Ross (main), Ye (main), Bink! (producer)", "1.9: Kanye West (main), Pusha T (main), Ye (main)", "1.10: Kanye West (main), Ye (main)", "1.11: Kanye West (main), John Legend (main), Ye (main), Frank E (producer)", "1.12: Kanye West (main), Bon Iver (main), Justin Vernon (guest), Ye (main)", "1.13: Kanye West (main), Ye (main)"]
 
 [today.output]
 albumartist = "Various"
-tracks = ["Kanye West & Ye | Dark Fantasy", "Kanye West, Kid Cudi, Raekwon, Ye | Gorgeous", "Kanye West & Ye | Power", "Kanye West & Ye | All Of The Lights (Interlude)", "Kanye West & Ye | All Of The Lights", "Kanye West, JAŸ-Z, Rick Ross, Nicki Minaj, Bon Iver, Ye (feat. JAY Z) | Monster", "Kanye West, JAŸ-Z, Pusha T, Prynce Cy Hi, Swizz Beatz, RZA, Ye (feat. JAY Z & CyHi Da Prynce) | So Appalled", "Kanye West, Rick Ross, Ye | Devil In A New Dress", "Kanye West, Pusha T, Ye | Runaway", "Kanye West & Ye | Hell Of A Life", "Kanye West, John Legend, Ye | Blame Game", "Kanye West, Bon Iver, Ye (feat. Justin Vernon) | Lost In The World", "Kanye West & Ye | Who Will Survive In America"]
+tracks = ["Kanye West & Ye | Dark Fantasy", "Kanye West, Kid Cudi, Raekwon, Ye | Gorgeous", "Kanye West & Ye | POWER", "Kanye West & Ye | All Of The Lights (Interlude)", "Kanye West & Ye | All Of The Lights", "Kanye West, JAŸ-Z, Rick Ross, Nicki Minaj, Bon Iver, Ye | Monster", "Kanye West, JAŸ-Z, Pusha T, Prynce Cy Hi, Swizz Beatz, RZA, Ye (feat. CyHi Da Prynce) | So Appalled", "Kanye West, Rick Ross, Ye | Devil In A New Dress", "Kanye West, Pusha T, Ye | Runaway", "Kanye West & Ye | Hell Of A Life", "Kanye West, John Legend, Ye | Blame Game", "Kanye West, Bon Iver, Ye (feat. Justin Vernon) | Lost In The World", "Kanye West & Ye | Who Will Survive In America"]
 
 [today."output-guests-in-title"]
 albumartist = "Various"
-tracks = ["Kanye West & Ye | Dark Fantasy", "Kanye West, Kid Cudi, Raekwon, Ye | Gorgeous", "Kanye West & Ye | Power", "Kanye West & Ye | All Of The Lights (Interlude)", "Kanye West & Ye | All Of The Lights", "Kanye West, JAŸ-Z, Rick Ross, Nicki Minaj, Bon Iver, Ye | Monster (feat. JAY Z)", "Kanye West, JAŸ-Z, Pusha T, Prynce Cy Hi, Swizz Beatz, RZA, Ye | So Appalled (feat. JAY Z & CyHi Da Prynce)", "Kanye West, Rick Ross, Ye | Devil In A New Dress", "Kanye West, Pusha T, Ye | Runaway", "Kanye West & Ye | Hell Of A Life", "Kanye West, John Legend, Ye | Blame Game", "Kanye West, Bon Iver, Ye | Lost In The World (feat. Justin Vernon)", "Kanye West & Ye | Who Will Survive In America"]
+tracks = ["Kanye West & Ye | Dark Fantasy", "Kanye West, Kid Cudi, Raekwon, Ye | Gorgeous", "Kanye West & Ye | POWER", "Kanye West & Ye | All Of The Lights (Interlude)", "Kanye West & Ye | All Of The Lights", "Kanye West, JAŸ-Z, Rick Ross, Nicki Minaj, Bon Iver, Ye | Monster", "Kanye West, JAŸ-Z, Pusha T, Prynce Cy Hi, Swizz Beatz, RZA, Ye | So Appalled (feat. CyHi Da Prynce)", "Kanye West, Rick Ross, Ye | Devil In A New Dress", "Kanye West, Pusha T, Ye | Runaway", "Kanye West & Ye | Hell Of A Life", "Kanye West, John Legend, Ye | Blame Game", "Kanye West, Bon Iver, Ye | Lost In The World (feat. Justin Vernon)", "Kanye West & Ye | Who Will Survive In America"]
 
 # The files' tags.
 # Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
@@ -178,6 +178,156 @@ tracknumber = ["13"]
 discnumber = ["1"]
 title = ["Who Will Survive In America"]
 artist = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Dark Fantasy"]
+artist = ["Kanye West"]
+artists = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Gorgeous"]
+artist = ["Kanye West feat. Kid Cudi & Raekwon"]
+artists = ["Kanye West", "Kid Cudi", "Raekwon"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Power"]
+artist = ["Kanye West"]
+artists = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["All of the Lights (interlude)"]
+artist = ["Kanye West"]
+artists = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["All of the Lights"]
+artist = ["Kanye West"]
+artists = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Monster"]
+artist = ["Kanye West feat. Jay‐Z, Rick Ross, Nicki Minaj & Bon Iver"]
+artists = ["Kanye West", "Jay‐Z", "Rick Ross", "Nicki Minaj", "Bon Iver"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["So Appalled"]
+artist = ["Kanye West feat. Jay‐Z, Pusha T, Cyhi, Swizz Beatz & RZA"]
+artists = ["Kanye West", "Jay‐Z", "Pusha T", "Cyhi", "Swizz Beatz", "RZA"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Devil in a New Dress"]
+artist = ["Kanye West feat. Rick Ross"]
+artists = ["Kanye West", "Rick Ross"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Runaway"]
+artist = ["Kanye West feat. Pusha T"]
+artists = ["Kanye West", "Pusha T"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Hell of a Life"]
+artist = ["Kanye West"]
+artists = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Blame Game"]
+artist = ["Kanye West feat. John Legend"]
+artists = ["Kanye West", "John Legend"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Lost in the World"]
+artist = ["Kanye West feat. Bon Iver"]
+artists = ["Kanye West", "Bon Iver"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Who Will Survive in America"]
+artist = ["Kanye West"]
+artists = ["Kanye West"]
 album = ["My Beautiful Dark Twisted Fantasy"]
 albumartist = ["Kanye West"]
 date = ["2010-11-22"]

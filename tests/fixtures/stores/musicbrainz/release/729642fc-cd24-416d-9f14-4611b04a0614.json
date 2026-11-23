@@ -9,7 +9,2061 @@
    "joinphrase": "",
    "artist": {
     "id": "89ad4ac3-39f7-470e-963a-56509c546377",
-    "name": "Various Artists"
+    "name": "Various Artists",
+    "aliases": [
+     {
+      "name": "(Karaoke) Various Artists",
+      "sort-name": "(Karaoke) Various Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "(V.A.)",
+      "sort-name": "(V.A.)",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "(various)",
+      "sort-name": "(various)",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "30 Vermont Artists",
+      "sort-name": "30 Vermont Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "A Pacific Northwest Tribute to Ray Charles",
+      "sort-name": "Pacific Northwest Tribute to Ray Charles",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "A.A.V.V.",
+      "sort-name": "A.A.V.V.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "AA.VV.",
+      "sort-name": "AA.VV.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "AAVV",
+      "sort-name": "AAVV",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "American Folk Blues Festival",
+      "sort-name": "American Folk Blues Festival",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Amrywiol",
+      "sort-name": "Amrywiol",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "cy",
+      "primary": false
+     },
+     {
+      "name": "Artis JK",
+      "sort-name": "Artis JK",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Artistas Varios",
+      "sort-name": "Artistas Varios",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Artistes divers",
+      "sort-name": "Artistes divers",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Artistes variés",
+      "sort-name": "Artistes variés",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Artisti uniti per l'Emilia",
+      "sort-name": "Artisti uniti per l'Emilia",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Artisti vari",
+      "sort-name": "Artisti vari",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "Artistiaid Amrywiol",
+      "sort-name": "Artistiaid Amrywiol",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "cy",
+      "primary": true
+     },
+     {
+      "name": "Assorted Artisits",
+      "sort-name": "Assorted Artisits",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Assorted Artists",
+      "sort-name": "Assorted Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Assorted Christian Artists",
+      "sort-name": "Assorted Christian Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Bande originale",
+      "sort-name": "Bande originale",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Bassrush",
+      "sort-name": "Bassrush",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Battle of the Bits",
+      "sort-name": "Battle of the Bits",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Berühmtesten Opernchören",
+      "sort-name": "Group, The",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Blandade artister",
+      "sort-name": "Blandade artister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "sv",
+      "primary": true
+     },
+     {
+      "name": "Blandat",
+      "sort-name": "Blandat",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "sv",
+      "primary": false
+     },
+     {
+      "name": "Blandede Kunstnere",
+      "sort-name": "Kunstnere, Blandede",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Bypass Audio",
+      "sort-name": "Bypass Audio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Cheapbeats",
+      "sort-name": "Cheapbeats",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Christmas Karma",
+      "sort-name": "Christmas Karma",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Circus Records",
+      "sort-name": "Records, Circus",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Coala.Records",
+      "sort-name": "Coala Records",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Coletânea",
+      "sort-name": "Coletânea",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pt",
+      "primary": false
+     },
+     {
+      "name": "Collectif",
+      "sort-name": "Collectif",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Collégiale",
+      "sort-name": "Collégiale",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Comp.",
+      "sort-name": "Comp.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Compilaciones",
+      "sort-name": "Compilaciones",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "es",
+      "primary": false
+     },
+     {
+      "name": "Compilation",
+      "sort-name": "Compilation",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "DESKPOP",
+      "sort-name": "DESKPOP",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Danske Kunstnere",
+      "sort-name": "Danske Kunstnere",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "da",
+      "primary": false
+     },
+     {
+      "name": "Div. artister",
+      "sort-name": "Div. artister",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Div. kunstnere",
+      "sort-name": "Div. kunstnere",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "da",
+      "primary": false
+     },
+     {
+      "name": "Divers",
+      "sort-name": "Divers",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Diverse",
+      "sort-name": "Diverse",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Diverse Artiesten",
+      "sort-name": "Diverse Artiesten",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "nl",
+      "primary": true
+     },
+     {
+      "name": "Diverse Artistar",
+      "sort-name": "Diverse Artistar",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "nn",
+      "primary": false
+     },
+     {
+      "name": "Diverse Artister",
+      "sort-name": "Diverse Artister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "nb",
+      "primary": true
+     },
+     {
+      "name": "Diverse Interpreten",
+      "sort-name": "Diverse Interpreten",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": true
+     },
+     {
+      "name": "Diverse Kunstnere",
+      "sort-name": "Diverse Kunstnere",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Diverse componisten",
+      "sort-name": "Diverse componisten",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "nl",
+      "primary": false
+     },
+     {
+      "name": "Diverse danske artister",
+      "sort-name": "Diverse danske artister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "da",
+      "primary": false
+     },
+     {
+      "name": "Diverse kunstnere",
+      "sort-name": "Diverse kunstnere",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "da",
+      "primary": true
+     },
+     {
+      "name": "Diversen",
+      "sort-name": "Diversen",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Dominicanos Varios",
+      "sort-name": "Dominicanos Varios",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "EXIT TUNES/PONY CANYON",
+      "sort-name": "EXIT TUNES/PONY CANYON",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Encrypted Audio",
+      "sort-name": "Encrypted Audio",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Eri esittäjiä",
+      "sort-name": "Eri esittäjiä",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "fi",
+      "primary": true
+     },
+     {
+      "name": "Erinevad",
+      "sort-name": "Erinevad",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "et",
+      "primary": false
+     },
+     {
+      "name": "Erinevad esitajad",
+      "sort-name": "Erinevad esitajad",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "et",
+      "primary": true
+     },
+     {
+      "name": "Ferkels grosses Abenteuer",
+      "sort-name": "Ferkels grosee Abenteuer",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Fitness Workout Music",
+      "sort-name": "Fitness Workout Music",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Goths For Palestine",
+      "sort-name": "Goths For Palestine",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Grand Theft Auto VI",
+      "sort-name": "VI, Grand Theft Auto",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Hainbat artista",
+      "sort-name": "Hainbat artista",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "eu",
+      "primary": true
+     },
+     {
+      "name": "Hazbin Hotel",
+      "sort-name": "Hazbin Hotel",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Helluva Boss",
+      "sort-name": "Helluva Boss",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Hitradio Ö3",
+      "sort-name": "Hitradio Ö3",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Hver gang vi møtes",
+      "sort-name": "Hver gang vi møtes",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Hợp ca",
+      "sort-name": "Hợp ca",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "vi",
+      "primary": false
+     },
+     {
+      "name": "Icelandic Folk Music",
+      "sort-name": "Icelandic Folk Music",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Iedereen",
+      "sort-name": "Iedereen",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "nl",
+      "primary": false
+     },
+     {
+      "name": "Insomniac Music Group",
+      "sort-name": "Insomniac Music Group",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Intérpretes Diversos",
+      "sort-name": "Intérpretes Diversos",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "KC101—Connecticut's #1 Hit Music Station",
+      "sort-name": "KC101",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "KZOK 102.5FM",
+      "sort-name": "KZOK 102.5 FM",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "La Historia de la Fania",
+      "sort-name": "Historia de la Fania, La",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "MDB",
+      "sort-name": "MDB",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "MUSIC STUDY PROJECT",
+      "sort-name": "MUSIC STUDY PROJECT",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Miscellaneous",
+      "sort-name": "Miscellaneous",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Mixed Artists",
+      "sort-name": "Mixed Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "More artists",
+      "sort-name": "More artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Multi Interprètes",
+      "sort-name": "Multi Interprètes",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Multi-artistes",
+      "sort-name": "Multi-artistes",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Multi-interprètes",
+      "sort-name": "Multi-interprètes",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Multiple Artists",
+      "sort-name": "Multiple Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Multi‐interprètes",
+      "sort-name": "Multi‐interprètes",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "fr",
+      "primary": true
+     },
+     {
+      "name": "Multi‐interprètes",
+      "sort-name": "Multi‐interprètes",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Multi‐interprètes",
+      "sort-name": "Multi‐interprètes",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nhiều Nghệ Sĩ",
+      "sort-name": "Nhiều Nghệ Sĩ",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nhiều ca sĩ",
+      "sort-name": "Nhiều ca sĩ",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "vi",
+      "primary": true
+     },
+     {
+      "name": "Nhiều nghệ sĩ",
+      "sort-name": "Nhiều nghệ sĩ",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "vi",
+      "primary": false
+     },
+     {
+      "name": "Noevir",
+      "sort-name": "Noevir",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Omnibus",
+      "sort-name": "Omnibus",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pluraj artistoj",
+      "sort-name": "Pluraj artistoj",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "eo",
+      "primary": true
+     },
+     {
+      "name": "Razlièni izvajalci",
+      "sort-name": "Razlièni izvajalci",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "sl",
+      "primary": false
+     },
+     {
+      "name": "Razni",
+      "sort-name": "Razni",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Razni Izvođači",
+      "sort-name": "Razni Izvođači",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "bs",
+      "primary": false
+     },
+     {
+      "name": "Razni Izvođači",
+      "sort-name": "Razni Izvođači",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "hr",
+      "primary": false
+     },
+     {
+      "name": "Razni Izvođači",
+      "sort-name": "Razni Izvođači",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "sr_Latn",
+      "primary": false
+     },
+     {
+      "name": "Reggae Gold",
+      "sort-name": "Reggae Gold",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Reinelex Records",
+      "sort-name": "Records, Reinelex",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Rizni vykonavci",
+      "sort-name": "Rizni vykonavci",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "uk",
+      "primary": false
+     },
+     {
+      "name": "Rizni vykonavtsi",
+      "sort-name": "Rizni vykonavtsi",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "uk",
+      "primary": false
+     },
+     {
+      "name": "Rossmann",
+      "sort-name": "Rossmann",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Różni",
+      "sort-name": "Różni",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pl",
+      "primary": false
+     },
+     {
+      "name": "Różni artyści",
+      "sort-name": "Różni artyści",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pl",
+      "primary": false
+     },
+     {
+      "name": "Różni wykonawcy",
+      "sort-name": "Różni wykonawcy",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pl",
+      "primary": true
+     },
+     {
+      "name": "Různí interpreti",
+      "sort-name": "Různí interpreti",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "cs",
+      "primary": true
+     },
+     {
+      "name": "Sampler",
+      "sort-name": "Sampler",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Siren Cues",
+      "sort-name": "Siren Cues",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Skratch 'N Sniff",
+      "sort-name": "Skratch 'N Sniff",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Soca Gold",
+      "sort-name": "Soca Gold",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Strictly The Best",
+      "sort-name": "Strictly The Best",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Suntory Oolong-cha CM Song Collection",
+      "sort-name": "Suntory Oolong-cha CM Song Collection",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tabu Recz",
+      "sort-name": "Tabu Recz",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "The Metal Observer",
+      "sort-name": "The Metal Observer",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Time Life Music: Various Artists",
+      "sort-name": "Time Life Music: Various Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Tốp ca",
+      "sort-name": "Tốp ca",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "vi",
+      "primary": false
+     },
+     {
+      "name": "Tốp ca nam",
+      "sort-name": "Tốp ca nam",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "vi",
+      "primary": false
+     },
+     {
+      "name": "V. A.",
+      "sort-name": "V. A.",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "V. Artist",
+      "sort-name": "V. Artist",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "V.A.",
+      "sort-name": "V.A.",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "V.A.",
+      "sort-name": "V.A.",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "V/a",
+      "sort-name": "V/a",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "VA",
+      "sort-name": "VA",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "VAR",
+      "sort-name": "VAR",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "VV AA",
+      "sort-name": "VV AA",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Vari",
+      "sort-name": "Vari",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "it",
+      "primary": false
+     },
+     {
+      "name": "Vari",
+      "sort-name": "Vari",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Vari Artisti",
+      "sort-name": "Vari Artisti",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varias Artistas",
+      "sort-name": "Varias Artistas",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varied",
+      "sort-name": "Varied",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Varies",
+      "sort-name": "Varies",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Variois",
+      "sort-name": "Variois",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varios",
+      "sort-name": "Varios",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "es",
+      "primary": false
+     },
+     {
+      "name": "Varios Artistas",
+      "sort-name": "Varios Artistas",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varios Intérpretes",
+      "sort-name": "Varios Intérpretes",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varios artistas",
+      "sort-name": "Varios artistas",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "es",
+      "primary": true
+     },
+     {
+      "name": "Varios artists",
+      "sort-name": "Varios artists",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various",
+      "sort-name": "Various",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various (not original artists)",
+      "sort-name": "Various (not original artists)",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various (original artists)",
+      "sort-name": "Various (original artists)",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various 80's",
+      "sort-name": "80's, Various",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Arists",
+      "sort-name": "Various Arists",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Artist",
+      "sort-name": "Various Artist",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Artist - GoGo Wonderful",
+      "sort-name": "Various Artist - GoGo Wonderful",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various Artistes",
+      "sort-name": "Various Artistes",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Artists",
+      "sort-name": "Various Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Various Artists (Rock)",
+      "sort-name": "Various Artists (Rock)",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Artists [DIY]",
+      "sort-name": "Various Artists [DIY]",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Artitsts",
+      "sort-name": "Various Artitsts",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Artsits",
+      "sort-name": "Various Artsits",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Big Bands",
+      "sort-name": "Various Big Bands",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various Celtic Artists",
+      "sort-name": "Various Celtic Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various Compiled By",
+      "sort-name": "Various Compiled By",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Composers",
+      "sort-name": "Various Composers",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various DHM Artists",
+      "sort-name": "Various DHM Artists",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various DJ's",
+      "sort-name": "Various DJ's",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various Female Artists",
+      "sort-name": "Various Female Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Various Items",
+      "sort-name": "Various Items",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various Military Bands",
+      "sort-name": "Various Military Bands",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various Speakers",
+      "sort-name": "Various Speakers",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various Talented Artists",
+      "sort-name": "Various Talented Artists",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Various artists from CISM 89,3 FM",
+      "sort-name": "Various artists from CISM 89,3 FM",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "VariousArtist",
+      "sort-name": "VariousArtist",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Variuos",
+      "sort-name": "Variuos",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Variuos Artists",
+      "sort-name": "Variuos Artists",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varius",
+      "sort-name": "Varius",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varius Artist",
+      "sort-name": "Varius Artist",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varius Artists",
+      "sort-name": "Varius Artists",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Variées",
+      "sort-name": "Variées",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Variés",
+      "sort-name": "Variés",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Varoius",
+      "sort-name": "Varoius",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Varoius Artists",
+      "sort-name": "Varoius Artists",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Verious",
+      "sort-name": "Verious",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Verschiedene",
+      "sort-name": "Verschiedene",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Verschiedene Interpret:innen",
+      "sort-name": "Verschiedene Interpret:innen",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Verschiedene Interpreten",
+      "sort-name": "Verschiedene Interpreten",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Vrious Artists",
+      "sort-name": "Vrious Artists",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Vários",
+      "sort-name": "Vários",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pt",
+      "primary": false
+     },
+     {
+      "name": "Vários Artistas",
+      "sort-name": "Vários Artistas",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Vários artistas",
+      "sort-name": "Vários artistas",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pt",
+      "primary": true
+     },
+     {
+      "name": "Vários intérpretes",
+      "sort-name": "Vários intérpretes",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pt",
+      "primary": false
+     },
+     {
+      "name": "War Child Records",
+      "sort-name": "War Child Records",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "WiddFam",
+      "sort-name": "WiddFam",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "WitChoirRecords",
+      "sort-name": "WitChoirRecords",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Woman & Home / Classic FM",
+      "sort-name": "Woman & Home / Classic FM",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Wszyscy artysci",
+      "sort-name": "Wszyscy artysci",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "pl",
+      "primary": false
+     },
+     {
+      "name": "[Various Artists]",
+      "sort-name": "[Various Artists]",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "[различные исполнители]",
+      "sort-name": "различные исполнители",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "div.",
+      "sort-name": "div.",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "diversos artistes",
+      "sort-name": "diversos artistes",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ca",
+      "primary": true
+     },
+     {
+      "name": "razlichnye ispolniteli",
+      "sort-name": "razlichnye ispolniteli",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "val",
+      "sort-name": "val",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "varias",
+      "sort-name": "varias",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "various aritsts",
+      "sort-name": "various aritsts",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "various artiste",
+      "sort-name": "various artiste",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "versch. Künstler",
+      "sort-name": "versch. Künstler",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Çeşitli sanatçılar",
+      "sort-name": "Çeşitli sanatçılar",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "tr",
+      "primary": false
+     },
+     {
+      "name": "Ýmsir hljóðfæraleikarar",
+      "sort-name": "Ýmsir hljóðfæraleikarar",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "is",
+      "primary": false
+     },
+     {
+      "name": "Įvairūs atlikėjai",
+      "sort-name": "atlikėjai, Įvairūs",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "lt",
+      "primary": true
+     },
+     {
+      "name": "Światowe Przeboje",
+      "sort-name": "Przeboje, Światowe",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Όλοι",
+      "sort-name": "Όλοι",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Διάφοροι Καλλιτέχνες",
+      "sort-name": "Diaforoi Kallitechnes",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "el",
+      "primary": true
+     },
+     {
+      "name": "Различни изпълнители",
+      "sort-name": "Различни изпълнители",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "bg",
+      "primary": true
+     },
+     {
+      "name": "Различные исполнители",
+      "sort-name": "Различные исполнители",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "Разни изведувачи",
+      "sort-name": "Razni izveduvači",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "mk",
+      "primary": true
+     },
+     {
+      "name": "Разные артисты",
+      "sort-name": "Разные артисты",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ru",
+      "primary": true
+     },
+     {
+      "name": "Різні виконавці",
+      "sort-name": "Різні виконавці",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "uk",
+      "primary": true
+     },
+     {
+      "name": "различных исполнителей",
+      "sort-name": "различных исполнителей",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "розныя выканаўцы",
+      "sort-name": "розныя выканаўцы",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "be",
+      "primary": true
+     },
+     {
+      "name": "різних виконавців",
+      "sort-name": "різних виконавців",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "uk",
+      "primary": false
+     },
+     {
+      "name": "אומנים שונים",
+      "sort-name": "אומנים שונים",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "he",
+      "primary": false
+     },
+     {
+      "name": "אמנים שונים",
+      "sort-name": "אמנים שונים",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "he",
+      "primary": true
+     },
+     {
+      "name": "כל המשתתפים",
+      "sort-name": "המשתתפים, כל",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "משתתפי פסטיגל",
+      "sort-name": "משתתפי פסטיגל",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "مختلف الفنانين",
+      "sort-name": "مختلف الفنانين",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ar",
+      "primary": true
+     },
+     {
+      "name": "هنرمندان مختلف",
+      "sort-name": "هنرمندان مختلف",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "fa",
+      "primary": true
+     },
+     {
+      "name": "รวมศิลปิน",
+      "sort-name": "รวมศิลปิน",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "th",
+      "primary": true
+     },
+     {
+      "name": "หลากหลายศิลปิน",
+      "sort-name": "หลากหลายศิลปิน",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "th",
+      "primary": false
+     },
+     {
+      "name": "さまざまなアーティスト",
+      "sort-name": "さまざまなアーティスト",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "オムニバス",
+      "sort-name": "オムニバス",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "ヴァリアス",
+      "sort-name": "ヴァリアス",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "ヴァリアス・アーティスト",
+      "sort-name": "ヴァリアス・アーティスト",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     },
+     {
+      "name": "ヴァリアス・アーティスト",
+      "sort-name": "ヴァリアス・アーティスト",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "群星",
+      "sort-name": "群星",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh",
+      "primary": true
+     },
+     {
+      "name": "여러 아티스트",
+      "sort-name": "여러 아티스트",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ko",
+      "primary": true
+     },
+     {
+      "name": "Ｖ．Ａ.",
+      "sort-name": "Ｖ．Ａ.",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],
@@ -64,7 +2118,306 @@
        "joinphrase": "",
        "artist": {
         "id": "314e1c25-dde7-4e4d-b2f4-0a7b9f7c56dc",
-        "name": "[dialogue]"
+        "name": "[dialogue]",
+        "aliases": [
+         {
+          "name": "(Dialog from Movie)",
+          "sort-name": "(Dialog from Movie)",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "(dialog)",
+          "sort-name": "(dialog)",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "(skit)",
+          "sort-name": "(skit)",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Barfuss Filmdialog",
+          "sort-name": "Barfuss Filmdialog",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Barfuß Filmdialog",
+          "sort-name": "Barfuß Filmdialog",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Boxfresh Skit II",
+          "sort-name": "Boxfresh Skit II",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Brooklyn Skit",
+          "sort-name": "Brooklyn Skit",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dialog",
+          "sort-name": "Dialog",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dialogue",
+          "sort-name": "Dialogue",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Film Dialogue",
+          "sort-name": "Film Dialogue",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Movie Dialogue",
+          "sort-name": "Movie Dialogue",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Radio Skit",
+          "sort-name": "Radio Skit",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Skit",
+          "sort-name": "Skit",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Skit (1)",
+          "sort-name": "Skit (1)",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Skit (2)",
+          "sort-name": "Skit (2)",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Studio Announcer",
+          "sort-name": "Studio Announcer",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "[Movie Dialogue]",
+          "sort-name": "[Movie Dialogue]",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "[cast]",
+          "sort-name": "[cast]",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "[dialog]",
+          "sort-name": "[dialog]",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en_US",
+          "primary": true
+         },
+         {
+          "name": "[dialogi]",
+          "sort-name": "[dialogi]",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "fi",
+          "primary": true
+         },
+         {
+          "name": "[dialogue]",
+          "sort-name": "[dialogue]",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": true
+         },
+         {
+          "name": "[dialoog]",
+          "sort-name": "[dialoog]",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "nl",
+          "primary": true
+         },
+         {
+          "name": "[diálogo]",
+          "sort-name": "[diálogo]",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "es",
+          "primary": true
+         },
+         {
+          "name": "[skit]",
+          "sort-name": "[skit]",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "[対話]",
+          "sort-name": "[対話]",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "dialouge",
+          "sort-name": "dialouge",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "speach",
+          "sort-name": "speach",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "〔對話〕",
+          "sort-name": "〔對話〕",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "zh_Hant_TW",
+          "primary": true
+         },
+         {
+          "name": "ドラマ",
+          "sort-name": "ドラマ",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         },
+         {
+          "name": "ドラマCD",
+          "sort-name": "ドラマCD",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         },
+         {
+          "name": "ローゼンメイデン・トロイメント アニメキャスト",
+          "sort-name": "Rozen Maiden Traumend Anime Cast",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "對白",
+          "sort-name": "對白",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "對話",
+          "sort-name": "對話",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -78,7 +2431,8 @@
         "joinphrase": " and ",
         "artist": {
          "id": "669982b2-97e5-46b1-a8e1-7415c6c44dd0",
-         "name": "Tim Roth"
+         "name": "Tim Roth",
+         "aliases": []
         }
        },
        {
@@ -86,7 +2440,18 @@
         "joinphrase": "",
         "artist": {
          "id": "61742cdb-b5ab-47f0-a724-38a454be4ef8",
-         "name": "Amanda Plummer"
+         "name": "Amanda Plummer",
+         "aliases": [
+          {
+           "name": "Amanada Plummer",
+           "sort-name": "Amanada Plummer",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        }
       ]
@@ -103,7 +2468,90 @@
        "joinphrase": "",
        "artist": {
         "id": "820263ae-ab51-426d-85e9-bed5a74f00e1",
-        "name": "Dick Dale and His Del‐Tones"
+        "name": "Dick Dale and His Del‐Tones",
+        "aliases": [
+         {
+          "name": "Dick Dale & His Del Tones",
+          "sort-name": "Dick Dale & His Del Tones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale & His Del-Tones",
+          "sort-name": "Dick Dale & His Del-Tones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale & His Del-Toness",
+          "sort-name": "Dick Dale & His Del-Toness",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale & His Deltones",
+          "sort-name": "Dick Dale & His Deltones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale & The Del Tones",
+          "sort-name": "Dick Dale & The Del Tones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale & the Del-Tones",
+          "sort-name": "Dick Dale & the Del-Tones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale And His Del Tones",
+          "sort-name": "Dick Dale And His Del Tones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale and His Deltones",
+          "sort-name": "Dick Dale and His Deltones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Dick Dale and The Del-Tones",
+          "sort-name": "Dick Dale and The Del-Tones",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -134,7 +2582,18 @@
        "joinphrase": " and ",
        "artist": {
         "id": "a1c82f09-cc3a-4c94-a518-cba50d9bfab1",
-        "name": "Samuel L. Jackson"
+        "name": "Samuel L. Jackson",
+        "aliases": [
+         {
+          "name": "Samuel Leroy Jackson",
+          "sort-name": "Jackson, Samuel Leroy",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -142,7 +2601,18 @@
        "joinphrase": "",
        "artist": {
         "id": "94f4c61e-5cf3-4cba-ab3e-9bd5be99f6ab",
-        "name": "John Travolta"
+        "name": "John Travolta",
+        "aliases": [
+         {
+          "name": "John Joseph Travolta",
+          "sort-name": "Travolta, John Joseph",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -181,7 +2651,36 @@
        "joinphrase": "",
        "artist": {
         "id": "2469950a-f0ca-425a-bfbc-baf55ea3afde",
-        "name": "Kool & the Gang"
+        "name": "Kool & the Gang",
+        "aliases": [
+         {
+          "name": "Kool and the Gang",
+          "sort-name": "Kool and the Gang",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Kool, the Gang",
+          "sort-name": "Kool,the Gang",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "クール&ザ・ギャング",
+          "sort-name": "クール&ザ・ギャング",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       }
      ],
@@ -212,7 +2711,36 @@
        "joinphrase": "",
        "artist": {
         "id": "fb7272ba-f130-4f0a-934d-6eeea4c18c9a",
-        "name": "Al Green"
+        "name": "Al Green",
+        "aliases": [
+         {
+          "name": "Albert Leornes Greene",
+          "sort-name": "Greene, Albert Leornes",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Green, Al",
+          "sort-name": "Green, Al",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "アル・グリーン",
+          "sort-name": "アル・グリーン",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       }
      ],
@@ -243,7 +2771,18 @@
        "joinphrase": "",
        "artist": {
         "id": "d557c4bb-253c-4f3b-967f-b6fef3e6db37",
-        "name": "The Tornadoes"
+        "name": "The Tornadoes",
+        "aliases": [
+         {
+          "name": "The Hollywood Tornadoes",
+          "sort-name": "Hollywood Tornadoes, The",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -274,7 +2813,45 @@
        "joinphrase": "",
        "artist": {
         "id": "0b511854-c21c-4af1-9c31-e3fc178ded61",
-        "name": "Rick Nelson"
+        "name": "Rick Nelson",
+        "aliases": [
+         {
+          "name": "Eric Hilliard Nelson",
+          "sort-name": "Nelson, Eric Hilliard",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Ricky Nelson",
+          "sort-name": "Nelson, Ricky",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "リッキー・ネルソン",
+          "sort-name": "リッキー・ネルソン",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         },
+         {
+          "name": "リック・ネルソン",
+          "sort-name": "リック・ネルソン",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -305,7 +2882,36 @@
        "joinphrase": "",
        "artist": {
         "id": "b896aa8c-2761-40ce-b485-0e1fffd26167",
-        "name": "Dusty Springfield"
+        "name": "Dusty Springfield",
+        "aliases": [
+         {
+          "name": "Mary Isobel Catherine Bernadette O'Brien",
+          "sort-name": "O'Brien, Mary Isobel Catherine Bernadette",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "ダスティ・スプリングフィールド",
+          "sort-name": "ダスティ・スプリングフィールド",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "ダスティ・スプリング・フィールド",
+          "sort-name": "ダスティ・スプリング・フィールド",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -350,7 +2956,18 @@
         "joinphrase": " and ",
         "artist": {
          "id": "8b7382a9-2c21-47a1-bd84-0495bc4dad0e",
-         "name": "Maria de Medeiros"
+         "name": "Maria de Medeiros",
+         "aliases": [
+          {
+           "name": "Maria Esteves de Medeiros Victorino de Almeida",
+           "sort-name": "de Medeiros Victorino de Almeida, Maria Esteves",
+           "type": "Legal name",
+           "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        },
        {
@@ -358,7 +2975,18 @@
         "joinphrase": "",
         "artist": {
          "id": "a60fa7b7-ec5c-4c0a-bec2-f1e2ae8eb4f3",
-         "name": "Bruce Willis"
+         "name": "Bruce Willis",
+         "aliases": [
+          {
+           "name": "Walter Bruce Willis",
+           "sort-name": "Walter Bruce Willis",
+           "type": "Legal name",
+           "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        }
       ]
@@ -375,7 +3003,18 @@
        "joinphrase": "",
        "artist": {
         "id": "441b8d20-8f8e-4d02-985e-b0e69936b7b7",
-        "name": "The Centurions"
+        "name": "The Centurions",
+        "aliases": [
+         {
+          "name": "The Centurians",
+          "sort-name": "The Centurians",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -420,7 +3059,8 @@
         "joinphrase": "",
         "artist": {
          "id": "621a2e58-1aec-4790-ac5e-40741eb77948",
-         "name": "Jerome Patrick Hoban"
+         "name": "Jerome Patrick Hoban",
+         "aliases": []
         }
        }
       ]
@@ -437,7 +3077,72 @@
        "joinphrase": "",
        "artist": {
         "id": "592a3b6d-c42b-4567-99c9-ecf63bd66499",
-        "name": "Chuck Berry"
+        "name": "Chuck Berry",
+        "aliases": [
+         {
+          "name": "BERRY Chuck",
+          "sort-name": "BERRY Chuck",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Berry",
+          "sort-name": "Berry",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Berry, Chuck",
+          "sort-name": "Berry, Chuck",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "C. Berry",
+          "sort-name": "C. Berry",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Charles Edward Anderson Berry",
+          "sort-name": "Berry, Charles Edward Anderson",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "E Anderson",
+          "sort-name": "E Anderson",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "チャック・ベリー",
+          "sort-name": "チャック・ベリー",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       }
      ],
@@ -468,7 +3173,8 @@
        "joinphrase": "",
        "artist": {
         "id": "120e728a-4078-47b7-a31c-d581ade28bde",
-        "name": "Urge Overkill"
+        "name": "Urge Overkill",
+        "aliases": []
        }
       }
      ],
@@ -499,7 +3205,36 @@
        "joinphrase": "",
        "artist": {
         "id": "f8276a46-0c87-4d2f-a0d3-f22900f9cbfe",
-        "name": "Maria McKee"
+        "name": "Maria McKee",
+        "aliases": [
+         {
+          "name": "Maria Luisa McKee",
+          "sort-name": "McKee, Maria Luisa",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Maria Mc Kee",
+          "sort-name": "Maria Mc Kee",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "McKee, Maria",
+          "sort-name": "McKee, Maria",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -544,7 +3279,8 @@
         "joinphrase": " and ",
         "artist": {
          "id": "3acb7f3e-c5fa-425f-9a53-2ead0c8ae9e5",
-         "name": "Peter Greene"
+         "name": "Peter Greene",
+         "aliases": []
         }
        },
        {
@@ -552,7 +3288,8 @@
         "joinphrase": "",
         "artist": {
          "id": "9e866c32-6cb6-465a-95ca-634cbd3e9b2a",
-         "name": "Duane Whitaker"
+         "name": "Duane Whitaker",
+         "aliases": []
         }
        }
       ]
@@ -569,7 +3306,8 @@
        "joinphrase": "",
        "artist": {
         "id": "91d44319-f666-4605-9926-8d26bac3416f",
-        "name": "The Revels"
+        "name": "The Revels",
+        "aliases": []
        }
       }
      ],
@@ -600,7 +3338,27 @@
        "joinphrase": "",
        "artist": {
         "id": "8f0c7db9-6d1c-446b-913c-b5c6811ca6fc",
-        "name": "The Statler Brothers"
+        "name": "The Statler Brothers",
+        "aliases": [
+         {
+          "name": "Statler Brothers",
+          "sort-name": "Statler Brothers",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The Statlers",
+          "sort-name": "Statlers, The",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -670,7 +3428,18 @@
        "joinphrase": "",
        "artist": {
         "id": "519ffb10-8132-4403-a4fd-7b5d00c4e52f",
-        "name": "The Lively Ones"
+        "name": "The Lively Ones",
+        "aliases": [
+         {
+          "name": "The Lively Ones - Rik-A",
+          "sort-name": "The Lively Ones - Rik-A",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],

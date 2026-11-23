@@ -131,6 +131,103 @@ album = ["Led Zeppelin II (Remaster)"]
 albumartist = ["Led Zeppelin"]
 date = ["1969-10-22"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Whole Lotta Love"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["What Is and What Should Never Be"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["The Lemon Song"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Thank You"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Heartbreaker"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Living Loving Maid (She’s Just a Woman)"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Ramble On"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Moby Dick"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Bring It On Home"]
+artist = ["Led Zeppelin"]
+artists = ["Led Zeppelin"]
+album = ["Led Zeppelin II"]
+albumartist = ["Led Zeppelin"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

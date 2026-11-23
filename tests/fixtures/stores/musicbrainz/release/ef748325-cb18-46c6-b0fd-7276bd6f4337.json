@@ -9,7 +9,117 @@
    "joinphrase": "",
    "artist": {
     "id": "164f0d73-1234-4e2c-8743-d77bf2191051",
-    "name": "Ye"
+    "name": "Ye",
+    "aliases": [
+     {
+      "name": "Donda",
+      "sort-name": "Donda",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "K. West",
+      "sort-name": "K. West",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "KanYeWest",
+      "sort-name": "KanYeWest",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Kanye",
+      "sort-name": "Kanye",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Kanye Omari West",
+      "sort-name": "West, Kanye Omari",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": true,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Kanye West",
+      "sort-name": "West, Kanye",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": true,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Kanye West",
+      "sort-name": "West, Kanye",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh",
+      "primary": true
+     },
+     {
+      "name": "Kayne West",
+      "sort-name": "Kayne West",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ye",
+      "sort-name": "Ye",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Ye",
+      "sort-name": "Ye",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Yeezy",
+      "sort-name": "Yeezy",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "カニエ・ウェスト",
+      "sort-name": "カニエ・ウェスト",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],
@@ -101,7 +211,45 @@
        "joinphrase": " & ",
        "artist": {
         "id": "e0e1db18-f7ba-4dee-95ff-7ae8cf545460",
-        "name": "Kid Cudi"
+        "name": "Kid Cudi",
+        "aliases": [
+         {
+          "name": "Kid Kudi",
+          "sort-name": "Kid Kudi",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "S. Mescudi",
+          "sort-name": "S. Mescudi",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Scott Ramon Seguro Mescudi",
+          "sort-name": "Mescudi, Scott Ramon Seguro",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "キッド・カディ",
+          "sort-name": "キッド・カディ",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -109,7 +257,81 @@
        "joinphrase": "",
        "artist": {
         "id": "4e954b02-fae2-4bd7-9547-e055a6ac0527",
-        "name": "Raekwon"
+        "name": "Raekwon",
+        "aliases": [
+         {
+          "name": "C. Woods",
+          "sort-name": "C. Woods",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Chef Raekwon",
+          "sort-name": "Chef Raekwon",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Corey Todd Woods",
+          "sort-name": "Woods, Corey Todd",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Corey Woods",
+          "sort-name": "Corey Woods",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Lex Diamonds",
+          "sort-name": "Lex Diamonds",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "RAEK WON",
+          "sort-name": "RAEK WON",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Raekwon the Chef",
+          "sort-name": "Raekwon the Chef",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Reakwon",
+          "sort-name": "Reakwon",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -257,7 +479,171 @@
        "joinphrase": ", ",
        "artist": {
         "id": "f82bcf78-5b69-4622-a5ef-73800768d9ac",
-        "name": "JAŸ-Z"
+        "name": "JAŸ-Z",
+        "aliases": [
+         {
+          "name": "Hova",
+          "sort-name": "Hova",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Hova da God",
+          "sort-name": "Hova da God",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "JAY Z",
+          "sort-name": "JAY Z",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "JAY:Z",
+          "sort-name": "JAY:Z",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "JAY‐Z",
+          "sort-name": "JAY‐Z",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "JAŸ‐Z",
+          "sort-name": "JAŸ‐Z",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jay - Z",
+          "sort-name": "Jay - Z",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jay Z",
+          "sort-name": "Jay Z",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jay-Hova",
+          "sort-name": "Jay-Hova",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jayz",
+          "sort-name": "Jayz",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jay‐Z",
+          "sort-name": "Jay‐Z",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jaÿ‐Z",
+          "sort-name": "Jaÿ‐Z",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Jigga",
+          "sort-name": "Jigga",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "S. Carter",
+          "sort-name": "Carter, S.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Shawn C Carter",
+          "sort-name": "Carter, Shawn C",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Shawn Carter",
+          "sort-name": "Carter, Shawn",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Shawn Corey Carter",
+          "sort-name": "Carter, Shawn Corey",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "jay z",
+          "sort-name": "Carter, Shawn",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -265,7 +651,234 @@
        "joinphrase": ", ",
        "artist": {
         "id": "13bcb2bb-db37-4397-baf5-e0f085be2d64",
-        "name": "Rick Ross"
+        "name": "Rick Ross",
+        "aliases": [
+         {
+          "name": "@mastermind",
+          "sort-name": "@mastermind",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "R. Ross",
+          "sort-name": "Ross, R.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Ric Ross",
+          "sort-name": "Ross, Ric",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Rick Ro$$",
+          "sort-name": "Ro$$, Rick",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "RickRo$$",
+          "sort-name": "RickRo$$",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "RickRoss",
+          "sort-name": "RickRoss",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Ricky Rozay",
+          "sort-name": "Rozay, Ricky",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Ross",
+          "sort-name": "Ross, Robert",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Williams",
+          "sort-name": "Williams, Robert",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Roberts",
+          "sort-name": "Roberts",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Rock Ross",
+          "sort-name": "Ross, Rock",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Ross",
+          "sort-name": "Ross",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The Boss Rick Ro$$",
+          "sort-name": "Boss Rick Ro$$, The",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The Boss Rick Ross",
+          "sort-name": "Boss Rick Ross, The",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The Boss Ricky Rozay",
+          "sort-name": "Boss Ricky Rozay, The",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "W. Leonard Roberts II",
+          "sort-name": "Roberts, W. Leonard II",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "W. Roberts",
+          "sort-name": "Roberts, W.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "W. Roberts II",
+          "sort-name": "Roberts W. II",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "W.Roberts",
+          "sort-name": "W.Roberts",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "William L. Roberts",
+          "sort-name": "Roberts, William L.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "William Leonard Roberts",
+          "sort-name": "Roberts, William Leonard",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "William Leonard Roberts II",
+          "sort-name": "Roberts, William Leonard II",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "William Roberts II",
+          "sort-name": "Roberts, William II",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "William Roberts III",
+          "sort-name": "Roberts, William III",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Williams Roberts",
+          "sort-name": "Roberts, Williams",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -273,7 +886,117 @@
        "joinphrase": " & ",
        "artist": {
         "id": "1036b808-f58c-4a3e-b461-a2c4492ecf1b",
-        "name": "Nicki Minaj"
+        "name": "Nicki Minaj",
+        "aliases": [
+         {
+          "name": "Nicki Maraj",
+          "sort-name": "Maraj, Nicki",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Nicki Minai",
+          "sort-name": "Nicki Minai",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Nicki Minaj",
+          "sort-name": "Minaj, Nicki",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": true
+         },
+         {
+          "name": "Nikki Minaj",
+          "sort-name": "Nikki Minaj",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "O. Maraj",
+          "sort-name": "O. Maraj",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Onika Maraj",
+          "sort-name": "Maraj, Onika",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Onika Tanya Maraj",
+          "sort-name": "Maraj, Onika Tanya",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": true,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Onika Tanya Maraj-Petty",
+          "sort-name": "Maraj-Petty, Onika Tanya",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Queen of Rap",
+          "sort-name": "Queen of Rap",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Roman Zolanski",
+          "sort-name": "Zolanski, Roman",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "ニッキー・ミナージュ",
+          "sort-name": "ニッキー・ミナージュ",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         },
+         {
+          "name": "妮琪米娜",
+          "sort-name": "妮琪米娜",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "zh",
+          "primary": false
+         }
+        ]
        }
       },
       {
@@ -281,7 +1004,8 @@
        "joinphrase": "",
        "artist": {
         "id": "437a0e49-c6ae-42f6-a6c1-84f25ed366bc",
-        "name": "Bon Iver"
+        "name": "Bon Iver",
+        "aliases": []
        }
       }
      ],
@@ -360,7 +1084,63 @@
        "joinphrase": ", ",
        "artist": {
         "id": "14ecd19f-7121-4192-8549-e5056241a42f",
-        "name": "Pusha T"
+        "name": "Pusha T",
+        "aliases": [
+         {
+          "name": "King Push",
+          "sort-name": "King Push",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Pusha",
+          "sort-name": "Pusha",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Pusha T",
+          "sort-name": "Pusha T",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": true
+         },
+         {
+          "name": "Terrar",
+          "sort-name": "Terrar",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Terrence LeVarr Thornton",
+          "sort-name": "Thornton, Terrence LeVarr",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Terrence Thornton",
+          "sort-name": "Thornton, Terrence",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         }
+        ]
        }
       },
       {
@@ -368,7 +1148,72 @@
        "joinphrase": ", ",
        "artist": {
         "id": "6a9e461c-e3c5-4794-a203-98a15daea2df",
-        "name": "Cyhi"
+        "name": "Cyhi",
+        "aliases": [
+         {
+          "name": "CyHi the Prynce",
+          "sort-name": "CyHi the Prynce",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cydel Charles Young",
+          "sort-name": "Young, Cydel Charles",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cydel Young",
+          "sort-name": "Young, Cydel",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cyhi",
+          "sort-name": "Cyhi",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cyhi da Prynce",
+          "sort-name": "Cyhi da Prynce",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cyhi da prince",
+          "sort-name": "Cyhi da prince",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Prince Cy Hi",
+          "sort-name": "Prince Cy Hi",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -376,7 +1221,90 @@
        "joinphrase": " & ",
        "artist": {
         "id": "698ff525-ff51-4206-8f08-60a7458aab24",
-        "name": "Swizz Beatz"
+        "name": "Swizz Beatz",
+        "aliases": [
+         {
+          "name": "Dean Kasseem",
+          "sort-name": "Kasseem, Dean",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "K. Dean",
+          "sort-name": "K. Dean",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Kaseem Dean",
+          "sort-name": "Kaseem Dean",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Kasseem Daoud Dean",
+          "sort-name": "Dean, Kasseem Daoud",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Kasseem Dean",
+          "sort-name": "Kasseem Dean",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Kasseem Mike Dean",
+          "sort-name": "Dean, Kasseem Mike",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Swiss Beats",
+          "sort-name": "Swiss Beats",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Swizz Beats",
+          "sort-name": "Swizz Beats",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Swizz Beatz",
+          "sort-name": "Swizz Beatz",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -384,7 +1312,180 @@
        "joinphrase": "",
        "artist": {
         "id": "29c28ac3-27c5-4822-8eb6-0af89a3a7240",
-        "name": "RZA"
+        "name": "RZA",
+        "aliases": [
+         {
+          "name": "(The) Abbott",
+          "sort-name": "Abbott, (The)",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bob the Builder",
+          "sort-name": "Bob the Builder",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Boulders",
+          "sort-name": "Bobby Boulders",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Digital",
+          "sort-name": "Bobby Digital",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Dynamite",
+          "sort-name": "Bobby Dynamite",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Steels",
+          "sort-name": "Bobby Steels",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Bobby Wasabi",
+          "sort-name": "Bobby Wasabi",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Diggs",
+          "sort-name": "Diggs",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Fitzgerald Diggs",
+          "sort-name": "Fitzgerald Diggs",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Prince Delight",
+          "sort-name": "Prince Delight",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Prince Rakeem",
+          "sort-name": "Prince Rakeem",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "RZA",
+          "sort-name": "RZA",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "RZArector",
+          "sort-name": "RZArector",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Diggs",
+          "sort-name": "Robert Diggs",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Fitzgerald",
+          "sort-name": "Robert Fitzgerald",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Robert Fitzgerald Diggs",
+          "sort-name": "Diggs, Robert Fitzgerald",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Ruler Zig-Zag-Zig Allah",
+          "sort-name": "Ruler Zig-Zag-Zig Allah",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The RZA",
+          "sort-name": "RZA, The",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The Scientist",
+          "sort-name": "Scientist, The",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -588,7 +1689,45 @@
        "joinphrase": "",
        "artist": {
         "id": "75a72702-a5ef-4513-bca5-c5b944903546",
-        "name": "John Legend"
+        "name": "John Legend",
+        "aliases": [
+         {
+          "name": "John Legend",
+          "sort-name": "Legend, John",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "John Roger Stephens",
+          "sort-name": "Stephens, John Roger",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "John Stephens",
+          "sort-name": "Stephens, John",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "ジョン・レジェンド",
+          "sort-name": "ジョン・レジェンド",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       }
      ],

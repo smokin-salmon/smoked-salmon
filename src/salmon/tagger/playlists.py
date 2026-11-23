@@ -69,6 +69,7 @@ class _Outcome:
     lines: list[str]
     broken: list[str]
     unwritable: list[str]
+    misread: list[str]
     changed: bool
 
 
@@ -77,7 +78,10 @@ def rewrite_playlists(path: str, renames: Sequence[Rename]) -> None:
 
     Call it once the renames are made and kept. A file that cannot be read or written is left and reported; this
     never raises for one. An entry that pointed to an audio file before the renames and now points to none, and a
-    new name the file's encoding cannot hold, are reported in yellow, one line each per playlist.
+    new name the file's encoding cannot hold, are reported in yellow, one line each per playlist, as are the non-ASCII
+    entries naming no file in a file read as cp1252, which may be in another code page, when a renamed path, taken
+    from the playlist's folder, is non-ASCII too. An entry a rename moved is held to that as well, when its new path
+    names no file.
     """
     if not renames:
         return
@@ -115,6 +119,10 @@ def _rewrite_file(album: str, playlist: str, renames: Sequence[Rename]) -> None:
         click.secho(
             f"{shown}: left as they were, {encoding} cannot hold the new names: {_names(outcome.unwritable)}",
             fg="yellow",
+        )
+    if outcome.misread:
+        click.secho(
+            f"{shown}: read as {encoding}, which may not be its encoding: check {_names(outcome.misread)}", fg="yellow"
         )
     if not outcome.changed:
         return
@@ -159,8 +167,12 @@ def _names(entries: list[str]) -> str:
 def _rewrite_lines(
     lines: list[str], cue: bool, old_folder: str, folder: str, renames: Sequence[Rename], encoding: str
 ) -> _Outcome:
-    outcome = _Outcome(list(lines), [], [], False)
+    outcome = _Outcome(list(lines), [], [], [], False)
     old_files = {_key(old).casefold() for old, _ in renames}
+    # Another code page mostly reads as cp1252 without error, as nonsense (one with a byte cp1252 leaves undefined is
+    # not read at all): a non-ASCII entry naming no file may be a renamed one, when the path an entry would name a
+    # renamed file by is non-ASCII, from the playlist's folder ("..\Björk\01.flac"), not the folders above it.
+    unsure = encoding == "cp1252" and any(not os.path.relpath(old, old_folder).isascii() for old, _ in renames)
     for index, line in enumerate(lines):
         parts = _cue_entry(line) if cue else _m3u_entry(line)
         if parts is None:
@@ -172,17 +184,24 @@ def _rewrite_lines(
         if new_entry is None:
             if _was_audio(entry, old_folder, folder, old_files):
                 outcome.broken.append(entry)
+            elif unsure and not entry.isascii() and not any(map(os.path.lexists, _candidates(entry, folder))):
+                outcome.misread.append(entry)
             continue
         try:
             new_entry.encode(encoding)
         except UnicodeEncodeError:
             outcome.unwritable.append(entry)
             continue
+        # A folder rename moves every entry under it, even one whose file was renamed too, and names it wrongly
+        # when the sheet was misread: the new path names no file. Test the unquoted path.
+        misread = unsure and not new_entry.isascii() and not any(map(os.path.lexists, _candidates(new_entry, folder)))
         if cue and not before.endswith('"') and " " in new_entry:
             # A bare name with a space needs its quotes.
             new_entry = f'"{new_entry}"'
         outcome.lines[index] = before + new_entry + after
         outcome.changed = True
+        if misread:
+            outcome.misread.append(entry)
     return outcome
 
 

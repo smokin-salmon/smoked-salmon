@@ -113,6 +113,7 @@ def test_descgen_never_echoes_a_refused_url(monkeypatch, url: str) -> None:
 
 MURPHY = ("Sullivan Murphy", "main")
 SIMPSON = ("Dierdre Simpson", "guest")
+OTHER = ("Other Artist", "main")
 
 
 def _release(*discs: list[tuple[list[tuple[str, str]], str]], rls_type: str = "Album") -> dict:
@@ -154,21 +155,25 @@ def test_as_before_descgen_does_not_wrap_artists_in_tags(monkeypatch) -> None:
     assert "[artist]" not in description
 
 
-def test_guest_goes_in_the_title_on_a_line_that_names_the_artist(monkeypatch) -> None:
+def test_as_before_guest_goes_in_the_title_on_a_line_that_names_the_artist(monkeypatch) -> None:
     # The artist string leaves the guest to the title, and only a retag put it there, so the guest was lost.
-    release = _release([([MURPHY, SIMPSON], "Song 1")], rls_type="Compilation")
+    release = _release([([MURPHY], "Song 1"), ([OTHER, SIMPSON], "Song 2")])
 
     description = _description(monkeypatch, release, guests_in_track_title=True)
 
-    assert description == f"{HEADING}[b]01.[/b] Sullivan Murphy - Song 1 (feat. Dierdre Simpson)\n"
+    assert description == (
+        f"{HEADING}[b]01.[/b] Sullivan Murphy - Song 1\n[b]02.[/b] Other Artist - Song 2 (feat. Dierdre Simpson)\n"
+    )
 
 
-def test_guest_goes_in_the_title_of_a_track_by_the_album_and_a_guest(monkeypatch) -> None:
+@pytest.mark.parametrize("guests_in_track_title", [True, False], ids=["setting on", "setting off"])
+def test_guest_of_the_album_artist_goes_after_the_title(monkeypatch, guests_in_track_title: bool) -> None:
+    # #971 item 6: only the album's artist goes, as on every other line; the guest stays on the line.
     release = _release([([MURPHY], "Song 1"), ([MURPHY, SIMPSON], "Song 2")])
 
-    description = _description(monkeypatch, release, guests_in_track_title=True)
+    description = _description(monkeypatch, release, guests_in_track_title=guests_in_track_title)
 
-    assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson)\n"
+    assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Song 2 (feat. Dierdre Simpson)\n"
 
 
 def test_guest_goes_in_the_title_on_each_disc(monkeypatch) -> None:
@@ -176,9 +181,7 @@ def test_guest_goes_in_the_title_on_each_disc(monkeypatch) -> None:
 
     description = _description(monkeypatch, release, guests_in_track_title=True)
 
-    assert description == (
-        f"{HEADING}[b]01-01.[/b] Song 1\n[b]02-01.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson)\n"
-    )
+    assert description == (f"{HEADING}[b]01-01.[/b] Song 1\n[b]02-01.[/b] Song 2 (feat. Dierdre Simpson)\n")
 
 
 def test_guest_in_the_title_comes_before_a_remix_as_a_retag_puts_it(monkeypatch) -> None:
@@ -193,12 +196,12 @@ def test_guest_in_the_title_comes_before_a_remix_as_a_retag_puts_it(monkeypatch)
     ("discs", "expected"),
     [
         (
-            [[([MURPHY], "Song 1"), ([MURPHY, SIMPSON], "Song 2")]],
-            "[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy (feat. Dierdre Simpson) - Song 2\n",
+            [[([MURPHY], "Song 1"), ([OTHER, SIMPSON], "Song 2")]],
+            "[b]01.[/b] Sullivan Murphy - Song 1\n[b]02.[/b] Other Artist (feat. Dierdre Simpson) - Song 2\n",
         ),
         (
-            [[([MURPHY], "Song 1")], [([MURPHY, SIMPSON], "Song 2")]],
-            "[b]01-01.[/b] Song 1\n[b]02-01.[/b] Sullivan Murphy (feat. Dierdre Simpson) - Song 2\n",
+            [[([MURPHY], "Song 1")], [([OTHER, SIMPSON], "Song 2")]],
+            "[b]01-01.[/b] Sullivan Murphy - Song 1\n[b]02-01.[/b] Other Artist (feat. Dierdre Simpson) - Song 2\n",
         ),
     ],
     ids=["one disc", "two discs"],
@@ -233,13 +236,13 @@ def test_as_before_with_the_setting_on_a_track_by_the_album_alone_names_no_artis
 @pytest.mark.parametrize(
     "title", ["Song 2 (feat. Dierdre Simpson)", "Song 2 (Feat. Dierdre Simpson)", "Song 2 [ft. Dierdre Simpson]"]
 )
-def test_as_before_a_title_already_crediting_the_guest_gains_no_second_credit(monkeypatch, title: str) -> None:
+def test_a_title_already_crediting_the_guest_gains_no_second_credit(monkeypatch, title: str) -> None:
     # Qobuz keeps the credit in its titles and reads the guest from it too.
     release = _release([([MURPHY], "Song 1"), ([MURPHY, SIMPSON], title)])
 
     description = _description(monkeypatch, release, guests_in_track_title=True)
 
-    assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy - {title}\n"
+    assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] {title}\n"
 
 
 def test_guest_named_in_a_with_bracket_gains_no_second_credit(monkeypatch) -> None:
@@ -248,15 +251,15 @@ def test_guest_named_in_a_with_bracket_gains_no_second_credit(monkeypatch) -> No
 
     description = _description(monkeypatch, release, guests_in_track_title=True)
 
-    assert description == f"{HEADING}[b]01.[/b] Sullivan Murphy - Song 1 (with Dierdre Simpson)\n"
+    assert description == f"{HEADING}[b]01.[/b] Song 1 (with Dierdre Simpson)\n"
 
 
-def test_as_before_a_with_bracket_naming_someone_else_gains_the_guest(monkeypatch) -> None:
+def test_a_with_bracket_naming_someone_else_gains_the_guest(monkeypatch) -> None:
     release = _release([([MURPHY, SIMPSON], "Song 1 (with Strings)")])
 
     description = _description(monkeypatch, release, guests_in_track_title=True)
 
-    assert description == f"{HEADING}[b]01.[/b] Sullivan Murphy - Song 1 (with Strings) (feat. Dierdre Simpson)\n"
+    assert description == f"{HEADING}[b]01.[/b] Song 1 (with Strings) (feat. Dierdre Simpson)\n"
 
 
 def _timed(*lengths: int | None, **release) -> dict:
@@ -305,9 +308,7 @@ def test_the_length_follows_a_guest_put_in_the_title(monkeypatch) -> None:
 
     description = _description(monkeypatch, release, guests_in_track_title=True)
 
-    assert description == (
-        f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson) [i](1:05)[/i]\n"
-    )
+    assert description == (f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Song 2 (feat. Dierdre Simpson) [i](1:05)[/i]\n")
 
 
 def test_the_total_counts_every_disc(monkeypatch) -> None:

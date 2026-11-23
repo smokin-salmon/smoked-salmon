@@ -1,228 +1,60 @@
-"""MusicBrainz requests are bounded, and their failures are ScrapeErrors (#786).
-
-musicbrainzngs, not aiohttp: the requests go to a local threaded server through its own set_hostname globals.
+"""How a MusicBrainz release's JSON is read: credits, track titles, remixers, barcode, type, and the fields the JSON
+leaves empty where the XML left them out (#1065). The requests themselves: tests/test_sources_musicbrainz_client.py.
 """
-
-import inspect
-import threading
-import time
-from collections.abc import Iterator
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import anyio
 import pytest
-from musicbrainzngs import caa
-from musicbrainzngs import musicbrainz as mb_module
 
-from salmon.errors import ScrapeError
-from salmon.search import musicbrainz as musicbrainz_search
-from salmon.sources import musicbrainz
 from salmon.tagger.sources import musicbrainz as musicbrainz_tagger
 
-RELEASE_ID = "0a1b2c3d-0000-0000-0000-000000000000"
-RELEASE_URL = f"https://musicbrainz.org/release/{RELEASE_ID}"
-RELEASE_XML = (
-    '<?xml version="1.0" encoding="UTF-8"?><metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#">'
-    f'<release id="{RELEASE_ID}"><title>Album</title></release></metadata>'
-)
 
-
-class _Server:
-    """A local server answering every request with `status` and `body`, after waiting `delay` seconds."""
-
-    def __init__(self) -> None:
-        self.status = 200
-        self.body = RELEASE_XML
-        self.delay = 0.0
-        self.requests: list[str] = []
-        self.released = threading.Event()  # Set at teardown, so no handler outlives the test
-        server = self
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_GET(self) -> None:
-                server.requests.append(self.path)
-                if server.delay and server.released.wait(server.delay):
-                    return  # The client gave up long ago: nothing to answer
-                payload = server.body.encode()
-                self.send_response(server.status)
-                self.send_header("Content-Type", "application/xml")
-                self.send_header("Content-Length", str(len(payload)))
-                self.end_headers()
-                self.wfile.write(payload)
-
-            def log_message(self, format: str, *args: object) -> None:
-                pass
-
-        self.httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        self.host = f"127.0.0.1:{self.httpd.server_address[1]}"
-        threading.Thread(target=self.httpd.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
-
-    def close(self) -> None:
-        self.released.set()
-        self.httpd.shutdown()
-        self.httpd.server_close()
-
-
-@pytest.fixture
-def server(monkeypatch) -> Iterator[_Server]:
-    """MusicBrainz and the Cover Art Archive pointed at a local server, with no rate limit and no real sleeps."""
-    local = _Server()
-    # urllib honours an environment proxy: the local server must be reached directly.
-    for name in ("no_proxy", "NO_PROXY"):
-        monkeypatch.setenv(name, "127.0.0.1")
-    for module in (mb_module, caa):
-        monkeypatch.setattr(module, "hostname", local.host)
-        monkeypatch.setattr(module, "https", False)
-    monkeypatch.setattr(mb_module, "do_rate_limit", False)
-    yield local
-    local.close()
-
-
-@pytest.fixture
-def sleeps(monkeypatch) -> list[float]:
-    """Every time.sleep during the test, recorded instead of slept: here, musicbrainzngs's between retries."""
-    slept: list[float] = []
-    monkeypatch.setattr(mb_module.time, "sleep", slept.append)
-    return slept
-
-
-def _fetch_release() -> dict:
-    return anyio.run(musicbrainz_tagger.Scraper().fetch_data, RELEASE_URL)
-
-
-def test_safe_read_keeps_the_signature_the_wrapper_calls() -> None:
-    # The bound wraps a private function of musicbrainzngs: an upgrade that changes it must fail here, not quietly.
-    parameters = list(inspect.signature(musicbrainz._safe_read).parameters)
-
-    assert parameters[:3] == ["opener", "req", "body"]
-    assert "max_retries" in parameters
-    assert mb_module._safe_read is musicbrainz._bounded_safe_read
-
-
-def test_a_release_is_fetched_through_the_bounded_read(server) -> None:
-    release = _fetch_release()
-
-    assert release["title"] == "Album"
-    assert len(server.requests) == 1
-
-
-def test_a_release_link_with_a_query_is_fetched_as_its_release(server) -> None:
-    release = anyio.run(musicbrainz_tagger.Scraper().fetch_data, f"{RELEASE_URL}?tab=tracks")
-
-    assert release["title"] == "Album"
-    assert RELEASE_ID in server.requests[0]
-
-
-def test_a_failing_server_gets_two_requests_and_one_sleep(server, sleeps) -> None:
-    # 503 every time: musicbrainzngs made 8 requests and slept 56 s, then raised NetworkError past the scrape.
-    server.status = 503
-
-    with pytest.raises(ScrapeError) as excinfo:
-        _fetch_release()
-
-    assert str(excinfo.value) == "MusicBrainz: Request failed (NetworkError)."
-    assert len(server.requests) == 2
-    assert sleeps == [2.0]
-
-
-def test_a_server_that_does_not_answer_times_out(server, sleeps, monkeypatch) -> None:
-    # No timeout at all: a server that stopped answering held the scrape, and STORE_LOCK under salmon web.
-    monkeypatch.setattr(musicbrainz, "REQUEST_TIMEOUT", 0.2, raising=False)
-    server.delay = 3
-
-    started = time.monotonic()
-    with pytest.raises(ScrapeError):
-        _fetch_release()
-
-    assert time.monotonic() - started < 2
-    assert len(server.requests) == 2
-
-
-def test_a_release_not_on_musicbrainz_is_said_so(server) -> None:
-    server.status = 404
-
-    with pytest.raises(ScrapeError) as excinfo:
-        _fetch_release()
-
-    assert str(excinfo.value) == "MusicBrainz: Not found."
-    assert len(server.requests) == 1
-
-
-def test_a_failed_search_is_a_scrape_error(server, sleeps) -> None:
-    server.status = 503
-
-    with pytest.raises(ScrapeError) as excinfo:
-        anyio.run(musicbrainz_search.Searcher().search_releases, "artist album", 5)
-
-    assert str(excinfo.value) == "MusicBrainz: Request failed (NetworkError)."
-    assert len(server.requests) == 2
-
-
-def test_a_failed_cover_art_archive_request_is_no_cover_and_says_so(server, sleeps, capsys) -> None:
-    # The cover lookup caught a 404 only: a Cover Art Archive that failed failed the whole scrape.
-    server.status = 503
-    release = {"id": RELEASE_ID, "cover-art-archive": {"front": "true"}}
-
-    cover = musicbrainz_tagger.Scraper().parse_cover_url(release)
-
-    out = capsys.readouterr().out
-    assert cover is None
-    assert "Cover Art Archive request failed (NetworkError): no cover." in out
-    assert len(server.requests) == 2
-
-
-def test_a_cover_art_archive_answer_that_is_not_json_is_no_cover_and_says_so(server, capsys) -> None:
-    # A 200 with a page in place of the image list raised JSONDecodeError past the cover lookup and failed the scrape.
-    server.body = "<html>Not the image list</html>"
-    release = {"id": RELEASE_ID, "cover-art-archive": {"front": "true"}}
-
-    cover = musicbrainz_tagger.Scraper().parse_cover_url(release)
-
-    out = capsys.readouterr().out
-    assert cover is None
-    assert "Cover Art Archive request failed (JSONDecodeError): no cover." in out
-    assert len(server.requests) == 1
+def _credit(name: str, joinphrase: str = "") -> dict:
+    return {"name": name, "joinphrase": joinphrase, "artist": {"name": name}}
 
 
 @pytest.mark.parametrize("join", [" feat. ", " ft. ", " featuring ", " Feat. ", " ft "])
 def test_a_featured_join_makes_the_artists_after_it_guests(join) -> None:
     # Only " feat. " did: B after " ft. " or " featuring " was a main artist (#910).
-    credits = [{"artist": {"name": "A"}}, join, {"artist": {"name": "B"}}]
+    credits = [_credit("A", join), _credit("B")]
 
     assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "guest")]
 
 
-@pytest.mark.parametrize("join", [" & ", ", ", " x ", " with "])
-def test_another_join_keeps_the_artists_after_it_main(join) -> None:
-    credits = [{"artist": {"name": "A"}}, join, {"artist": {"name": "B"}}]
+def test_a_null_join_phrase_is_no_join() -> None:
+    credits = [{"name": "A", "joinphrase": None, "artist": {"name": "A"}}, _credit("B")]
 
     assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "main")]
 
 
-def _track(number: str, recording_title: str, title: str | None = None) -> dict:
-    track = {
+@pytest.mark.parametrize("join", [" & ", ", ", " x ", " with "])
+def test_another_join_keeps_the_artists_after_it_main(join) -> None:
+    credits = [_credit("A", join), _credit("B")]
+
+    assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "main")]
+
+
+def _track(number: str, recording_title: str, title: str) -> dict:
+    return {
         "number": number,
-        "recording": {"title": recording_title, "artist-credit": [{"artist": {"name": "Spice Girls"}}]},
+        "title": title,
+        "recording": {"title": recording_title, "artist-credit": [_credit("Spice Girls")]},
     }
-    if title is not None:
-        track["title"] = title
-    return track
 
 
-def test_a_track_takes_its_title_from_the_release_track_list_not_its_recording() -> None:
+def test_a_track_takes_its_release_track_title_not_its_recordings() -> None:
     # Disc 14 of MusicBrainz release https://musicbrainz.org/release/9c21406a-2032-4336-b0cd-ecb701cee16b: the track
     # list says "(demo)" on every track, while its recordings say "(demo version)", or nothing and carry "demo" in
     # their disambiguation.
     disc = {
-        "position": "14",
-        "track-list": [
+        "position": 14,
+        "tracks": [
             _track("2", "Wannabe (demo)", "Wannabe (demo)"),
             _track("3", "2 Become 1", "2 Become 1 (demo)"),
             _track("6", "Step to Me (demo version)", "Step to Me (demo)"),
         ],
     }
 
-    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"media": [disc]})
 
     assert {number: track["title"] for number, track in tracks["14"].items()} == {
         "2": "Wannabe (demo)",
@@ -231,30 +63,33 @@ def test_a_track_takes_its_title_from_the_release_track_list_not_its_recording()
     }
 
 
-def test_a_track_without_a_title_of_its_own_takes_its_recordings() -> None:
-    disc = {"position": "1", "track-list": [_track("4", "Mama")]}
+def test_a_disc_with_only_data_tracks_adds_no_tracks_and_keeps_the_others() -> None:
+    # MusicBrainz's JSON leaves out "tracks" on a medium with no audio track; the XML gave an empty track list.
+    audio = {"position": 1, "tracks": [_track("1", "Wannabe", "Wannabe")]}
+    data_only = {"position": 2, "track-count": 0, "data-tracks": [_track("1", "Video", "Video")]}
 
-    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"media": [audio, data_only]})
 
-    assert tracks["1"]["4"]["title"] == "Mama"
+    assert list(tracks) == ["1"]
+    assert list(tracks["1"]) == ["1"]
 
 
 # Tracks of MusicBrainz release https://musicbrainz.org/release/ec3baf33-2d0f-4eea-a3ec-8bcd582bf939
 # (Lady Gaga, The Remix)
 def _remix_track(number: str, recording_title: str, relations: list[tuple[str, str]]) -> dict:
-    recording: dict = {"title": recording_title, "artist-credit": [{"artist": {"name": "Lady Gaga"}}]}
+    recording: dict = {"title": recording_title, "artist-credit": [_credit("Lady Gaga")]}
     if relations:
-        recording["artist-relation-list"] = [
-            {"type": relation_type, "direction": "backward", "artist": {"name": name}}
+        recording["relations"] = [
+            {"type": relation_type, "target-type": "artist", "direction": "backward", "artist": {"name": name}}
             for relation_type, name in relations
         ]
-    return {"number": number, "recording": recording}
+    return {"number": number, "title": recording_title, "recording": recording}
 
 
 def test_a_recordings_remixer_relation_is_a_remixer_credit() -> None:
     disc = {
-        "position": "1",
-        "track-list": [
+        "position": 1,
+        "tracks": [
             _remix_track("1", "Just Dance (Richard Vission remix)", [("remixer", "Richard “Humpty” Vission")]),
             _remix_track("2", "Poker Face (LLG vs. GLG radio mix remix)", []),
             _remix_track(
@@ -265,7 +100,7 @@ def test_a_recordings_remixer_relation_is_a_remixer_credit() -> None:
         ],
     }
 
-    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"medium-list": [disc]})["1"]
+    tracks = anyio.run(musicbrainz_tagger.Scraper().parse_tracks, {"media": [disc]})["1"]
 
     assert tracks["1"]["artists"] == [("Lady Gaga", "main"), ("Richard “Humpty” Vission", "remixer")]
     assert tracks["1"]["credited_remixers"] == ["Richard “Humpty” Vission"]
@@ -280,8 +115,53 @@ def test_a_recordings_remixer_relation_is_a_remixer_credit() -> None:
     [
         ({"barcode": "00602527462943"}, "00602527462943"),
         ({"barcode": ""}, None),  # MusicBrainz sends "" for a release with no barcode
+        ({"barcode": None}, None),
         ({}, None),
     ],
 )
 def test_a_releases_barcode_is_its_upc(release, upc) -> None:
     assert musicbrainz_tagger.Scraper().parse_upc(release) == upc
+
+
+@pytest.mark.parametrize(
+    ("primary", "secondaries", "expected"),
+    [
+        ("Album", [], "Album"),
+        ("Album", ["Live"], "Live"),
+        ("Album", ["Compilation", "DJ-mix"], "Compilation"),
+        # Over an Album, MusicBrainz's XML serializer takes the first of Compilation, Remix, Soundtrack, Live,
+        # Spokenword and Interview the group has, in that order, and otherwise keeps Album.
+        ("Album", ["Live", "Compilation"], "Compilation"),
+        ("Album", ["DJ-mix"], "Album"),
+        ("Album", ["Audiobook"], "Album"),
+        ("Album", ["Mixtape/Street", "Remix"], "Remix"),
+        # It takes no secondary type over another primary: release 4c1dd3a5-ada8-4e6a-ab6e-b129f6758b9b
+        # (Single + Live) was "Single", d4b8af18-da19-48c3-b5bb-d6254fd1510a (EP + Soundtrack) "EP".
+        ("Single", ["Live"], "Single"),
+        ("EP", ["Soundtrack"], "EP"),
+        # With no primary type, the first secondary type.
+        (None, ["Live", "Compilation"], "Live"),
+        # Release 2f35c487-1f25-4179-a815-0713bb940d40: no type at all, and no type attribute in the XML.
+        (None, [], None),
+    ],
+)
+def test_a_release_groups_type_is_the_one_the_xml_gave(primary, secondaries, expected) -> None:
+    group = {"primary-type": primary, "secondary-types": secondaries}
+
+    assert musicbrainz_tagger.release_group_type(group) == expected
+
+
+@pytest.mark.parametrize(
+    ("release", "parse", "expected"),
+    [
+        ({"label-info": [{"label": None, "catalog-number": "X1"}]}, "parse_release_label", None),
+        ({"label-info": [{"label": {"name": "Columbia"}, "catalog-number": None}]}, "parse_release_catno", None),
+        ({"label-info": [{"label": None, "catalog-number": "X1"}]}, "parse_release_catno", "X1"),
+        ({"label-info": []}, "parse_release_label", None),
+        ({"release-events": [{"date": ""}]}, "parse_release_date", None),
+        ({"release-events": []}, "parse_release_date", None),
+        ({"release-group": {"primary-type": None, "secondary-types": []}}, "parse_release_type", None),
+    ],
+)
+def test_a_field_json_leaves_empty_parses_as_the_xml_left_it_out(release, parse, expected) -> None:
+    assert getattr(musicbrainz_tagger.Scraper(), parse)(release) == expected

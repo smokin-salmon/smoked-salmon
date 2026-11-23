@@ -1533,6 +1533,30 @@ def test_a_remaster_gets_its_group_as_the_default_answer(monkeypatch, dirs) -> N
     assert post.fields["groupid"] == [str(TARGET_GROUP_ID)]
 
 
+def test_a_source_title_ending_in_a_bracketed_type_finds_its_group_and_goes_into_it(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def answer(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = _ops_answer(folder, torrent_id)
+        response["group"]["name"] = "SAMPLE VOL. I (RMX) (EP)"
+        return response
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album, answer=answer)(source, target)
+        # The group comes up only for the search that names it.
+        target.answers["GET ajax.php?action=browse"] = lambda: _success(
+            {"results": [_result([])] if target.sent[-1].query["searchstr"] in _searchstrs() else []}
+        )
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    browses = [sent.query["searchstr"] for sent in run.target.sent if sent.query.get("action") == "browse"]
+    assert browses == _searchstrs()
+    (post,) = run.target.posts()
+    assert post.fields["groupid"] == [str(TARGET_GROUP_ID)]
+
+
 @pytest.mark.parametrize(("edition", "shown"), [(2023, "(group 2018, edition 2023)"), (2018, "(2018)")])
 def test_the_plan_shows_the_group_year_when_the_edition_has_another(monkeypatch, dirs, edition, shown) -> None:
     # Which year the dupe check looks for the group on, before its question.

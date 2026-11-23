@@ -14,8 +14,17 @@ from typing import Any
 
 import anyio
 import pytest
+from aiohttp import web
 from asyncclick.testing import CliRunner, Result
-from helpers.tagger_run_metadata import GUESSED, RELEASE_URL, STATED, FakeDiscogs, pointed_at, stating_credits
+from helpers.tagger_run_metadata import (
+    GUESSED,
+    RELEASE,
+    RELEASE_URL,
+    STATED,
+    FakeDiscogs,
+    pointed_at,
+    stating_credits,
+)
 
 import salmon.tagger
 from salmon.errors import ScrapeError
@@ -164,6 +173,49 @@ def test_as_before_a_store_that_states_nothing_has_its_remixer_added_to_a_title(
     title = _title_of_3_3(monkeypatch, states=False)
 
     assert title == "Tell Me It's Real (Club Asylum Remix)"
+
+
+class TwelveTrackAlbum(FakeDiscogs):
+    """A release of 12 tracks Discogs calls an album, with the title its page gives."""
+
+    def __init__(self, title: str) -> None:
+        super().__init__()
+        self.title = title
+
+    async def _answer(self, request: web.Request) -> web.StreamResponse:
+        self.requests.append(request.path)
+        tracklist = [{"position": str(n), "type_": "track", "title": f"Track {n}"} for n in range(1, 13)]
+        formats = [{"name": "File", "descriptions": ["Album"]}]
+        artists = [{"name": "Artist", "anv": "", "join": ""}]
+        return web.json_response(
+            {**RELEASE, "title": self.title, "artists": artists, "formats": formats, "tracklist": tracklist}
+        )
+
+
+def _title_and_type(monkeypatch: pytest.MonkeyPatch, title: str) -> tuple[str, str]:
+    store = TwelveTrackAlbum(title)
+
+    async def main() -> dict[str, Any]:
+        async with store.serving():
+            pointed_at(monkeypatch, store)
+            return await scraped()
+
+    metadata = anyio.run(main)
+    return metadata["title"], metadata["rls_type"]
+
+
+def test_a_store_title_ending_in_single_in_brackets_is_a_single_of_the_title_before_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scraped = _title_and_type(monkeypatch, "Album (Single)")
+
+    assert scraped == ("Album", "Single")
+
+
+def test_as_before_a_store_title_ending_in_a_dash_and_single_is_a_single(monkeypatch: pytest.MonkeyPatch) -> None:
+    scraped = _title_and_type(monkeypatch, "Album - Single")
+
+    assert scraped == ("Album", "Single")
 
 
 def test_salmon_meta_saves_json(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

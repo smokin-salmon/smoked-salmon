@@ -9,7 +9,90 @@
    "joinphrase": ", ",
    "artist": {
     "id": "705076ef-a0c5-472f-bebd-3e72174fcaf4",
-    "name": "Luciano Pavarotti"
+    "name": "Luciano Pavarotti",
+    "aliases": [
+     {
+      "name": "Luciano Pavarotti",
+      "sort-name": "Pavarotti, Luciano",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Luciano Paveretti",
+      "sort-name": "Luciano Paveretti",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Luciano Paverotti",
+      "sort-name": "Luciano Paverotti",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Luciano Pavoratti",
+      "sort-name": "Luciano Pavoratti",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pavarati",
+      "sort-name": "Pavarati",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pavarotti",
+      "sort-name": "Pavarotti",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pavarotti Luciano",
+      "sort-name": "Pavarotti Luciano",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pavoratti",
+      "sort-name": "Pavoratti",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ルチアーノ・パヴァロッティ",
+      "sort-name": "ルチアーノ・パヴァロッティ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   },
   {
@@ -17,7 +100,108 @@
    "joinphrase": ", ",
    "artist": {
     "id": "a693df4a-8762-4a45-b7fd-6695b558385e",
-    "name": "Giacomo Puccini"
+    "name": "Giacomo Puccini",
+    "aliases": [
+     {
+      "name": "Dž.Pučīni",
+      "sort-name": "Pučīni, Dž.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "lv",
+      "primary": false
+     },
+     {
+      "name": "Džakomo Pučīni",
+      "sort-name": "Pučīni, Džakomo",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "lv",
+      "primary": false
+     },
+     {
+      "name": "G. Puccini",
+      "sort-name": "G. Puccini",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Gacomo Puccini",
+      "sort-name": "Gacomo Puccini",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Giacomo Antonio Domenico Michele Secondo Maria Puccini",
+      "sort-name": "Giacomo Antonio Domenico Michele Secondo Maria Puccini",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Giacomo Pucchini",
+      "sort-name": "Giacomo Pucchini",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Giacomo Puccini (1858-1924)",
+      "sort-name": "Giacomo Puccini (1858-1924)",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Puccini",
+      "sort-name": "Puccini",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Дж. Пуччини",
+      "sort-name": "Puchchini, Dzh.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "プッチーニ",
+      "sort-name": "プッチーニ",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "푸치니",
+      "sort-name": "푸치니",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -25,7 +209,27 @@
    "joinphrase": ", ",
    "artist": {
     "id": "be81ad1d-b280-40e9-8097-2c999420ed0b",
-    "name": "Mirella Freni"
+    "name": "Mirella Freni",
+    "aliases": [
+     {
+      "name": "Mirella Fregni",
+      "sort-name": "Fregni, Mirella",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Mirella Freni",
+      "sort-name": "Freni, Mirella",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -33,7 +237,8 @@
    "joinphrase": ", ",
    "artist": {
     "id": "28742ef4-d86e-4fd6-b5b4-3b4917c73613",
-    "name": "Rolando Panerai"
+    "name": "Rolando Panerai",
+    "aliases": []
    }
   },
   {
@@ -41,7 +246,8 @@
    "joinphrase": ", ",
    "artist": {
     "id": "6b66d1eb-8fa3-466e-8612-7b8658d6c30a",
-    "name": "Gianni Maffeo"
+    "name": "Gianni Maffeo",
+    "aliases": []
    }
   },
   {
@@ -49,7 +255,72 @@
    "joinphrase": ", ",
    "artist": {
     "id": "15775a2f-be83-4aa8-9fff-66bc7ed2784b",
-    "name": "Nicolaï Ghiaurov"
+    "name": "Nicolaï Ghiaurov",
+    "aliases": [
+     {
+      "name": "N. Ghiaurov",
+      "sort-name": "N. Ghiaurov",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nicolai Ghiaurov",
+      "sort-name": "Nicolai Ghiaurov",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nicolaï Ghiaurov",
+      "sort-name": "Nicolaï Ghiaurov",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nikolai Gjaurov",
+      "sort-name": "Nikolai Gjaurov",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Nikolay Gyaurov",
+      "sort-name": "Nikolay Gyaurov",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Николай Георгиев Гяуров",
+      "sort-name": "Николай Георгиев Гяуров",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Николай Гяуров",
+      "sort-name": "Николай Гяуров",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   },
   {
@@ -57,7 +328,8 @@
    "joinphrase": ", ",
    "artist": {
     "id": "a3083be7-1941-45b7-b281-2074e6ec21b0",
-    "name": "Elizabeth Harwood"
+    "name": "Elizabeth Harwood",
+    "aliases": []
    }
   },
   {
@@ -65,7 +337,117 @@
    "joinphrase": " & ",
    "artist": {
     "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
-    "name": "Berliner Philharmoniker"
+    "name": "Berliner Philharmoniker",
+    "aliases": [
+     {
+      "name": "BPO",
+      "sort-name": "BPO",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Berliini Filharmoonia Orkester",
+      "sort-name": "Berliini Filharmoonia Orkester",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "et",
+      "primary": true
+     },
+     {
+      "name": "Berlin Philharmonic",
+      "sort-name": "Berlin Philharmonic",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Berlin Philharmonic Orchestra",
+      "sort-name": "Berlin Philharmonic Orchestra",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Berlin Philharmoniker",
+      "sort-name": "Berlin Philharmoniker",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Berliner Philharmoniker",
+      "sort-name": "Berliner Philharmoniker",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": true
+     },
+     {
+      "name": "Berliner Philharmonisches Orchester",
+      "sort-name": "Berliner Philharmonisches Orchester",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Orchestre philharmonique de Berlin",
+      "sort-name": "Orchestre philharmonique de Berlin",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": true
+     },
+     {
+      "name": "Orquesta filarmónica de Berlín",
+      "sort-name": "Orquesta filarmónica de Berlín",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "es",
+      "primary": true
+     },
+     {
+      "name": "The Berlin Philharmonic Orchestra",
+      "sort-name": "Berlin Philharmonic Orchestra, The",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "ベルリン・フィルハーモニー・ブラスオルケスター",
+      "sort-name": "ベルリン・フィルハーモニー・ブラスオルケスター",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "ベルリン・フィルハーモニー管弦楽団",
+      "sort-name": "ベルリン・フィルハーモニーかんげんがくだん",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   },
   {
@@ -73,7 +455,54 @@
    "joinphrase": "",
    "artist": {
     "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
-    "name": "Herbert von Karajan"
+    "name": "Herbert von Karajan",
+    "aliases": [
+     {
+      "name": "Herbert von Karajan",
+      "sort-name": "Karajan, Herbert von",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": true
+     },
+     {
+      "name": "Herbert von Karajan",
+      "sort-name": "Karajan, Herbert von",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Heribert Ritter von Karajan",
+      "sort-name": "Heribert Ritter von Karajan",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Karajan, Herbert von",
+      "sort-name": "Karajan, Herbert von",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ヘルベルト・フォン・カラヤン",
+      "sort-name": "ヘルベルト・フォン・カラヤン",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],
@@ -164,7 +593,7 @@
   }
  ],
  "cover-art-archive": {
-  "front": false
+  "front": true
  },
  "label-info": [
   {
@@ -204,7 +633,18 @@
         "joinphrase": ", ",
         "artist": {
          "id": "6f43bd08-a3c2-479e-aecd-fbcbbb5af729",
-         "name": "Walter Hagen-Groll"
+         "name": "Walter Hagen-Groll",
+         "aliases": [
+          {
+           "name": "Walter Hagen-Kroll",
+           "sort-name": "Walter Hagen-Kroll",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        },
        {
@@ -212,7 +652,36 @@
         "joinphrase": ", ",
         "artist": {
          "id": "739a663e-a15d-4fe7-8dbc-53ec238d2b8f",
-         "name": "Chor der Deutschen Oper Berlin"
+         "name": "Chor der Deutschen Oper Berlin",
+         "aliases": [
+          {
+           "name": "Berlin State Opera Chorus",
+           "sort-name": "Berlin State Opera Chorus",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Chorus of the German Opera Berlin",
+           "sort-name": "Chorus of the German Opera Berlin",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "en",
+           "primary": true
+          },
+          {
+           "name": "German Opera Chorus Berlin",
+           "sort-name": "German Opera Chorus Berlin",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        },
        {
@@ -244,7 +713,18 @@
         "joinphrase": ", ",
         "artist": {
          "id": "f2cae0d2-8b23-4586-9c47-3fac7877e581",
-         "name": "Schöneberger Sängerknaben"
+         "name": "Schöneberger Sängerknaben",
+         "aliases": [
+          {
+           "name": "Die Schöneberger Sängerknaben",
+           "sort-name": "Die Schöneberger Sängerknaben",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
         }
        },
        {
@@ -529,7 +1009,8 @@
         "joinphrase": ", ",
         "artist": {
          "id": "4942c2fb-a786-469a-b07a-a12c8ca105a4",
-         "name": "Michel Sénéchal"
+         "name": "Michel Sénéchal",
+         "aliases": []
         }
        },
        {
@@ -1177,7 +1658,8 @@
         "joinphrase": ", ",
         "artist": {
          "id": "259bc419-804a-469c-8eed-9f4c3e77eff2",
-         "name": "Gernot Pietsch"
+         "name": "Gernot Pietsch",
+         "aliases": []
         }
        },
        {
@@ -1714,7 +2196,8 @@
         "joinphrase": ", ",
         "artist": {
          "id": "6854b4b5-415a-424c-9c3b-1c7ef34fb207",
-         "name": "Hans-Dietrich Pohl"
+         "name": "Hans-Dietrich Pohl",
+         "aliases": []
         }
        },
        {
@@ -1777,7 +2260,8 @@
         "joinphrase": ", ",
         "artist": {
          "id": "0459f3da-0c36-462c-9b09-ee8475c63d55",
-         "name": "Hans-Dieter Appelt"
+         "name": "Hans-Dieter Appelt",
+         "aliases": []
         }
        },
        {

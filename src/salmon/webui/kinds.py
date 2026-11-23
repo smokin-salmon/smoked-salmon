@@ -53,6 +53,7 @@ import asyncclick as click
 import msgspec
 
 import salmon.trackers
+import salmon.webui.reports
 from salmon import cfg, interaction
 from salmon.commands import descgen_refusals
 from salmon.config.image_hosts import display_refusal, spectrals_refusal

@@ -1,7 +1,7 @@
 album = "Various Artists, Pulp Fiction (soundtrack)"
-why = "A various-artists soundtrack with dialogue tracks: Deezer and MusicBrainz credit the actors; Discogs has 'No Artist' and makes some performers producers."
+why = "A various-artists soundtrack with dialogue tracks: Deezer and MusicBrainz credit the actors; Discogs has 'No Artist' and credits some performers as producers too."
 edition = "Geffen 2019 digital, 20 tracks (Deezer 89920242 = MusicBrainz 729642fc by barcode); Discogs 1347833 is master 17468's main release (1994 MCA CD, 16 tracks)"
-known_wrong = ["Discogs parse: 'No Artist (main)' on the dialogue tracks; Urge Overkill, Maria McKee and Ricky Nelson as producers only, so their tracks have no performing artist"]
+known_wrong = ["Discogs parse: 'No Artist (main)' on the dialogue tracks"]
 files_from = "deezer"
 
 [sources]
@@ -24,7 +24,7 @@ release = ["Tim Roth (main)", "Amanda Plummer (main)", "Dick Dale and His Del‐
 tracks = 20
 
 [today.discogs]
-release = ["No Artist (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "The Centurions (main)", "Bob Keene (producer)", "Chuck Berry (main)", "Kramer (producer)", "Urge Overkill (producer)", "Bruce Brody (producer)", "Maria McKee (producer)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
+release = ["No Artist (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Ricky Nelson (main)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "The Centurions (main)", "Bob Keene (producer)", "Chuck Berry (main)", "Urge Overkill (main)", "Kramer (producer)", "Urge Overkill (producer)", "Maria McKee (main)", "Bruce Brody (producer)", "Maria McKee (producer)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
 tracks = 20
 
 [today.qobuz]
@@ -32,9 +32,9 @@ release = ["Various Artists (main)", "Tim Roth (guest)", "Amanda Plummer (guest)
 tracks = 20
 
 [today.merge]
-release = ["Tim Roth (main)", "Amanda Plummer (main)", "No Artist (main)", "Dick Dale and His Del-Tones (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Ricky Nelson (main)", "Rick Nelson (main)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "Maria de Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "The Centurions (main)", "Bob Keene (producer)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Kramer (producer)", "Urge Overkill (producer)", "Maria McKee (main)", "Bruce Brody (producer)", "Maria McKee (producer)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
+release = ["Tim Roth (main)", "Amanda Plummer (main)", "No Artist (main)", "Dick Dale and His Del-Tones (main)", "Jim Monsour (producer)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Ricky Nelson (main)", "Rick Nelson (main)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "Maria de Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "Bob Keene (producer)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Kramer (producer)", "Urge Overkill (producer)", "Maria McKee (main)", "Bruce Brody (producer)", "Maria McKee (producer)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
 tracks = 20
-credits = ["1.1: Tim Roth (main), Amanda Plummer (main), No Artist (main)", "1.2: Dick Dale and His Del-Tones (main), Dick Dale & His Del-Tones (main), Jim Monsour (producer)", "1.3: John Travolta (main), Samuel L. Jackson (main), No Artist (main)", "1.4: Kool & The Gang (main)", "1.5: Al Green (main), Willie Mitchell (producer)", "1.6: The Tornadoes (main), Bob Irwin (producer)", "1.7: Ricky Nelson (main), Rick Nelson (main), Jimmie Haskell (producer), Ozzie Nelson (producer), Ricky Nelson (producer)", "1.8: Dusty Springfield (main), Arif Mardin (producer), Jerry Wexler (producer), Tom Dowd (producer)", "1.9: Maria de Medeiros (main), Bruce Willis (main), No Artist (main)", "1.10: The Centurians (main), The Centurions (main), Bob Keene (producer)", "1.11: Jerome Patrick Hoban (main), No Artist (main)", "1.12: Chuck Berry (main)", "1.13: Urge Overkill (main), Kramer (producer), Urge Overkill (producer)", "1.14: Maria McKee (main), Bruce Brody (producer), Maria McKee (producer)", "1.15: Peter Greene (main), Duane Whitaker (main), No Artist (main)", "1.16: The Revels (main), Bill Wenzel (producer)", "1.17: The Statler Brothers (main), Jerry Kennedy (producer)", "1.18: John Travolta (main), Samuel L. Jackson (main), No Artist (main)", "1.19: The Lively Ones (main)", "1.20: Samuel L. Jackson (main), No Artist (main)"]
+credits = ["1.1: Tim Roth (main), Amanda Plummer (main), No Artist (main)", "1.2: Dick Dale and His Del-Tones (main), Jim Monsour (producer)", "1.3: John Travolta (main), Samuel L. Jackson (main), No Artist (main)", "1.4: Kool & The Gang (main)", "1.5: Al Green (main), Willie Mitchell (producer)", "1.6: The Tornadoes (main), Bob Irwin (producer)", "1.7: Ricky Nelson (main), Rick Nelson (main), Jimmie Haskell (producer), Ozzie Nelson (producer), Ricky Nelson (producer)", "1.8: Dusty Springfield (main), Arif Mardin (producer), Jerry Wexler (producer), Tom Dowd (producer)", "1.9: Maria de Medeiros (main), Bruce Willis (main), No Artist (main)", "1.10: The Centurians (main), Bob Keene (producer)", "1.11: Jerome Patrick Hoban (main), No Artist (main)", "1.12: Chuck Berry (main)", "1.13: Urge Overkill (main), Kramer (producer), Urge Overkill (producer)", "1.14: Maria McKee (main), Bruce Brody (producer), Maria McKee (producer)", "1.15: Peter Greene (main), Duane Whitaker (main), No Artist (main)", "1.16: The Revels (main), Bill Wenzel (producer)", "1.17: The Statler Brothers (main), Jerry Kennedy (producer)", "1.18: John Travolta (main), Samuel L. Jackson (main), No Artist (main)", "1.19: The Lively Ones (main)", "1.20: Samuel L. Jackson (main), No Artist (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -238,6 +238,233 @@ discnumber = ["1"]
 title = ["Ezekiel 25:17"]
 artist = ["Samuel L. Jackson"]
 album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Pumpkin and Honey Bunny"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Misirlou (single version)"]
+artist = ["Dick Dale and His Del‐Tones"]
+artists = ["Dick Dale and His Del‐Tones"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Royale With Cheese"]
+artist = ["Samuel L. Jackson and John Travolta"]
+artists = ["Samuel L. Jackson", "John Travolta"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Jungle Boogie"]
+artist = ["Kool & the Gang"]
+artists = ["Kool & the Gang"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Let’s Stay Together"]
+artist = ["Al Green"]
+artists = ["Al Green"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Bustin’ Surfboards (single version)"]
+artist = ["The Tornadoes"]
+artists = ["The Tornadoes"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Lonesome Town"]
+artist = ["Ricky Nelson"]
+artists = ["Ricky Nelson"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Son of a Preacher Man"]
+artist = ["Dusty Springfield"]
+artists = ["Dusty Springfield"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Zed’s Dead Baby"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Bullwinkle, Part 2"]
+artist = ["The Centurions"]
+artists = ["The Centurions"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Jack Rabbit Slims Twist Contest"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["You Never Can Tell (1964 single version) [mono]"]
+artist = ["Chuck Berry"]
+artists = ["Chuck Berry"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Girl, You’ll Be a Woman Soon"]
+artist = ["Urge Overkill"]
+artists = ["Urge Overkill"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["If Love Is a Red Dress (Hang Me in Rags)"]
+artist = ["Maria McKee"]
+artists = ["Maria McKee"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Bring Out the Gimp"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["Comanche (single version)"]
+artist = ["The Revels"]
+artists = ["The Revels"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["Flowers on the Wall"]
+artist = ["The Statler Brothers"]
+artists = ["The Statler Brothers"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "18.flac"
+tracknumber = ["18"]
+discnumber = ["1"]
+title = ["Personality Goes a Long Way"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "19.flac"
+tracknumber = ["19"]
+discnumber = ["1"]
+title = ["Surf Rider"]
+artist = ["The Lively Ones"]
+artists = ["The Lively Ones"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[picard_track]]
+file = "20.flac"
+tracknumber = ["20"]
+discnumber = ["1"]
+title = ["Ezekiel 25:17"]
+artist = ["[dialogue]"]
+artists = ["[dialogue]"]
+album = ["Pulp Fiction: Music From the Motion Picture"]
 albumartist = ["Various Artists"]
 date = ["2019-03-15"]
 

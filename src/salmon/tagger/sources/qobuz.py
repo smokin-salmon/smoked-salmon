@@ -9,10 +9,10 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.common.credits import EXTRA_ROLES, Credit, Role
-from salmon.common.strings import comparable, guests_from_title
+from salmon.common.strings import comparable, guests_from_title, split_type_marker
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, standardize_genres, strip_ep_suffix
+from salmon.tagger.sources.base import MetadataMixin, add_track, ends_with_ep, standardize_genres, strip_ep_suffix
 from salmon.tagger.tags import is_classical_genre
 
 # ------------------------------------------------------------------------------
@@ -36,8 +36,7 @@ NAME_SUFFIXES = frozenset({"jr", "sr", "ii", "iii", "iv"})
 
 # Pre-compiled regular expressions for better performance
 RE_YEAR = re.compile(r"(\d{4})")
-RE_EDITION = re.compile(r"\((.*?)\)(?:\s*-\s*(?:Single|EP))?$")
-RE_SINGLE = re.compile(r"-? *Single$", re.IGNORECASE)
+RE_EDITION = re.compile(r"\((.*?)\)$")
 RE_SOUNDTRACK = re.compile(r"original.*soundtrack", re.IGNORECASE)
 
 # Release type mappings
@@ -388,22 +387,18 @@ class Scraper(QobuzBase, MetadataMixin):
             track_number = str(track.get("track_number", 1))
             artists, guessed = _track_credits(track, album_mains, featured, album_names, extra)
 
-            # Parse track title with version
-            title = track.get("title", "")
-            if version := track.get("version"):
-                title = f"{title} ({version})"
-
-            # Create track entry
-            tracks[disc_number][track_number] = self.generate_track(
+            new_track = self.generate_track(
                 trackno=track_number,
                 discno=disc_number,
                 artists=list(artists),
                 credited_remixers=[name for name, role in artists if role == "remixer"],
-                title=title,
+                title=(track.get("title") or "").strip(),
+                version=(track.get("version") or "").strip() or None,
                 isrc=track.get("isrc"),
                 explicit=track.get("parental_warning", False),
             )
-            tracks[disc_number][track_number]["assumed_artists"] = guessed
+            new_track["assumed_artists"] = guessed
+            add_track(tracks, disc_number, track_number, new_track)
 
         return dict(tracks)
 
@@ -433,8 +428,8 @@ class Scraper(QobuzBase, MetadataMixin):
         if not title:
             return None
 
-        # Extract text in parentheses at the end of the title
-        match = RE_EDITION.search(title)
+        # Extract text in parentheses at the end of the title, before any release type
+        match = RE_EDITION.search(split_type_marker(title).title)
         if not match:
             return None
 
@@ -466,9 +461,8 @@ class Scraper(QobuzBase, MetadataMixin):
         if ends_with_ep(title):
             soup["title"] = strip_ep_suffix(title)
             return "EP"
-        elif RE_SINGLE.search(title):
-            # Remove the suffix from the title
-            soup["title"] = RE_SINGLE.sub("", title)
+        elif (marked := split_type_marker(title, bare=False)).rls_type == "Single":
+            soup["title"] = marked.title
             return "Single"
         elif RE_SOUNDTRACK.search(title):
             return "Soundtrack"
@@ -510,8 +504,12 @@ class Scraper(QobuzBase, MetadataMixin):
         if data["rls_type"] == "EP":
             # The title may still carry the marker, as with any other store: the same rule drops it.
             return strip_ep_suffix(data["title"]), "EP"
-        if data["rls_type"] in ["Single", "Soundtrack"]:
-            return data["title"], data["rls_type"]
+        if data["rls_type"] == "Single":
+            # As for an EP: the title read before the type may still carry its marker, and only its own goes.
+            marked = split_type_marker(data["title"], bare=False)
+            return (marked.title if marked.rls_type == "Single" else data["title"]).strip(), "Single"
+        if data["rls_type"] == "Soundtrack":
+            return data["title"], "Soundtrack"
 
         # Otherwise, fall back to the base class's heuristics
         return super().determine_rls_type(data)

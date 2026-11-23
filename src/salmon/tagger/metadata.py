@@ -12,7 +12,7 @@ import msgspec
 from salmon import cfg, interaction
 from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
-from salmon.common.strings import artist_keys, comparable, names_no_artist, numeric_id
+from salmon.common.strings import artist_keys, comparable, names_no_artist, numeric_id, split_type_marker
 from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
 from salmon.search.base import IdentData
 from salmon.sources.deezer import DeezerBase, album_upc
@@ -238,8 +238,6 @@ def _print_search_results(results, rls_data=None):
 
 # A store's page for one track or a playlist: not the album's.
 _NOT_ALBUM_PAGE = re.compile(r"/(?:track|playlist)/", re.IGNORECASE)
-# What a store appends to a title to say the release type: "Title - EP", "Title (Single)".
-_TYPE_SUFFIX = re.compile(r"\s*(?:-\s*(?:EP|Single)|[(\[](?:EP|Single)[)\]])\s*$", re.IGNORECASE)
 
 
 def _metasource_of(url: str) -> str | None:
@@ -279,7 +277,8 @@ def _album_identity(url: str) -> tuple[str, ...] | None:
 
 
 def _comparable_title(title: object) -> str:
-    return comparable(_TYPE_SUFFIX.sub("", str(title or "")))
+    # A bare "EP" or "Single" may be part of the name, so only a type set apart goes: "Title - EP", "Title (Single)".
+    return comparable(split_type_marker(title, bare=False).title)
 
 
 def _matching_choice(

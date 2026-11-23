@@ -18,7 +18,7 @@ not_main = ["Various Artists", "Frank Ocean", "Migos", "ScHoolboy Q", "PARTYNEXT
 how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Calvin Harris as the only release artist and every other name as featured"
 
 [today.deezer]
-release = ["Frank Ocean (guest)", "Migos (guest)", "Calvin Harris (main)", "ScHoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "D.R.A.M. (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A-Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
+release = ["Calvin Harris (main)", "Frank Ocean (guest)", "Migos (guest)", "ScHoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "D.R.A.M. (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A-Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
 tracks = 10
 
 [today.musicbrainz]
@@ -40,15 +40,15 @@ credits = ["1.1: Calvin Harris (main), Frank Ocean (main), Migos (main)", "1.2: 
 
 [today.output]
 albumartist = "Various"
-tracks = ["Calvin Harris, Frank Ocean, Migos | Slide", "Calvin Harris, ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M. | Cash Out", "Calvin Harris, Young Thug, Pharrell Williams, Ariana Grande | Heatstroke", "Calvin Harris, Future, Khalid | Rollin", "Calvin Harris, Travis Scott, A-Trak | Prayers Up", "Calvin Harris, Snoop Dogg, John Legend, Takeoff | Holiday", "Calvin Harris & Nicki Minaj | Skrt On Me", "Calvin Harris, Pharrell Williams, Katy Perry, Big Sean | Feels", "Calvin Harris, Kehlani, Lil Yachty | Faking It", "Calvin Harris & Jessie Reyez | Hard To Love"]
+tracks = ["Calvin Harris, Frank Ocean, Migos | Slide", "Calvin Harris, ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M. | Cash Out", "Calvin Harris, Young Thug, Pharrell Williams, Ariana Grande | Heatstroke", "Calvin Harris, Future, Khalid | Rollin", "Calvin Harris, Travis Scott, A-Trak | Prayers Up", "Calvin Harris, Snoop Dogg, John Legend, Takeoff | Holiday", "Calvin Harris & Nicki Minaj | Skrt On Me", "Calvin Harris, Pharrell Williams, Katy Perry, Big Sean | Feels", "Calvin Harris, Kehlani, Lil Yachty | Faking It", "Calvin Harris & Jessie Reyez | Hard to Love"]
 
 [today."output-guests-in-title"]
 albumartist = "Various"
-tracks = ["Calvin Harris, Frank Ocean, Migos | Slide", "Calvin Harris, ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M. | Cash Out", "Calvin Harris, Young Thug, Pharrell Williams, Ariana Grande | Heatstroke", "Calvin Harris, Future, Khalid | Rollin", "Calvin Harris, Travis Scott, A-Trak | Prayers Up", "Calvin Harris, Snoop Dogg, John Legend, Takeoff | Holiday", "Calvin Harris & Nicki Minaj | Skrt On Me", "Calvin Harris, Pharrell Williams, Katy Perry, Big Sean | Feels", "Calvin Harris, Kehlani, Lil Yachty | Faking It", "Calvin Harris & Jessie Reyez | Hard To Love"]
+tracks = ["Calvin Harris, Frank Ocean, Migos | Slide", "Calvin Harris, ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M. | Cash Out", "Calvin Harris, Young Thug, Pharrell Williams, Ariana Grande | Heatstroke", "Calvin Harris, Future, Khalid | Rollin", "Calvin Harris, Travis Scott, A-Trak | Prayers Up", "Calvin Harris, Snoop Dogg, John Legend, Takeoff | Holiday", "Calvin Harris & Nicki Minaj | Skrt On Me", "Calvin Harris, Pharrell Williams, Katy Perry, Big Sean | Feels", "Calvin Harris, Kehlani, Lil Yachty | Faking It", "Calvin Harris & Jessie Reyez | Hard to Love"]
 
 [today."output-salmon-tags"]
 albumartist = "Calvin Harris"
-tracks = ["Calvin Harris (feat. Frank Ocean & Migos) | Slide", "Calvin Harris (feat. ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M.) | Cash Out", "Calvin Harris (feat. Young Thug, Pharrell Williams, Ariana Grande) | Heatstroke", "Calvin Harris (feat. Future & Khalid) | Rollin", "Calvin Harris (feat. Travis Scott & A-Trak) | Prayers Up", "Calvin Harris (feat. Snoop Dogg, John Legend, Takeoff) | Holiday", "Calvin Harris (feat. Nicki Minaj) | Skrt On Me", "Calvin Harris (feat. Pharrell Williams, Katy Perry, Big Sean) | Feels", "Calvin Harris (feat. Kehlani & Lil Yachty) | Faking It", "Calvin Harris (feat. Jessie Reyez) | Hard To Love"]
+tracks = ["Calvin Harris (feat. Frank Ocean & Migos) | Slide", "Calvin Harris (feat. ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M.) | Cash Out", "Calvin Harris (feat. Young Thug, Pharrell Williams, Ariana Grande) | Heatstroke", "Calvin Harris (feat. Future & Khalid) | Rollin", "Calvin Harris (feat. Travis Scott & A-Trak) | Prayers Up", "Calvin Harris (feat. Snoop Dogg, John Legend, Takeoff) | Holiday", "Calvin Harris (feat. Nicki Minaj) | Skrt On Me", "Calvin Harris (feat. Pharrell Williams, Katy Perry, Big Sean) | Feels", "Calvin Harris (feat. Kehlani & Lil Yachty) | Faking It", "Calvin Harris (feat. Jessie Reyez) | Hard to Love"]
 
 # A control for the tag shape: the same files with ARTIST and TITLE as salmon itself writes them
 # (retagger.create_artist_str, guests_in_track_title off), every other tag as in [[track]] below.
@@ -162,6 +162,123 @@ album = ["Funk Wav Bounces Vol.1"]
 albumartist = ["Calvin Harris"]
 date = ["2017-06-30"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Slide"]
+artist = ["Calvin Harris feat. Frank Ocean & Migos"]
+artists = ["Calvin Harris", "Frank Ocean", "Migos"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Cash Out"]
+artist = ["Calvin Harris feat. ScHoolboy Q, PARTYNEXTDOOR & D.R.A.M."]
+artists = ["Calvin Harris", "ScHoolboy Q", "PARTYNEXTDOOR", "D.R.A.M."]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Heatstroke"]
+artist = ["Calvin Harris feat. Young Thug, Pharrell Williams & Ariana Grande"]
+artists = ["Calvin Harris", "Young Thug", "Pharrell Williams", "Ariana Grande"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Rollin"]
+artist = ["Calvin Harris feat. Future & Khalid"]
+artists = ["Calvin Harris", "Future", "Khalid"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Prayers Up"]
+artist = ["Calvin Harris feat. Travis Scott & A‐Trak"]
+artists = ["Calvin Harris", "Travis Scott", "A‐Trak"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Holiday"]
+artist = ["Calvin Harris feat. Snoop Dogg, John Legend & Takeoff"]
+artists = ["Calvin Harris", "Snoop Dogg", "John Legend", "Takeoff"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Skrt on Me"]
+artist = ["Calvin Harris feat. Nicki Minaj"]
+artists = ["Calvin Harris", "Nicki Minaj"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Feels"]
+artist = ["Calvin Harris feat. Pharrell Williams, Katy Perry & Big Sean"]
+artists = ["Calvin Harris", "Pharrell Williams", "Katy Perry", "Big Sean"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Faking It"]
+artist = ["Calvin Harris feat. Kehlani & Lil Yachty"]
+artists = ["Calvin Harris", "Kehlani", "Lil Yachty"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Hard to Love"]
+artist = ["Calvin Harris feat. Jessie Reyez"]
+artists = ["Calvin Harris", "Jessie Reyez"]
+album = ["Funk Wav Bounces, Vol. 1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''
@@ -190,6 +307,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Frank Ocean",
+     "Migos"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -210,6 +331,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "ScHoolboy Q",
+     "PARTYNEXTDOOR",
+     "D.R.A.M."
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -230,6 +356,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Young Thug",
+     "Pharrell Williams",
+     "Ariana Grande"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -249,6 +380,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Future",
+     "Khalid"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -268,6 +403,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Travis Scott",
+     "A-Trak"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -288,6 +427,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Snoop Dogg",
+     "John Legend",
+     "Takeoff"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -306,6 +450,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Nicki Minaj"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -326,6 +473,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Pharrell Williams",
+     "Katy Perry",
+     "Big Sean"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -345,6 +497,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Kehlani",
+     "Lil Yachty"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -363,6 +519,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Jessie Reyez"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]

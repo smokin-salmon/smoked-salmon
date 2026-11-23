@@ -9,7 +9,63 @@
    "joinphrase": "",
    "artist": {
     "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
-    "name": "Kruder & Dorfmeister"
+    "name": "Kruder & Dorfmeister",
+    "aliases": [
+     {
+      "name": "Kruder & Dofmeister",
+      "sort-name": "Kruder & Dofmeister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Kruder & Dorfmaister",
+      "sort-name": "Kruder & Dorfmaister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Kruder And Dorfmeister",
+      "sort-name": "Kruder And Dorfmeister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Kruder Dorfmeister",
+      "sort-name": "Kruder Dorfmeister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Kruder&Dorfmeister",
+      "sort-name": "Kruder&Dorfmeister",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "P. Kruder, R. Dorfmeister",
+      "sort-name": "Kruder, P., Dorfmeister, R.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     }
+    ]
    }
   }
  ],
@@ -65,7 +121,36 @@
        "joinphrase": "",
        "artist": {
         "id": "bf48d271-9595-4043-9064-52f43707d4ab",
-        "name": "The Herbaliser"
+        "name": "The Herbaliser",
+        "aliases": [
+         {
+          "name": "Herbaliser",
+          "sort-name": "Herbaliser",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Herbalizer",
+          "sort-name": "Herbalizer",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "The Herbalizer",
+          "sort-name": "The Herbalizer",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -96,7 +181,8 @@
        "joinphrase": "",
        "artist": {
         "id": "c8ba1952-3508-4b7e-a59e-4d519328d6d9",
-        "name": "Small World"
+        "name": "Small World",
+        "aliases": []
        }
       }
      ],
@@ -127,7 +213,8 @@
        "joinphrase": "",
        "artist": {
         "id": "aeacd604-aebf-454b-92be-4fe4007d7a95",
-        "name": "Tango"
+        "name": "Tango",
+        "aliases": []
        }
       }
      ],
@@ -158,7 +245,18 @@
        "joinphrase": "",
        "artist": {
         "id": "c4896a65-651b-41e0-a6d7-fd9fb72a7047",
-        "name": "Lab Rats"
+        "name": "Lab Rats",
+        "aliases": [
+         {
+          "name": "The Lab Rats",
+          "sort-name": "The Lab Rats",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -172,7 +270,8 @@
         "joinphrase": "",
         "artist": {
          "id": "7c29ac1c-e903-4839-b737-dc438e15cd41",
-         "name": "The Lab Rats"
+         "name": "The Lab Rats",
+         "aliases": []
         }
        }
       ]
@@ -189,7 +288,18 @@
        "joinphrase": "",
        "artist": {
         "id": "532fcdd8-18f1-4c9e-91b8-5cfa8e96db63",
-        "name": "Statik Sound System"
+        "name": "Statik Sound System",
+        "aliases": [
+         {
+          "name": "Static Sound System",
+          "sort-name": "Static Sound System",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -220,7 +330,18 @@
        "joinphrase": " & ",
        "artist": {
         "id": "65833881-48b2-45c4-b6d4-8d7dfa478e0d",
-        "name": "JMJ"
+        "name": "JMJ",
+        "aliases": [
+         {
+          "name": "J.M.J",
+          "sort-name": "J.M.J",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -228,7 +349,18 @@
        "joinphrase": "",
        "artist": {
         "id": "9d7ce3bf-9ea8-4750-a9c8-6344dff0fe08",
-        "name": "Flytronix"
+        "name": "Flytronix",
+        "aliases": [
+         {
+          "name": "Flytronic",
+          "sort-name": "Flytronic",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -267,7 +399,18 @@
        "joinphrase": "",
        "artist": {
         "id": "bd8f19ba-c3e9-410c-9253-e4d997a0c310",
-        "name": "Aquasky"
+        "name": "Aquasky",
+        "aliases": [
+         {
+          "name": "Aqua Sky",
+          "sort-name": "Aqua Sky",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -298,7 +441,8 @@
        "joinphrase": "",
        "artist": {
         "id": "1a1531ca-c74e-400b-9412-4b422b59e94c",
-        "name": "James Bong"
+        "name": "James Bong",
+        "aliases": []
        }
       }
      ],
@@ -329,7 +473,8 @@
        "joinphrase": "",
        "artist": {
         "id": "49c5cce4-aaa6-4600-a9a2-2b045fb6a87b",
-        "name": "Hardfloor"
+        "name": "Hardfloor",
+        "aliases": []
        }
       }
      ],
@@ -360,7 +505,27 @@
        "joinphrase": "",
        "artist": {
         "id": "a505bb48-ad65-4af4-ae47-29149715bff9",
-        "name": "Thievery Corporation"
+        "name": "Thievery Corporation",
+        "aliases": [
+         {
+          "name": "Theivery Corporation",
+          "sort-name": "Theivery Corporation",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Thievery Corp",
+          "sort-name": "Thievery Corp",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -422,7 +587,8 @@
        "joinphrase": "",
        "artist": {
         "id": "ad0811ea-e213-451d-b22f-fa1a7f9e0226",
-        "name": "Beanfield"
+        "name": "Beanfield",
+        "aliases": []
        }
       }
      ],
@@ -453,7 +619,8 @@
        "joinphrase": "",
        "artist": {
         "id": "4ad93913-f9de-43f6-8d14-efeb2642b85a",
-        "name": "Sapien"
+        "name": "Sapien",
+        "aliases": []
        }
       }
      ],
@@ -484,7 +651,18 @@
        "joinphrase": "",
        "artist": {
         "id": "fc79b760-fc4a-4efa-b0e5-f0387d7cd25f",
-        "name": "Shantel"
+        "name": "Shantel",
+        "aliases": [
+         {
+          "name": "DJ Shantel",
+          "sort-name": "DJ Shantel",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -515,7 +693,8 @@
        "joinphrase": "",
        "artist": {
         "id": "e200ef60-9626-49ed-b761-864acef70d2a",
-        "name": "Karma"
+        "name": "Karma",
+        "aliases": []
        }
       }
      ],
@@ -546,7 +725,18 @@
        "joinphrase": "",
        "artist": {
         "id": "aefe448b-c5e6-4d2a-b92d-79b90b4441a4",
-        "name": "Showroom Recordings"
+        "name": "Showroom Recordings",
+        "aliases": [
+         {
+          "name": "Showroom Recording Series",
+          "sort-name": "Showroom Recording Series",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],

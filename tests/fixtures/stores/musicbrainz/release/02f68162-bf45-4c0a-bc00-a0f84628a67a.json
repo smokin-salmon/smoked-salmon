@@ -1,0 +1,342 @@
+{
+ "id": "02f68162-bf45-4c0a-bc00-a0f84628a67a",
+ "title": "Where Do We Go From Here? The Remixes EP",
+ "date": "2024-10-18",
+ "barcode": "846070079702",
+ "artist-credit": [
+  {
+   "name": "Asking Alexandria",
+   "joinphrase": "",
+   "artist": {
+    "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+    "name": "Asking Alexandria",
+    "aliases": [
+     {
+      "name": "Аsking Аlехаndriа",
+      "sort-name": "Аsking Аlехаndriа",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
+   }
+  }
+ ],
+ "release-group": {
+  "id": "362c4ee7-f02f-4e68-89be-d386daff4018",
+  "title": "Where Do We Go From Here? The Remixes EP",
+  "first-release-date": "2024-10-18",
+  "primary-type": "EP",
+  "secondary-types": [
+   "Remix"
+  ],
+  "artist-credit": [
+   {
+    "name": "Asking Alexandria",
+    "joinphrase": "",
+    "artist": {
+     "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+     "name": "Asking Alexandria"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2024-10-18"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Better Noise Music"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "89a17183-88b7-476e-b27d-91504376218b",
+     "position": 1,
+     "number": "1",
+     "title": "Bad Blood (Weird Genius remix)",
+     "artist-credit": [
+      {
+       "name": "Asking Alexandria",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+        "name": "Asking Alexandria"
+       }
+      }
+     ],
+     "recording": {
+      "id": "203a3001-75d1-4d33-8dff-370ee49fc35d",
+      "title": "Bad Blood (Weird Genius remix)",
+      "first-release-date": "2024-09-20",
+      "artist-credit": [
+       {
+        "name": "Asking Alexandria",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+         "name": "Asking Alexandria"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "917270e7-246d-422a-8a82-5fa2dda4f582",
+         "name": "Weird Genius"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "caf0fe9b-d2ca-4255-bc9f-8e9c670a13d1",
+     "position": 2,
+     "number": "2",
+     "title": "Let Go (kodeblooded remix)",
+     "artist-credit": [
+      {
+       "name": "Asking Alexandria",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+        "name": "Asking Alexandria"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b91ff4cf-a04e-4b78-8214-69c3a5104322",
+      "title": "Let Go (kodeblooded remix)",
+      "first-release-date": "2024-09-20",
+      "artist-credit": [
+       {
+        "name": "Asking Alexandria",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+         "name": "Asking Alexandria"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "1190fe62-d9c9-4f3a-a249-0829a7358e49",
+         "name": "kodeblooded"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "60d67196-ce32-419e-96d7-08e62361dc51",
+     "position": 3,
+     "number": "3",
+     "title": "Nothing Left (Cass Dillon remix)",
+     "artist-credit": [
+      {
+       "name": "Asking Alexandria",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+        "name": "Asking Alexandria"
+       }
+      }
+     ],
+     "recording": {
+      "id": "217c6eef-adae-43d2-ab18-3e8ec10f8519",
+      "title": "Nothing Left (Cass Dillon remix)",
+      "first-release-date": "2024-10-18",
+      "artist-credit": [
+       {
+        "name": "Asking Alexandria",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+         "name": "Asking Alexandria"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "7a97a0fe-eeb1-4419-8658-24ed859e9815",
+         "name": "Cass Dillon"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "68130f9f-9460-47f7-93a7-20fd5f2af67a",
+     "position": 4,
+     "number": "4",
+     "title": "Where Do We Go From Here? (Fairlane remix)",
+     "artist-credit": [
+      {
+       "name": "Asking Alexandria",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+        "name": "Asking Alexandria"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c1552a83-bdcc-47e2-a2f6-dd6685f6de3d",
+      "title": "Where Do We Go From Here? (Fairlane remix)",
+      "first-release-date": "2024-10-18",
+      "artist-credit": [
+       {
+        "name": "Asking Alexandria",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+         "name": "Asking Alexandria"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "1f5899c2-56f1-4945-8242-5f99e3c3fe03",
+         "name": "Fairlane"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d6a28645-fa30-405a-80ea-307c9581c501",
+     "position": 5,
+     "number": "5",
+     "title": "Where Do We Go From Here?",
+     "artist-credit": [
+      {
+       "name": "Asking Alexandria",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+        "name": "Asking Alexandria"
+       }
+      }
+     ],
+     "recording": {
+      "id": "59f10fd1-639b-48ff-a909-c945fd9adc06",
+      "title": "Where Do We Go From Here?",
+      "first-release-date": "2023-08-25",
+      "artist-credit": [
+       {
+        "name": "Asking Alexandria",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+         "name": "Asking Alexandria"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a347c94f-4027-4836-86c3-35290af3b0e1",
+     "position": 6,
+     "number": "6",
+     "title": "Dark Void (Sullivan King remix)",
+     "artist-credit": [
+      {
+       "name": "Asking Alexandria",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+        "name": "Asking Alexandria"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2cadad78-83af-437c-9ed5-3b9489724b94",
+      "title": "Dark Void (Sullivan King remix)",
+      "first-release-date": "2024-01-12",
+      "artist-credit": [
+       {
+        "name": "Asking Alexandria",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+         "name": "Asking Alexandria"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "f1e0c3fb-1ecb-49fa-bebd-5b0aedb33737",
+         "name": "Sullivan King"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5ab2b7c5-c340-4d7c-a09a-6d7056e4d907",
+     "position": 7,
+     "number": "7",
+     "title": "Holding on to Something More",
+     "artist-credit": [
+      {
+       "name": "Asking Alexandria",
+       "joinphrase": "",
+       "artist": {
+        "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+        "name": "Asking Alexandria"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4ee3175a-75a1-4862-83fe-3685b4759a05",
+      "title": "Holding on to Something More",
+      "first-release-date": "2023-08-25",
+      "artist-credit": [
+       {
+        "name": "Asking Alexandria",
+        "joinphrase": "",
+        "artist": {
+         "id": "9d2fde91-4633-430d-87f0-2b9bbb7fa451",
+         "name": "Asking Alexandria"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

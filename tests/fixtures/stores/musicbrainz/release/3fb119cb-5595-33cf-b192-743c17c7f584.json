@@ -9,7 +9,81 @@
    "joinphrase": "",
    "artist": {
     "id": "fe7245e7-d734-4ca1-8e26-691883f58201",
-    "name": "Miles Davis Quintet"
+    "name": "Miles Davis Quintet",
+    "aliases": [
+     {
+      "name": "Miles Davis Quintets",
+      "sort-name": "Miles Davis Quintet",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Miles Davis Quintett",
+      "sort-name": "Miles Davis Quintett",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Miles Davis Quintette",
+      "sort-name": "Miles Davis Quintette",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Miles Davis quintet 1965-'68",
+      "sort-name": "Miles Davis quintet 1965-'68",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Miles Dvis Quintet",
+      "sort-name": "Miles Dvis Quintet",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "The Miles Davis Quintet",
+      "sort-name": "The Miles Davis Quintet",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "The New Miles Davis Quintet",
+      "sort-name": "The New Miles Davis Quintet",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "マイルス・デイヴィス・クインテット",
+      "sort-name": "マイルス・デイヴィス・クインテット",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],

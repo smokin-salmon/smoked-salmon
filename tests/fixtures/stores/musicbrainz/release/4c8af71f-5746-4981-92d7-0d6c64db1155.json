@@ -9,7 +9,63 @@
    "joinphrase": "",
    "artist": {
     "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
-    "name": "Miles Davis"
+    "name": "Miles Davis",
+    "aliases": [
+     {
+      "name": "Davis",
+      "sort-name": "Davis",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Miles Davies",
+      "sort-name": "Miles Davies",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Miles Davis",
+      "sort-name": "Davis, Miles",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Miles Dewey Davis III",
+      "sort-name": "Miles Dewey Davis III",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Miles Favis",
+      "sort-name": "Favis, Miles",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Майлз Дейвис",
+      "sort-name": "Дейвис, Майлз",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "bg",
+      "primary": false
+     }
+    ]
    }
   }
  ],

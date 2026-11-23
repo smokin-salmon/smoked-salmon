@@ -1,18 +1,19 @@
 # MusicBrainz recordings
 
-What MusicBrainz and the Cover Art Archive sent, kept so the tests parse real
-answers without a network. Each answer is recorded in both of MusicBrainz's
-formats, XML and JSON, fetched one straight after the other, so the two
-describe the same data (#1065).
+What MusicBrainz's JSON API and the Cover Art Archive sent, kept so the tests
+parse real answers without a network (#1065). `tests/helpers/musicbrainz.py`
+serves them from a local server.
 
 | Path | What it is |
 | --- | --- |
-| `release/<mbid>.xml`, `.json` | `/ws/2/release/<mbid>` with salmon's includes |
-| `search/<slug>.xml`, `.json` | `/ws/2/release/?query=<query>&limit=10` |
+| `release/<mbid>.json` | `/ws/2/release/<mbid>?fmt=json`, includes below |
+| `search/<slug>.json` | `/ws/2/release/?query=<query>&limit=10&fmt=json` |
 | `caa/<mbid>.json` | the Cover Art Archive's `/release/<mbid>` image list |
 
 The artist-credit casebook (`tests/fixtures/artist_credits/`) names its
-release here by MBID.
+release here by MBID, in `stores.musicbrainz` and, for the Picard-tagged
+files, `picard_release`. A search's slug is its query in lower case, each run of
+other characters than letters and digits turned into one `-`.
 
 ## How they were fetched
 
@@ -23,18 +24,22 @@ as MusicBrainz asks.
 
 Includes for a release:
 `artists labels recordings release-groups media artist-credits artist-rels
-recording-level-rels`. The JSON is the same URL with `&fmt=json`.
+recording-level-rels`, and for the casebook's releases (both keys) also
+`aliases release-group-level-rels` (#1133).
+
+These answers were first recorded in both of MusicBrainz's formats, XML and
+JSON, fetched one straight after the other. The casebook's `today`, the search
+results and the covers came out the same from the JSON as from the XML before
+salmon moved to the JSON; the XML was then dropped.
 
 ## Trimmed
 
-Each answer keeps only the fields salmon's parsers read, and the trimmed XML
-parses to the same release as the full answer. The JSON keeps the matching
-fields:
+Each answer keeps only the fields salmon's parsers read:
 
 | Part | Kept |
 | --- | --- |
 | release | id, title, date, barcode, release event dates, the cover's `front` flag |
-| release group | id, title, first release date, type (XML), primary and secondary types |
+| release group | id, title, first release date, primary and secondary types |
 | label info | label name, catalogue number |
 | medium | position, format |
 | track | id, position, number, title, artist credit |
@@ -42,5 +47,18 @@ fields:
 | artist credit | join phrase, credited name, artist id and name |
 | search result | id, title, artist credit, label info, track count, format |
 
-To add or refresh a release, fetch both formats together and trim them the
-same way. If the casebook's `today` changes, say why in the commit.
+The casebook's releases keep two more parts, which salmon's parsers don't read.
+The casebook's Picard-tagged files (`[[picard_track]]`) are built from them,
+and they are there for deciding whether aliases are worth a later step (#1131):
+
+| Part | Kept |
+| --- | --- |
+| artist | aliases (name, sort name, type and its id, ended, locale, primary), on the artist's first appearance in the file only: each later appearance leaves them out |
+| release and release group relations | composer, conductor and remixer relations to an artist: type and its id, direction, credited name, attributes, the artist |
+
+An artist's aliases sit on one of its credits only, so look them up by the artist's id across the whole file: read from
+each credit's own artist, the later credits seem to have none. None of the casebook's releases has a composer,
+conductor or remixer relation of its own yet; a recording's composers come from its works, which are not recorded.
+
+To add or refresh a release, fetch it and trim it the same way. If the
+casebook's `today` changes, say why in the commit.

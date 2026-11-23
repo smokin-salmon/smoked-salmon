@@ -162,6 +162,145 @@ album = ["El Dorado"]
 albumartist = ["Marcus King"]
 date = ["2020-01-17"]
 
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Young Man’s Dream"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["The Well"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Wildflowers & Wine"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["One Day She’s Here"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Sweet Mariona"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Beautiful Stranger"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Break"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Say You Will"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Turn It Up"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Too Much Whiskey"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Love Song"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[picard_track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["No Pain"]
+artist = ["Marcus King"]
+artists = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
 # What each store sent, trimmed as [sources] says.
 [stores]
 deezer = '''

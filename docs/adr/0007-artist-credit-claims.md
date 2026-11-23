@@ -147,6 +147,15 @@ place, following the `strip_useless_versions` setting, and a remixer is read fro
 two title cases left open by #947 ("Heroic Feat", and "Song (feat. B)" with guest C) are decided in that
 same place, from the guests `resolve_credits` gives.
 
+*Amended 2026-11-18 (#869 step 3b): Qobuz and Deezer keep the version apart in one PR, as neither alone can say
+which store names the title (#1077). The merge records each store's title and version and writes each track's title
+once, after the last store: the files' title as they give it, with the accents a store restores and, by
+`strip_useless_versions`, without a trailing featuring clause that names only artists the track credits; a files'
+title that names nothing ("Track 01") takes the first store's. With no files, the first store's title and version,
+by `strip_useless_versions`, whatever the store. A store's version isn't added to the files' title. The remixer read
+stays on the store's title with its version folded back in: a remix can sit in a title rather than its version
+(DJ-Kicks on Qobuz).*
+
 ### 4. Where it runs, and what stays
 
 - **Step 2:** as the merge pairs each store's tracks with the base's, it records which source gave each
@@ -157,6 +166,12 @@ same place, from the guests `resolve_credits` gives.
   Then `resolve_credits` runs, in place of the first-wins choice. `generate_artists` still runs where
   it does today, after the merge's cleanup and after review edits; on credits already decided it has
   nothing left to choose.
+  *Amended 2026-11-22 (#1131): the spelling is the artist's, not the accent-folded name's. Names are one
+  artist across the release when they share `same_artist_key` (`comparable` after two folds: a word
+  "and" between names, and a leading "The"), and on a track when Discogs credits one as the other there
+  (its ANV, through any chain). Each artist takes the spelling of its first credit the merge kept, in
+  track order, then `artist_spellings`' pick for case and accents, and the configured artist corrections
+  apply to that spelling. The fragment check (#1112) runs once, after the last store.*
 - **Step 3**, one store per PR: each reads its store's credits as stated claims, and `scrape_release`
   stops running `filter_artists` for that store. The title reading for remixers leaves each store as
   its version is kept apart. `parse_credits` leaves with the Discogs PR.
@@ -170,6 +185,8 @@ same place, from the guests `resolve_credits` gives.
 - **What stays, on purpose:** a review edit has no sources to weigh, so it doesn't go through
   `resolve_credits` (#854). A rule about reading one source stays in that source's parser, such as
   Tidal's inference. The name repairs stay where they are.
+  *Amended 2026-11-22 (#1109): the bad-split repair also runs on each track's claims, over every
+  source, before the decision; `generate_artists` still runs it after.*
 
 ### 5. What each step proves
 
@@ -207,7 +224,7 @@ this record are what those cases support, not a complete model of artist credits
 - **Where this is going, not decided here:** the release and track as structs, as their own proposal
   after the credit steps, with a check at each edge first that warns and doesn't block; `Credit` as a
   NamedTuple with `.name` and `.role`, which still equals a plain pair; `Claim.artist_id` and the
-  source's own role words, each added by the first PR that fills and reads it; one key for an artist's
-  name, with the Qobuz PR (*Ágætis byrjun*).
+  source's own role words, each added by the first PR that fills and reads it. (One key for an artist's
+  name, listed here at first, is decided: step 2's amendment, #1131.)
 - **Ruled out:** a role read from a title once a source gives it as data; a rule choosing between
   sources outside `resolve_credits`; reasons in tags; a numeric confidence.

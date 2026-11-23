@@ -9,7 +9,36 @@
    "joinphrase": "",
    "artist": {
     "id": "5b11f4ce-a62d-471e-81fc-a69a8278c7da",
-    "name": "Nirvana"
+    "name": "Nirvana",
+    "aliases": [
+     {
+      "name": "Nirvana",
+      "sort-name": "Nirvana",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Nirvana US",
+      "sort-name": "Nirvana US",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ニルヴァーナ",
+      "sort-name": "ニルヴァーナ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
    }
   }
  ],
@@ -441,7 +470,7 @@
      "recording": {
       "id": "b14446e7-1212-4a83-b6e7-82d665227c4d",
       "title": "Endless, Nameless",
-      "first-release-date": "1991-09-24",
+      "first-release-date": "1992-02",
       "artist-credit": [
        {
         "name": "Nirvana",
@@ -689,7 +718,7 @@
      "recording": {
       "id": "e78da5d6-ae82-41da-a343-685315cd36b3",
       "title": "Sliver",
-      "first-release-date": "1991-09-24",
+      "first-release-date": "2011-09-23",
       "artist-credit": [
        {
         "name": "Nirvana",
@@ -720,7 +749,7 @@
      "recording": {
       "id": "a373a781-c13f-4122-bcae-47661a900756",
       "title": "Polly",
-      "first-release-date": "1991-09-24",
+      "first-release-date": "1992-11-30",
       "artist-credit": [
        {
         "name": "Nirvana",

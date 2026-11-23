@@ -398,6 +398,12 @@ seedbox copy or client add is a 3.
 
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
+### Request lossy approval after uploading
+
+Run `salmon report 12345 --tracker RED` or pass a RED or OPS torrent permalink to report your own FLAC upload. RED selects Lossy WEB or Lossy Master from the torrent’s media. OPS uses one approval category.
+
+Add `--folder PATH` to upload spectral evidence before final confirmation. Use `--dry-run` to preview the report without contacting the tracker. The same workflow is available under **Tools → Lossy approval report**.
+
 ### 🌐 Spectral Viewer for `up`
 When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. If salmon runs on another machine or in Docker, set `display_host` under `[upload.spectrals_viewer]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead: in a terminal that speaks the Kitty graphics protocol (kitty, Ghostty, WezTerm...), salmon shows them in the terminal itself, a track at a time (← and → move between tracks, Enter goes on, q stops early), and this works over SSH too; elsewhere it opens feh (or, without feh, your desktop's default image viewer), Quick Look or the default Windows viewer. Set `terminal_spectrals_viewer = false` to always use those. This viewer is separate from `salmon web` below.
 
@@ -419,7 +425,7 @@ The pages:
 * **Convert** – transcode, downconvert and compress.
 * **Tag** – `salmon tag`.
 * **Search** – look up an album in the stores and read its metadata.
-* **Tools** – the description generator (`salmon descgen`) and image uploads (`salmon images up`).
+* **Tools** – the description generator (`salmon descgen`), image uploads (`salmon images up`), and approval reports for eligible self-uploaded RED/OPS FLAC torrents (`salmon report`). An optional album folder supplies full and zoomed spectral images for the report. The images go to the configured spectral host before final confirmation. Without a folder, only the comment and optional source URL are included. Print-only skips spectral generation and stays offline.
 * **Settings** – each tracker's session cookie and API key: paste a new one, and salmon saves it in your config
   file, keeping its comments, then runs the connection check. Jobs started after a save use it, with no restart. The
   page shows whether each is set, never the value. Opened over plain HTTP from another machine, it warns that a

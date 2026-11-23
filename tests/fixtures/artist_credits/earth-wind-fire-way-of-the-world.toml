@@ -39,11 +39,11 @@ credits = ["1.1: Earth, Wind & Fire (main), Larry Dunn (composer), Maurice White
 
 [today.output]
 albumartist = "Earth, Wind & Fire"
-tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's The Way Of The World", "Earth, Wind & Fire (feat. Maurice White) | Happy Feelin'", "Earth, Wind & Fire (feat. Maurice White) | All About Love", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire (feat. Maurice White) | Reasons", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See The Light"]
+tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's the Way of the World", "Earth, Wind & Fire (feat. Maurice White) | Happy Feelin'", "Earth, Wind & Fire (feat. Maurice White) | All About Love (First Impression)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire (feat. Maurice White) | Reasons", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See the Light"]
 
 [today."output-guests-in-title"]
 albumartist = "Earth, Wind & Fire"
-tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's The Way Of The World", "Earth, Wind & Fire | Happy Feelin' (feat. Maurice White)", "Earth, Wind & Fire | All About Love (feat. Maurice White)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire | Reasons (feat. Maurice White)", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See The Light"]
+tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's the Way of the World", "Earth, Wind & Fire | Happy Feelin' (feat. Maurice White)", "Earth, Wind & Fire | All About Love (First Impression) (feat. Maurice White)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire | Reasons (feat. Maurice White)", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See the Light"]
 
 
 # The files' tags.
@@ -130,6 +130,101 @@ artist = ["Earth, Wind & Fire"]
 album = ["That's The Way Of The World"]
 albumartist = ["Earth, Wind & Fire"]
 date = ["1975-03-15"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Shining Star"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["That’s the Way of the World"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Happy Feelin'"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["All About Love (First Impression)"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Yearnin' Learnin'"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Reasons"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Africano"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["See the Light"]
+artist = ["Earth, Wind & Fire"]
+artists = ["Earth, Wind & Fire"]
+album = ["That's the Way of the World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["2013"]
 
 # What each store sent, trimmed as [sources] says.
 [stores]

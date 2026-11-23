@@ -1,8 +1,9 @@
-"""A source that fails at the metadata question asks the question again, a number or a URL alike (#968, part 1).
+"""A source that fails at the metadata question asks the question again, a number or a URL alike (#968, part 1),
+and so does one whose answer puts two tracks at one position (part 2).
 
 The runs go through salmon.run.main with the real get_metadata: the store search is stubbed, and Discogs, Deezer and
-the Bandcamp catch-all are a fake store on 127.0.0.1 that answers 404, but for Discogs release 2. Uploads go to the
-local fake tracker of helpers.uploader_dry_run. No real store or tracker is reached.
+the Bandcamp catch-all are a fake store on 127.0.0.1 that answers 404, but for Discogs releases 2 and 3. Uploads go to
+the local fake tracker of helpers.uploader_dry_run. No real store or tracker is reached.
 """
 
 import contextlib
@@ -45,6 +46,7 @@ pytestmark = pytest.mark.usefixtures("image_uploads")
 FAILING_URL = "https://www.discogs.com/release/1"
 WORKING_URL = "https://www.discogs.com/release/2"
 TAGGED_URL = "https://www.deezer.com/album/1"
+REPEATING_URL = "https://www.discogs.com/release/3"
 QUESTION = "Which metadata results would you like to use?"
 
 
@@ -61,12 +63,15 @@ def dirs(monkeypatch, tmp_path) -> tuple[Path, Path]:
 
 
 class Store(FakeStore):
-    """Discogs's API, Deezer's and a Bandcamp page: release 2 of Discogs answers, everything else is a 404."""
+    """Discogs's API, Deezer's and a Bandcamp page: release 2 of Discogs answers, release 3 with its one track twice,
+    everything else is a 404."""
 
     async def _answer(self, request: web.Request) -> web.StreamResponse:
         self.requests.append(request.path)
         if request.path == "/releases/2":
             return web.json_response(RELEASE)
+        if request.path == "/releases/3":
+            return web.json_response({**RELEASE, "tracklist": RELEASE["tracklist"] * 2})
         return web.json_response({"message": "Release not found."}, status=404)
 
 
@@ -195,6 +200,14 @@ def test_a_failed_source_asks_the_question_again(
     assert (code, out.count(QUESTION), _upload_posts(tracker)) == (1, 2, 0), out
     assert "Scrape error: " in out
     assert "Aborting upload..." in out
+
+
+def test_an_answer_with_two_tracks_at_one_position_asks_again_naming_it(monkeypatch, capsys, dirs) -> None:
+    code, out, tracker, store = _up(monkeypatch, capsys, dirs, lambda _store: [REPEATING_URL, "a"], yyy=True)
+
+    assert (code, out.count(QUESTION), _upload_posts(tracker)) == (1, 2, 0), out
+    assert "Scrape error: Disc 3 has two tracks numbered 3." in out
+    assert store.requests == ["/releases/3"]
 
 
 def test_enter_on_the_url_pretyped_from_the_tags_asks_again_when_it_fails(monkeypatch, capsys, dirs) -> None:

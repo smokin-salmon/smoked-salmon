@@ -9,7 +9,27 @@
    "joinphrase": "",
    "artist": {
     "id": "9a3bf45c-347d-4630-894d-7cf3e8e0b632",
-    "name": "Santana"
+    "name": "Santana",
+    "aliases": [
+     {
+      "name": "Santana Band",
+      "sort-name": "Santana Band",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "サンタナ",
+      "sort-name": "サンタナ",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
    }
   }
  ],
@@ -107,7 +127,45 @@
        "joinphrase": " & ",
        "artist": {
         "id": "2fa95b32-3c11-42d7-b495-12fc6be0a024",
-        "name": "Dave Matthews"
+        "name": "Dave Matthews",
+        "aliases": [
+         {
+          "name": "Dave J. Matthews",
+          "sort-name": "Dave J. Matthews",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "David J. Matthews",
+          "sort-name": "Matthews, David J.",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "David John Matthews",
+          "sort-name": "Matthews, David John",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "David Matthews",
+          "sort-name": "Matthews, David",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       },
       {
@@ -115,7 +173,18 @@
        "joinphrase": "",
        "artist": {
         "id": "b065c2c6-92ef-40b2-a5b0-79f76b4953ec",
-        "name": "Carter Beauford"
+        "name": "Carter Beauford",
+        "aliases": [
+         {
+          "name": "Carter Anthony Beauford",
+          "sort-name": "Beauford, Carter Anthony",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -170,7 +239,8 @@
        "joinphrase": "",
        "artist": {
         "id": "ca39d50f-9885-420e-88d6-9c3f64038773",
-        "name": "Everlast"
+        "name": "Everlast",
+        "aliases": []
        }
       }
      ],
@@ -248,7 +318,8 @@
        "joinphrase": "",
        "artist": {
         "id": "e42680f7-e439-4666-9c2c-536c2b3c6db3",
-        "name": "Rob Thomas"
+        "name": "Rob Thomas",
+        "aliases": []
        }
       }
      ],
@@ -295,7 +366,72 @@
        "joinphrase": " & ",
        "artist": {
         "id": "e8414012-4a1c-4ad4-be5e-fc55294e28cc",
-        "name": "Ms. Lauryn Hill"
+        "name": "Ms. Lauryn Hill",
+        "aliases": [
+         {
+          "name": "Hill, Lauryn",
+          "sort-name": "Hill, Lauryn",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "L-Boogie",
+          "sort-name": "L-Boogie",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Lauren Hill",
+          "sort-name": "Lauren Hill",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Laurin Hill",
+          "sort-name": "Laurin Hill",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Lauryn Hill",
+          "sort-name": "Hill, Lauryn",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Ms. Lauryn Hill",
+          "sort-name": "Ms. Lauryn Hill",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "ローリン・ヒル",
+          "sort-name": "ローリン・ヒル",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": true
+         }
+        ]
        }
       },
       {
@@ -303,7 +439,144 @@
        "joinphrase": "",
        "artist": {
         "id": "2c69465c-0f76-45ce-90a2-1ed0fdacc997",
-        "name": "CeeLo Green"
+        "name": "CeeLo Green",
+        "aliases": [
+         {
+          "name": "Carlos Green",
+          "sort-name": "Carlos Green",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cee Lo",
+          "sort-name": "Cee Lo",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cee Lo Green",
+          "sort-name": "Cee Lo Green",
+          "type": "Search hint",
+          "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cee-Lo",
+          "sort-name": "Cee-Lo",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cee-Lo Green",
+          "sort-name": "Cee-Lo Green",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Ceelo",
+          "sort-name": "Ceelo",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cee‐Lo",
+          "sort-name": "Cee‐Lo",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cee‐Lo Goodie",
+          "sort-name": "Cee‐Lo Goodie",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Cee‐Lo Green",
+          "sort-name": "Green, Cee‐Lo",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "T. Callaway",
+          "sort-name": "Callaway, T.",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Thomas Burton",
+          "sort-name": "Thomas Burton",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Thomas Callaway",
+          "sort-name": "Callaway, Thomas",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Thomas Calloway",
+          "sort-name": "Thomas Calloway",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Thomas DeCarlo Callaway",
+          "sort-name": "Callaway, Thomas DeCarlo",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": "en",
+          "primary": false
+         },
+         {
+          "name": "Thomas DeCarlo Callaway",
+          "sort-name": "Callaway, Thomas DeCarlo",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -358,7 +631,8 @@
        "joinphrase": "",
        "artist": {
         "id": "69f6711d-bc7e-4e3b-ab49-20e055e136b4",
-        "name": "The Product G&B"
+        "name": "The Product G&B",
+        "aliases": []
        }
       }
      ],
@@ -436,7 +710,36 @@
        "joinphrase": "",
        "artist": {
         "id": "55441123-89a2-49ab-ae3f-df7a3e86835a",
-        "name": "Maná"
+        "name": "Maná",
+        "aliases": [
+         {
+          "name": "Mana",
+          "sort-name": "Mana",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Manà",
+          "sort-name": "Manà",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Maña",
+          "sort-name": "Maña",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -483,7 +786,27 @@
        "joinphrase": "",
        "artist": {
         "id": "4a5777b3-f55b-437c-8b23-d9ee7791c7fc",
-        "name": "Eagle‐Eye Cherry"
+        "name": "Eagle‐Eye Cherry",
+        "aliases": [
+         {
+          "name": "Eagle Eye Cherry",
+          "sort-name": "Eagle Eye Cherry",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Eagle-Eye Lanoo Cherry",
+          "sort-name": "Cherry, Eagle-Eye Lanoo",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         }
+        ]
        }
       }
      ],
@@ -592,7 +915,45 @@
        "joinphrase": "",
        "artist": {
         "id": "618b6900-0618-4f1e-b835-bccb17f84294",
-        "name": "Eric Clapton"
+        "name": "Eric Clapton",
+        "aliases": [
+         {
+          "name": "Eric Claption",
+          "sort-name": "Eric Claption",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Eric Patrick Clapton",
+          "sort-name": "Clapton, Eric Patrick",
+          "type": "Legal name",
+          "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "Slowhand",
+          "sort-name": "Slowhand",
+          "type": null,
+          "type-id": null,
+          "ended": false,
+          "locale": null,
+          "primary": null
+         },
+         {
+          "name": "エリック・クラプトン",
+          "sort-name": "エリック・クラプトン",
+          "type": "Artist name",
+          "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+          "ended": false,
+          "locale": "ja",
+          "primary": false
+         }
+        ]
        }
       }
      ],
