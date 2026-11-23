@@ -93,7 +93,7 @@ def test_a_title_with_control_characters_is_quoted_without_them() -> None:
 
 
 def test_a_json_store_answering_something_else_names_the_status_and_no_title(monkeypatch) -> None:
-    store = Answering(body="<title>Not JSON</title>", content_type="text/plain")
+    store = Answering(body="not json at all", content_type="text/plain")
 
     async def run() -> str:
         async with store.serving():
@@ -105,6 +105,38 @@ def test_a_json_store_answering_something_else_names_the_status_and_no_title(mon
     message = anyio.run(run)
 
     assert message.startswith("Deezer: could not read the release at https://www.deezer.com/album/1 (HTTP 200): ")
+
+
+def test_a_json_store_answering_200_with_a_check_page_names_its_title(monkeypatch) -> None:
+    store = Answering(body="<title>Client Challenge</title>", content_type="text/html")
+
+    async def run() -> str:
+        async with store.serving():
+            monkeypatch.setattr(deezer.Scraper, "url", store.url(""))
+            with pytest.raises(ScrapeError) as excinfo:
+                await deezer.Scraper().scrape_release("https://www.deezer.com/album/1", rls_id="1")
+            return str(excinfo.value)
+
+    assert '(HTTP 200, page titled "Client Challenge")' in anyio.run(run)
+
+
+def test_deezers_internal_page_answering_200_with_a_check_page_names_its_title(monkeypatch) -> None:
+    store = Answering(body="<title>Client Challenge</title>")
+
+    async def run() -> str:
+        async with store.serving():
+            monkeypatch.setattr(deezer.Scraper, "url", store.url(""))
+            monkeypatch.setattr(deezer.Scraper, "site_url", store.url(""))
+
+            async def get_json(self: Any, *_args: Any, **_kwargs: Any) -> dict:
+                return {}
+
+            monkeypatch.setattr(deezer.Scraper, "get_json", get_json)
+            with pytest.raises(ScrapeError) as excinfo:
+                await deezer.Scraper().scrape_release("https://www.deezer.com/album/1", rls_id="1")
+            return str(excinfo.value)
+
+    assert '(HTTP 200, page titled "Client Challenge")' in anyio.run(run)
 
 
 def test_the_query_and_the_fragment_appear_nowhere() -> None:

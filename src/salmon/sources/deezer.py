@@ -130,9 +130,10 @@ class DeezerBase(BaseScraper):
             session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
         ):
             self.record_answer(response.status)
+            text = await response.text()
+            self.record_text_answer(response.status, text)
             if response.status != 200:
                 raise ScrapeError(f"Deezer internal API returned status {response.status}.")
-            text = await response.text()
 
         r = re.search(
             r"window.__DZR_APP_STATE__ = ({.*?}})</script>",

@@ -124,6 +124,11 @@ class BaseScraper:
         rls_id_str = rls_id[1] if isinstance(rls_id, tuple) else rls_id
         return cls.site_url + cls.release_format.format(rls_id=rls_id_str)
 
+    def record_text_answer(self, status: int, text: str | None) -> None:
+        """Remember the answer just received, with the <title> of `text` if it holds one (see last_answer)."""
+        match = _TITLE.search(text or "")
+        self.record_answer(status, match[1] if match else None)
+
     async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
         self.record_answer(resp.status)
         if resp.status != 200:
@@ -131,12 +136,14 @@ class BaseScraper:
                 error_data = await resp.text()
             except Exception:
                 error_data = None
-            match = _TITLE.search(error_data or "")
-            self.record_answer(resp.status, match[1] if match else None)
+            self.record_text_answer(resp.status, error_data)
             raise ScrapeError(f"{self.store or self.__class__.__name__}: HTTP {resp.status}.", error_data)
+        body = await resp.read()
         try:
-            return msgspec.json.decode(await resp.read())
+            return msgspec.json.decode(body)
         except msgspec.DecodeError as e:
+            # A check page answered with 200: its title says so.
+            self.record_text_answer(resp.status, body.decode("utf-8", errors="ignore"))
             raise ScrapeError(f"{self.store or self.__class__.__name__}: Did not receive JSON from API.") from e
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
