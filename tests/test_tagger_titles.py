@@ -9,6 +9,7 @@ from copy import deepcopy
 import anyio
 import msgspec
 import pytest
+from helpers.deezer import deezer_song
 from test_tagger_combine import make_metadata
 
 from salmon import cfg
@@ -58,21 +59,6 @@ def test_as_before_a_store_s_version_is_kept_with_the_setting_off_and_never_twic
 
     assert MetadataMixin.parse_title("Django", "(Original Mix)") == "Django (Original Mix)"
     assert MetadataMixin.parse_title("Song (Live)", "Live") == "Song (Live)"
-
-
-def deezer_song(number: int, version: str, title: str = "Spellbound") -> dict:
-    """A track of Deezer's album page."""
-    return {
-        "DISK_NUMBER": "1",
-        "TRACK_NUMBER": str(number),
-        "SNG_TITLE": title,
-        "VERSION": version,
-        "SNG_CONTRIBUTORS": {"main_artist": ["Alice"]},
-        "ARTISTS": [],
-        "ISRC": None,
-        "EXPLICIT_LYRICS": "0",
-        "SNG_ID": str(number),
-    }
 
 
 # The stores

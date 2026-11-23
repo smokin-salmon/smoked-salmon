@@ -17,7 +17,7 @@ how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz agree: Elton John the albu
 open = "Not judged by the test: the release-wide judge reads Elton John's guest credits on 6, 8 and 12 beside his main ones as 'main and guest at once', which here is right, and whether a duet partner is the release's main or guest is RED's call, not the stores'. Per track: 6, 8 and 12 led by their own artists with Elton John a guest; 3 open (Surfaces with Elton John featured, or both main)"
 
 [today.deezer]
-release = ["Elton John (main)", "Dua Lipa (main)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "Elton John (guest)", "6LACK (guest)", "Years & Years (main)", "Miley Cyrus (main)", "WATT (guest)", "Yo-Yo Ma (guest)", "Robert Trujillo (guest)", "Chad Smith (guest)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
+release = ["Elton John (main)", "Dua Lipa (main)", "PNAU (remixer)", "Young Thug (main)", "Nicki Minaj (main)", "Surfaces (main)", "Charlie Puth (main)", "Rina Sawayama (main)", "Gorillaz (main)", "Elton John (guest)", "6LACK (guest)", "Years & Years (main)", "Miley Cyrus (main)", "WATT (guest)", "Yo-Yo Ma (guest)", "Robert Trujillo (guest)", "Chad Smith (guest)", "SG Lewis (main)", "Brandi Carlile (main)", "Jimmie Allen (main)", "Lil Nas X (main)", "Eddie Vedder (main)", "Stevie Wonder (main)", "Stevie Nicks (main)", "Glen Campbell (main)"]
 tracks = 16
 
 [today.musicbrainz]
@@ -425,6 +425,9 @@ deezer = '''
     "main_artist": [
      "Elton John",
      "Dua Lipa"
+    ],
+    "remixer": [
+     "PNAU"
     ]
    },
    "DISK_NUMBER": "1",

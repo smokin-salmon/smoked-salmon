@@ -17,7 +17,7 @@ open = "name forms: Cee-Lo / CeeLo Green, Lauryn Hill / Ms. Lauryn Hill, Mana / 
 how_we_know = "every store names Santana as the main artist"
 
 [today.deezer]
-release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Lauryn Hill (guest)", "Cee-Lo (guest)", "Ms. Lauryn Hill (guest)", "The Product G&B (guest)", "Mana (guest)", "Eagle-Eye Cherry (guest)", "Eric Clapton (guest)"]
+release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Ms. Lauryn Hill (guest)", "Cee-Lo (guest)", "Lauryn Hill (guest)", "The Product G&B (guest)", "Mana (guest)", "Eagle-Eye Cherry (guest)", "Eric Clapton (guest)"]
 tracks = 14
 
 [today.musicbrainz]

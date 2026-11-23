@@ -18,7 +18,7 @@ not_main = ["Various Artists", "Frank Ocean", "Migos", "ScHoolboy Q", "PARTYNEXT
 how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Calvin Harris as the only release artist and every other name as featured"
 
 [today.deezer]
-release = ["Frank Ocean (guest)", "Migos (guest)", "Calvin Harris (main)", "ScHoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "D.R.A.M. (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A-Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
+release = ["Calvin Harris (main)", "Frank Ocean (guest)", "Migos (guest)", "ScHoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "D.R.A.M. (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A-Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
 tracks = 10
 
 [today.musicbrainz]
@@ -307,6 +307,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Frank Ocean",
+     "Migos"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -327,6 +331,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "ScHoolboy Q",
+     "PARTYNEXTDOOR",
+     "D.R.A.M."
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -347,6 +356,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Young Thug",
+     "Pharrell Williams",
+     "Ariana Grande"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -366,6 +380,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Future",
+     "Khalid"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -385,6 +403,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Travis Scott",
+     "A-Trak"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -405,6 +427,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Snoop Dogg",
+     "John Legend",
+     "Takeoff"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -423,6 +450,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Nicki Minaj"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -443,6 +473,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Pharrell Williams",
+     "Katy Perry",
+     "Big Sean"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -462,6 +497,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Kehlani",
+     "Lil Yachty"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]
@@ -480,6 +519,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Jessie Reyez"
+    ],
     "main_artist": [
      "Calvin Harris"
     ]

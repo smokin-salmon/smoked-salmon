@@ -1,0 +1,1699 @@
+{
+ "id": "c66b921d-a938-4fd4-b112-4ebb7d57fb33",
+ "title": "Remixes 81>04",
+ "date": "2004-10-25",
+ "barcode": "0724387455955",
+ "artist-credit": [
+  {
+   "name": "Depeche Mode",
+   "joinphrase": "",
+   "artist": {
+    "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+    "name": "Depeche Mode",
+    "aliases": [
+     {
+      "name": "DM",
+      "sort-name": "DM",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "デペッシュ・モード",
+      "sort-name": "デペッシュ・モード",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  }
+ ],
+ "release-group": {
+  "id": "af7bbd44-9c79-3dbd-af2f-f8b0b8655f72",
+  "title": "Remixes 81–04",
+  "first-release-date": "2004-10-22",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Compilation",
+   "Remix"
+  ],
+  "artist-credit": [
+   {
+    "name": "Depeche Mode",
+    "joinphrase": "",
+    "artist": {
+     "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+     "name": "Depeche Mode"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2004-10-25"
+  }
+ ],
+ "cover-art-archive": {
+  "front": false
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Venusnote Limited"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "1de36424-d4ea-44c0-bb49-b804f042c3bc",
+     "position": 1,
+     "number": "1",
+     "title": "Never Let Me Down Again (Split mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3b06d807-cb55-48ce-ab1f-1bd7d320114c",
+      "title": "Never Let Me Down Again (Split mix)",
+      "first-release-date": "1987-08-24",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "f2a2699c-3f82-4222-918e-9629f1271a36",
+         "name": "David Bascombe"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1abe4844-0a18-4ea5-ac6f-ef563153998f",
+     "position": 2,
+     "number": "2",
+     "title": "Policy of Truth (Capitol mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "be9e24c4-80ca-4713-853f-3769edd23452",
+      "title": "Policy of Truth (Capitol mix)",
+      "first-release-date": "1990-05-07",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "093b79fc-d913-4580-8403-c2430f7a18ee",
+         "name": "François K"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9a571c9b-e2bf-4b20-95fc-dd5042e5335d",
+     "position": 3,
+     "number": "3",
+     "title": "Shout! (Rio mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6a7d3fc6-ad92-4642-a1d0-9287cde6503d",
+      "title": "Shout (Rio mix)",
+      "first-release-date": "1981-06-13",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "254a1c29-252f-448a-a0a5-f2b01d114855",
+     "position": 4,
+     "number": "4",
+     "title": "Home (Air \"Around the Golf\" remix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "44fcf722-dc23-49e9-aa8e-9617f5d5d6c4",
+      "title": "Home (Air ‘Around the Golf’ remix)",
+      "first-release-date": "1997-06-16",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "cb67438a-7f50-4f2b-a6f1-2bb2729fd538",
+         "name": "Air"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "662423f1-c9c9-4bf3-9297-ef15d663504d",
+         "name": "Stéphane Briat"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0873cc38-6612-46b7-805e-b397c53ecaf0",
+     "position": 5,
+     "number": "5",
+     "title": "Strangelove (Blind mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7444e19f-520f-4c86-a693-b9d8629bbe9f",
+      "title": "Strangelove (Blind mix)",
+      "first-release-date": "1987-04-13",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "22018771-e514-4998-a1b9-76b87ebb15d4",
+         "name": "Rico Conning"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "5abdec70-4e68-4eab-ad17-3448f280960d",
+         "name": "Daniel Miller"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "746eec70-2acb-4a17-9bb6-826bec18578f",
+     "position": 6,
+     "number": "6",
+     "title": "Rush (Spiritual Guidance mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "11efc3ef-9e7d-4a99-8805-33386131a666",
+      "title": "Rush (Spiritual Guidance mix)",
+      "first-release-date": "1993-09-13",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "1bd84f6d-909a-40c2-8672-802e6521c5d8",
+         "name": "Jack Dangers"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "dcb2955e-ff59-4ff2-a608-cbb90ee3ac38",
+         "name": "Meat Beat Manifesto"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "72d10d1f-a03e-4fe0-9b44-17362c6d026c",
+     "position": 7,
+     "number": "7",
+     "title": "I Feel You (Renegade Soundwave Afghan Surgery mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b02a1d6b-7890-4e14-8b8c-ea3ebbf8b6d1",
+      "title": "I Feel You (Renegade Soundwave Afghan Surgery mix)",
+      "first-release-date": "1993-02-09",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "09e3440f-fbc4-4444-b6d1-6b34b55680ea",
+         "name": "Danny Briottet"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "5e074654-aad2-4944-bce6-3aa1d16bb2d2",
+         "name": "Renegade Soundwave"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "63ae800a-150a-4847-b45f-4d5d503ae9b2",
+     "position": 8,
+     "number": "8",
+     "title": "Barrel of a Gun (Underworld Hard mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0e404b04-dce3-4085-98a8-99ebded2db76",
+      "title": "Barrel of a Gun (Underworld hard mix)",
+      "first-release-date": "1997-01-28",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "ba2f4f3b-0293-4bc8-bb94-2f73b5207343",
+         "name": "Underworld"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "af4c195b-3bc6-4d74-81e9-0fb0855e2c00",
+     "position": 9,
+     "number": "9",
+     "title": "Route 66 (Beatmasters mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d4a36710-9cae-4767-99df-a8d1c3165def",
+      "title": "Route 66 (Beatmasters mix)",
+      "first-release-date": "1987-12-28",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "8e5e440c-cd14-47f0-a562-14a3796c50da",
+         "name": "The Beatmasters"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b43d314e-ff26-4af8-abad-bc69016564f4",
+     "position": 10,
+     "number": "10",
+     "title": "Freelove (DJ Muggs remix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e39afded-0ef7-4740-af77-f841659e7eb7",
+      "title": "Freelove (DJ Muggs remix)",
+      "first-release-date": "2001-11-05",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "d9c25451-bec6-4273-abe2-15ce0f0e0621",
+         "name": "DJ Muggs"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "7f3f8a85-da4f-4703-8001-7be9805d20fe",
+     "position": 11,
+     "number": "11",
+     "title": "I Feel Loved (Chamber's remix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "188fce93-8510-4e27-8419-59410e1d5742",
+      "title": "I Feel Loved (Chamber’s remix)",
+      "first-release-date": "2001-07-03",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "9028d207-b902-4eb8-9055-8266aaf1c1fa",
+         "name": "Chamber"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "1d0731db-d9ce-436c-83b9-ddbc98ae76f7",
+         "name": "Paul Freegard"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "d374cb30-3f7f-4b8b-ad8c-201d73faef17",
+         "name": "Doug Hart"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9407a8f4-8f45-419c-8eaf-3c5dfa08d418",
+     "position": 12,
+     "number": "12",
+     "title": "Just Can't Get Enough (Schizo mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b4002abd-f47a-4db7-8002-0727fc2052db",
+      "title": "Just Can’t Get Enough (Schizo mix)",
+      "first-release-date": "1981-09-07",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "5abdec70-4e68-4eab-ad17-3448f280960d",
+         "name": "Daniel Miller"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "position": 2,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "2b143545-fb38-488c-a165-bedda7fda826",
+     "position": 1,
+     "number": "1",
+     "title": "Personal Jesus (Pump mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "80e95ba3-6425-4297-9d89-694e6843535f",
+      "title": "Personal Jesus (Pump mix)",
+      "first-release-date": "1989-08-29",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "093b79fc-d913-4580-8403-c2430f7a18ee",
+         "name": "François K"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b9cb0ed0-90b4-4164-94c0-85fbac37f464",
+     "position": 2,
+     "number": "2",
+     "title": "World in My Eyes (Mode to Joy)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a6532e0b-9de2-448a-9230-894e573f3538",
+      "title": "World in My Eyes (Mode to Joy)",
+      "first-release-date": "1990-09-17",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "daa695cd-32df-4b9f-969b-1dd52f6fb2bd",
+         "name": "Jon Marsh"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "12b00849-60a4-42ef-b82c-11ea232d5ec6",
+     "position": 3,
+     "number": "3",
+     "title": "Get the Balance Right! (Combination mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c017d76f-5b31-4a2b-bfad-962d90ebd917",
+      "title": "Get the Balance Right! (Combination mix)",
+      "first-release-date": "1983-01-31",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "43633365-2947-4eb9-8a29-788a422bf2ce",
+     "position": 4,
+     "number": "4",
+     "title": "Everything Counts (Absolut mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2d7496e6-8767-4af4-a31c-62ede6e15d46",
+      "title": "Everything Counts (Absolut mix)",
+      "first-release-date": "1989-02-13",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "1b75cdb6-4d61-4ff5-b699-28075b867b4c",
+         "name": "Alan Moulder"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "64af3dd5-e4c4-4061-b098-3e89471e5fe8",
+     "position": 5,
+     "number": "5",
+     "title": "Breathing in Fumes",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b7c9fa17-9798-4b5c-b69d-761b1c3b8c3f",
+      "title": "Breathing in Fumes",
+      "first-release-date": "1986-02-10",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bb3d532c-290f-4685-87ca-d27582a60eca",
+     "position": 6,
+     "number": "6",
+     "title": "Painkiller (Kill the Pain mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "aead8af3-8736-4a60-b4db-f8424e8c2236",
+      "title": "Painkiller (Kill the Pain mix)",
+      "first-release-date": "1998-02-23",
+      "artist-credit": [
+       {
+        "name": "DJ Shadow",
+        "joinphrase": " vs. ",
+        "artist": {
+         "id": "efa2c11a-1a35-4b60-bc1b-66d37de88511",
+         "name": "DJ Shadow",
+         "aliases": [
+          {
+           "name": "D.J. Shadow",
+           "sort-name": "D.J. Shadow",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "DJ Shadow Presents...",
+           "sort-name": "DJ Shadow Presents...",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "DJ Shadow/Q-Bert",
+           "sort-name": "DJ Shadow/Q-Bert",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Dj Shadow",
+           "sort-name": "Dj Shadow",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Josh Davis",
+           "sort-name": "Davis, Josh",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Josh Paul Davis",
+           "sort-name": "Davis, Josh Paul",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Joshua Paul Davis",
+           "sort-name": "Davis, Joshua Paul",
+           "type": "Legal name",
+           "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
+        }
+       },
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "efa2c11a-1a35-4b60-bc1b-66d37de88511",
+         "name": "DJ Shadow"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0d0f246a-3b47-42df-973a-6f5ca0a098f9",
+     "position": 7,
+     "number": "7",
+     "title": "Useless (The Kruder + Dorfmeister session)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f3fc8f77-e3fe-4230-b8b7-e534c1744f1e",
+      "title": "Useless (The Kruder + Dorfmeister session™)",
+      "first-release-date": "1997-10-20",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "6b49dc39-cb6f-465f-980b-bc17a271da34",
+         "name": "Kruder & Dorfmeister"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "940ba2cf-66f5-4a96-b68c-8d7701f0f955",
+     "position": 8,
+     "number": "8",
+     "title": "In Your Room (The Jeep Rock mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "aa7eebb8-fc16-4e06-858e-41a6636814cd",
+      "title": "In Your Room (The Jeep Rock mix)",
+      "first-release-date": "1994-01-10",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "9bf9ca03-682e-4d72-b2ab-60bd3e003a1d",
+         "name": "Jonny Dollar"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "8f6bd1e4-fbe1-4f50-aa9b-94c450ec0f11",
+         "name": "Portishead"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "539e63da-0afd-47df-8604-151e222ec23f",
+     "position": 9,
+     "number": "9",
+     "title": "Dream On (Dave Clarke acoustic version)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2ec640d2-c967-41e8-b0d0-cb15b158b392",
+      "title": "Dream On (Dave Clarke acoustic version)",
+      "first-release-date": "2001-04-23",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "0d7fffb1-c282-4995-96a9-f6f2ea3c86e0",
+         "name": "Dave Clarke"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "205d9201-7e6b-4ca8-b9d0-bca307896e38",
+     "position": 10,
+     "number": "10",
+     "title": "It's No Good (Speedy J mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f1787698-daf2-48e7-9077-12920dc81ba4",
+      "title": "It’s No Good (Speedy J mix)",
+      "first-release-date": "1997-03-31",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "734fa82c-864e-468b-bee4-944cb4b1952b",
+         "name": "Speedy J"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "3841e816-d549-4321-8eea-cb63fb0db7f4",
+     "position": 11,
+     "number": "11",
+     "title": "Master and Servant (An On-Usound Science Fiction dance Hall Classic)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "202dc00b-e986-4ad1-b296-f67774ff67b7",
+      "title": "Master and Servant (An On‐U Sound Science Fiction Dance Hall Classic)",
+      "first-release-date": "1984-08-20",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "cbfcdb48-c199-45af-80da-100d4e53253e",
+         "name": "Adrian Sherwood"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d879fac8-a524-4f53-bc92-2643dca0fe08",
+     "position": 12,
+     "number": "12",
+     "title": "Enjoy the Silence (Timo Maas extended remix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "0d1b26ea-289c-409d-b91c-e0afae4bead6",
+      "title": "Enjoy the Silence ’04 (Timo Maas extended remix)",
+      "first-release-date": "2004-09",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "6160d384-287f-4310-809f-6ef69ef4c46c",
+         "name": "Martin Buttrich"
+        }
+       },
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "71348eeb-0c15-4718-b0ca-5775f78ad5f8",
+         "name": "Timo Maas"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "position": 3,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "deb765c0-1b01-4f03-b378-bb087c999a78",
+     "position": 1,
+     "number": "1",
+     "title": "A Question of Lust (remix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3ee7986d-73cd-4b5d-ab85-d9fe124a6f2a",
+      "title": "A Question of Lust (Flood mix)",
+      "first-release-date": "1986-04-14",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "f1461e6c-c008-414b-bad0-bce88f71724e",
+         "name": "Flood"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "778b8f6d-bc79-49f7-b993-0115a57c29f0",
+     "position": 2,
+     "number": "2",
+     "title": "Walking in My Shoes (Random Carpet mix Full Length)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f5d66533-c5f3-45ae-a319-6151d4ef1124",
+      "title": "Walking in My Shoes (Random Carpet mix, full length)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5978504c-45c6-4116-9dfa-2e5a46e86f87",
+     "position": 3,
+     "number": "3",
+     "title": "Are People People?",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6cc441b5-d56a-4d4e-971f-a3e990cb65bf",
+      "title": "Are People People?",
+      "first-release-date": "1984-08-20",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "cbfcdb48-c199-45af-80da-100d4e53253e",
+         "name": "Adrian Sherwood"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e238b572-2ed6-42d0-b613-a06736a7592b",
+     "position": 4,
+     "number": "4",
+     "title": "World in My Eyes (Daniel Miller mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2bc43d99-fd69-4e17-9d82-e5e80e56f216",
+      "title": "World in My Eyes (Daniel Miller mix)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "23f5eea5-540c-4c3b-ba4a-6358dc4f0730",
+     "position": 5,
+     "number": "5",
+     "title": "I Feel Loved (Danny Tenaglia's Labor of Love dub edit)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "81f0fef8-d49c-42c9-ac48-83b2bbdd7c69",
+      "title": "I Feel Loved (Danny Tenaglia’s Labor of Love dub)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f568f2f6-cc1b-4e2c-87c2-4f6490c19770",
+     "position": 6,
+     "number": "6",
+     "title": "It's No Good (club 69 Future mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c57e1423-0ac6-4772-bbb4-d58c961795d4",
+      "title": "It’s No Good (Club 69 Future mix)",
+      "first-release-date": "1998",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ee967cc8-315d-4151-b7f7-d240b91f6e69",
+     "position": 7,
+     "number": "7",
+     "title": "Photographic (Rex the Dog Dubb mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "04762a27-dfc8-4d0b-b464-1799a9c7f960",
+      "title": "Photographic (Rex the Dog Dubb mix)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "dadfc8b1-3076-4c45-be39-2afbd68e0f4b",
+     "position": 8,
+     "number": "8",
+     "title": "Little 15 (Ulrich Schnauss remix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3a5c071b-eda6-42c8-a126-f088808e3c83",
+      "title": "Little 15 (Ulrich Schnauss remix)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "29f6333a-b4c8-4416-8fdf-598bcef1122a",
+         "name": "Ulrich Schnauss"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "642f6ac6-9e8e-4c27-ae62-9b3443ea9e06",
+     "position": 9,
+     "number": "9",
+     "title": "Nothing (Headcleanr Rock mix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "21426e79-adc2-4c9d-b540-b8cfb6e68fbe",
+      "title": "Nothing (Headcleanr Rock mix)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "70d9f231-bf60-49eb-924c-026fee8b88fb",
+         "name": "Headcleanr"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8e47e616-b300-4338-9383-cdbb21c0cd1d",
+     "position": 10,
+     "number": "10",
+     "title": "Lie to Me ('the Pleasure of Her Private Shame' remix by LFO)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "61660cc4-5f54-4f36-86a2-914f2a982f5c",
+      "title": "Lie to Me (‘The Pleasure of Her Private Shame’ remix by LFO)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9ef6a1f6-8e92-4a02-b81a-85a1f978b416",
+     "position": 11,
+     "number": "11",
+     "title": "Clean (Colder version)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "90e98ca9-bcc0-4e11-81b1-65ff4c9290a6",
+      "title": "Clean (Colder version)",
+      "first-release-date": "2004-10-25",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "142cd367-a54b-48e3-b976-962ed608d829",
+     "position": 12,
+     "number": "12",
+     "title": "Halo (Goldfrapp remix)",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2e1b3fdd-b0f3-4896-a672-0e54977e1dc5",
+      "title": "Halo (Goldfrapp remix)",
+      "first-release-date": "2004-10-18",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "7b885d42-3c41-4f43-9944-a5855ec5155e",
+         "name": "Goldfrapp"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "afc7fc91-46b2-4e89-91ec-826b891df122",
+     "position": 13,
+     "number": "13",
+     "title": "Enjoy the Silence 2004",
+     "artist-credit": [
+      {
+       "name": "Depeche Mode",
+       "joinphrase": "",
+       "artist": {
+        "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+        "name": "Depeche Mode"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2eca5dbc-d79a-4f61-bc9b-cbae3f5540b9",
+      "title": "Enjoy the Silence ’04 (reinterpreted by Mike Shinoda)",
+      "first-release-date": "2004-09",
+      "artist-credit": [
+       {
+        "name": "Depeche Mode",
+        "joinphrase": "",
+        "artist": {
+         "id": "8538e728-ca0b-4321-b7e5-cff6565dd4c0",
+         "name": "Depeche Mode"
+        }
+       }
+      ],
+      "relations": [
+       {
+        "type": "remixer",
+        "target-type": "artist",
+        "direction": "backward",
+        "artist": {
+         "id": "c262b6bf-be56-4b26-bceb-42d7a27342f3",
+         "name": "Mike Shinoda"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

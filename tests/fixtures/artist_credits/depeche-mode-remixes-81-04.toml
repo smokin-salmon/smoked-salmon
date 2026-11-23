@@ -1,0 +1,2931 @@
+album = "Depeche Mode, Remixes 81>04"
+why = "A band's remix compilation over three discs: a remixer on most tracks, the band the only main; Deezer states the remixers on 13 tracks and leaves the rest to the titles, and states one remixer, DJ Shadow, as a main beside the band."
+edition = "The 3-disc, 37-track edition, 2004 (Deezer 6709180 = MusicBrainz c66b921d by barcode, digital, MusicBrainz's with a leading 0; the only MusicBrainz release with that barcode). Discogs 339234 is the limited 3-CD edition (XLCDMUTEL8, barcode 724387455924): MusicBrainz links no Discogs release, its release group links master 26034, whose main release is a 12-inch box set in another order, and 339234 has the same 37 tracks in Deezer's order. Qobuz 0724387455955 has the same UPC with a leading 0 and the same 37 tracks on 3 discs."
+known_wrong = ["Deezer parse: DJ Shadow main on 'Painkiller (Kill The Pain Mix)' as well as its remixer, as Deezer's contributors list him as main_artist beside the band; the merge credits him only as remixer (his role on that track is open: see `open`)", "MusicBrainz parse: DJ Shadow main on 'Painkiller (Kill the Pain mix)', from the recording's credit 'DJ Shadow vs. Depeche Mode', where this release's track credits Depeche Mode alone", "merge: two remixers named from the titles' remix names, 'Air \"Around the Golf\"' on 'Home' and 'Chamber's' on 'I Feel Loved (Chamber's Remix)'; on 'Home', Air itself, which Deezer and MusicBrainz state as remixer (Discogs as AIR), is lost", "output: REMIXER on 'Home' lacks Air, and holds one remixer in two spellings, 'Stéphane Briat; Stéphane \"Alf\" Briat'; likewise 'François K; François Kevorkian' on 'Policy of Truth' and 'Personal Jesus', MusicBrainz's and Discogs's forms of one name"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, in tests/fixtures/stores/musicbrainz/release/, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Depeche Mode"]
+not_main = ["Air", "Daniel Miller", "Rico Conning", "Jack Dangers", "Renegade Soundwave", "Underworld", "The Beatmasters", "DJ Muggs", "Thomas Brinkmann", "Jon Marsh", "Alan Moulder", "Kruder & Dorfmeister", "Speedy J", "Dave Clarke", "Timo Maas", "Danny Tenaglia", "Club 69", "Rex The Dog", "Ulrich Schnauss", "Headcleanr", "LFO", "Colder", "Goldfrapp"]
+how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Depeche Mode alone as the release's artist (Qobuz's artists[] lists only Depeche Mode, main-artist)"
+open = "DJ Shadow's role on 'Painkiller (Kill The Pain Mix)' (2.6), a DJ Shadow vs Depeche Mode record: Deezer states him as main_artist and remixer, MusicBrainz credits the recording to 'DJ Shadow vs. Depeche Mode' with him as remixer but the track on this release to Depeche Mode alone, Discogs titles it 'Kill The Pain DJ Shadow Vs. Depeche Mode' and credits him Remix, Qobuz names Depeche Mode alone. The remixers' exact set and name forms: Deezer states them on 13 tracks and Qobuz only Goldfrapp, while MusicBrainz and Discogs state more, some behind a remixer's name (Meat Beat Manifesto beside Jack Dangers, Danny Briottet beside Renegade Soundwave) and some no title names (Flood, Adrian Sherwood, William Orbit, Mike Shinoda), in spellings that differ (Air and AIR, François K and François Kevorkian). Who remixed 'I Feel Loved (Chamber's Remix)': Deezer Thomas Brinkmann, MusicBrainz and Discogs Chamber, with Paul Freegard and Doug Hart. Depeche Mode as remixers of four of their own tracks (Discogs; MusicBrainz on two). Whether Mike Shinoda ('Enjoy The Silence 2004') and Marc Nguyen Tan (Colder, on 'Clean') are guests, as Discogs's Vocals credits make them."
+
+[today.deezer]
+release = ["Depeche Mode (main)", "Air (remixer)", "Daniel Miller (remixer)", "Rico Conning (remixer)", "Jack Dangers (remixer)", "Renegade Soundwave (remixer)", "Underworld (remixer)", "The Beatmasters (remixer)", "DJ Muggs (remixer)", "Thomas Brinkmann (remixer)", "Jon Marsh (remixer)", "Alan Moulder (remixer)", "DJ Shadow (main)", "DJ Shadow (remixer)", "Kruder & Dorfmeister (remixer)", "Speedy J (remixer)"]
+tracks = 37
+
+[today.musicbrainz]
+release = ["Depeche Mode (main)", "David Bascombe (remixer)", "Depeche Mode (remixer)", "François K (remixer)", "Air (remixer)", "Stéphane Briat (remixer)", "Rico Conning (remixer)", "Daniel Miller (remixer)", "Jack Dangers (remixer)", "Meat Beat Manifesto (remixer)", "Danny Briottet (remixer)", "Renegade Soundwave (remixer)", "Underworld (remixer)", "The Beatmasters (remixer)", "DJ Muggs (remixer)", "Chamber (remixer)", "Paul Freegard (remixer)", "Doug Hart (remixer)", "Jon Marsh (remixer)", "Alan Moulder (remixer)", "DJ Shadow (main)", "DJ Shadow (remixer)", "Kruder & Dorfmeister (remixer)", "Jonny Dollar (remixer)", "Portishead (remixer)", "Dave Clarke (remixer)", "Speedy J (remixer)", "Adrian Sherwood (remixer)", "Martin Buttrich (remixer)", "Timo Maas (remixer)", "Flood (remixer)", "Ulrich Schnauss (remixer)", "Headcleanr (remixer)", "Goldfrapp (remixer)", "Mike Shinoda (remixer)"]
+tracks = 37
+
+[today.discogs]
+release = ["Depeche Mode (main)", "Daniel Miller (producer)", "David Bascombe (producer)", "Depeche Mode (producer)", "David Bascombe (remixer)", "Depeche Mode (remixer)", "Flood (producer)", "François Kevorkian (remixer)", "Daniel Miller (remixer)", "Tim Simenon (producer)", "AIR (remixer)", "Stéphane \"Alf\" Briat (remixer)", "Rico Conning (remixer)", "Jack Dangers (remixer)", "Danny Briottet (remixer)", "Renegade Soundwave (remixer)", "Underworld (remixer)", "The Beatmasters (remixer)", "Mark Bell (producer)", "DJ Muggs (remixer)", "Chamber (remixer)", "Jon Marsh (remixer)", "Alan Moulder (remixer)", "Gareth Jones (producer)", "DJ Shadow (remixer)", "Kruder & Dorfmeister (remixer)", "Jonny Dollar (remixer)", "Dave Clarke (remixer)", "Speedy J (remixer)", "Adrian Sherwood (remixer)", "Martin Buttrich (remixer)", "Timo Maas (remixer)", "Flood (remixer)", "William Orbit (remixer)", "Danny Tenaglia (remixer)", "Club 69 (remixer)", "Peter Rauhofer (remixer)", "Rex The Dog (remixer)", "Ulrich Schnauss (remixer)", "Ray Carroll (remixer)", "LFO (remixer)", "Colder (remixer)", "Marc Nguyen Tan (remixer)", "Marc Nguyen Tan (guest)", "Goldfrapp (remixer)", "Mike Shinoda (guest)"]
+tracks = 37
+
+[today.qobuz]
+release = ["Depeche Mode (main)", "Goldfrapp (remixer)"]
+tracks = 37
+
+[today.merge]
+release = ["Depeche Mode (main)", "David Bascombe (remixer)", "Depeche Mode (remixer)", "Daniel Miller (producer)", "David Bascombe (producer)", "Depeche Mode (producer)", "François K (remixer)", "Flood (producer)", "François Kevorkian (remixer)", "Daniel Miller (remixer)", "Air \"Around the Golf\" (remixer)", "Stéphane Briat (remixer)", "Tim Simenon (producer)", "Stéphane \"Alf\" Briat (remixer)", "Rico Conning (remixer)", "Jack Dangers (remixer)", "Meat Beat Manifesto (remixer)", "Renegade Soundwave (remixer)", "Danny Briottet (remixer)", "Underworld (remixer)", "The Beatmasters (remixer)", "DJ Muggs (remixer)", "Mark Bell (producer)", "Thomas Brinkmann (remixer)", "Chamber's (remixer)", "Chamber (remixer)", "Paul Freegard (remixer)", "Doug Hart (remixer)", "Jon Marsh (remixer)", "Alan Moulder (remixer)", "Gareth Jones (producer)", "DJ Shadow (remixer)", "Kruder & Dorfmeister (remixer)", "Jonny Dollar (remixer)", "Portishead (remixer)", "Dave Clarke (remixer)", "Speedy J (remixer)", "Adrian Sherwood (remixer)", "Timo Maas (remixer)", "Martin Buttrich (remixer)", "Flood (remixer)", "William Orbit (remixer)", "Danny Tenaglia (remixer)", "Club 69 (remixer)", "Peter Rauhofer (remixer)", "Rex The Dog (remixer)", "Ulrich Schnauss (remixer)", "Headcleanr (remixer)", "Ray Carroll (remixer)", "LFO (remixer)", "Colder (remixer)", "Marc Nguyen Tan (remixer)", "Marc Nguyen Tan (guest)", "Goldfrapp (remixer)", "Mike Shinoda (remixer)", "Mike Shinoda (guest)"]
+tracks = 37
+credits = ["1.1: Depeche Mode (main), David Bascombe (remixer), Depeche Mode (remixer), Daniel Miller (producer), David Bascombe (producer), Depeche Mode (producer)", "1.2: Depeche Mode (main), François K (remixer), Depeche Mode (producer), Flood (producer), François Kevorkian (remixer)", "1.3: Depeche Mode (main), Daniel Miller (remixer), Daniel Miller (producer), Depeche Mode (remixer), Depeche Mode (producer)", "1.4: Depeche Mode (main), Air \"Around the Golf\" (remixer), Stéphane Briat (remixer), Tim Simenon (producer), Stéphane \"Alf\" Briat (remixer)", "1.5: Depeche Mode (main), Daniel Miller (remixer), Rico Conning (remixer), David Bascombe (producer), Depeche Mode (producer)", "1.6: Depeche Mode (main), Jack Dangers (remixer), Meat Beat Manifesto (remixer), Depeche Mode (producer), Flood (producer)", "1.7: Depeche Mode (main), Renegade Soundwave (remixer), Danny Briottet (remixer), Depeche Mode (producer), Flood (producer)", "1.8: Depeche Mode (main), Underworld (remixer), Tim Simenon (producer)", "1.9: Depeche Mode (main), The Beatmasters (remixer), David Bascombe (producer), Depeche Mode (producer)", "1.10: Depeche Mode (main), DJ Muggs (remixer), Mark Bell (producer)", "1.11: Depeche Mode (main), Thomas Brinkmann (remixer), Chamber's (remixer), Chamber (remixer), Paul Freegard (remixer), Doug Hart (remixer), Mark Bell (producer)", "1.12: Depeche Mode (main), Depeche Mode (remixer), Daniel Miller (remixer), Daniel Miller (producer), Depeche Mode (producer)", "2.1: Depeche Mode (main), François K (remixer), Depeche Mode (producer), Flood (producer), François Kevorkian (remixer)", "2.2: Depeche Mode (main), Jon Marsh (remixer), Depeche Mode (producer), Flood (producer)", "2.3: Depeche Mode (main), Daniel Miller (producer), Daniel Miller (remixer), Depeche Mode (producer), Depeche Mode (remixer)", "2.4: Depeche Mode (main), Alan Moulder (remixer), Daniel Miller (producer), Depeche Mode (producer)", "2.5: Depeche Mode (main), Daniel Miller (producer), Depeche Mode (producer), Gareth Jones (producer)", "2.6: Depeche Mode (main), DJ Shadow (remixer), Tim Simenon (producer)", "2.7: Depeche Mode (main), Kruder & Dorfmeister (remixer), Tim Simenon (producer)", "2.8: Depeche Mode (main), Jonny Dollar (remixer), Portishead (remixer), Depeche Mode (producer), Flood (producer)", "2.9: Depeche Mode (main), Dave Clarke (remixer), Mark Bell (producer)", "2.10: Depeche Mode (main), Speedy J (remixer), Tim Simenon (producer)", "2.11: Depeche Mode (main), Adrian Sherwood (remixer), Daniel Miller (producer), Depeche Mode (producer), Gareth Jones (producer)", "2.12: Depeche Mode (main), Timo Maas (remixer), Martin Buttrich (remixer), Depeche Mode (producer), Flood (producer)", "3.1: Depeche Mode (main), Flood (remixer), Daniel Miller (producer), Depeche Mode (producer), Gareth Jones (producer)", "3.2: Depeche Mode (main), Depeche Mode (producer), Flood (producer), William Orbit (remixer)", "3.3: Depeche Mode (main), Adrian Sherwood (remixer), Daniel Miller (producer), Depeche Mode (producer), Gareth Jones (producer)", "3.4: Depeche Mode (main), Depeche Mode (producer), Flood (producer), Daniel Miller (remixer)", "3.5: Depeche Mode (main), Mark Bell (producer), Danny Tenaglia (remixer)", "3.6: Depeche Mode (main), Tim Simenon (producer), Club 69 (remixer), Peter Rauhofer (remixer)", "3.7: Depeche Mode (main), Daniel Miller (producer), Depeche Mode (producer), Rex The Dog (remixer)", "3.8: Depeche Mode (main), Ulrich Schnauss (remixer), David Bascombe (producer), Depeche Mode (producer)", "3.9: Depeche Mode (main), Headcleanr (remixer), David Bascombe (producer), Depeche Mode (producer), Ray Carroll (remixer)", "3.10: Depeche Mode (main), Daniel Miller (producer), Depeche Mode (producer), Gareth Jones (producer), LFO (remixer)", "3.11: Depeche Mode (main), Depeche Mode (producer), Flood (producer), Colder (remixer), Marc Nguyen Tan (remixer), Marc Nguyen Tan (guest)", "3.12: Depeche Mode (main), Goldfrapp (remixer), Depeche Mode (producer), Flood (producer)", "3.13: Depeche Mode (main), Mike Shinoda (remixer), Depeche Mode (producer), Flood (producer), Mike Shinoda (guest)"]
+
+[today.output]
+albumartist = "Depeche Mode"
+tracks = ["Depeche Mode | Never Let Me Down Again (Split Mix) | REMIXER David Bascombe; Depeche Mode", "Depeche Mode | Policy of Truth (Capitol Mix) | REMIXER François K; François Kevorkian", "Depeche Mode | Shout! (Rio Mix) | REMIXER Daniel Miller; Depeche Mode", "Depeche Mode | Home (Air \"Around the Golf\" Remix) | REMIXER Stéphane Briat; Stéphane \"Alf\" Briat", "Depeche Mode | Strangelove (Blind Mix) | REMIXER Daniel Miller; Rico Conning", "Depeche Mode | Rush (Spiritual Guidance Mix) | REMIXER Jack Dangers; Meat Beat Manifesto", "Depeche Mode | I Feel You (Renegade Soundwave Afghan Surgery Mix) | REMIXER Renegade Soundwave; Danny Briottet", "Depeche Mode | Barrel of a Gun (Underworld Hard Mix) | REMIXER Underworld", "Depeche Mode | Route 66 (Beatmasters Mix) | REMIXER The Beatmasters", "Depeche Mode | Freelove (DJ Muggs Remix) | REMIXER DJ Muggs", "Depeche Mode | I Feel Loved (Chamber's Remix) | REMIXER Thomas Brinkmann; Chamber; Paul Freegard; Doug Hart", "Depeche Mode | Just Can't Get Enough (Schizo Mix) | REMIXER Depeche Mode; Daniel Miller", "Depeche Mode | Personal Jesus (Pump Mix) | REMIXER François K; François Kevorkian", "Depeche Mode | World In My Eyes (Mode to Joy) | REMIXER Jon Marsh", "Depeche Mode | Get the Balance Right! (Combination Mix) | REMIXER Daniel Miller; Depeche Mode", "Depeche Mode | Everything Counts (Absolut Mix) | REMIXER Alan Moulder", "Depeche Mode | Breathing In Fumes", "Depeche Mode | Painkiller (Kill The Pain Mix) | REMIXER DJ Shadow", "Depeche Mode | Useless (The Kruder + Dorfmeister Session) | REMIXER Kruder & Dorfmeister", "Depeche Mode | In Your Room (The Jeep Rock Mix) | REMIXER Jonny Dollar; Portishead", "Depeche Mode | Dream On (Dave Clarke Acoustic Version) | REMIXER Dave Clarke", "Depeche Mode | It's No Good (Speedy J Mix) | REMIXER Speedy J", "Depeche Mode | Master and Servant (An On-Usound Science Fiction Dance Hall Classic) | REMIXER Adrian Sherwood", "Depeche Mode | Enjoy the Silence (Timo Maas Extended Remix) | REMIXER Timo Maas; Martin Buttrich", "Depeche Mode | A Question of Lust (Remix) | REMIXER Flood", "Depeche Mode | Walking in My Shoes (Random Carpet Mix Full Length) | REMIXER William Orbit", "Depeche Mode | Are People People? | REMIXER Adrian Sherwood", "Depeche Mode | World In My Eyes (Daniel Miller Mix) | REMIXER Daniel Miller", "Depeche Mode | I Feel Loved (Danny Tenaglia's Labor Of Love Dub Edit) | REMIXER Danny Tenaglia", "Depeche Mode | It's No Good (Club 69 Future Mix) | REMIXER Club 69; Peter Rauhofer", "Depeche Mode | Photographic (Rex The Dog Dubb Mix) | REMIXER Rex The Dog", "Depeche Mode | Little 15 (Ulrich Schnauss Remix) | REMIXER Ulrich Schnauss", "Depeche Mode | Nothing (Headcleanr Rock Mix) | REMIXER Headcleanr; Ray Carroll", "Depeche Mode | Lie To Me ('The Pleasure Of Her Private Shame' Remix By LFO) | REMIXER LFO", "Depeche Mode (feat. Marc Nguyen Tan) | Clean (Colder Version) | REMIXER Colder; Marc Nguyen Tan", "Depeche Mode | Halo (Goldfrapp Remix) | REMIXER Goldfrapp", "Depeche Mode (feat. Mike Shinoda) | Enjoy The Silence 2004 | REMIXER Mike Shinoda"]
+
+[today."output-guests-in-title"]
+albumartist = "Depeche Mode"
+tracks = ["Depeche Mode | Never Let Me Down Again (Split Mix) | REMIXER David Bascombe; Depeche Mode", "Depeche Mode | Policy of Truth (Capitol Mix) | REMIXER François K; François Kevorkian", "Depeche Mode | Shout! (Rio Mix) | REMIXER Daniel Miller; Depeche Mode", "Depeche Mode | Home (Air \"Around the Golf\" Remix) | REMIXER Stéphane Briat; Stéphane \"Alf\" Briat", "Depeche Mode | Strangelove (Blind Mix) | REMIXER Daniel Miller; Rico Conning", "Depeche Mode | Rush (Spiritual Guidance Mix) | REMIXER Jack Dangers; Meat Beat Manifesto", "Depeche Mode | I Feel You (Renegade Soundwave Afghan Surgery Mix) | REMIXER Renegade Soundwave; Danny Briottet", "Depeche Mode | Barrel of a Gun (Underworld Hard Mix) | REMIXER Underworld", "Depeche Mode | Route 66 (Beatmasters Mix) | REMIXER The Beatmasters", "Depeche Mode | Freelove (DJ Muggs Remix) | REMIXER DJ Muggs", "Depeche Mode | I Feel Loved (Chamber's Remix) | REMIXER Thomas Brinkmann; Chamber; Paul Freegard; Doug Hart", "Depeche Mode | Just Can't Get Enough (Schizo Mix) | REMIXER Depeche Mode; Daniel Miller", "Depeche Mode | Personal Jesus (Pump Mix) | REMIXER François K; François Kevorkian", "Depeche Mode | World In My Eyes (Mode to Joy) | REMIXER Jon Marsh", "Depeche Mode | Get the Balance Right! (Combination Mix) | REMIXER Daniel Miller; Depeche Mode", "Depeche Mode | Everything Counts (Absolut Mix) | REMIXER Alan Moulder", "Depeche Mode | Breathing In Fumes", "Depeche Mode | Painkiller (Kill The Pain Mix) | REMIXER DJ Shadow", "Depeche Mode | Useless (The Kruder + Dorfmeister Session) | REMIXER Kruder & Dorfmeister", "Depeche Mode | In Your Room (The Jeep Rock Mix) | REMIXER Jonny Dollar; Portishead", "Depeche Mode | Dream On (Dave Clarke Acoustic Version) | REMIXER Dave Clarke", "Depeche Mode | It's No Good (Speedy J Mix) | REMIXER Speedy J", "Depeche Mode | Master and Servant (An On-Usound Science Fiction Dance Hall Classic) | REMIXER Adrian Sherwood", "Depeche Mode | Enjoy the Silence (Timo Maas Extended Remix) | REMIXER Timo Maas; Martin Buttrich", "Depeche Mode | A Question of Lust (Remix) | REMIXER Flood", "Depeche Mode | Walking in My Shoes (Random Carpet Mix Full Length) | REMIXER William Orbit", "Depeche Mode | Are People People? | REMIXER Adrian Sherwood", "Depeche Mode | World In My Eyes (Daniel Miller Mix) | REMIXER Daniel Miller", "Depeche Mode | I Feel Loved (Danny Tenaglia's Labor Of Love Dub Edit) | REMIXER Danny Tenaglia", "Depeche Mode | It's No Good (Club 69 Future Mix) | REMIXER Club 69; Peter Rauhofer", "Depeche Mode | Photographic (Rex The Dog Dubb Mix) | REMIXER Rex The Dog", "Depeche Mode | Little 15 (Ulrich Schnauss Remix) | REMIXER Ulrich Schnauss", "Depeche Mode | Nothing (Headcleanr Rock Mix) | REMIXER Headcleanr; Ray Carroll", "Depeche Mode | Lie To Me ('The Pleasure Of Her Private Shame' Remix By LFO) | REMIXER LFO", "Depeche Mode | Clean (Colder Version) (feat. Marc Nguyen Tan) | REMIXER Colder; Marc Nguyen Tan", "Depeche Mode | Halo (Goldfrapp Remix) | REMIXER Goldfrapp", "Depeche Mode | Enjoy The Silence 2004 (feat. Mike Shinoda) | REMIXER Mike Shinoda"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
+# the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Never Let Me Down Again (Split Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Policy of Truth (Capitol Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Shout! (Rio Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Home (Air \"Around the Golf\" Remix)"]
+artist = ["Depeche Mode", "Air"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Strangelove (Blind Mix)"]
+artist = ["Depeche Mode", "Daniel Miller", "Rico Conning"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Rush (Spiritual Guidance Mix)"]
+artist = ["Depeche Mode", "Jack Dangers"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["I Feel You (Renegade Soundwave Afghan Surgery Mix)"]
+artist = ["Depeche Mode", "Renegade Soundwave"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Barrel of a Gun (Underworld Hard Mix)"]
+artist = ["Depeche Mode", "Underworld"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Route 66 (Beatmasters Mix)"]
+artist = ["Depeche Mode", "The Beatmasters"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Freelove (DJ Muggs Remix)"]
+artist = ["Depeche Mode", "DJ Muggs"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["I Feel Loved (Chamber's Remix)"]
+artist = ["Depeche Mode", "Thomas Brinkmann"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Just Can't Get Enough (Schizo Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["1"]
+discnumber = ["2"]
+title = ["Personal Jesus (Pump Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["2"]
+discnumber = ["2"]
+title = ["World In My Eyes (Mode to Joy)"]
+artist = ["Depeche Mode", "Jon Marsh"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["3"]
+discnumber = ["2"]
+title = ["Get the Balance Right! (Combination Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["4"]
+discnumber = ["2"]
+title = ["Everything Counts (Absolut Mix)"]
+artist = ["Depeche Mode", "Alan Moulder"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "17.flac"
+tracknumber = ["5"]
+discnumber = ["2"]
+title = ["Breathing In Fumes"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "18.flac"
+tracknumber = ["6"]
+discnumber = ["2"]
+title = ["Painkiller (Kill The Pain Mix)"]
+artist = ["DJ Shadow", "Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "19.flac"
+tracknumber = ["7"]
+discnumber = ["2"]
+title = ["Useless (The Kruder + Dorfmeister Session)"]
+artist = ["Depeche Mode", "Kruder & Dorfmeister"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "20.flac"
+tracknumber = ["8"]
+discnumber = ["2"]
+title = ["In Your Room (The Jeep Rock Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "21.flac"
+tracknumber = ["9"]
+discnumber = ["2"]
+title = ["Dream On (Dave Clarke Acoustic Version)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "22.flac"
+tracknumber = ["10"]
+discnumber = ["2"]
+title = ["It's No Good (Speedy J Mix)"]
+artist = ["Depeche Mode", "Speedy J"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "23.flac"
+tracknumber = ["11"]
+discnumber = ["2"]
+title = ["Master and Servant (An On-Usound Science Fiction Dance Hall Classic)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "24.flac"
+tracknumber = ["12"]
+discnumber = ["2"]
+title = ["Enjoy the Silence (Timo Maas Extended Remix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "25.flac"
+tracknumber = ["1"]
+discnumber = ["3"]
+title = ["A Question of Lust (Remix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "26.flac"
+tracknumber = ["2"]
+discnumber = ["3"]
+title = ["Walking in My Shoes (Random Carpet Mix Full Length)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "27.flac"
+tracknumber = ["3"]
+discnumber = ["3"]
+title = ["Are People People?"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "28.flac"
+tracknumber = ["4"]
+discnumber = ["3"]
+title = ["World In My Eyes (Daniel Miller Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "29.flac"
+tracknumber = ["5"]
+discnumber = ["3"]
+title = ["I Feel Loved (Danny Tenaglia's Labor Of Love Dub Edit)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "30.flac"
+tracknumber = ["6"]
+discnumber = ["3"]
+title = ["It's No Good (Club 69 Future Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "31.flac"
+tracknumber = ["7"]
+discnumber = ["3"]
+title = ["Photographic (Rex The Dog Dubb Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "32.flac"
+tracknumber = ["8"]
+discnumber = ["3"]
+title = ["Little 15 (Ulrich Schnauss Remix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "33.flac"
+tracknumber = ["9"]
+discnumber = ["3"]
+title = ["Nothing (Headcleanr Rock Mix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "34.flac"
+tracknumber = ["10"]
+discnumber = ["3"]
+title = ["Lie To Me ('The Pleasure Of Her Private Shame' Remix By LFO)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "35.flac"
+tracknumber = ["11"]
+discnumber = ["3"]
+title = ["Clean (Colder Version)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "36.flac"
+tracknumber = ["12"]
+discnumber = ["3"]
+title = ["Halo (Goldfrapp Remix)"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+[[track]]
+file = "37.flac"
+tracknumber = ["13"]
+discnumber = ["3"]
+title = ["Enjoy The Silence 2004"]
+artist = ["Depeche Mode"]
+album = ["Remixes 81>04"]
+albumartist = ["Depeche Mode"]
+date = ["2004-10-26"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 6709180,
+ "title": "Remixes 81>04",
+ "upc": "724387455955",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 132,
+    "name": "Pop"
+   }
+  ]
+ },
+ "label": "Venusnote Ltd.",
+ "release_date": "2004-10-26",
+ "tracklist": [
+  {
+   "SNG_ID": "68515302",
+   "SNG_TITLE": "Never Let Me Down Again",
+   "VERSION": "(Split Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBAJH0400012",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515303",
+   "SNG_TITLE": "Policy of Truth",
+   "VERSION": "(Capitol Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBAJH9900184",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515304",
+   "SNG_TITLE": "Shout!",
+   "VERSION": "(Rio Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBAJH0300205",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515305",
+   "SNG_TITLE": "Home",
+   "VERSION": "(Air \"Around the Golf\" Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Air"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBAJH0400135",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515306",
+   "SNG_TITLE": "Strangelove",
+   "VERSION": "(Blind Mix)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Daniel Miller",
+     "Rico Conning"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBAJH0400007",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "68515307",
+   "SNG_TITLE": "Rush",
+   "VERSION": "(Spiritual Guidance Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Jack Dangers"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBAJH0400098",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "68515308",
+   "SNG_TITLE": "I Feel You",
+   "VERSION": "(Renegade Soundwave Afghan Surgery Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Renegade Soundwave"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBAJH0400086",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515309",
+   "SNG_TITLE": "Barrel of a Gun",
+   "VERSION": "(Underworld Hard Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Underworld"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBAJH0400121",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515310",
+   "SNG_TITLE": "Route 66",
+   "VERSION": "(Beatmasters Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "The Beatmasters"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBAJH0400021",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "68515311",
+   "SNG_TITLE": "Freelove",
+   "VERSION": "(DJ Muggs Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "DJ Muggs"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBAJH0100429",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515312",
+   "SNG_TITLE": "I Feel Loved",
+   "VERSION": "(Chamber's Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Thomas Brinkmann"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBAJH0100222",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515313",
+   "SNG_TITLE": "Just Can't Get Enough",
+   "VERSION": "(Schizo Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "GBAJH0401394",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "68515314",
+   "SNG_TITLE": "Personal Jesus",
+   "VERSION": "(Pump Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBAJH0400042",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "68515315",
+   "SNG_TITLE": "World In My Eyes",
+   "VERSION": "(Mode to Joy)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Jon Marsh"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBAJH0400076",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "68515316",
+   "SNG_TITLE": "Get the Balance Right!",
+   "VERSION": "(Combination Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBAJH0400193",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515317",
+   "SNG_TITLE": "Everything Counts",
+   "VERSION": "(Absolut Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Alan Moulder"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBAJH0400032",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515318",
+   "SNG_TITLE": "Breathing In Fumes",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBAJH0000361",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515319",
+   "SNG_TITLE": "Painkiller",
+   "VERSION": "(Kill The Pain Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "DJ Shadow",
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "DJ Shadow"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBAJH0400157",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515320",
+   "SNG_TITLE": "Useless",
+   "VERSION": "(The Kruder + Dorfmeister Session)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Kruder & Dorfmeister"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBAJH0400146",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "9"
+  },
+  {
+   "SNG_ID": "68515321",
+   "SNG_TITLE": "In Your Room",
+   "VERSION": "(The Jeep Rock Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBAJH0400108",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "68515322",
+   "SNG_TITLE": "Dream On",
+   "VERSION": "(Dave Clarke Acoustic Version)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBAJH0100044",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515323",
+   "SNG_TITLE": "It's No Good",
+   "VERSION": "(Speedy J Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ],
+    "remixer": [
+     "Speedy J"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBAJH0400129",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515324",
+   "SNG_TITLE": "Master and Servant",
+   "VERSION": "(An On-Usound Science Fiction Dance Hall Classic)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBAJH0401732",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515325",
+   "SNG_TITLE": "Enjoy the Silence",
+   "VERSION": "(Timo Maas Extended Remix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "12",
+   "ISRC": "GBAJH0401733",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "68515326",
+   "SNG_TITLE": "A Question of Lust",
+   "VERSION": "(Remix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBAJH0401787",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515327",
+   "SNG_TITLE": "Walking in My Shoes",
+   "VERSION": "(Random Carpet Mix Full Length)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBAJH0401788",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515328",
+   "SNG_TITLE": "Are People People?",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBAJH0401789",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515329",
+   "SNG_TITLE": "World In My Eyes",
+   "VERSION": "(Daniel Miller Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBAJH0401790",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515330",
+   "SNG_TITLE": "I Feel Loved",
+   "VERSION": "(Danny Tenaglia's Labor Of Love Dub Edit)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBAJH0401812",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515331",
+   "SNG_TITLE": "It's No Good",
+   "VERSION": "(Club 69 Future Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBAJH0401792",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515332",
+   "SNG_TITLE": "Photographic",
+   "VERSION": "(Rex The Dog Dubb Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBAJH0401793",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515333",
+   "SNG_TITLE": "Little 15",
+   "VERSION": "(Ulrich Schnauss Remix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBAJH0401794",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515334",
+   "SNG_TITLE": "Nothing",
+   "VERSION": "(Headcleanr Rock Mix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBAJH0401795",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515335",
+   "SNG_TITLE": "Lie To Me",
+   "VERSION": "('The Pleasure Of Her Private Shame' Remix By LFO)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBAJH0401815",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68515336",
+   "SNG_TITLE": "Clean",
+   "VERSION": "(Colder Version)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBAJH0401796",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "68515337",
+   "SNG_TITLE": "Halo",
+   "VERSION": "(Goldfrapp Remix)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "12",
+   "ISRC": "GBAJH0401756",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68515338",
+   "SNG_TITLE": "Enjoy The Silence 2004",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Depeche Mode"
+    ]
+   },
+   "DISK_NUMBER": "3",
+   "TRACK_NUMBER": "13",
+   "ISRC": "GBAJH0401757",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  }
+ ]
+}
+'''
+musicbrainz = "c66b921d-a938-4fd4-b112-4ebb7d57fb33"
+discogs = '''
+{
+ "id": 339234,
+ "year": 2004,
+ "artists": [
+  {
+   "name": "Depeche Mode",
+   "anv": "",
+   "join": "",
+   "role": "",
+   "id": 2725
+  }
+ ],
+ "labels": [
+  {
+   "name": "Mute",
+   "catno": "XLCDMUTEL8",
+   "id": 26391
+  },
+  {
+   "name": "Mute",
+   "catno": "0724387455924",
+   "id": 26391
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Compilation",
+    "Limited Edition"
+   ]
+  }
+ ],
+ "title": "Remixes 81···04",
+ "released": "2004-10-25",
+ "genres": [
+  "Electronic"
+ ],
+ "tracklist": [
+  {
+   "position": "1-1",
+   "type_": "track",
+   "title": "Never Let Me Down Again (Split Mix)",
+   "extraartists": [
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 9857
+    },
+    {
+     "name": "David Bascombe",
+     "anv": "Dave Bascombe",
+     "join": "",
+     "role": "Producer",
+     "id": 52459
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "David Bascombe",
+     "anv": "Dave Bascombe",
+     "join": "",
+     "role": "Remix",
+     "id": 52459
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 2725
+    }
+   ],
+   "duration": "9:31"
+  },
+  {
+   "position": "1-2",
+   "type_": "track",
+   "title": "Policy Of Truth (Capitol Mix)",
+   "extraartists": [
+    {
+     "name": "Alan Gregorie",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 36660
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "François Kevorkian",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 20662
+    }
+   ],
+   "duration": "8:00"
+  },
+  {
+   "position": "1-3",
+   "type_": "track",
+   "title": "Shout (Rio Remix)",
+   "extraartists": [
+    {
+     "name": "Eric Radcliffe",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 36687
+    },
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer",
+     "id": 2725
+    }
+   ],
+   "duration": "7:31"
+  },
+  {
+   "position": "1-4",
+   "type_": "track",
+   "title": "Home (Air 'Around The Golf' Remix)",
+   "extraartists": [
+    {
+     "name": "Tim Simenon",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2730
+    },
+    {
+     "name": "Jean-Benoît Dunckel",
+     "anv": "JB Dunckel",
+     "join": "",
+     "role": "Producer [Additional], Engineer [Remix]",
+     "id": 295454
+    },
+    {
+     "name": "Nicolas Godin",
+     "anv": "",
+     "join": "",
+     "role": "Producer [Additional], Engineer [Remix]",
+     "id": 406621
+    },
+    {
+     "name": "AIR",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 2770
+    },
+    {
+     "name": "Stéphane \"Alf\" Briat",
+     "anv": "Stéphane 'Alf' Briat",
+     "join": "",
+     "role": "Remix",
+     "id": 645232
+    }
+   ],
+   "duration": "3:55"
+  },
+  {
+   "position": "1-5",
+   "type_": "track",
+   "title": "Strangelove (Blind Mix)",
+   "extraartists": [
+    {
+     "name": "David Bascombe",
+     "anv": "Dave Bascombe",
+     "join": "",
+     "role": "Producer",
+     "id": 52459
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 9857
+    },
+    {
+     "name": "Rico Conning",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 20978
+    }
+   ],
+   "duration": "6:33"
+  },
+  {
+   "position": "1-6",
+   "type_": "track",
+   "title": "Rush (Spiritual Guidance Mix)",
+   "extraartists": [
+    {
+     "name": "Josh T. Roberts",
+     "anv": "Joshua Tobias",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 638495
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Jack Dangers",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 2538
+    }
+   ],
+   "duration": "5:26"
+  },
+  {
+   "position": "1-7",
+   "type_": "track",
+   "title": "I Feel You (Renegade Soundwave Afghan Surgery Mix)",
+   "extraartists": [
+    {
+     "name": "George Holt",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 34447
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Danny Briottet",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 26956
+    },
+    {
+     "name": "Renegade Soundwave",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 2710
+    }
+   ],
+   "duration": "4:57"
+  },
+  {
+   "position": "1-8",
+   "type_": "track",
+   "title": "Barrel Of A Gun (Underworld Hard Mix)",
+   "extraartists": [
+    {
+     "name": "Tim Simenon",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2730
+    },
+    {
+     "name": "Underworld",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 1280
+    }
+   ],
+   "duration": "9:36"
+  },
+  {
+   "position": "1-9",
+   "type_": "track",
+   "title": "Route 66 (Beatmasters Mix)",
+   "extraartists": [
+    {
+     "name": "David Bascombe",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 52459
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "The Beatmasters",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 30915
+    },
+    {
+     "name": "Bobby Troup",
+     "anv": "Robert William Troup Jnr.",
+     "join": "",
+     "role": "Written-By",
+     "id": 80847
+    }
+   ],
+   "duration": "6:18"
+  },
+  {
+   "position": "1-10",
+   "type_": "track",
+   "title": "Freelove (DJ Muggs Remix)",
+   "extraartists": [
+    {
+     "name": "Brandon Abeln",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 772701
+    },
+    {
+     "name": "Troy Staton",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 28736
+    },
+    {
+     "name": "Mark Bell",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 167
+    },
+    {
+     "name": "DJ Muggs",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 22935
+    }
+   ],
+   "duration": "4:23"
+  },
+  {
+   "position": "1-11",
+   "type_": "track",
+   "title": "I Feel Loved (Chamber's Remix)",
+   "extraartists": [
+    {
+     "name": "Mark Bell",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 167
+    },
+    {
+     "name": "Doug Hart",
+     "anv": "",
+     "join": "",
+     "role": "Producer [Additional], Remix [Credited To]",
+     "id": 25637
+    },
+    {
+     "name": "Paul Freegard",
+     "anv": "",
+     "join": "",
+     "role": "Producer [Additional], Remix [Credited To]",
+     "id": 25635
+    },
+    {
+     "name": "Chamber",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 2281
+    }
+   ],
+   "duration": "6:16"
+  },
+  {
+   "position": "1-12",
+   "type_": "track",
+   "title": "Just Can't Get Enough (Schizo Mix)",
+   "extraartists": [
+    {
+     "name": "Eric Radcliffe",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 36687
+    },
+    {
+     "name": "John Fryer",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 26840
+    },
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer",
+     "id": 2725
+    }
+   ],
+   "duration": "6:46"
+  },
+  {
+   "position": "2-1",
+   "type_": "track",
+   "title": "Personal Jesus (Pump Mix)",
+   "extraartists": [
+    {
+     "name": "Dennis Mitchell",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 55744
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "François Kevorkian",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 20662
+    }
+   ],
+   "duration": "7:47"
+  },
+  {
+   "position": "2-2",
+   "type_": "track",
+   "title": "World In My Eyes (Mode To Joy)",
+   "extraartists": [
+    {
+     "name": "Dominique Brethes",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 278109
+    },
+    {
+     "name": "Robin Hancock",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 39788
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Jon Marsh",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 6554
+    }
+   ],
+   "duration": "6:28"
+  },
+  {
+   "position": "2-3",
+   "type_": "track",
+   "title": "Get The Balance Right! (Combination Mix)",
+   "extraartists": [
+    {
+     "name": "Eric Radcliffe",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 36687
+    },
+    {
+     "name": "John Fryer",
+     "anv": "",
+     "join": "",
+     "role": "Engineer [Remix]",
+     "id": 26840
+    },
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer, Remix",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer, Remix",
+     "id": 2725
+    }
+   ],
+   "duration": "7:55"
+  },
+  {
+   "position": "2-4",
+   "type_": "track",
+   "title": "Everything Counts (Absolut Mix)",
+   "extraartists": [
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Alan Moulder",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 2768
+    }
+   ],
+   "duration": "6:02"
+  },
+  {
+   "position": "2-5",
+   "type_": "track",
+   "title": "Breathing In Fumes",
+   "extraartists": [
+    {
+     "name": "Thomas Stiehler",
+     "anv": "",
+     "join": "",
+     "role": "Edited By [Editing Assistance]",
+     "id": 331034
+    },
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer, Mixed By",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer, Mixed By",
+     "id": 2725
+    },
+    {
+     "name": "Gareth Jones",
+     "anv": "",
+     "join": "",
+     "role": "Producer, Mixed By",
+     "id": 2719
+    }
+   ],
+   "duration": "6:05"
+  },
+  {
+   "position": "2-6",
+   "type_": "track",
+   "title": "Painkiller (Kill The Pain DJ Shadow Vs. Depeche Mode)",
+   "extraartists": [
+    {
+     "name": "Tim Simenon",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2730
+    },
+    {
+     "name": "DJ Shadow",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 4478
+    }
+   ],
+   "duration": "6:29"
+  },
+  {
+   "position": "2-7",
+   "type_": "track",
+   "title": "Useless (The Kruder + Dorfmeister Session ™)",
+   "extraartists": [
+    {
+     "name": "Tim Simenon",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2730
+    },
+    {
+     "name": "Kruder & Dorfmeister",
+     "anv": "Kruder + Dorfmeister",
+     "join": "",
+     "role": "Remix",
+     "id": 1434
+    }
+   ],
+   "duration": "9:05"
+  },
+  {
+   "position": "2-8",
+   "type_": "track",
+   "title": "In Your Room (The Jeep Rock Mix)",
+   "extraartists": [
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Jonny Dollar",
+     "anv": "Johnny Dollar",
+     "join": "",
+     "role": "Remix",
+     "id": 286565
+    },
+    {
+     "name": "Portishead",
+     "anv": "",
+     "join": "",
+     "role": "Remix [With]",
+     "id": 2774
+    }
+   ],
+   "duration": "6:19"
+  },
+  {
+   "position": "2-9",
+   "type_": "track",
+   "title": "Dream On (Dave Clarke Acoustic Version)",
+   "extraartists": [
+    {
+     "name": "Mark Bell",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 167
+    },
+    {
+     "name": "Dave Clarke",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 1000
+    }
+   ],
+   "duration": "4:24"
+  },
+  {
+   "position": "2-10",
+   "type_": "track",
+   "title": "It's No Good (Speedy J Mix)",
+   "extraartists": [
+    {
+     "name": "Tim Simenon",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2730
+    },
+    {
+     "name": "Speedy J",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 823
+    }
+   ],
+   "duration": "5:01"
+  },
+  {
+   "position": "2-11",
+   "type_": "track",
+   "title": "Master And Servant (An ON-USound Science Fiction Dance Hall Classic)",
+   "extraartists": [
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Gareth Jones",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2719
+    },
+    {
+     "name": "Adrian Sherwood",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 4969
+    }
+   ],
+   "duration": "4:35"
+  },
+  {
+   "position": "2-12",
+   "type_": "track",
+   "title": "Enjoy The Silence (Timo Maas Extended Mix)",
+   "extraartists": [
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Martin Buttrich",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 12995
+    },
+    {
+     "name": "Timo Maas",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 1014
+    }
+   ],
+   "duration": "8:43"
+  },
+  {
+   "position": "3-1",
+   "type_": "track",
+   "title": "A Question Of Lust (Remix)",
+   "extraartists": [
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Gareth Jones",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2719
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 20661
+    }
+   ],
+   "duration": "5:09"
+  },
+  {
+   "position": "3-2",
+   "type_": "track",
+   "title": "Walking In My Shoes (Random Carpet Mix (Full Length))",
+   "extraartists": [
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "William Orbit",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 2728
+    }
+   ],
+   "duration": "8:36"
+  },
+  {
+   "position": "3-3",
+   "type_": "track",
+   "title": "Are People People?",
+   "extraartists": [
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Gareth Jones",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2719
+    },
+    {
+     "name": "Adrian Sherwood",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 4969
+    }
+   ],
+   "duration": "4:28"
+  },
+  {
+   "position": "3-4",
+   "type_": "track",
+   "title": "World In My Eyes (Daniel Miller Mix)",
+   "extraartists": [
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 9857
+    }
+   ],
+   "duration": "4:37"
+  },
+  {
+   "position": "3-5",
+   "type_": "track",
+   "title": "I Feel Loved (Danny Tenaglia's Labor Of Love Dub (Edit))",
+   "extraartists": [
+    {
+     "name": "Mark Bell",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 167
+    },
+    {
+     "name": "Danny Tenaglia",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 1644
+    }
+   ],
+   "duration": "11:22"
+  },
+  {
+   "position": "3-6",
+   "type_": "track",
+   "title": "It's No Good (Club 69 Funk Mix)",
+   "extraartists": [
+    {
+     "name": "Tim Simenon",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2730
+    },
+    {
+     "name": "Club 69",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 216
+    },
+    {
+     "name": "Peter Rauhofer",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 9580
+    }
+   ],
+   "duration": "8:50"
+  },
+  {
+   "position": "3-7",
+   "type_": "track",
+   "title": "Photographic (Rex The Dog Dubb Mix)",
+   "extraartists": [
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Rex The Dog",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 172007
+    }
+   ],
+   "duration": "6:20"
+  },
+  {
+   "position": "3-8",
+   "type_": "track",
+   "title": "Little 15 (Ulrich Schnauss Remix)",
+   "extraartists": [
+    {
+     "name": "David Bascombe",
+     "anv": "Dave Bascombe",
+     "join": "",
+     "role": "Producer",
+     "id": 52459
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Ulrich Schnauss",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 22152
+    }
+   ],
+   "duration": "4:51"
+  },
+  {
+   "position": "3-9",
+   "type_": "track",
+   "title": "Nothing (Headcleanr Rock Mix)",
+   "extraartists": [
+    {
+     "name": "David Bascombe",
+     "anv": "Dave Bascombe",
+     "join": "",
+     "role": "Producer",
+     "id": 52459
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Ray Carroll",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 95961
+    }
+   ],
+   "duration": "3:30"
+  },
+  {
+   "position": "3-10",
+   "type_": "track",
+   "title": "Lie To Me ('The Pleasure Of Her Private Shame' Remix By LFO)",
+   "extraartists": [
+    {
+     "name": "Daniel Miller",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 9857
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Gareth Jones",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2719
+    },
+    {
+     "name": "LFO",
+     "anv": "",
+     "join": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 751
+    }
+   ],
+   "duration": "6:35"
+  },
+  {
+   "position": "3-11",
+   "type_": "track",
+   "title": "Clean (Colder Version)",
+   "extraartists": [
+    {
+     "name": "Norscq",
+     "anv": "",
+     "join": "",
+     "role": "Mixed By",
+     "id": 90452
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Colder",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 108112
+    },
+    {
+     "name": "Marc Nguyen Tan",
+     "anv": "Marc Nguyen",
+     "join": "",
+     "role": "Remix, Vocals, Programmed By [Additional]",
+     "id": 617926
+    }
+   ],
+   "duration": "7:11"
+  },
+  {
+   "position": "3-12",
+   "type_": "track",
+   "title": "Halo (Goldfrapp Remix)",
+   "extraartists": [
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Goldfrapp",
+     "anv": "",
+     "join": "",
+     "role": "Remix",
+     "id": 2720
+    },
+    {
+     "name": "Alison Goldfrapp",
+     "anv": "",
+     "join": "",
+     "role": "Vocals [Additional]",
+     "id": 15589
+    }
+   ],
+   "duration": "4:23"
+  },
+  {
+   "position": "3-13",
+   "type_": "track",
+   "title": "Enjoy The Silence (Reinterpreted)",
+   "extraartists": [
+    {
+     "name": "Mark Stent",
+     "anv": "Mark 'Spike' Stent",
+     "join": "",
+     "role": "Mixed By",
+     "id": 211449
+    },
+    {
+     "name": "Depeche Mode",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 2725
+    },
+    {
+     "name": "Flood",
+     "anv": "",
+     "join": "",
+     "role": "Producer",
+     "id": 20661
+    },
+    {
+     "name": "Mike Shinoda",
+     "anv": "",
+     "join": "",
+     "role": "Remix [Reinterpreted], Vocals",
+     "id": 86301
+    }
+   ],
+   "duration": "3:33"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Roland Brown",
+   "anv": "",
+   "join": "",
+   "role": "Compiled By",
+   "id": 184419
+  },
+  {
+   "name": "Intro (11)",
+   "anv": "",
+   "join": "",
+   "role": "Design",
+   "id": 138285
+  },
+  {
+   "name": "Paul Morley",
+   "anv": "",
+   "join": "",
+   "role": "Liner Notes",
+   "id": 231640
+  },
+  {
+   "name": "Jonathan Kessler",
+   "anv": "",
+   "join": "",
+   "role": "Management",
+   "id": 1651213
+  },
+  {
+   "name": "J.D. Fanger",
+   "anv": "JD Fanger",
+   "join": "",
+   "role": "Management [Depeche Mode Office]",
+   "id": 404050
+  },
+  {
+   "name": "Mike Marsh",
+   "anv": "",
+   "join": "",
+   "role": "Mastered By",
+   "id": 325174
+  },
+  {
+   "name": "Vince Clarke",
+   "anv": "",
+   "join": "",
+   "role": "Performer [Depeche Mode 1980-1981]",
+   "id": 37365
+  },
+  {
+   "name": "Alan Wilder",
+   "anv": "",
+   "join": "",
+   "role": "Performer [Depeche Mode 1982-1995]",
+   "id": 25411
+  },
+  {
+   "name": "Andrew Fletcher",
+   "anv": "Andy Fletcher",
+   "join": "",
+   "role": "Performer [Depeche Mode Is]",
+   "id": 132774
+  },
+  {
+   "name": "Dave Gahan",
+   "anv": "",
+   "join": "",
+   "role": "Performer [Depeche Mode Is]",
+   "id": 27158
+  },
+  {
+   "name": "Martin L. Gore",
+   "anv": "Martin Gore",
+   "join": "",
+   "role": "Performer [Depeche Mode Is]",
+   "id": 26847
+  },
+  {
+   "name": "Martin L. Gore",
+   "anv": "",
+   "join": "",
+   "role": "Written-By",
+   "id": 26847
+  },
+  {
+   "name": "Vince Clarke",
+   "anv": "V. Clarke",
+   "join": "",
+   "role": "Written-By",
+   "id": 37365
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0724387455955",
+ "upc": "0724387455955",
+ "title": "Remixes 81>04",
+ "version": null,
+ "tracks_count": 37,
+ "artist": {
+  "name": "Depeche Mode"
+ },
+ "artists": [
+  {
+   "name": "Depeche Mode",
+   "roles": [
+    "main-artist"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Pop/Rock"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Never Let Me Down Again",
+    "version": "Split Mix",
+    "media_number": 1,
+    "track_number": 1,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Policy of Truth",
+    "version": "Capitol Mix",
+    "media_number": 1,
+    "track_number": 2,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Shout!",
+    "version": "Rio Mix",
+    "media_number": 1,
+    "track_number": 3,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Vince Clarke, Composer"
+   },
+   {
+    "title": "Home",
+    "version": "Air \"Around the Golf\" Remix",
+    "media_number": 1,
+    "track_number": 4,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Strangelove",
+    "version": "Blind Mix",
+    "media_number": 1,
+    "track_number": 5,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Rush",
+    "version": "Spiritual Guidance Mix",
+    "media_number": 1,
+    "track_number": 6,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "I Feel You",
+    "version": "Renegade Soundwave Afghan Surgery Mix",
+    "media_number": 1,
+    "track_number": 7,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Barrel of a Gun",
+    "version": "Underworld Hard Mix",
+    "media_number": 1,
+    "track_number": 8,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Route 66",
+    "version": "Beatmasters Mix",
+    "media_number": 1,
+    "track_number": 9,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Troup, Composer"
+   },
+   {
+    "title": "Freelove",
+    "version": "DJ Muggs Remix",
+    "media_number": 1,
+    "track_number": 10,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "I Feel Loved",
+    "version": "Chamber's Remix",
+    "media_number": 1,
+    "track_number": 11,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Just Can't Get Enough",
+    "version": "Schizo Mix",
+    "media_number": 1,
+    "track_number": 12,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Vince Clarke, Composer"
+   },
+   {
+    "title": "Personal Jesus",
+    "version": "Pump Mix",
+    "media_number": 2,
+    "track_number": 1,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "World In My Eyes",
+    "version": "Mode to Joy",
+    "media_number": 2,
+    "track_number": 2,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Get the Balance Right!",
+    "version": "Combination Mix",
+    "media_number": 2,
+    "track_number": 3,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer, Producer, Keyboards\r - Dave Gahan, Producer, Vocals\r - Daniel Miller, Producer\r - Andy Fletcher, Producer, Keyboards\r - Alan Wilder, Producer, Keyboards\r - John Fryer, Engineer\r - ERIC RADCLIFFE, Engineer"
+   },
+   {
+    "title": "Everything Counts",
+    "version": "Absolut Mix",
+    "media_number": 2,
+    "track_number": 4,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Breathing In Fumes",
+    "version": null,
+    "media_number": 2,
+    "track_number": 5,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist, Assistant Engineer\r - Martin L.Gore, Composer, Producer, Keyboards\r - Dave Gahan, Producer, Vocals\r - GARETH JONES, Producer\r - Daniel Miller, Producer\r - Andy Fletcher, Producer, Keyboards\r - Alan Wilder, Producer, Keyboards\r - Peter Schmidt, Assistant Engineer\r - Richard Sullivan, Assistant Engineer"
+   },
+   {
+    "title": "Painkiller",
+    "version": "Kill The Pain Mix",
+    "media_number": 2,
+    "track_number": 6,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Useless",
+    "version": "The Kruder + Dorfmeister Session",
+    "media_number": 2,
+    "track_number": 7,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "In Your Room",
+    "version": "The Jeep Rock Mix",
+    "media_number": 2,
+    "track_number": 8,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Dream On",
+    "version": "Dave Clarke Acoustic Version",
+    "media_number": 2,
+    "track_number": 9,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "It's No Good",
+    "version": "Speedy J Mix",
+    "media_number": 2,
+    "track_number": 10,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Master and Servant",
+    "version": "An On-Usound Science Fiction Dance Hall Classic",
+    "media_number": 2,
+    "track_number": 11,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Enjoy the Silence",
+    "version": "Timo Maas Extended Remix",
+    "media_number": 2,
+    "track_number": 12,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin Gore, Composer"
+   },
+   {
+    "title": "A Question of Lust",
+    "version": "Remix",
+    "media_number": 3,
+    "track_number": 1,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Walking in My Shoes",
+    "version": "Random Carpet Mix Full Length",
+    "media_number": 3,
+    "track_number": 2,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Are People People?",
+    "version": null,
+    "media_number": 3,
+    "track_number": 3,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "World In My Eyes",
+    "version": "Daniel Miller Mix",
+    "media_number": 3,
+    "track_number": 4,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "I Feel Loved",
+    "version": "Danny Tenaglia's Labor Of Love Dub Edit",
+    "media_number": 3,
+    "track_number": 5,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "It's No Good",
+    "version": "Club 69 Future Mix",
+    "media_number": 3,
+    "track_number": 6,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Photographic",
+    "version": "Rex The Dog Dubb Mix",
+    "media_number": 3,
+    "track_number": 7,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Vince Clarke, Composer"
+   },
+   {
+    "title": "Little 15",
+    "version": "Ulrich Schnauss Remix",
+    "media_number": 3,
+    "track_number": 8,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Nothing",
+    "version": "Headcleanr Rock Mix",
+    "media_number": 3,
+    "track_number": 9,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Lie To Me",
+    "version": "'The Pleasure Of Her Private Shame' Remix By LFO",
+    "media_number": 3,
+    "track_number": 10,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Clean",
+    "version": "Colder Version",
+    "media_number": 3,
+    "track_number": 11,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin L.Gore, Composer"
+   },
+   {
+    "title": "Halo",
+    "version": "Goldfrapp Remix",
+    "media_number": 3,
+    "track_number": 12,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist, Producer\r - Martin L.Gore, Composer\r - FLOOD, Producer\r - Goldfrapp, Remixer\r - Alison Goldfrapp, Additional Vocals"
+   },
+   {
+    "title": "Enjoy The Silence 2004",
+    "version": null,
+    "media_number": 3,
+    "track_number": 13,
+    "performer": {
+     "name": "Depeche Mode"
+    },
+    "performers": "Depeche Mode, Main Artist\r - Martin Gore, Composer"
+   }
+  ]
+ }
+}
+'''
