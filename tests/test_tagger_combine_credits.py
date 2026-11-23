@@ -5,16 +5,20 @@ import contextlib
 import io
 from copy import deepcopy
 
+import anyio
 import msgspec
 import pytest
+from helpers.deezer import deezer_song, deezer_tracks
 from helpers.tagger_combine import make_tracks, one_track, stating, stores_stating
 from test_common_credits import files_claim, store_claim
 
 from salmon import cfg
 from salmon.common.credits import Claim
 from salmon.tagger.combine import _decide_credits, _join_split_names, combine_metadatas, combine_tracks, decide_alone
+from salmon.tagger.metadata import clean_metadata
 from salmon.tagger.retagger import create_remixer_list
-from salmon.tagger.sources.base import construct_replacement_list, generate_artists
+from salmon.tagger.sources.base import assign_track_totals, construct_replacement_list, generate_artists
+from salmon.tagger.sources.deezer import Scraper as Deezer
 
 
 def release(*artists: tuple[str, str], label: str | None = None) -> dict:
@@ -1047,3 +1051,135 @@ def test_as_before_a_name_only_discogs_credits_an_artist_as_is_not_shown(capsys:
 
     out = capsys.readouterr().out
     assert "Read as one artist" not in out
+
+
+def deezer(*songs: tuple[str, dict]) -> dict:
+    """The release Deezer's parser makes of these songs, each a title and its SNG_CONTRIBUTORS."""
+    meta = release()
+    meta["tracks"] = assign_track_totals(
+        deezer_tracks(*(deezer_song(n, title=title, contributors=c) for n, (title, c) in enumerate(songs, 1)))
+    )
+    return meta
+
+
+def files(*tracks: tuple[str, list[tuple[str, str]]]) -> dict:
+    """Files tagged as deemix tags them: every name in a track's ARTISTS, its remixers too, as ARTIST."""
+    meta = release()
+    meta["tracks"] = make_tracks({"1": [str(n) for n in range(1, len(tracks) + 1)]}, isrc_prefix=None)
+    for n, (title, artists) in enumerate(tracks, 1):
+        meta["tracks"]["1"][str(n)].update(title=title, artists=artists)
+    return meta
+
+
+def test_deezer_as_the_only_store_over_deemix_files_credits_their_remixer_as_remixer_not_main() -> None:
+    """deemix writes a remixer as ARTIST; Deezer states them remixer, so the release names them remixer only
+    (#1132: Remixes 81>04, Daft Club and four other famous remix albums get their ALBUMARTIST back)."""
+    base = files(("Alejandro (Guéna LG Remix)", [("Lady Gaga", "main"), ("Guéna LG", "main")]))
+    store = deezer(("Alejandro (Guéna LG Remix)", {"main_artist": ["Lady Gaga"], "remixer": ["Guéna LG"]}))
+
+    combined = clean_metadata(combine_metadatas(("Deezer", store), base=base))
+
+    track = combined["tracks"]["1"]["1"]
+    assert track["artists"] == [("Lady Gaga", "main"), ("Guéna LG", "remixer")]
+    assert create_remixer_list(track) == ["Guéna LG"]
+
+
+def test_as_before_deezer_as_the_only_store_reads_a_title_s_remixer_on_a_track_where_it_states_none() -> None:
+    """A release stating a remixer on one track and naming one only in another's title keeps both (#1125)."""
+    store = deezer(
+        ("Song (Bob Remix)", {"main_artist": ["Alice"], "remixer": ["Bob"]}),
+        ("Other (Carol Remix)", {"main_artist": ["Alice"]}),
+    )
+
+    combined = combine_metadatas(("Deezer", store), base=files(("Song (Bob Remix)", []), ("Other (Carol Remix)", [])))
+
+    assert ("Bob", "remixer") in combined["tracks"]["1"]["1"]["artists"]
+    assert ("Carol", "remixer") in combined["tracks"]["1"]["2"]["artists"]
+
+
+def test_a_dj_deezer_states_as_main_and_remixer_is_only_remixer_on_that_track() -> None:
+    """Accepted for now (#1132): The Blessed Madonna mixes Club Future Nostalgia and remixes two of its tracks; on
+    those two the release names her remixer only, as for any remixer the files give as ARTIST."""
+    both = [("Dua Lipa", "main"), ("The Blessed Madonna", "main")]
+    base = files(("Love Again", both), ("Levitating", both))
+    store = deezer(
+        ("Love Again", {"main_artist": ["Dua Lipa", "The Blessed Madonna"]}),
+        ("Levitating", {"main_artist": ["Dua Lipa", "The Blessed Madonna"], "remixer": ["The Blessed Madonna"]}),
+    )
+
+    combined = clean_metadata(combine_metadatas(("Deezer", store), base=base))
+
+    assert credits(combined) == [both, [("Dua Lipa", "main"), ("The Blessed Madonna", "remixer")]]
+
+
+def test_deezer_s_stated_guest_is_kept_over_qobuz_s_stated_main_with_no_files() -> None:
+    """Accepted for now (#1132): on an "X with Y" album (Monk with Coltrane) both should be main once every store
+    states its credits; with no files Deezer is the base, and the first stated claim wins."""
+    store = deezer(("Ruby, My Dear", {"main_artist": ["Thelonious Monk"], "featuring": ["John Coltrane"]}))
+    qobuz = release(("Thelonious Monk", "main"), ("John Coltrane", "main"))
+
+    combined = combine_metadatas(("Qobuz", stating(qobuz)), ("Deezer", store))
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Thelonious Monk", "main"), ("John Coltrane", "guest")]
+
+
+def scraped_alone(monkeypatch: pytest.MonkeyPatch, *songs: dict) -> dict:
+    """A lone Deezer scrape (salmon meta, the web lookup) of these songs, scraped and decided as run_metadata does."""
+    soup = {
+        "id": 1,
+        "title": "Album",
+        "upc": "1",
+        "cover_xl": None,
+        "genres": {"data": []},
+        "label": "Label",
+        "release_date": "2026-01-01",
+        "record_type": "album",
+        "tracklist": list(songs),
+    }
+    scraper = Deezer()
+
+    async def fetch_data(*_args: object, **_kwargs: object) -> dict:
+        return deepcopy(soup)
+
+    monkeypatch.setattr(scraper, "fetch_data", fetch_data)
+    alone = anyio.run(scraper.scrape_release, "https://www.deezer.com/album/1")
+    decide_alone(alone, "Deezer")
+    return alone
+
+
+def test_a_lone_deezer_scrape_keeps_its_stated_remixer_and_names_the_remix_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The remixer Deezer states is the track's REMIXER, and its title is written from Deezer's title and version,
+    not given the remix again."""
+    contributors = {"main_artist": ["Lady Gaga"], "remixer": ["Guéna LG"]}
+    alone = scraped_alone(monkeypatch, deezer_song(1, "(Guéna LG Remix)", "Alejandro", contributors))
+
+    track = alone["tracks"]["1"]["1"]
+    assert track["artists"] == [("Lady Gaga", "main"), ("Guéna LG", "remixer")]
+    assert track["title"] == "Alejandro (Guéna LG Remix)"
+    assert create_remixer_list(track) == ["Guéna LG"]
+
+
+def test_a_lone_deezer_scrape_leads_with_its_main_not_a_title_guest_it_states_as_main(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    alone = scraped_alone(
+        monkeypatch,
+        deezer_song(1, title="Song (feat. Bob)", contributors={"main_artist": ["Alice", "Bob"]}),
+        deezer_song(2, title="Other"),
+    )
+
+    assert alone["artists"][0] == ("Alice", "main")
+    assert alone["tracks"]["1"]["1"]["artists"][0] == ("Alice", "main")
+
+
+def test_a_guest_only_deezer_s_title_names_yields_to_qobuz_s_stated_main_after_the_main() -> None:
+    """Deezer's title guest is its guess, so with no files Qobuz's stated main wins, though Deezer comes first; and
+    it follows Deezer's main, as the guess is claimed after it."""
+    store = deezer(("Song (feat. Bob)", {"main_artist": ["Alice"]}))
+    qobuz = release(("Alice", "main"), ("Bob", "main"))
+
+    combined = combine_metadatas(("Qobuz", stating(qobuz)), ("Deezer", store))
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "main")]

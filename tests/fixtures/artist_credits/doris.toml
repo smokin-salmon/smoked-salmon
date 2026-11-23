@@ -22,7 +22,7 @@ open = "Per track, not judged by the test yet: Tyler, The Creator a guest on 7 a
 "SK La' Flare" = ["SK La'Flare"]
 
 [today.deezer]
-release = ["SK La' Flare (guest)", "Earl Sweatshirt (main)", "Vince Staples (guest)", "Domo Genesis (guest)", "Frank Ocean (guest)", "Casey Veggies (guest)", "Tyler, The Creator (guest)", "Mac Miller (guest)", "RZA (guest)"]
+release = ["Earl Sweatshirt (main)", "SK La' Flare (guest)", "Vince Staples (guest)", "Domo Genesis (guest)", "Frank Ocean (guest)", "Casey Veggies (guest)", "Tyler, The Creator (guest)", "Mac Miller (guest)", "RZA (guest)"]
 tracks = 15
 
 [today.musicbrainz]

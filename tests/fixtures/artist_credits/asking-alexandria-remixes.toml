@@ -1,7 +1,7 @@
 album = "Asking Alexandria, Where Do We Go From Here? The Remixes EP"
 why = "A remix EP whose remixers Qobuz states as Remixer, and three of them also as MainArtist on their own remix (\"Weird Genius, Remixer, MainArtist\"); Deezer lists those three as main_artist beside the band."
 edition = "The 7-track digital EP, Better Noise Music 2024 (Qobuz tfw5m00ec42ab = Deezer 631629531 by barcode 846070079702, Qobuz's with a leading 0). Only the two stores whose credits the case is about."
-known_wrong = ["Deezer parse: its contributors give Weird Genius, Fairlane and Sullivan King as main_artist on their remixes, so they are main and no remixer is credited; the merge credits them only as remixers"]
+known_wrong = ["Deezer parse: its contributors give Weird Genius, Fairlane and Sullivan King as main_artist on their remixes as well as remixer, so they are main beside their remixer credit; the merge credits them only as remixers"]
 files_from = "qobuz"
 # The release Picard tags these files from, found by their barcode (846070079702). The case has no
 # stores.musicbrainz: only the two stores whose credits it is about.
@@ -17,10 +17,10 @@ tags = "constructed from the store data named in the comment above [[track]], ne
 release_main = ["Asking Alexandria"]
 not_main = ["Weird Genius", "Kodeblooded", "Cass Dillon", "Fairlane", "Sullivan King"]
 remixers = ["Weird Genius", "Kodeblooded", "Cass Dillon", "Fairlane", "Sullivan King"]
-how_we_know = "Qobuz and Deezer both give Asking Alexandria alone as the album's artist, and each remix's version names its remixer; Qobuz's line states all five as Remixer, and Deezer's contributors list them as remixer (a key its parser doesn't read, so trimmed here)"
+how_we_know = "Qobuz and Deezer both give Asking Alexandria alone as the album's artist, and each remix's version names its remixer; Qobuz's line states all five as Remixer, and Deezer's contributors list them as remixer"
 
 [today.deezer]
-release = ["Asking Alexandria (main)", "Weird Genius (main)", "Fairlane (main)", "Sullivan King (main)"]
+release = ["Asking Alexandria (main)", "Weird Genius (main)", "Weird Genius (remixer)", "Kodeblooded (remixer)", "Cass Dillon (remixer)", "Fairlane (main)", "Fairlane (remixer)", "Sullivan King (main)", "Sullivan King (remixer)"]
 tracks = 7
 
 [today.qobuz]
@@ -235,6 +235,9 @@ deezer = '''
     "main_artist": [
      "Asking Alexandria",
      "Weird Genius"
+    ],
+    "remixer": [
+     "Weird Genius"
     ]
    },
    "DISK_NUMBER": "1",
@@ -254,6 +257,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Asking Alexandria"
+    ],
+    "remixer": [
+     "Kodeblooded"
     ]
    },
    "DISK_NUMBER": "1",
@@ -273,6 +279,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Asking Alexandria"
+    ],
+    "remixer": [
+     "Cass Dillon"
     ]
    },
    "DISK_NUMBER": "1",
@@ -292,6 +301,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Asking Alexandria",
+     "Fairlane"
+    ],
+    "remixer": [
      "Fairlane"
     ]
    },
@@ -330,6 +342,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Asking Alexandria",
+     "Sullivan King"
+    ],
+    "remixer": [
      "Sullivan King"
     ]
    },

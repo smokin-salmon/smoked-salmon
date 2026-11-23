@@ -16,7 +16,7 @@ release_main = ["Miles Davis"]
 how_we_know = "MusicBrainz and Discogs agree"
 
 [today.deezer]
-release = ["John Coltrane (guest)", "Cannonball Adderley (guest)", "Bill Evans (guest)", "Miles Davis (main)", "Wynton Kelly (guest)", "Paul Chambers (guest)"]
+release = ["Miles Davis (main)", "John Coltrane (guest)", "Cannonball Adderley (guest)", "Bill Evans (guest)", "Wynton Kelly (guest)", "Paul Chambers (guest)"]
 tracks = 5
 
 [today.musicbrainz]
@@ -183,6 +183,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane",
+     "Cannonball Adderley",
+     "Bill Evans"
+    ],
     "main_artist": [
      "Miles Davis"
     ]
@@ -204,6 +209,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane",
+     "Cannonball Adderley",
+     "Wynton Kelly",
+     "Paul Chambers"
+    ],
     "main_artist": [
      "Miles Davis"
     ]
@@ -223,6 +234,10 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane",
+     "Bill Evans"
+    ],
     "main_artist": [
      "Miles Davis"
     ]
@@ -243,6 +258,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane",
+     "Cannonball Adderley",
+     "Bill Evans"
+    ],
     "main_artist": [
      "Miles Davis"
     ]
@@ -263,6 +283,11 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane",
+     "Cannonball Adderley",
+     "Bill Evans"
+    ],
     "main_artist": [
      "Miles Davis"
     ]

@@ -1,7 +1,7 @@
 album = "Lady Gaga, The Remix"
 why = "A remix album: a remixer on every track, the original singer the only main; two tracks keep their singles' featured guests."
 edition = "The 10-track US edition, Streamline/Interscope 2010 (Deezer 2383521 = MusicBrainz ec3baf33 by barcode, digital; Discogs 2384351, the US CD with the same barcode). Chosen because all three stores carry it under one UPC; the 17-track international edition is another release. Qobuz ow9fz03z2krna has the same UPC and the same 10 tracks."
-known_wrong = ["merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest or remixer, so the singles' guests (Colby O'Donis, Marilyn Manson, Beyoncé) are made main and ALBUMARTIST is 'Various'", "merge: remixers read from MusicBrainz's titles beside the stores' names: 'FrankMusik \"Cut Snare Edit\"', \"Monarchy 'Stylites'\"", "output: no REMIXER on 'Eh, Eh' or 'Dance In The Dark'"]
+known_wrong = ["merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest or remixer, so the singles' guests (Colby O'Donis, Marilyn Manson, Beyoncé) are made main and ALBUMARTIST is 'Various'"]
 files_from = "deezer"
 output = true
 
@@ -16,10 +16,10 @@ tags = "constructed from the store data named in the comment above [[track]], ne
 release_main = ["Lady Gaga"]
 not_main = ["Richard Vission", "Richard \"Humpty\" Vission", "Guena LG", "Chew Fu", "Chew-Fu Phat", "Frankmusik", "FrankMusik", "Stuart Price", "Starsmith", "Passion Pit", "The Sound of Arrows", "The Sound Of Arrows", "Monarchy", "Colby O'Donis", "Colby O’Donis", "Marilyn Manson", "Beyoncé"]
 how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Lady Gaga alone as the release's artist and the singles' guests as featured; D1 keeps remixers out of ARTIST"
-open = "the remixers' exact set and name forms: Discogs credits them as remixers, Deezer as featured artists, MusicBrainz as remixer relations on the recordings and in the titles, each spelling some differently"
+open = "the remixers' exact set and name forms: Discogs credits them as remixers, Deezer as remixers (in its track artists, as featured), MusicBrainz as remixer relations on the recordings and in the titles, each spelling some differently"
 
 [today.deezer]
-release = ["Lady Gaga (main)", "Colby O'Donis (guest)", "Marilyn Manson (guest)", "Beyoncé (guest)"]
+release = ["Lady Gaga (main)", "Colby O'Donis (guest)", "Richard Vission (remixer)", "Guéna LG (remixer)", "Marilyn Manson (guest)", "Chew Fu (remixer)", "Frankmusik (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (guest)", "Passion Pit (remixer)", "The Sound of Arrows (remixer)", "Monarchy (remixer)"]
 tracks = 10
 
 [today.musicbrainz]
@@ -34,15 +34,15 @@ release = ["Lady Gaga (main)", "Richard Vission (remixer)", "Colby O'Donis (gues
 tracks = 10
 
 [today.merge]
-release = ["Lady Gaga (main)", "Colby O'Donis (main)", "Richard Vission (remixer)", "Guena LG (remixer)", "Marilyn Manson (main)", "Chew Fu (remixer)", "FrankMusik \"Cut Snare Edit\" (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (main)", "Passion Pit (remixer)", "The Sound of Arrows (remixer)", "Monarchy 'Stylites' (remixer)"]
+release = ["Lady Gaga (main)", "Colby O'Donis (main)", "Richard Vission (remixer)", "Guena LG (remixer)", "Marilyn Manson (main)", "Chew Fu (remixer)", "Frankmusik (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (main)", "Passion Pit (remixer)", "The Sound of Arrows (remixer)", "Monarchy (remixer)"]
 tracks = 10
-credits = ["1.1: Lady Gaga (main), Colby O'Donis (main), Richard Vission (remixer)", "1.2: Lady Gaga (main), Guena LG (remixer)", "1.3: Lady Gaga (main), Marilyn Manson (main), Chew Fu (remixer)", "1.4: Lady Gaga (main), FrankMusik \"Cut Snare Edit\" (remixer)", "1.5: Lady Gaga (main), Stuart Price (remixer)", "1.6: Lady Gaga (main), Guena LG (remixer)", "1.7: Lady Gaga (main), Starsmith (remixer)", "1.8: Lady Gaga (main), Beyoncé (main), Passion Pit (remixer)", "1.9: Lady Gaga (main), The Sound of Arrows (remixer)", "1.10: Lady Gaga (main), Monarchy 'Stylites' (remixer)"]
+credits = ["1.1: Lady Gaga (main), Colby O'Donis (main), Richard Vission (remixer)", "1.2: Lady Gaga (main), Guena LG (remixer)", "1.3: Lady Gaga (main), Marilyn Manson (main), Chew Fu (remixer)", "1.4: Lady Gaga (main), Frankmusik (remixer)", "1.5: Lady Gaga (main), Stuart Price (remixer)", "1.6: Lady Gaga (main), Guena LG (remixer)", "1.7: Lady Gaga (main), Starsmith (remixer)", "1.8: Lady Gaga (main), Beyoncé (main), Passion Pit (remixer)", "1.9: Lady Gaga (main), The Sound of Arrows (remixer)", "1.10: Lady Gaga (main), Monarchy (remixer)"]
 [today.output]
 albumartist = "Various"
-tracks = ["Lady Gaga & Colby O'Donis | Just Dance (Richard Vission Remix) | REMIXER Richard Vission", "Lady Gaga | Poker Face (LLG vs GLG Radio Mix) | REMIXER Guena LG", "Lady Gaga & Marilyn Manson | LoveGame (Chew Fu Ghettohouse Fix) | REMIXER Chew Fu", "Lady Gaga | Eh, Eh (Nothing Else I Can Say) (FrankMusik \"Cut Snare Edit\" Remix)", "Lady Gaga | Paparazzi (Stuart Price Remix) | REMIXER Stuart Price", "Lady Gaga | The Fame (Glam As You Remix - Radio Edit Version) | REMIXER Guena LG", "Lady Gaga | Bad Romance (Starsmith Remix) | REMIXER Starsmith", "Lady Gaga & Beyoncé | Telephone (Passion Pit Remix) | REMIXER Passion Pit", "Lady Gaga | Alejandro (The Sound of Arrows Remix) | REMIXER The Sound of Arrows", "Lady Gaga | Dance In The Dark (Monarchy 'Stylites' Remix)"]
+tracks = ["Lady Gaga & Colby O'Donis | Just Dance (Richard Vission Remix) | REMIXER Richard Vission", "Lady Gaga | Poker Face (LLG vs GLG Radio Mix) | REMIXER Guena LG", "Lady Gaga & Marilyn Manson | LoveGame (Chew Fu Ghettohouse Fix) | REMIXER Chew Fu", "Lady Gaga | Eh, Eh (Nothing Else I Can Say) (FrankMusik \"Cut Snare Edit\" Remix) | REMIXER Frankmusik", "Lady Gaga | Paparazzi (Stuart Price Remix) | REMIXER Stuart Price", "Lady Gaga | The Fame (Glam As You Remix - Radio Edit Version) | REMIXER Guena LG", "Lady Gaga | Bad Romance (Starsmith Remix) | REMIXER Starsmith", "Lady Gaga & Beyoncé | Telephone (Passion Pit Remix) | REMIXER Passion Pit", "Lady Gaga | Alejandro (The Sound of Arrows Remix) | REMIXER The Sound of Arrows", "Lady Gaga | Dance In The Dark (Monarchy 'Stylites' Remix) | REMIXER Monarchy"]
 [today."output-guests-in-title"]
 albumartist = "Various"
-tracks = ["Lady Gaga & Colby O'Donis | Just Dance (Richard Vission Remix) | REMIXER Richard Vission", "Lady Gaga | Poker Face (LLG vs GLG Radio Mix) | REMIXER Guena LG", "Lady Gaga & Marilyn Manson | LoveGame (Chew Fu Ghettohouse Fix) | REMIXER Chew Fu", "Lady Gaga | Eh, Eh (Nothing Else I Can Say) (FrankMusik \"Cut Snare Edit\" Remix)", "Lady Gaga | Paparazzi (Stuart Price Remix) | REMIXER Stuart Price", "Lady Gaga | The Fame (Glam As You Remix - Radio Edit Version) | REMIXER Guena LG", "Lady Gaga | Bad Romance (Starsmith Remix) | REMIXER Starsmith", "Lady Gaga & Beyoncé | Telephone (Passion Pit Remix) | REMIXER Passion Pit", "Lady Gaga | Alejandro (The Sound of Arrows Remix) | REMIXER The Sound of Arrows", "Lady Gaga | Dance In The Dark (Monarchy 'Stylites' Remix)"]
+tracks = ["Lady Gaga & Colby O'Donis | Just Dance (Richard Vission Remix) | REMIXER Richard Vission", "Lady Gaga | Poker Face (LLG vs GLG Radio Mix) | REMIXER Guena LG", "Lady Gaga & Marilyn Manson | LoveGame (Chew Fu Ghettohouse Fix) | REMIXER Chew Fu", "Lady Gaga | Eh, Eh (Nothing Else I Can Say) (FrankMusik \"Cut Snare Edit\" Remix) | REMIXER Frankmusik", "Lady Gaga | Paparazzi (Stuart Price Remix) | REMIXER Stuart Price", "Lady Gaga | The Fame (Glam As You Remix - Radio Edit Version) | REMIXER Guena LG", "Lady Gaga | Bad Romance (Starsmith Remix) | REMIXER Starsmith", "Lady Gaga & Beyoncé | Telephone (Passion Pit Remix) | REMIXER Passion Pit", "Lady Gaga | Alejandro (The Sound of Arrows Remix) | REMIXER The Sound of Arrows", "Lady Gaga | Dance In The Dark (Monarchy 'Stylites' Remix) | REMIXER Monarchy"]
 # The files' tags.
 # Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
 # from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
@@ -299,6 +299,9 @@ deezer = '''
     ],
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Richard Vission"
     ]
    },
    "DISK_NUMBER": "1",
@@ -318,6 +321,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Guéna LG"
     ]
    },
    "DISK_NUMBER": "1",
@@ -341,6 +347,9 @@ deezer = '''
     ],
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Chew Fu"
     ]
    },
    "DISK_NUMBER": "1",
@@ -360,6 +369,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Frankmusik"
     ]
    },
    "DISK_NUMBER": "1",
@@ -379,6 +391,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Stuart Price"
     ]
    },
    "DISK_NUMBER": "1",
@@ -398,6 +413,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Guéna LG"
     ]
    },
    "DISK_NUMBER": "1",
@@ -417,6 +435,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Starsmith"
     ]
    },
    "DISK_NUMBER": "1",
@@ -440,6 +461,9 @@ deezer = '''
     ],
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Passion Pit"
     ]
    },
    "DISK_NUMBER": "1",
@@ -459,6 +483,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "The Sound of Arrows"
     ]
    },
    "DISK_NUMBER": "1",
@@ -478,6 +505,9 @@ deezer = '''
    "SNG_CONTRIBUTORS": {
     "main_artist": [
      "Lady Gaga"
+    ],
+    "remixer": [
+     "Monarchy"
     ]
    },
    "DISK_NUMBER": "1",
