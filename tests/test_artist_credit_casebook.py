@@ -96,9 +96,12 @@ def _update_message(case_name: str, stage: str, got: dict[str, Any]) -> str:
     return f"today changed: if the change is meant, set [today.{stage}] in {case_name} to:\n{shown}"
 
 
-def picard_verdict(case_name: str, stage: str, got: dict[str, Any], today: dict[str, Any]) -> str | None:
-    """Why a Picard stage fails, or None: it is recorded only where it differs from its Deezer stage."""
-    if got == today[PICARD[stage]]:
+def picard_verdict(
+    case_name: str, stage: str, got: dict[str, Any], deezer: dict[str, Any], today: dict[str, Any]
+) -> str | None:
+    """Why a Picard stage fails, or None: it is recorded only where it differs from its Deezer stage, as `deezer`
+    (that stage's value in the same run, not its record, so a fix that moves both alike asks for nothing here)."""
+    if got == deezer:
         same = f"[today.{stage}] is the same as [today.{PICARD[stage]}]: remove [today.{stage}] from {case_name}"
         return same if stage in today else None
     return _update_message(case_name, stage, got) if got != today.get(stage) else None
@@ -270,9 +273,11 @@ def _params() -> list[Any]:
 def test_today(case: Path, stage: str, monkeypatch: pytest.MonkeyPatch) -> None:
     record = _record(case)
     if stage in PICARD:
-        meta = merge(record, monkeypatch, record["picard_track"])
-        got = summary(meta, per_track=True) if stage == "merge-picard" else written(meta, False, monkeypatch)
-        verdict = picard_verdict(case.name, stage, got, record["today"])
+        picard, deezer = (
+            summary(meta, per_track=True) if stage == "merge-picard" else written(meta, False, monkeypatch)
+            for meta in (merge(record, monkeypatch, record["picard_track"]), merge(record, monkeypatch))
+        )
+        verdict = picard_verdict(case.name, stage, picard, deezer, record["today"])
         assert verdict is None, verdict
         return
     if stage == CONTROL:
@@ -335,15 +340,22 @@ def test_picard_stages_run_only_where_there_are_picard_files() -> None:
 
 
 def test_a_picard_stage_is_recorded_only_where_it_differs() -> None:
-    a, b = {"tracks": 1}, {"tracks": 2}
-    assert picard_verdict("case.toml", "merge-picard", a, {"merge": a}) is None
-    assert "set [today.merge-picard]" in str(picard_verdict("case.toml", "merge-picard", b, {"merge": a}))
-    redundant = picard_verdict("case.toml", "merge-picard", a, {"merge": a, "merge-picard": a})
-    assert "remove [today.merge-picard]" in str(redundant)
-    assert picard_verdict("case.toml", "merge-picard", b, {"merge": a, "merge-picard": b}) is None
-    assert "set [today.merge-picard]" in str(
-        picard_verdict("case.toml", "merge-picard", a, {"merge": b, "merge-picard": b})
-    )
+    """Judged against the Deezer stage as it comes out in the same run, so a fix's first run gives the right advice."""
+    a, b, c = {"tracks": 1}, {"tracks": 2}, {"tracks": 3}
+
+    def verdict(got: dict[str, Any], deezer: dict[str, Any], today: dict[str, Any]) -> str:
+        return str(picard_verdict("case.toml", "merge-picard", got, deezer, today))
+
+    assert verdict(a, a, {"merge": a}) == "None"
+    assert "set [today.merge-picard]" in verdict(b, a, {"merge": a})
+    assert "remove [today.merge-picard]" in verdict(a, a, {"merge": a, "merge-picard": a})
+    assert verdict(b, a, {"merge": a, "merge-picard": b}) == "None"
+    assert "set [today.merge-picard]" in verdict(a, b, {"merge": b, "merge-picard": b})
+    # A fix moves both shapes alike before [today.merge] is updated: nothing to record for Picard.
+    assert verdict(c, c, {"merge": a}) == "None"
+    assert "remove [today.merge-picard]" in verdict(c, c, {"merge": a, "merge-picard": b})
+    # A fix moves only the Deezer shape: Picard's unchanged result is recorded in the same run.
+    assert "set [today.merge-picard]" in verdict(a, c, {"merge": a})
 
 
 def test_the_scoreboard_judges_every_picard_case() -> None:
