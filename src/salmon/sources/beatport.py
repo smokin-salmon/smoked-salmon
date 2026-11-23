@@ -190,6 +190,7 @@ class BeatportBase(BaseScraper):
                 "response_type": "code",
             }
             async with session.get(self.url + "/auth/o/authorize/", params=params, allow_redirects=False) as resp:
+                self.record_answer(resp.status)
                 if resp.status < 300 or resp.status >= 400:
                     data = await resp.read()
                     soup = BeautifulSoup(data, "lxml")

@@ -152,4 +152,4 @@ class AppleMusicBase(BaseScraper):
             }
 
         except (KeyError, IndexError) as e:
-            raise ScrapeError(f"Failed to grab Apple Music metadata for {url}.") from e
+            raise ScrapeError("Apple Music: Failed to grab metadata.") from e

@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from random import choice
 from string import Formatter
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import aiohttp
 import msgspec
@@ -20,6 +20,23 @@ if TYPE_CHECKING:
 HEADERS = {"User-Agent": choice(UAGENTS)}
 # Seconds a fetch_page request may take in all.
 PAGE_TIMEOUT = 7
+
+
+# The longest page title an error message quotes.
+TITLE_CAP = 80
+_TITLE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
+
+
+class Answer(NamedTuple):
+    """What a store answered: its HTTP status, and the page's <title> when it sent an HTML page that has one."""
+
+    status: int
+    title: str | None = None
+
+
+def _tidy_title(title: str | None) -> str | None:
+    """A <title> on one line, at most TITLE_CAP characters; None if it has no text."""
+    return " ".join((title or "").split())[:TITLE_CAP] or None
 
 
 class IdentData(msgspec.Struct, frozen=True):
@@ -48,6 +65,13 @@ class BaseScraper:
     # The store's name in error messages ("Apple Music"), so a multi-store search says which one failed; None: the
     # class's name.
     store: str | None = None
+    # The last answer this scraper instance received, status checked or not: what a failed scrape reports. An
+    # instance serves one scrape, so it is safe state; None until a store answers.
+    last_answer: Answer | None = None
+
+    def record_answer(self, status: int, title: str | None = None) -> None:
+        """Remember the answer just received (see last_answer)."""
+        self.last_answer = Answer(status, _tidy_title(title))
 
     @classmethod
     @asynccontextmanager
@@ -100,14 +124,15 @@ class BaseScraper:
         return cls.site_url + cls.release_format.format(rls_id=rls_id_str)
 
     async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
+        self.record_answer(resp.status)
         if resp.status != 200:
-            class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
-            error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
             try:
                 error_data = await resp.text()
             except Exception:
                 error_data = None
-            raise ScrapeError(error_msg, error_data)
+            match = _TITLE.search(error_data or "")
+            self.record_answer(resp.status, match[1] if match else None)
+            raise ScrapeError(f"{self.store or self.__class__.__name__}: HTTP {resp.status}.", error_data)
         try:
             return msgspec.json.decode(await resp.read())
         except msgspec.DecodeError as e:
@@ -165,10 +190,13 @@ class BaseScraper:
             self._session(timeout=PAGE_TIMEOUT) as session,
             session.get(url, params=params, headers=headers or HEADERS, allow_redirects=follow_redirects) as r,
         ):
-            if r.status != 200:
-                raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
+            self.record_answer(r.status)
             data = await r.read()
-            return BeautifulSoup(data, "lxml"), r.url
+            soup = BeautifulSoup(data, "lxml")
+            self.record_answer(r.status, soup.title.get_text() if soup.title else None)
+            if r.status != 200:
+                raise ScrapeError(f"{self.store or self.__class__.__name__}: HTTP {r.status}.")
+            return soup, r.url
 
     async def fetch_data(
         self,

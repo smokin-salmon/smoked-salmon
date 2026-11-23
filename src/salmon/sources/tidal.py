@@ -101,6 +101,7 @@ class TidalBase(BaseScraper):
             return token
 
     async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
+        self.record_answer(resp.status)
         if resp.status == 429:
             raise _RateLimitedError(parse_retry_after(resp.headers.get("Retry-After")))
         if resp.status == 401:
@@ -287,4 +288,4 @@ class TidalBase(BaseScraper):
         except msgspec.DecodeError as e:
             raise ScrapeError("Tidal page did not return valid JSON.") from e
         except (KeyError, ScrapeError) as e:
-            raise ScrapeError(f"Failed to grab metadata for {url}.") from e
+            raise ScrapeError("Tidal: Failed to grab metadata.") from e

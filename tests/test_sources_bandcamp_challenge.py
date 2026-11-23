@@ -190,7 +190,10 @@ def test_a_check_page_that_stays_is_named_instead_of_failing_to_parse(first_fetc
     with pytest.raises(ScrapeError) as excinfo:
         anyio.run(Scraper().scrape_release, ALBUM_URL)
 
-    assert str(excinfo.value) == STILL
+    # Named by the store, the URL and the check page's status and title, then the reason.
+    assert str(excinfo.value) == (
+        f'Bandcamp: could not read the release at {ALBUM_URL} (HTTP 200, page titled "Client Challenge"): {STILL}'
+    )
     assert len(retries[1]) == 1
 
 

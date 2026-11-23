@@ -107,7 +107,7 @@ class DeezerBase(BaseScraper):
         except msgspec.DecodeError as e:
             raise ScrapeError("Deezer page did not return valid JSON.") from e
         except (KeyError, ScrapeError) as e:
-            raise ScrapeError(f"Failed to grab metadata for {url}.") from e
+            raise ScrapeError("Deezer: Failed to grab metadata.") from e
 
     async def get_internal_api_data(self, url: str, params: dict | None = None) -> dict:
         """Fetch internal API data from Deezer.
@@ -129,6 +129,7 @@ class DeezerBase(BaseScraper):
             self._session() as session,
             session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
         ):
+            self.record_answer(response.status)
             if response.status != 200:
                 raise ScrapeError(f"Deezer internal API returned status {response.status}.")
             text = await response.text()
