@@ -1,0 +1,588 @@
+{
+ "id": "075029f6-7057-46ba-a9ec-c80dd5eb9d45",
+ "title": "Thelonious Monk With John Coltrane",
+ "date": "2016-02-12",
+ "barcode": "888072390232",
+ "artist-credit": [
+  {
+   "name": "Thelonious Monk",
+   "joinphrase": " with ",
+   "artist": {
+    "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+    "name": "Thelonious Monk",
+    "aliases": [
+     {
+      "name": "Monk",
+      "sort-name": "Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Monk Thelonious",
+      "sort-name": "Monk Thelonious",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Monk, Thelonious",
+      "sort-name": "Monk, Thelonious",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Monk, Thelonius",
+      "sort-name": "Monk, Thelonius",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "T. Monk",
+      "sort-name": "Monk, T.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Th. Monk",
+      "sort-name": "Th. Monk",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Thelenious Monk",
+      "sort-name": "Thelenious Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Thelonios Monk",
+      "sort-name": "Thelonios Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Thelonious Sphere Monk",
+      "sort-name": "Monk, Thelonious Sphere",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Thelonius Monk",
+      "sort-name": "Thelonius Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Theolonius Monk",
+      "sort-name": "Theolonius Monk",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Т. Монк",
+      "sort-name": "Т. Монк",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Телониус Монк",
+      "sort-name": "Монк, Телониус",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ru",
+      "primary": true
+     },
+     {
+      "name": "セロニアス・モンク",
+      "sort-name": "セロニアス・モンク",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "John Coltrane",
+   "joinphrase": "",
+   "artist": {
+    "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+    "name": "John Coltrane",
+    "aliases": [
+     {
+      "name": "Blue Train",
+      "sort-name": "Blue Train",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Coltrane",
+      "sort-name": "Coltrane",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "J. Coltrane",
+      "sort-name": "J. Coltrane",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "J.Coltrane",
+      "sort-name": "J.Coltrane",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "John Coltraine",
+      "sort-name": "John Coltraine",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "John William Coltrane",
+      "sort-name": "Coltrane, John William",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Trane",
+      "sort-name": "Trane",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ジョン・コルトレーン",
+      "sort-name": "ジョン・コルトレーン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  }
+ ],
+ "release-group": {
+  "id": "20052b09-e445-3bca-b8b5-110c0efd559f",
+  "title": "Thelonious Monk with John Coltrane",
+  "first-release-date": "1961",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Thelonious Monk",
+    "joinphrase": " with ",
+    "artist": {
+     "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+     "name": "Thelonious Monk"
+    }
+   },
+   {
+    "name": "John Coltrane",
+    "joinphrase": "",
+    "artist": {
+     "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+     "name": "John Coltrane"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "2016-02-12"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Jazzland"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "893f3750-e81c-43b1-a8ba-7f424c791709",
+     "position": 1,
+     "number": "1",
+     "title": "Ruby, My Dear",
+     "artist-credit": [
+      {
+       "name": "Thelonious Monk",
+       "joinphrase": " with ",
+       "artist": {
+        "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+        "name": "Thelonious Monk"
+       }
+      },
+      {
+       "name": "John Coltrane",
+       "joinphrase": "",
+       "artist": {
+        "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+        "name": "John Coltrane"
+       }
+      }
+     ],
+     "recording": {
+      "id": "c69695d4-7a56-41df-b798-6b0cb65290f6",
+      "title": "Ruby, My Dear",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Thelonious Monk",
+        "joinphrase": " with ",
+        "artist": {
+         "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+         "name": "Thelonious Monk"
+        }
+       },
+       {
+        "name": "John Coltrane",
+        "joinphrase": "",
+        "artist": {
+         "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+         "name": "John Coltrane"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a46bb923-a30e-47cc-8f41-df8a725404b8",
+     "position": 2,
+     "number": "2",
+     "title": "Trinkle, Tinkle",
+     "artist-credit": [
+      {
+       "name": "Thelonious Monk",
+       "joinphrase": " with ",
+       "artist": {
+        "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+        "name": "Thelonious Monk"
+       }
+      },
+      {
+       "name": "John Coltrane",
+       "joinphrase": "",
+       "artist": {
+        "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+        "name": "John Coltrane"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5f79eaa4-01de-491a-a7b6-62ffc6489a7e",
+      "title": "Trinkle, Tinkle",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Thelonious Monk",
+        "joinphrase": " with ",
+        "artist": {
+         "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+         "name": "Thelonious Monk"
+        }
+       },
+       {
+        "name": "John Coltrane",
+        "joinphrase": "",
+        "artist": {
+         "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+         "name": "John Coltrane"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1a6ea480-2b76-4f47-9bc5-8277a6595983",
+     "position": 3,
+     "number": "3",
+     "title": "Off Minor (take 4)",
+     "artist-credit": [
+      {
+       "name": "Thelonious Monk",
+       "joinphrase": " with ",
+       "artist": {
+        "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+        "name": "Thelonious Monk"
+       }
+      },
+      {
+       "name": "John Coltrane",
+       "joinphrase": "",
+       "artist": {
+        "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+        "name": "John Coltrane"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7c7d95cc-cf1e-4fec-9872-c8a5828826c5",
+      "title": "Off Minor (take 4)",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Thelonious Monk",
+        "joinphrase": " with ",
+        "artist": {
+         "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+         "name": "Thelonious Monk"
+        }
+       },
+       {
+        "name": "John Coltrane",
+        "joinphrase": "",
+        "artist": {
+         "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+         "name": "John Coltrane"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "f46f920d-8186-4ae0-a016-436f88ddb847",
+     "position": 4,
+     "number": "4",
+     "title": "Nutty",
+     "artist-credit": [
+      {
+       "name": "Thelonious Monk",
+       "joinphrase": " with ",
+       "artist": {
+        "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+        "name": "Thelonious Monk"
+       }
+      },
+      {
+       "name": "John Coltrane",
+       "joinphrase": "",
+       "artist": {
+        "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+        "name": "John Coltrane"
+       }
+      }
+     ],
+     "recording": {
+      "id": "06937d1a-cc78-44e4-a556-4ad7e830789f",
+      "title": "Nutty",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Thelonious Monk",
+        "joinphrase": " with ",
+        "artist": {
+         "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+         "name": "Thelonious Monk"
+        }
+       },
+       {
+        "name": "John Coltrane",
+        "joinphrase": "",
+        "artist": {
+         "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+         "name": "John Coltrane"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "8aab9503-9f0b-47d6-ad5c-eee248f3c24a",
+     "position": 5,
+     "number": "5",
+     "title": "Epistrophy (alternate take)",
+     "artist-credit": [
+      {
+       "name": "Thelonious Monk",
+       "joinphrase": " with ",
+       "artist": {
+        "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+        "name": "Thelonious Monk"
+       }
+      },
+      {
+       "name": "John Coltrane",
+       "joinphrase": "",
+       "artist": {
+        "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+        "name": "John Coltrane"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4eb4e411-b4ed-4e94-ae06-f5ab79db2ef2",
+      "title": "Epistrophy (alternate take)",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Thelonious Monk",
+        "joinphrase": " with ",
+        "artist": {
+         "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+         "name": "Thelonious Monk"
+        }
+       },
+       {
+        "name": "John Coltrane",
+        "joinphrase": "",
+        "artist": {
+         "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+         "name": "John Coltrane"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "504d0e83-d3d5-479c-a290-2c83dd9d42cb",
+     "position": 6,
+     "number": "6",
+     "title": "Functional (take 1)",
+     "artist-credit": [
+      {
+       "name": "Thelonious Monk",
+       "joinphrase": " with ",
+       "artist": {
+        "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+        "name": "Thelonious Monk"
+       }
+      },
+      {
+       "name": "John Coltrane",
+       "joinphrase": "",
+       "artist": {
+        "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+        "name": "John Coltrane"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5db55eed-d336-4f0f-9854-4737805a7231",
+      "title": "Functional (alternate take)",
+      "first-release-date": "1961",
+      "artist-credit": [
+       {
+        "name": "Thelonious Monk",
+        "joinphrase": "",
+        "artist": {
+         "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+         "name": "Thelonious Monk"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bc783110-e6fb-4915-96f2-d2114666f953",
+     "position": 7,
+     "number": "7",
+     "title": "Monk’s Mood",
+     "artist-credit": [
+      {
+       "name": "Thelonious Monk",
+       "joinphrase": " with ",
+       "artist": {
+        "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+        "name": "Thelonious Monk"
+       }
+      },
+      {
+       "name": "John Coltrane",
+       "joinphrase": "",
+       "artist": {
+        "id": "b625448e-bf4a-41c3-a421-72ad46cdb831",
+        "name": "John Coltrane"
+       }
+      }
+     ],
+     "recording": {
+      "id": "39a73f68-492b-4aa8-9ee4-53702c287c81",
+      "title": "Monk’s Mood",
+      "first-release-date": "1957",
+      "artist-credit": [
+       {
+        "name": "Thelonious Monk",
+        "joinphrase": "",
+        "artist": {
+         "id": "8e8c7417-c905-46b1-b42a-5260b4274ed4",
+         "name": "Thelonious Monk"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

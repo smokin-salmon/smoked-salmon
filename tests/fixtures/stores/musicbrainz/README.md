@@ -11,7 +11,8 @@ serves them from a local server.
 | `caa/<mbid>.json` | the Cover Art Archive's `/release/<mbid>` image list |
 
 The artist-credit casebook (`tests/fixtures/artist_credits/`) names its
-release here by MBID. A search's slug is its query in lower case, each run of
+release here by MBID, in `stores.musicbrainz` and, for the Picard-tagged
+files, `picard_release`. A search's slug is its query in lower case, each run of
 other characters than letters and digits turned into one `-`.
 
 ## How they were fetched
@@ -23,8 +24,8 @@ as MusicBrainz asks.
 
 Includes for a release:
 `artists labels recordings release-groups media artist-credits artist-rels
-recording-level-rels`, and for the casebook's releases also `aliases
-release-group-level-rels` (#1133).
+recording-level-rels`, and for the casebook's releases (both keys) also
+`aliases release-group-level-rels` (#1133).
 
 These answers were first recorded in both of MusicBrainz's formats, XML and
 JSON, fetched one straight after the other. The casebook's `today`, the search

@@ -3,6 +3,9 @@ why = "A remix EP whose remixers Qobuz states as Remixer, and three of them also
 edition = "The 7-track digital EP, Better Noise Music 2024 (Qobuz tfw5m00ec42ab = Deezer 631629531 by barcode 846070079702, Qobuz's with a leading 0). Only the two stores whose credits the case is about."
 known_wrong = ["Deezer parse: its contributors give Weird Genius, Fairlane and Sullivan King as main_artist on their remixes, so they are main and no remixer is credited; the merge credits them only as remixers"]
 files_from = "qobuz"
+# The release Picard tags these files from, by their barcode (846070079702). The case has no
+# stores.musicbrainz: only the two stores whose credits it is about.
+picard_release = "02f68162-bf45-4c0a-bc00-a0f84628a67a"
 output = true
 
 [sources]
@@ -108,6 +111,90 @@ tracknumber = ["7"]
 discnumber = ["1"]
 title = ["Holding On To Something More"]
 artist = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Bad Blood (Weird Genius remix)"]
+artist = ["Asking Alexandria"]
+artists = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Let Go (kodeblooded remix)"]
+artist = ["Asking Alexandria"]
+artists = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Nothing Left (Cass Dillon remix)"]
+artist = ["Asking Alexandria"]
+artists = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Where Do We Go From Here? (Fairlane remix)"]
+artist = ["Asking Alexandria"]
+artists = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Where Do We Go From Here?"]
+artist = ["Asking Alexandria"]
+artists = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Dark Void (Sullivan King remix)"]
+artist = ["Asking Alexandria"]
+artists = ["Asking Alexandria"]
+album = ["Where Do We Go From Here? The Remixes EP"]
+albumartist = ["Asking Alexandria"]
+date = ["2024-10-18"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Holding on to Something More"]
+artist = ["Asking Alexandria"]
+artists = ["Asking Alexandria"]
 album = ["Where Do We Go From Here? The Remixes EP"]
 albumartist = ["Asking Alexandria"]
 date = ["2024-10-18"]

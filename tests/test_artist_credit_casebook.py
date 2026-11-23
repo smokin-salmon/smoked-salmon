@@ -279,11 +279,13 @@ def test_each_musicbrainz_case_names_a_recorded_release() -> None:
 def test_each_picard_track_block_has_its_musicbrainz_releases_tracks() -> None:
     """A [[picard_track]] block holds only tags salmon reads, as many as the recorded release's tracks, one file each.
 
+    The release is `picard_release` where the files are another edition from `stores.musicbrainz`.
     Its structure only: the values are not checked against the release, nor which cases have a block."""
     cases = [(case, record) for case in _cases() if "picard_track" in (record := _record(case))]
     read = {*TAG_FIELDS["FLAC"].values(), "file"}
     for case, record in cases:
-        recorded = MUSICBRAINZ / "release" / f"{record['stores']['musicbrainz']}.json"
+        mbid = record.get("picard_release", record["stores"].get("musicbrainz"))
+        recorded = MUSICBRAINZ / "release" / f"{mbid}.json"
         release = json.loads(recorded.read_text(encoding="utf-8"))
         tracks = record["picard_track"]
         assert len(tracks) == sum(len(medium["tracks"]) for medium in release["media"]), case.name

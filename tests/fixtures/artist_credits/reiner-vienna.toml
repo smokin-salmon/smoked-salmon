@@ -3,6 +3,9 @@ why = "One conductor and orchestra, four composers on one album (COMPOSER per tr
 edition = "RCA Living Stereo hybrid SACD (Deezer 8298628, MusicBrainz 4d9f6650 with its three layers, Discogs 5831655); Qobuz w6xss4wpaqt9a, UPC 0886445157598, a later issue"
 known_wrong = ["MusicBrainz parse: 30 tracks, the hybrid SACD's three layers counted as three discs", "Qobuz parse: the album lists only Reiner (main-artist, conductor); the orchestra, a main-artist on some tracks only, becomes a guest; Reiner main beside conductor", "merge: Johann Strauss composer twice on his tracks, Qobuz's 'Johann Strauss II' beside Discogs' 'Johann Strauss Jr.'"]
 files_from = "deezer"
+# The release Picard tags these files from: the SACD as 10 tracks on one disc (828767161525), as a
+# Picard user holding them would. stores.musicbrainz stays the entry listing its three layers as 30 tracks.
+picard_release = "c4b9f80d-d9cd-4a49-a1eb-9ec842d295a3"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
@@ -140,6 +143,123 @@ artist = ["Fritz Reiner", "Chicago Symphony Orchestra"]
 album = ["Vienna"]
 albumartist = ["Fritz Reiner"]
 date = ["2006-02-07"]
+
+# The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
+# Constructed from the case's MusicBrainz recording, not copied from anyone's
+# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# variations only; release relationships on, track relationships off; no
+# translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
+# name. Only the tags salmon reads.
+
+[[picard_track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Morning Papers, op. 279"]
+artist = ["Johann Strauss"]
+artists = ["Johann Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Emperor Waltz, op. 437"]
+artist = ["Johann Strauss"]
+artists = ["Johann Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["On the Beautiful Blue Danube, op. 314"]
+artist = ["Johann Strauss"]
+artists = ["Johann Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Invitation to the Dance, op. 65"]
+artist = ["Carl Maria von Weber"]
+artists = ["Carl Maria von Weber"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Village Swallows, op. 164"]
+artist = ["Josef Strauss"]
+artists = ["Josef Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Der Rosenkavalier: Waltzes"]
+artist = ["Richard Strauss"]
+artists = ["Richard Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Vienna Blood, op. 354"]
+artist = ["Johann Strauss"]
+artists = ["Johann Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Roses from the South, op. 388"]
+artist = ["Johann Strauss"]
+artists = ["Johann Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Treasure Waltz, op. 418"]
+artist = ["Johann Strauss"]
+artists = ["Johann Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
+
+[[picard_track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Thunder and Lightning, op. 324"]
+artist = ["Johann Strauss"]
+artists = ["Johann Strauss"]
+album = ["Vienna"]
+albumartist = ["Chicago Symphony Orchestra, Fritz Reiner"]
+date = ["2006"]
 
 # What each store sent, trimmed as [sources] says.
 [stores]
