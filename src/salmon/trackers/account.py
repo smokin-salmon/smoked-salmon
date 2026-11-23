@@ -168,6 +168,11 @@ async def requests_on_this_loop() -> AsyncIterator[None]:
         await _close_pools(loop)
 
 
+def web_running() -> bool:
+    """Whether salmon web runs in this process: its jobs' tracker requests run on its loop."""
+    return _request_loop is not None
+
+
 def handing_over() -> bool:
     """Whether a tracker request made here runs on another loop: salmon web's, from a job's own loop."""
     loop = _request_loop

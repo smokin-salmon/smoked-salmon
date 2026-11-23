@@ -6,6 +6,7 @@ Each test edits a copy of the config in tmp_path, never the one the run loaded. 
 """
 
 import asyncio
+import re
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -132,3 +133,19 @@ def test_login_error_points_to_settings(config: Path, kind: Callable[[str, Any],
         assert job.error is not None and LOGIN_HINT in job.error
 
     _web(config, FakeTracker(), test)
+
+
+def test_missing_folder_does_not_fail_jobs(config: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A download folder or library that is offline fails no job: a job's start reads the trackers only."""
+    offline = "download_directory = '/nonexistent/salmon-music'"
+    config.write_text(re.sub(r"(?m)^download_directory = .*$", offline, config.read_text()), encoding="utf-8")
+    fake = FakeTracker()
+    point_at(monkeypatch, {"RED": fake})
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job = await _check(client, manager)
+        assert job.status == "done", job.error
+
+    _web(config, fake, test)
+
+    assert fake.credentials == ["test-session-red", OLD_KEY]

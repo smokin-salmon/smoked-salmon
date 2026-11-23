@@ -31,11 +31,13 @@ client, and each client belongs to one job.
 - `salmon.trackers.credentials` holds a snapshot of each tracker's session cookie and API key in a contextvar.
   `RedApi`, `OpsApi` and `DICApi` read their cookie and key through it when they are built. Without a snapshot (the
   CLI, anything outside a job), they read `cfg` as loaded. `cfg` itself is never changed.
-- `JobManager._run` reads `config.toml` and validates the whole file as a start does, then sets the snapshot along
-  with the job's other context. It does this when the job starts running, not when it was queued. A running job keeps
+- `JobManager._run` reads `config.toml`, and checks its tracker tables as a start does (old keys and placeholders
+  included), then sets the snapshot along with the job's other context. The rest of the file is not checked again: a
+  library or download folder that is offline (a NAS) must not stop jobs that never touch it. It does this when the job starts running, not when it was queued. A running job keeps
   its snapshot until it ends, so an upload never changes credentials part way. The job's tasks inherit the snapshot,
   and `run_on_request_loop` carries it to the request loop.
-- A file that cannot be read or would not load fails the job before anything is sent, with the file and the reason.
+- A file that cannot be read or decoded, or whose tracker tables would be refused, fails the job before anything is
+  sent, with the file and the reason.
   There is no fallback to the credentials salmon started with, which the user can no longer see.
 - The trackers stay those salmon started with. A tracker removed from the file fails a job only when that job builds
   its client, saying a restart is needed. A tracker added to the file is ignored until a restart. Only the session
@@ -59,12 +61,16 @@ rewrites the user's config file").
   itself: old keys, placeholders and defaults are handled as 0005 says, by warnings, and never written back.
 - The whole edited text is read as a start reads it before anything is written. A change that would leave a config
   salmon refuses is not written, and its reason is shown.
-- The file is written to a temporary file in the same folder, then moved over it with `os.replace`, keeping its mode
-  and the symlink it may be reached through. If that fails, as it does for a config bind-mounted on its own into a
-  container, the file is written in place. A file salmon may not write is never written, and the page says so.
+- The file is written to a temporary file in the same folder, then moved over it with `os.replace`, keeping its mode,
+  its owner and the symlink it may be reached through. When the folder takes no new file, the owner cannot be kept
+  (salmon not running as the file's owner, nor as root) or the move fails (a config bind-mounted on its own into a
+  container), the file is written in place instead. A temporary file that cannot be written (a full disk) leaves the
+  config as it was. A file salmon may not write is never written, and the page says so.
 - `GET /api/settings/trackers` never returns a stored value. For each credential it gives whether it is set and,
   for a value of 16 characters or more, its last 4. Each saved value is added to the redaction filter before
   anything could repeat it.
+- A request a tracker sends to its login page says, under salmon web, that a new cookie can be pasted on the
+  Settings page.
 - After a save, the page runs the connection check for that tracker as a job: at most two requests, and only because
   the user saved. Nothing is checked on page load.
 
@@ -73,8 +79,9 @@ rewrites the user's config file").
 - No restart is needed to renew a cookie or rotate a key, from the page or by editing the file by hand.
 - `cfg` stays read-only, and 0004's rule stands that a runtime write to it is a bug. What can change while the
   server runs is the snapshot a job reads when it starts.
-- Every web job reads and validates the config when it starts. A config broken by a hand edit stops new jobs, with
-  the reason, instead of being ignored.
+- Every web job reads the config when it starts. A config whose tracker tables a hand edit broke stops new jobs,
+  with the reason, instead of being ignored. A save checks the whole file, so it is refused while a folder the config
+  names is offline.
 - Each save adds one connection check, at most two requests to that tracker.
 - Ruled out: loading `cfg` again or replacing it, adding or removing a tracker without a restart, the page showing
   or editing any other setting, and a fallback to the credentials salmon started with.

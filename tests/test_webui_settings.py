@@ -192,3 +192,15 @@ def test_post_needs_json_and_auth(tmp_path: Path) -> None:
     _with_client(config, test)
 
     assert config.read_bytes() == before
+
+
+def test_save_on_an_unparsable_file_is_refused_not_crashed(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    config.write_text("[tracker", encoding="utf-8")
+
+    async def test(client: TestClient, _app: Any) -> None:
+        response = await client.post("/api/settings/trackers/RED", json={"session": NEW_COOKIE}, headers=AUTH)
+        assert response.status == 422
+        assert str(config) in (await response.json())["detail"]
+
+    _with_client(config, test)

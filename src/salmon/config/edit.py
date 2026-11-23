@@ -61,18 +61,28 @@ def _read(path: Path) -> str:
 
 
 def read_credentials(path: Path) -> dict[str, Credentials]:
-    """Each tracker's credentials in the config at ``path``, by site code, once the whole file is read as a start does.
+    """Each tracker's credentials in the config at ``path``, by site code: what a salmon web job reads as it starts.
+
+    Only the tracker tables are checked, the old keys read as a start reads them: a folder of the config that is
+    offline (a library on a NAS) must fail no job. A save checks the whole file (``update_credentials``).
 
     Raises:
-        ConfigEditError: If the file cannot be read, or salmon would refuse it.
+        ConfigEditError: If the file cannot be read, or its trackers' session or api_key would be refused.
     """
-    config = _parsed(_read(path), path)
-    found: dict[str, Credentials] = {}
-    for code in TRACKER_CODES:
-        tracker = getattr(config.tracker, code.lower())
-        if tracker is not None:
-            found[code] = Credentials(tracker.session, tracker.api_key)
-    return found
+    text = _read(path)
+    try:
+        with compat.quiet():
+            raw = msgspec.toml.decode(text)
+            compat.apply(raw, path)
+        tables = raw.get("tracker")
+        found: dict[str, Credentials] = {}
+        for code in TRACKER_CODES:
+            table = tables.get(code.lower()) if isinstance(tables, dict) else None
+            if table is not None:
+                found[code] = msgspec.convert(table, type=Credentials)
+        return found
+    except (msgspec.MsgspecError, ValueError) as e:
+        raise ConfigEditError(f"{path}: {e}") from None
 
 
 def writable(path: Path) -> bool:
@@ -81,13 +91,20 @@ def writable(path: Path) -> bool:
 
 
 def _string(old: object, value: str) -> String:
-    """``value`` as a TOML string, in single quotes when the old value was and the new one allows it."""
-    literal = isinstance(old, String) and old.type is StringType.SLL and "'" not in value and "\n" not in value
+    """``value`` as a TOML string, in single quotes when the old value was and the new one allows it.
+
+    A single-quoted string cannot hold a quote or a control character; a double-quoted one escapes them.
+    """
+    literal = isinstance(old, String) and old.type is StringType.SLL and "'" not in value and value.isprintable()
     return tomlkit.string(value, literal=literal)
 
 
 def _edited(text: str, path: Path, code: str, update: CredentialsUpdate) -> str:
-    doc = tomlkit.parse(text)
+    try:
+        doc = tomlkit.parse(text)
+    except ValueError as e:
+        # Where the file is broken, never what it holds.
+        raise ConfigEditError(f"{path}: {e}") from None
     tracker = doc.get("tracker")
     table = tracker.get(code.lower()) if isinstance(tracker, dict) else None
     if not isinstance(table, dict):
@@ -103,28 +120,53 @@ def _edited(text: str, path: Path, code: str, update: CredentialsUpdate) -> str:
 
 
 def _write(path: Path, text: str) -> None:
-    """Write ``text`` to the file at ``path``: to a new file beside it, then moved over it, with the old file's mode.
+    """Write ``text`` to the file at ``path``: to a new file beside it with the old one's mode and owner, moved over it.
 
-    A move cannot leave a file cut short if salmon stops part way. When the folder takes no new file or the move
-    fails (a config bind-mounted on its own into a container), the file is written in place instead.
+    A move cannot leave a file cut short if salmon stops part way. When the folder takes no new file, the owner cannot
+    be kept or the move fails (a config bind-mounted on its own into a container), the file is written in place.
+
+    Raises:
+        OSError: If the new file cannot be written (a full disk), the file being left as it was, or the write in
+            place fails.
     """
     real = path.resolve()
-    mode = stat.S_IMODE(real.stat().st_mode)
-    temp: str | None = None
     try:
         fd, temp = tempfile.mkstemp(dir=real.parent, prefix=".config.toml.")
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            os.fchmod(f.fileno(), mode)
-            f.write(text)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(temp, real)
-        return
     except OSError:
-        if temp is not None:
-            with suppress(OSError):
-                os.unlink(temp)
-    real.write_text(text, encoding="utf-8")
+        real.write_text(text, encoding="utf-8")
+        return
+    try:
+        moved = _replace(real, fd, temp, text)
+    finally:
+        with suppress(FileNotFoundError):
+            os.unlink(temp)
+    if not moved:
+        real.write_text(text, encoding="utf-8")
+
+
+def _replace(real: Path, fd: int, temp: str, text: str) -> bool:
+    """Write ``text`` to the new file ``temp`` (open as ``fd``) with ``real``'s mode and owner, and move it over it.
+
+    Returns:
+        False, nothing changed, when the owner cannot be kept or the move fails: the caller writes in place.
+    """
+    st = real.stat()
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        os.fchmod(f.fileno(), stat.S_IMODE(st.st_mode))
+        if hasattr(os, "fchown"):
+            try:
+                os.fchown(f.fileno(), st.st_uid, st.st_gid)
+            except PermissionError:
+                # Moved over theirs, salmon's file would make the config salmon's (root's, in the Docker image).
+                return False
+        f.write(text)
+        f.flush()
+        os.fsync(f.fileno())
+    try:
+        os.replace(temp, real)
+    except OSError:
+        return False
+    return True
 
 
 def update_credentials(path: Path, code: str, update: CredentialsUpdate) -> None:

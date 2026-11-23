@@ -200,3 +200,81 @@ def test_reading_prints_no_config_warnings(tmp_path: Path, capsys: pytest.Captur
 
     assert capsys.readouterr() == ("", "")
     assert compat.config_warnings == warnings_before
+
+
+# --- From the branch review --------------------------------------------------------------
+
+
+def test_read_credentials_ignores_missing_folders(tmp_path: Path) -> None:
+    """A job's start reads the trackers only: a library or download folder that is offline fails no job."""
+    path = _config(tmp_path)
+    (tmp_path / "music").rmdir()
+
+    assert read_credentials(path)["RED"].session == "test-session-red"
+
+
+def test_read_credentials_refuses_a_bad_tracker_table(tmp_path: Path) -> None:
+    path = _config(tmp_path, _template(tmp_path).replace("session = 'test-session-red'", "session = 5"))
+
+    with pytest.raises(ConfigEditError, match=str(path)):
+        read_credentials(path)
+
+
+def test_update_keeps_owner(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = _config(tmp_path)
+    st = path.stat()
+    owners: list[tuple[int, int]] = []
+    monkeypatch.setattr(os, "fchown", lambda _fd, uid, gid: owners.append((uid, gid)))
+
+    update_credentials(path, "RED", CredentialsUpdate(session="new-cookie"))
+
+    assert owners == [(st.st_uid, st.st_gid)]
+
+
+def test_update_writes_in_place_when_owner_cannot_be_kept(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = _config(tmp_path)
+    replaced: list[str] = []
+
+    def refuse(_fd: int, _uid: int, _gid: int) -> None:
+        raise PermissionError(errno.EPERM, "Operation not permitted")
+
+    monkeypatch.setattr(os, "fchown", refuse)
+    monkeypatch.setattr(os, "replace", lambda src, dst: replaced.append(dst))
+
+    update_credentials(path, "RED", CredentialsUpdate(session="new-cookie"))
+
+    assert replaced == []
+    assert read_credentials(path)["RED"].session == "new-cookie"
+    assert _leftovers(tmp_path) == []
+
+
+def test_failed_temp_write_leaves_file_untouched(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = _config(tmp_path)
+    before = path.read_bytes()
+
+    def full(_fd: int) -> None:
+        raise OSError(errno.ENOSPC, "No space left on device")
+
+    monkeypatch.setattr(os, "fsync", full)
+
+    with pytest.raises(ConfigEditError, match=str(path)):
+        update_credentials(path, "RED", CredentialsUpdate(session="new-cookie"))
+
+    assert path.read_bytes() == before
+    assert _leftovers(tmp_path) == []
+
+
+def test_update_of_an_unparsable_file_names_it(tmp_path: Path) -> None:
+    path = _config(tmp_path, "[tracker")
+
+    with pytest.raises(ConfigEditError, match=str(path)):
+        update_credentials(path, "RED", CredentialsUpdate(session="new-cookie"))
+
+
+def test_control_characters_are_written_escaped(tmp_path: Path) -> None:
+    path = _config(tmp_path)
+    value = "cookie\r-12\x7f-3456789"
+
+    update_credentials(path, "RED", CredentialsUpdate(session=value))
+
+    assert read_credentials(path)["RED"].session == value

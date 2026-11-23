@@ -10,6 +10,7 @@ import pytest
 import salmon.trackers
 from salmon import cfg
 from salmon.config.edit import Credentials
+from salmon.trackers import account
 from salmon.trackers.credentials import TrackerRemovedError, secrets_of, using
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
@@ -60,3 +61,12 @@ def test_secrets_of_includes_cookie_forms_and_key() -> None:
 
     assert {"a/b+c", "a%2Fb%2Bc", "a-key"} <= set(found)
     assert "" not in found
+
+
+def test_login_message_points_to_settings_under_salmon_web(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An upload catches the LoginError and goes on: the request's own message is what the user reads."""
+    assert "Settings page" not in RedApi().login_page_message()
+
+    monkeypatch.setattr(account, "_request_loop", object())
+
+    assert "Settings page" in RedApi().login_page_message()
