@@ -117,7 +117,9 @@ def test_a_json_store_answering_200_with_a_check_page_names_its_title(monkeypatc
                 await deezer.Scraper().scrape_release("https://www.deezer.com/album/1", rls_id="1")
             return str(excinfo.value)
 
-    assert '(HTTP 200, page titled "Client Challenge")' in anyio.run(run)
+    message = anyio.run(run)
+
+    assert '(HTTP 200, page titled "Client Challenge")' in message
 
 
 def test_deezers_internal_page_answering_200_with_a_check_page_names_its_title(monkeypatch) -> None:
@@ -136,7 +138,9 @@ def test_deezers_internal_page_answering_200_with_a_check_page_names_its_title(m
                 await deezer.Scraper().scrape_release("https://www.deezer.com/album/1", rls_id="1")
             return str(excinfo.value)
 
-    assert '(HTTP 200, page titled "Client Challenge")' in anyio.run(run)
+    message = anyio.run(run)
+
+    assert '(HTTP 200, page titled "Client Challenge")' in message
 
 
 def test_the_query_and_the_fragment_appear_nowhere() -> None:
