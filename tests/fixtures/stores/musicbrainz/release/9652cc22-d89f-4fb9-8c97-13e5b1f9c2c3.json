@@ -1,0 +1,2036 @@
+{
+ "id": "9652cc22-d89f-4fb9-8c97-13e5b1f9c2c3",
+ "title": "Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme",
+ "date": "1995-01-01",
+ "barcode": "028944741322",
+ "artist-credit": [
+  {
+   "name": "Antonín Dvořák",
+   "joinphrase": "; ",
+   "artist": {
+    "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+    "name": "Antonín Dvořák",
+    "aliases": [
+     {
+      "name": "A. Dvorak",
+      "sort-name": "A. Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Anton Dvorak",
+      "sort-name": "Anton Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Anton Dvorák",
+      "sort-name": "Anton Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvorak",
+      "sort-name": "Dvorak, Antonin",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Antonin Dvorak",
+      "sort-name": "Antonin Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvorák",
+      "sort-name": "Antonin Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvoŕàk",
+      "sort-name": "Antonin Dvoŕàk",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonin Dvořák",
+      "sort-name": "Antonin Dvořák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonmn Dvorak",
+      "sort-name": "Antonmn Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín DvoYák",
+      "sort-name": "Antonín DvoYák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvorak",
+      "sort-name": "Antonín Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvorák",
+      "sort-name": "Antonín Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvorák (1841 - 1904)",
+      "sort-name": "Antonín Dvorák (1841 - 1904)",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvo·ák",
+      "sort-name": "Antonín Dvo·ák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Antonín Dvořák",
+      "sort-name": "Dvořák, Antonín",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "cs",
+      "primary": true
+     },
+     {
+      "name": "Antonín Dvořák",
+      "sort-name": "Dvořák, Antonín",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Antonín Dvořák",
+      "sort-name": "Dvořák, Antonín",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sv",
+      "primary": true
+     },
+     {
+      "name": "Antonín Leopold Dvořák",
+      "sort-name": "Dvořák, Antonín Leopold",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "cs",
+      "primary": false
+     },
+     {
+      "name": "Antonín Leopold Dvořák",
+      "sort-name": "Dvořák, Antonín Leopold",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "sv",
+      "primary": false
+     },
+     {
+      "name": "Devorak",
+      "sort-name": "Devorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvirak",
+      "sort-name": "Dvirak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorak",
+      "sort-name": "Dvorak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorak, Antonin (1841-1904)",
+      "sort-name": "Dvorak, Antonin (1841-1904)",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorzak",
+      "sort-name": "Dvorzak",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvorák",
+      "sort-name": "Dvorák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dvořák",
+      "sort-name": "Dvořák",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "アントニン・ドヴォルザーク",
+      "sort-name": "アントニン・ドヴォルザーク",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "ドボルザーク",
+      "sort-name": "ドボルザーク",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ドヴォルザック",
+      "sort-name": "ドヴォルザック",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ドヴォルザーク",
+      "sort-name": "ドヴォルザーク",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "Pyotr Ilyich Tchaikovsky",
+   "joinphrase": "; ",
+   "artist": {
+    "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+    "name": "Пётр Ильич Чайковский",
+    "aliases": [
+     {
+      "name": "Chaikovsky",
+      "sort-name": "Chaikovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ciaikosvsky",
+      "sort-name": "Ciaikosvsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ciaikovsky",
+      "sort-name": "Ciaikovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Csajkovszkij",
+      "sort-name": "Csajkovszkij",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Hich",
+      "sort-name": "Hich",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "II'yich",
+      "sort-name": "II'yich",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Il'yich",
+      "sort-name": "Il'yich",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ilic",
+      "sort-name": "Ilic",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ilich",
+      "sort-name": "Ilich",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ilitsch",
+      "sort-name": "Ilitsch",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Iljitsch",
+      "sort-name": "Iljitsch",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Illich",
+      "sort-name": "Illich",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Illitch",
+      "sort-name": "Illitch",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Illyich",
+      "sort-name": "Illyich",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ilych",
+      "sort-name": "Ilych",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Ilyitch",
+      "sort-name": "Ilyitch",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Llyich",
+      "sort-name": "Llyich",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "P. Čaikovskis",
+      "sort-name": "P. Čaikovskis",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Peter I. Tschaikowsky",
+      "sort-name": "Tschaikowsky, Peter I.",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Peter Ilich Tchaikovsky",
+      "sort-name": "Tchaikovsky, Peter Ilich",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Peter Iljitsch Tschaikowsky",
+      "sort-name": "Tschaikowsky, Peter Iljitsch",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Peter Ilyich Tchaikovsky",
+      "sort-name": "Tchaikovsky, Peter Ilyich",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Peter Tchaikovsky",
+      "sort-name": "Tchaikovsky, Peter",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Peter Tschaikovsky",
+      "sort-name": "Peter Tschaikovsky",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Peter Tschaikowsky",
+      "sort-name": "Tschaikowsky, Peter",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Petr Ilich Chajkovskij",
+      "sort-name": "Petr Ilich Chajkovskij",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Piotr Czajkowski",
+      "sort-name": "Czajkowski, Piotr",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "pl",
+      "primary": true
+     },
+     {
+      "name": "Piotr Ilitch Tchaïkovski",
+      "sort-name": "Tchaïkovski, Piotr Ilitch",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "fr",
+      "primary": true
+     },
+     {
+      "name": "Piotr Ilitch Tchaïkovski",
+      "sort-name": "Tchaïkovski, Piotr Ilitch",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "fr",
+      "primary": false
+     },
+     {
+      "name": "Piotr Iljitsch Tschaikowski",
+      "sort-name": "Tschaikowski",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Piotr Iljič Čajkovskij",
+      "sort-name": "Piotr Iljič Čajkovskij",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sk",
+      "primary": true
+     },
+     {
+      "name": "Piotr Ilyich Tchaikovski",
+      "sort-name": "Tchaikovski, Piotr Ilyich",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "pt_PT",
+      "primary": true
+     },
+     {
+      "name": "Piotr Ilyich Tchaikovsky",
+      "sort-name": "Tchaikovsky, Piotr Ilyich",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pjotr Iljics Csajkovszkij",
+      "sort-name": "Csajkovszkij, Pjotr Iljics",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "hu",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Iljitj Tjajkovskij",
+      "sort-name": "Tjajkovskij, Pjotr Iljitj",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "da",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Iljitj Tjajkovskij",
+      "sort-name": "Tjajkovskij, Pjotr Iljitj",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "sv",
+      "primary": false
+     },
+     {
+      "name": "Pjotr Iljitsch Tschaikowski",
+      "sort-name": "Tschaikowski, Pjotr Iljitsch",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Iljitsj Tsjaikovski",
+      "sort-name": "Tsjaikovski, Pjotr Iljitsj",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "nl",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Iljitsj Tsjaíkovskíj",
+      "sort-name": "Tsjaíkovskíj, Pjotr Iljitsj",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "is",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Tjajkovskij",
+      "sort-name": "Tjajkovskij, Pjotr",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sv",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Tsjaikofski",
+      "sort-name": "Tsjaikofski, Pjotr",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "af",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Tsjajkovskij",
+      "sort-name": "Pjotr Tsjajkovskij",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "nb",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Tsjajkovskij",
+      "sort-name": "Tsjajkovskij, Pjotr",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "nn",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Tšaikovski",
+      "sort-name": "Tšaikovski, Pjotr",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "et",
+      "primary": true
+     },
+     {
+      "name": "Pjotr Tšaikovski",
+      "sort-name": "Tšaikovski, Pjotr",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "fi",
+      "primary": true
+     },
+     {
+      "name": "Pjotrs Čaikovskis",
+      "sort-name": "Čaikovskis, Pjotrs",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "lv",
+      "primary": false
+     },
+     {
+      "name": "Pyotor",
+      "sort-name": "Pyotor",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pyotr Il'yich Tchaikovsky",
+      "sort-name": "Pyotr Il'yich Tchaikovsky",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pyotr Ilyich Tchaikovsky",
+      "sort-name": "Tchaikovsky, Pyotr Ilyich",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Pyotr Tchaikovsky",
+      "sort-name": "Tchaikovsky, Pyotr",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Pyotr İlyiç Çaykovski",
+      "sort-name": "Pyotr İlyiç Çaykovski",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "tr",
+      "primary": true
+     },
+     {
+      "name": "Pëtr Il’ič Čajkovskij",
+      "sort-name": "Čajkovskij, Pëtr Il’ič",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "it",
+      "primary": true
+     },
+     {
+      "name": "Pēteris Čaikovskis",
+      "sort-name": "Čaikovskis, Pēteris",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "lv",
+      "primary": true
+     },
+     {
+      "name": "Tchaikivsky",
+      "sort-name": "Tchaikivsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikoskvy",
+      "sort-name": "Tchaikoskvy",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovisky",
+      "sort-name": "Tchaikovisky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovshy",
+      "sort-name": "Tchaikovshy",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovski",
+      "sort-name": "Tchaikovski",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovskij",
+      "sort-name": "Tchaikovskij",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovsky",
+      "sort-name": "Tchaikovsky",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Tchaikovsky Pyotr Ilyich",
+      "sort-name": "Tchaikovsky P.I.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovskyes",
+      "sort-name": "Tchaikovskyes",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovskys",
+      "sort-name": "Tchaikovskys",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovsly",
+      "sort-name": "Tchaikovsly",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikovsy",
+      "sort-name": "Tchaikovsy",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikowski",
+      "sort-name": "Tchaikowski",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaikowsky",
+      "sort-name": "Tchaikowsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchailovisky",
+      "sort-name": "Tchailovisky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchakovsky",
+      "sort-name": "Tchakovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchaïkovki",
+      "sort-name": "Tchaïkovki",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchiakovsky",
+      "sort-name": "Tchiakovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tchikovsky",
+      "sort-name": "Tchikovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tjakovski",
+      "sort-name": "Tjakovski",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tjakovsky",
+      "sort-name": "Tjakovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tschaikovsky",
+      "sort-name": "Tschaikovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tschaikowski",
+      "sort-name": "Tschaikowski",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tschaikowskij",
+      "sort-name": "Tschaikowskij",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tschaikowsky",
+      "sort-name": "Tschaikowsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tsjaikovski",
+      "sort-name": "Tsjaikovski",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tsjaikovsky",
+      "sort-name": "Tsjaikovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Tsjajkovskij",
+      "sort-name": "Tsjajkovskij",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Txhaikovsky",
+      "sort-name": "Txhaikovsky",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Èajkovskij",
+      "sort-name": "Èajkovskij",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Čajkovski",
+      "sort-name": "Čajkovski",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Петр Ильич Чайковский",
+      "sort-name": "Петр Ильич Чайковский",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Петро Ілліч Чайковський",
+      "sort-name": "Чайковський, Петро Ілліч",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "uk",
+      "primary": true
+     },
+     {
+      "name": "Пётр Ильич Чайковский",
+      "sort-name": "Чайковский, Пётр Ильич",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "ru",
+      "primary": false
+     },
+     {
+      "name": "Пётр Чайковский",
+      "sort-name": "Чайковский, Пётр",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ru",
+      "primary": true
+     },
+     {
+      "name": "بيتر إليتش تشايكوفسكي",
+      "sort-name": "بيتر إليتش تشايكوفسكي",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ar",
+      "primary": true
+     },
+     {
+      "name": "チャイコフスキー",
+      "sort-name": "チャイコフスキー",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "ピョートル・チャイコフスキー",
+      "sort-name": "ピョートル・チャイコフスキー",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     },
+     {
+      "name": "彼得·伊里奇·柴可夫斯基",
+      "sort-name": "彼得·伊里奇·柴可夫斯基",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh",
+      "primary": true
+     },
+     {
+      "name": "彼得·伊里奇·柴科夫斯基",
+      "sort-name": "彼得·伊里奇·柴科夫斯基",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "zh",
+      "primary": false
+     },
+     {
+      "name": "표트르 일리치 차이콥스키",
+      "sort-name": "차이콥스키, 표트르 일리치",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ko",
+      "primary": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "Mstislav Rostropovich",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+    "name": "Мстислав Ростропович",
+    "aliases": [
+     {
+      "name": "Mstislav Leopoldovitj Rostropovitj",
+      "sort-name": "Rostropovitj, Mstislav Leopoldovitj",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": "sv",
+      "primary": false
+     },
+     {
+      "name": "Mstislav Rostropovich",
+      "sort-name": "Rostropovich, Mstislav",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Mstislav Rostropovitch",
+      "sort-name": "Mstislav Rostropovitch",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Mstislav Rostropovitj",
+      "sort-name": "Rostropovitj, Mstislav",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "sv",
+      "primary": true
+     },
+     {
+      "name": "Mstislav Rostropovitsj",
+      "sort-name": "Rostropovitsj, Mstislav",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "nl",
+      "primary": true
+     },
+     {
+      "name": "Mstislaw Leopoldowitsch Rostropowitsch",
+      "sort-name": "Rostropowitsch, Mstislaw Leopoldowitsch",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Mstislaw Rostropowitsch",
+      "sort-name": "Rostropowitsch, Mstislaw",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": true
+     },
+     {
+      "name": "ムスティスラフ・ロストロポーヴィチ",
+      "sort-name": "ムスティスラフ・ロストロポーヴィチ",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "Berliner Philharmoniker",
+   "joinphrase": " & ",
+   "artist": {
+    "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+    "name": "Berliner Philharmoniker",
+    "aliases": [
+     {
+      "name": "BPO",
+      "sort-name": "BPO",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Berliini Filharmoonia Orkester",
+      "sort-name": "Berliini Filharmoonia Orkester",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "et",
+      "primary": true
+     },
+     {
+      "name": "Berlin Philharmonic",
+      "sort-name": "Berlin Philharmonic",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Berlin Philharmonic Orchestra",
+      "sort-name": "Berlin Philharmonic Orchestra",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Berlin Philharmoniker",
+      "sort-name": "Berlin Philharmoniker",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Berliner Philharmoniker",
+      "sort-name": "Berliner Philharmoniker",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "de",
+      "primary": true
+     },
+     {
+      "name": "Berliner Philharmonisches Orchester",
+      "sort-name": "Berliner Philharmonisches Orchester",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": false
+     },
+     {
+      "name": "Orchestre philharmonique de Berlin",
+      "sort-name": "Orchestre philharmonique de Berlin",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "fr",
+      "primary": true
+     },
+     {
+      "name": "Orquesta filarmónica de Berlín",
+      "sort-name": "Orquesta filarmónica de Berlín",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "es",
+      "primary": true
+     },
+     {
+      "name": "The Berlin Philharmonic Orchestra",
+      "sort-name": "Berlin Philharmonic Orchestra, The",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "ベルリン・フィルハーモニー・ブラスオルケスター",
+      "sort-name": "ベルリン・フィルハーモニー・ブラスオルケスター",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": false
+     },
+     {
+      "name": "ベルリン・フィルハーモニー管弦楽団",
+      "sort-name": "ベルリン・フィルハーモニーかんげんがくだん",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "Herbert von Karajan",
+   "joinphrase": "",
+   "artist": {
+    "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+    "name": "Herbert von Karajan",
+    "aliases": [
+     {
+      "name": "Herbert von Karajan",
+      "sort-name": "Karajan, Herbert von",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "de",
+      "primary": true
+     },
+     {
+      "name": "Herbert von Karajan",
+      "sort-name": "Karajan, Herbert von",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Heribert Ritter von Karajan",
+      "sort-name": "Heribert Ritter von Karajan",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Karajan, Herbert von",
+      "sort-name": "Karajan, Herbert von",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ヘルベルト・フォン・カラヤン",
+      "sort-name": "ヘルベルト・フォン・カラヤン",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  }
+ ],
+ "release-group": {
+  "id": "b8846370-c565-336f-a030-3be550addf52",
+  "title": "Dvořák: Cellokonzert / Tschaikowsky: Rokoko‐Variationen",
+  "first-release-date": "1969",
+  "primary-type": "Album",
+  "secondary-types": [],
+  "artist-credit": [
+   {
+    "name": "Dvořák",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+     "name": "Antonín Dvořák"
+    }
+   },
+   {
+    "name": "Tschaikowsky",
+    "joinphrase": "; ",
+    "artist": {
+     "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+     "name": "Пётр Ильич Чайковский"
+    }
+   },
+   {
+    "name": "Berliner Philharmoniker",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+     "name": "Berliner Philharmoniker"
+    }
+   },
+   {
+    "name": "Mstislav Rostropovich",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+     "name": "Мстислав Ростропович"
+    }
+   },
+   {
+    "name": "Herbert von Karajan",
+    "joinphrase": "",
+    "artist": {
+     "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+     "name": "Herbert von Karajan"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "1995-01-01"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": null,
+   "label": {
+    "name": "Deutsche Grammophon"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "Digital Media",
+   "tracks": [
+    {
+     "id": "d3fb89e9-b8c9-439a-915e-b6479a82f27c",
+     "position": 1,
+     "number": "1",
+     "title": "Konzert für Violoncello und Orchester h‐moll, op. 104: 1. Allegro",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3ab82b64-c019-4764-a4cc-8668b9554498",
+      "title": "Concerto for Cello and Orchestra in B minor, op. 104: I. Allegro",
+      "first-release-date": "1969",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Orquesta Filarmónica de Berlín",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2cb5a30c-5200-47bd-9f3e-db208234c728",
+     "position": 2,
+     "number": "2",
+     "title": "Konzert für Violoncello und Orchester h‐moll, op. 104: 2. Adagio ma non troppo",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "7e2e13c0-1a5b-4532-a680-010941fe4bf6",
+      "title": "Concerto for Cello and Orchestra in B minor, op. 104: II. Adagio ma non troppo",
+      "first-release-date": "1969",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Orquesta Filarmónica de Berlín",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b9177470-78d6-4b29-9ea0-b285c4fa4569",
+     "position": 3,
+     "number": "3",
+     "title": "Konzert für Violoncello und Orchester h‐moll, op. 104: 3. Finale. Allegro moderato",
+     "artist-credit": [
+      {
+       "name": "Antonín Dvořák",
+       "joinphrase": "",
+       "artist": {
+        "id": "819eaeb2-8dd8-48a5-ad07-0bcd137985ef",
+        "name": "Antonín Dvořák"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ca250f48-c56f-4fb5-bf8c-0246682cf7be",
+      "title": "Concerto for Cello and Orchestra in B minor, op. 104: III. Finale - Allegro moderato",
+      "first-release-date": "1969",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Orquesta Filarmónica de Berlín",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "28018968-e424-4649-831c-bd8ed433d951",
+     "position": 4,
+     "number": "4",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Moderato quasi Andante",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "3795841e-c604-4100-ad43-a8b105592599",
+      "title": "Variations on a Rococo Theme, op. 33: Moderato quasi andante",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e238035f-4f93-4ba2-96ff-9f3ebef138ad",
+     "position": 5,
+     "number": "5",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Tema. Moderato semplice",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "beaedeb5-7ac2-4df8-aae9-a8d22541f33d",
+      "title": "Variations on a Rococo Theme, op. 33: Tema. Moderato semplice",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0254f0ee-25ac-405f-ba5c-b6382b855c26",
+     "position": 6,
+     "number": "6",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Variazione I. Tempo del Tema",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2a32d526-35c2-4296-8e31-db1a5c1378ed",
+      "title": "Variations on a Rococo Theme for Cello and Orchestra, op. 33: Variation I. Tempo del tema",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "455a4f2f-2e42-4bcb-b3b1-bb43ecc97f63",
+     "position": 7,
+     "number": "7",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Variazione II. Tempo del Tema",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "67c92fe7-50c8-4dae-882f-ab272312b28d",
+      "title": "Variations on a Rococo Theme for Cello and Orchestra, op. 33: Variation II. Tempo del tema",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2a326921-5003-40c1-9cc4-e94f232c7c33",
+     "position": 8,
+     "number": "8",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Variazione III. Andante sostenuto",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4e0bf388-b8a6-46fa-a241-b48c6abbd390",
+      "title": "Variations on a Rococo Theme for Cello and Orchestra, op. 33: Variation III. Andante sostenuto",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "7adf43f0-ceca-4ce8-ac31-e49c071b0584",
+     "position": 9,
+     "number": "9",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Variazione IV. Andante grazioso",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8a3aff0b-9a0f-4297-8661-629c5074fdbe",
+      "title": "Variations on a Rococo Theme for Cello and Orchestra, op. 33: Variation IV. Andante grazioso",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "333501af-b890-4f63-bd8f-8b87f45bf02d",
+     "position": 10,
+     "number": "10",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Variazione V. Allegro moderato",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "eb031133-7746-4e1c-8c37-11df53205cd1",
+      "title": "Variations on a Rococo Theme for Cello and Orchestra, op. 33: Variation V. Allegro moderato",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "967351be-16ad-403a-ad91-9047966b103e",
+     "position": 11,
+     "number": "11",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Variazione VI. Andante",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "343d62cf-e7f0-42ed-9bdd-481ea28f0705",
+      "title": "Variations on a Rococo Theme for Cello and Orchestra, op. 33: Variation VI. Andante",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "327178ab-9dce-4c3b-9300-c5bba4b7c398",
+     "position": 12,
+     "number": "12",
+     "title": "Variationen über ein Rokoko‐Thema für Violoncello und Orchester, op. 33: Variazione VII. Allegro vivo",
+     "artist-credit": [
+      {
+       "name": "Peter Ilyich Tchaikovsky",
+       "joinphrase": "",
+       "artist": {
+        "id": "9ddd7abc-9e1b-471d-8031-583bc6bc8be9",
+        "name": "Пётр Ильич Чайковский"
+       }
+      }
+     ],
+     "recording": {
+      "id": "d40d0fe1-5cac-40a3-8cc3-8a8bcaeb005b",
+      "title": "Variations on a Rococo Theme for Cello and Orchestra, op. 33: Variation VII. Allegro vivo",
+      "first-release-date": "1985",
+      "artist-credit": [
+       {
+        "name": "Mstislav Rostropovich",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e2b294b7-f705-4317-a96b-fd94da3719e5",
+         "name": "Мстислав Ростропович"
+        }
+       },
+       {
+        "name": "Berliner Philharmoniker",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "dea28aa9-1086-4ffa-8739-0ccc759de1ce",
+         "name": "Berliner Philharmoniker"
+        }
+       },
+       {
+        "name": "Herbert von Karajan",
+        "joinphrase": "",
+        "artist": {
+         "id": "d2ced2f1-6b58-47cf-ae87-5943e2ab6d99",
+         "name": "Herbert von Karajan"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

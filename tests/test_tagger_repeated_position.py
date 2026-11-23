@@ -51,7 +51,7 @@ def _deezer(*positions: tuple[int, int]) -> tuple[Any, Any]:
         }
         for i, (d, n) in enumerate(positions)
     ]
-    return deezer.Scraper(), {"tracklist": tracks}
+    return deezer.Scraper(), {"tracklist": tracks, "genres": {"data": []}}
 
 
 def _discogs(*positions: str) -> tuple[Any, Any]:

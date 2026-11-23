@@ -3,9 +3,13 @@ from collections import defaultdict
 from html import unescape
 
 from salmon.common import RE_FEAT, parse_copyright, re_split
+from salmon.common.credits import EXTRA_ROLES
 from salmon.common.strings import guests_from_title, unbracketed
 from salmon.sources import DeezerBase
-from salmon.tagger.sources.base import MetadataMixin, add_track, label_names_a_main_artist
+from salmon.tagger.sources.base import MetadataMixin, add_track, is_classical_release, label_names_a_main_artist
+
+# The roles Deezer gives under their own contributor key, read where EXTRA_ROLES asks.
+ROLE_KEYS = ("conductor", "composer")
 
 RECORD_TYPES = {
     "album": "Album",
@@ -51,8 +55,11 @@ class Scraper(DeezerBase, MetadataMixin):
 
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
+        extra = EXTRA_ROLES["classical"] if is_classical_release(self.parse_genres(soup)) else frozenset()
         for track in soup["tracklist"]:
-            artists, guessed = self.parse_artists(track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"])
+            artists, guessed = self.parse_artists(
+                track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"], extra
+            )
             new_track = self.generate_track(
                 trackno=track["TRACK_NUMBER"],
                 discno=track["DISK_NUMBER"],
@@ -79,18 +86,21 @@ class Scraper(DeezerBase, MetadataMixin):
             return "Self-Released"
         return data["label"]
 
-    def parse_artists(self, artists, default_artists, title):
+    def parse_artists(self, artists, default_artists, title, extra=frozenset()):
         """The track's credits as Deezer states them, then those salmon only guessed: the guests read from the title
-        that Deezer doesn't state as featuring, and the track's ARTISTS given as mains when it has no contributors."""
+        that Deezer doesn't state as featuring, and the track's ARTISTS given as mains when it has no contributors.
+        The roles in `extra` (a classical release's conductor and composer: EXTRA_ROLES) are read under their keys."""
         # Each contributor and track artist is one Deezer artist, so its name stays whole ("Earth, Wind & Fire").
         if artists:
             mains = [name.strip() for name in artists.get("mainartist", []) + artists.get("main_artist", [])]
             featured = [name.strip() for name in artists.get("featuredartist", []) + artists.get("featuring", [])]
             remixers = [name.strip() for name in artists.get("remixer", [])]
+            roles = [(role, [name.strip() for name in artists.get(role, [])]) for role in ROLE_KEYS if role in extra]
         else:
             mains, featured, remixers = [artist["ART_NAME"].strip() for artist in default_artists], [], []
+            roles = []
         result = []
-        for role, names in (("main", mains), ("guest", featured), ("remixer", remixers)):
+        for role, names in (("main", mains), ("guest", featured), ("remixer", remixers), *roles):
             for name in names:
                 if name and (name, role) not in result:
                     result.append((name, role))

@@ -18,6 +18,7 @@ from salmon.common.strings import (
 )
 from salmon.errors import GenreNotInWhitelist, ScrapeError
 from salmon.sources.base import Answer
+from salmon.tagger.tags import is_classical_genre
 
 
 def scrape_error_with_context(scraper: Any, url: str, error: ScrapeError) -> ScrapeError:
@@ -620,6 +621,14 @@ def _is_separate_word_in_combination(generic, combined):
     generic = generic.lower()
     combined_parts = re.split(r"\s*/\s*|\s*&\s*|\s+and\s+", combined.lower())
     return generic in combined_parts
+
+
+def is_classical_release(genres) -> bool:
+    """Whether these genres, a store's as sent or the release's merged ones, name a classical genre, read through
+    salmon's genre table ("Classique→Opéra" is Classical and Opera): the stating stores' gate for their classical roles
+    (EXTRA_ROLES), and clean_metadata's for its classical rule. Standardizing genres already standardized changes
+    nothing."""
+    return any(is_classical_genre(genre) for genre in standardize_genres([genre for genre in genres if genre]))
 
 
 def standardize_genres(genres):

@@ -1,0 +1,1743 @@
+{
+ "id": "9b5eabf5-4b82-380d-806e-034810816165",
+ "title": "Leonard Bernstein Conducts West Side Story",
+ "date": "1985-03-19",
+ "barcode": "028941525321",
+ "artist-credit": [
+  {
+   "name": "Leonard Bernstein",
+   "joinphrase": "; ",
+   "artist": {
+    "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+    "name": "Leonard Bernstein",
+    "aliases": [
+     {
+      "name": "Bernstein",
+      "sort-name": "Bernstein",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Bernstein, Leonard",
+      "sort-name": "Bernstein, Leonard",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "L.Bernstains",
+      "sort-name": "Bernstains, L.",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "lv",
+      "primary": false
+     },
+     {
+      "name": "Leon Bernstein (1918-1990)",
+      "sort-name": "Leon Bernstein (1918-1990)",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Leonard Bernstein",
+      "sort-name": "Bernstein, Leonard",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": true
+     },
+     {
+      "name": "Leonard Berstein",
+      "sort-name": "Leonard Berstein",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Leonard Berstein",
+      "sort-name": "Leonard Berstein",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Leonhard Bernstein",
+      "sort-name": "Leonhard Bernstein",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Original West Side Story Cast",
+      "sort-name": "Original West Side Story Cast",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "West Side Story",
+      "sort-name": "West Side Story",
+      "type": "Search hint",
+      "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "レナード・バーンスタイン",
+      "sort-name": "レナード・バーンスタイン",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "Kiri Te Kanawa",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+    "name": "Kiri Te Kanawa",
+    "aliases": [
+     {
+      "name": "Claire Mary Teresa Rawstron",
+      "sort-name": "Rawstron, Claire Mary Teresa",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dame Kiri Janette Te Kanawa",
+      "sort-name": "Dame Kiri Janette Te Kanawa",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Dame Kiri Te Kanawa",
+      "sort-name": "Dame Kiri Te Kanawa",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Kiri TeKanawa",
+      "sort-name": "Kiri TeKanawa",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Te Kanawa",
+      "sort-name": "Te Kanawa",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "José Carreras",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+    "name": "José Carreras",
+    "aliases": [
+     {
+      "name": "Carreras",
+      "sort-name": "Carreras",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Jose Carreras",
+      "sort-name": "Carreras, Jose",
+      "type": "Artist name",
+      "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+      "ended": false,
+      "locale": "en",
+      "primary": false
+     },
+     {
+      "name": "Jose Carreras",
+      "sort-name": "Jose Carreras",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "es",
+      "primary": true
+     },
+     {
+      "name": "Jose Carreras and Friends",
+      "sort-name": "Jose Carreras and Friends",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "Josep Carreras",
+      "sort-name": "Josep Carreras",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ca",
+      "primary": true
+     },
+     {
+      "name": "Josep Maria Carreras i Coll",
+      "sort-name": "Carreras i Coll, Josep Maria",
+      "type": "Legal name",
+      "type-id": "d4dcd0c0-b341-3612-a332-c0ce797b25cf",
+      "ended": false,
+      "locale": null,
+      "primary": null
+     },
+     {
+      "name": "ホセ・カレーラス",
+      "sort-name": "ホセ・カレーラス",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": "ja",
+      "primary": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "Tatiana Troyanos",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "2b2b45ef-c62c-4aee-bea1-823c9784f403",
+    "name": "Tatiana Troyanos",
+    "aliases": [
+     {
+      "name": "Tatiana Troyano",
+      "sort-name": "Tatiana Troyano",
+      "type": null,
+      "type-id": null,
+      "ended": false,
+      "locale": null,
+      "primary": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "Kurt Ollmann",
+   "joinphrase": ", ",
+   "artist": {
+    "id": "283467c1-da7f-4cda-bfd4-74b67811d709",
+    "name": "Kurt Ollmann",
+    "aliases": []
+   }
+  },
+  {
+   "name": "Marilyn Horne",
+   "joinphrase": "",
+   "artist": {
+    "id": "471087d4-3438-4f55-bb37-89cfe042b300",
+    "name": "Marilyn Horne",
+    "aliases": []
+   }
+  }
+ ],
+ "release-group": {
+  "id": "28224cf2-d8f7-32fe-94be-2a36ddc2651b",
+  "title": "West Side Story",
+  "first-release-date": "1985-03-19",
+  "primary-type": "Album",
+  "secondary-types": [
+   "Soundtrack"
+  ],
+  "artist-credit": [
+   {
+    "name": "Leonard Bernstein",
+    "joinphrase": "; ",
+    "artist": {
+     "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+     "name": "Leonard Bernstein"
+    }
+   },
+   {
+    "name": "Kiri Te Kanawa",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+     "name": "Kiri Te Kanawa"
+    }
+   },
+   {
+    "name": "José Carreras",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+     "name": "José Carreras"
+    }
+   },
+   {
+    "name": "Tatiana Troyanos",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "2b2b45ef-c62c-4aee-bea1-823c9784f403",
+     "name": "Tatiana Troyanos"
+    }
+   },
+   {
+    "name": "Kurt Ollmann",
+    "joinphrase": ", ",
+    "artist": {
+     "id": "283467c1-da7f-4cda-bfd4-74b67811d709",
+     "name": "Kurt Ollmann"
+    }
+   },
+   {
+    "name": "Marilyn Horne",
+    "joinphrase": "",
+    "artist": {
+     "id": "471087d4-3438-4f55-bb37-89cfe042b300",
+     "name": "Marilyn Horne"
+    }
+   }
+  ]
+ },
+ "release-events": [
+  {
+   "date": "1985-03-19"
+  }
+ ],
+ "cover-art-archive": {
+  "front": true
+ },
+ "label-info": [
+  {
+   "catalog-number": "415 253-2",
+   "label": {
+    "name": "Deutsche Grammophon"
+   }
+  }
+ ],
+ "media": [
+  {
+   "position": 1,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "d2634e89-37a1-30fa-87cc-a91d89775222",
+     "position": 1,
+     "number": "1",
+     "title": "West Side Story: No. 1: Prologue",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "5edd7e66-4060-4e42-b75a-800a3c8a259b",
+      "title": "West Side Story: No. 1: Prologue",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0c854d85-06a8-3fb7-8a1a-ace0277294eb",
+     "position": 2,
+     "number": "2",
+     "title": "West Side Story: No. 2: Jet Song",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e7a155f1-3e8f-4f72-9cce-50be053eb616",
+      "title": "West Side Story: No. 2: Jet Song",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kurt Ollmann",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "283467c1-da7f-4cda-bfd4-74b67811d709",
+         "name": "Kurt Ollmann"
+        }
+       },
+       {
+        "name": "David Livingston",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "158d01d9-7f7a-4004-8031-4f19a8a9fe74",
+         "name": "David Livingston",
+         "aliases": []
+        }
+       },
+       {
+        "name": "Peter Thom",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "b4f0d301-d730-41e3-ac71-ec6fc02ff34d",
+         "name": "Peter Thom",
+         "aliases": []
+        }
+       },
+       {
+        "name": "Stephen Bogardus",
+        "joinphrase": "",
+        "artist": {
+         "id": "6678efcf-9617-4b09-b86d-6567f2b4e863",
+         "name": "Stephen Bogardus",
+         "aliases": []
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bcde05e4-4c20-3587-a9ac-ffec77706b4b",
+     "position": 3,
+     "number": "3",
+     "title": "West Side Story: No. 3: Something’s Coming",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "19d3a444-a243-46b9-a6c8-1cc83a861b3f",
+      "title": "West Side Story: No. 3: Something’s Coming",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "José Carreras",
+        "joinphrase": "",
+        "artist": {
+         "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+         "name": "José Carreras"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "d3c293e3-aa8a-3465-93ed-11a374acbc63",
+     "position": 4,
+     "number": "4",
+     "title": "West Side Story: No. 4: The Dance at the Gym: Blues",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "6a2a1e24-b8a0-4ec9-b6cd-84f9e7123c12",
+      "title": "West Side Story: No. 4: The Dance at the Gym: Blues",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c9f76376-875b-306e-b133-ba6cd327becc",
+     "position": 5,
+     "number": "5",
+     "title": "West Side Story: No. 4: The Dance at the Gym: Promenade",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "225f207a-23d2-4194-a7d0-cffa8499986b",
+      "title": "West Side Story: No. 4: The Dance at the Gym: Promenade",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "77a800fb-6343-31e1-a56f-f8c65a356779",
+     "position": 6,
+     "number": "6",
+     "title": "West Side Story: No. 4: The Dance at the Gym: Mambo",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8abba0c4-7037-4ca6-bb80-388126fe11f3",
+      "title": "West Side Story: No. 4: The Dance at the Gym: Mambo",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "211daaf0-628f-3a5c-81f0-6b91d5768948",
+     "position": 7,
+     "number": "7",
+     "title": "West Side Story: No. 4: The Dance at the Gym: Cha‐Cha",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e0784c85-829e-45e1-bd2f-e55f089ce97d",
+      "title": "West Side Story: No. 4: The Dance at the Gym: Cha‐Cha",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "2f762e4b-29ea-388e-afe5-92496a879124",
+     "position": 8,
+     "number": "8",
+     "title": "West Side Story: No. 4: The Dance at the Gym: Meeting Scene",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "350ba3f5-4210-4944-8a12-4f631894f711",
+      "title": "West Side Story: No. 4: The Dance at the Gym: Meeting Scene",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e4b07be9-47bd-36c8-97de-b0ea7018081b",
+     "position": 9,
+     "number": "9",
+     "title": "West Side Story: No. 4: The Dance at the Gym: Jump",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a7436123-6703-4a98-a87d-5652085c863d",
+      "title": "West Side Story: No. 4: The Dance at the Gym: Jump",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e5744d13-c9b8-32b0-a019-92c25aa46dbd",
+     "position": 10,
+     "number": "10",
+     "title": "West Side Story: No. 5: Maria",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1b13c41d-fd97-4a4d-a7ba-0cfade7445c5",
+      "title": "West Side Story: No. 5: Maria",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "José Carreras",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+         "name": "José Carreras"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bb6852ae-5d29-31fd-bf29-43ef9d35a14a",
+     "position": 11,
+     "number": "11",
+     "title": "West Side Story: No. 6: Balcony Scene (Tonight)",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "83b48b0c-c86d-465b-ba81-18f7c61dc51c",
+      "title": "West Side Story: No. 6: Balcony Scene (Tonight)",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       },
+       {
+        "name": "José Carreras",
+        "joinphrase": "",
+        "artist": {
+         "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+         "name": "José Carreras"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "81910e3b-bc4b-3171-936c-90d734bd2525",
+     "position": 12,
+     "number": "12",
+     "title": "West Side Story: No. 7: America",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "e2fbc3db-b6a1-4c4e-b78e-7ccada710ecb",
+      "title": "West Side Story: No. 7: America",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Tatiana Troyanos",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "2b2b45ef-c62c-4aee-bea1-823c9784f403",
+         "name": "Tatiana Troyanos"
+        }
+       },
+       {
+        "name": "Louise Edeiken",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "66f4c2c1-c159-41bc-a571-9e6273b46ca7",
+         "name": "Louise Edeiken",
+         "aliases": []
+        }
+       },
+       {
+        "name": "Israel Philharmonic Orchestra",
+        "joinphrase": " & Chorus,",
+        "artist": {
+         "id": "c8a88cc7-c93e-42b5-ba29-68859b5716e3",
+         "name": "התזמורת הפילהרמונית הישראלית",
+         "aliases": [
+          {
+           "name": "IPO",
+           "sort-name": "IPO",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Israel Philarmonic Orchestra",
+           "sort-name": "Israel Philarmonic Orchestra",
+           "type": "Search hint",
+           "type-id": "1937e404-b981-3cb7-8151-4c86ebfc8d8e",
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Israel Philharmonic Orchestra",
+           "sort-name": "Israel Philharmonic Orchestra",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "en",
+           "primary": true
+          },
+          {
+           "name": "Israeli Philharmony",
+           "sort-name": "Israeli Philharmony",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          },
+          {
+           "name": "Palestine Orchestra",
+           "sort-name": "Palestine Orchestra",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": true,
+           "locale": "en",
+           "primary": false
+          },
+          {
+           "name": "The Israel Philharmonic Orchestra",
+           "sort-name": "Israel Philharmonic Orchestra, The",
+           "type": "Artist name",
+           "type-id": "894afba6-2816-3c24-8072-eadb66bd04bc",
+           "ended": false,
+           "locale": "en",
+           "primary": false
+          },
+          {
+           "name": "Израильская филармония",
+           "sort-name": "Израильская филармония",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": "ru",
+           "primary": false
+          },
+          {
+           "name": "Израильский филармонический оркестр",
+           "sort-name": "Израильский филармонический оркестр",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": "ru",
+           "primary": false
+          }
+         ]
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "809a5bb4-54cf-35ea-b00e-3fb40a30befb",
+     "position": 13,
+     "number": "13",
+     "title": "West Side Story: No. 8: Cool",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "a8611785-a297-49a7-b61a-ed0bf910b49b",
+      "title": "West Side Story: No. 8: Cool",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kurt Ollmann",
+        "joinphrase": "",
+        "artist": {
+         "id": "283467c1-da7f-4cda-bfd4-74b67811d709",
+         "name": "Kurt Ollmann"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "a337cb0b-66ea-33f4-b4d5-183700c76c3b",
+     "position": 14,
+     "number": "14",
+     "title": "West Side Story: No. 9: One Hand, One Heart",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "f0920797-d14d-4e23-a53a-474cb38929d4",
+      "title": "West Side Story: No. 9: One Hand, One Heart",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       },
+       {
+        "name": "José Carreras",
+        "joinphrase": "",
+        "artist": {
+         "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+         "name": "José Carreras"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "36ee32a9-6e21-371c-9e5d-2ad8de224969",
+     "position": 15,
+     "number": "15",
+     "title": "West Side Story: No. 10: Tonight (Ensemble)",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "9870c6c9-009f-43b9-a85e-f6268d169d5a",
+      "title": "West Side Story: No. 10: Tonight (Ensemble)",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "José Carreras",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+         "name": "José Carreras"
+        }
+       },
+       {
+        "name": "Richard Harrell",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "770625ee-9a33-4f55-bd1a-9a34e5a5b59e",
+         "name": "Richard Harrell",
+         "aliases": []
+        }
+       },
+       {
+        "name": "Kurt Ollmann",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "283467c1-da7f-4cda-bfd4-74b67811d709",
+         "name": "Kurt Ollmann"
+        }
+       },
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       },
+       {
+        "name": "Tatiana Troyanos",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "2b2b45ef-c62c-4aee-bea1-823c9784f403",
+         "name": "Tatiana Troyanos"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "e8832c26-62b0-32ad-a6ae-b0d617d5a2b5",
+     "position": 16,
+     "number": "16",
+     "title": "West Side Story: No. 11: The Rumble",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "25dbb70a-9ca1-4b2e-8d4c-1235a4c22f23",
+      "title": "West Side Story: No. 11: The Rumble",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "position": 2,
+   "format": "CD",
+   "tracks": [
+    {
+     "id": "01772cfa-9a89-3096-8cdc-800081cab697",
+     "position": 1,
+     "number": "1",
+     "title": "West Side Story: No. 12: I Feel Pretty",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "4eeefedb-7803-4db2-a05f-dfdbc743ffbf",
+      "title": "West Side Story: No. 12: I Feel Pretty",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       },
+       {
+        "name": "Louise Edeiken",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "66f4c2c1-c159-41bc-a571-9e6273b46ca7",
+         "name": "Louise Edeiken"
+        }
+       },
+       {
+        "name": "Stella Zambalis",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "e87a2fa3-a843-4499-a22e-2649d1ef158a",
+         "name": "Stella Zambalis",
+         "aliases": []
+        }
+       },
+       {
+        "name": "Angelina Réaux",
+        "joinphrase": "",
+        "artist": {
+         "id": "827790a1-d814-491b-9780-34a7c983111d",
+         "name": "Angelina Réaux",
+         "aliases": [
+          {
+           "name": "Angelina Réaux",
+           "sort-name": "Angelina Réaux",
+           "type": null,
+           "type-id": null,
+           "ended": false,
+           "locale": null,
+           "primary": null
+          }
+         ]
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "0b934e45-12fc-3fe7-9405-3c87f824b06a",
+     "position": 2,
+     "number": "2",
+     "title": "West Side Story: No. 13: Ballet Sequence",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "af9b1ab6-7150-470c-aa10-e5f3a49b2c35",
+      "title": "West Side Story: No. 13: Ballet Sequence: Beginning",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       },
+       {
+        "name": "José Carreras",
+        "joinphrase": "",
+        "artist": {
+         "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+         "name": "José Carreras"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "eced420e-3c6e-32f9-aef0-5f8907793104",
+     "position": 3,
+     "number": "3",
+     "title": "West Side Story: Transition to Scherzo",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2bcfe59e-5d42-4b5b-bbcb-a125617e45da",
+      "title": "West Side Story: Ballet Sequence: Transition to Scherzo",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9e8b4628-e7e8-30d9-a6ab-fffc443b0c76",
+     "position": 4,
+     "number": "4",
+     "title": "West Side Story: Scherzo",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1657fbd0-1343-4d84-8aeb-c7be1878dde3",
+      "title": "West Side Story: Ballet Sequence: Scherzo",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b0587d31-3290-34fd-8f12-c2132e4d072b",
+     "position": 5,
+     "number": "5",
+     "title": "West Side Story: Somewhere",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "683bb3c8-932a-4e47-b6d4-c10ff173e1e9",
+      "title": "West Side Story: Ballet Sequence: Somewhere",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Marilyn Horne",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "471087d4-3438-4f55-bb37-89cfe042b300",
+         "name": "Marilyn Horne"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "973dca9d-1a5a-3cdc-9c57-a3875992144a",
+     "position": 6,
+     "number": "6",
+     "title": "West Side Story: Procession and Nightmare",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "8e728abd-564e-4f74-ad9b-1cf1d1b13fe7",
+      "title": "West Side Story: Ballet Sequence: Procession and Nightmare",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "bdb13567-b877-30bf-a071-40bc7b47b07e",
+     "position": 7,
+     "number": "7",
+     "title": "West Side Story: No. 14: Gee, Officer Krupke!",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ee7dcf8a-54db-4800-a695-6019dab400b3",
+      "title": "West Side Story: No. 14: Gee, Officer Krupke!",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "David Livingston",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "158d01d9-7f7a-4004-8031-4f19a8a9fe74",
+         "name": "David Livingston"
+        }
+       },
+       {
+        "name": "Marty Nelson",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "0b1440ea-1236-40bc-a5fd-3c436f104e85",
+         "name": "Marty Nelson",
+         "aliases": []
+        }
+       },
+       {
+        "name": "Peter Thom",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "b4f0d301-d730-41e3-ac71-ec6fc02ff34d",
+         "name": "Peter Thom"
+        }
+       },
+       {
+        "name": "Stephen Bogardus",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "6678efcf-9617-4b09-b86d-6567f2b4e863",
+         "name": "Stephen Bogardus"
+        }
+       },
+       {
+        "name": "Todd Lester",
+        "joinphrase": "",
+        "artist": {
+         "id": "ece34a26-f213-48ae-b220-9cd4a4d53611",
+         "name": "Todd Lester",
+         "aliases": []
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9ee5814e-ea88-38b7-b53f-f76dea3c398d",
+     "position": 8,
+     "number": "8",
+     "title": "West Side Story: No. 15: A Boy Like That",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "fb84fa95-1a9d-4ed5-bc75-ae5a6317fabc",
+      "title": "West Side Story: No. 15: A Boy Like That",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Tatiana Troyanos",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "2b2b45ef-c62c-4aee-bea1-823c9784f403",
+         "name": "Tatiana Troyanos"
+        }
+       },
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": "",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "ac82de4e-a642-3ab9-b739-eac555eb1e9c",
+     "position": 9,
+     "number": "9",
+     "title": "West Side Story: I Have a Love",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "329be7e5-bf50-463d-aa48-642ac6432a92",
+      "title": "West Side Story: I Have a Love",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       },
+       {
+        "name": "Tatiana Troyanos",
+        "joinphrase": "",
+        "artist": {
+         "id": "2b2b45ef-c62c-4aee-bea1-823c9784f403",
+         "name": "Tatiana Troyanos"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "9c0a7eed-2999-360c-9c7c-5bbed172c557",
+     "position": 10,
+     "number": "10",
+     "title": "West Side Story: No. 16: Taunting Scene",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "00270741-e962-4a97-aa28-8ad08885a82a",
+      "title": "West Side Story: No. 16: Taunting Scene",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "97e01597-bd82-323f-8918-c16966767c9e",
+     "position": 11,
+     "number": "11",
+     "title": "West Side Story: No. 17: Finale",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "88e4769a-6c80-4fd2-8b61-44ee231fc3e4",
+      "title": "West Side Story: No. 17: Finale",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Kiri Te Kanawa",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "1a78bb97-ad86-4f89-b4b4-cc10953103c3",
+         "name": "Kiri Te Kanawa"
+        }
+       },
+       {
+        "name": "José Carreras",
+        "joinphrase": "",
+        "artist": {
+         "id": "7716ddac-2f24-44fa-81b1-bfa920811445",
+         "name": "José Carreras"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "aa884968-80a0-3a18-9516-316ab09501fc",
+     "position": 12,
+     "number": "12",
+     "title": "Suite from “On the Waterfront”: Andante / Presto barbaro",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "2a116191-f662-458b-8034-b474c9549036",
+      "title": "Symphonic Suite from On the Waterfront: I. Andante (with dignity) - Presto barbaro",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Israel Philharmonic Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "c8a88cc7-c93e-42b5-ba29-68859b5716e3",
+         "name": "התזמורת הפילהרמונית הישראלית"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "508a309c-ef62-3fc6-bdcf-ded412d87485",
+     "position": 13,
+     "number": "13",
+     "title": "Suite from “On the Waterfront”: Adagio / Allegro molto agitato / Alla breve (Poco più mosso) / Presto come prima",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "b95ea3dd-daa0-44a4-bebe-89b95fc1fe2e",
+      "title": "Symphonic Suite from On the Waterfront: II. Adagio - Allegro molto agitato - Alla breve (Poco più mosso - Presto come prima)",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Israel Philharmonic Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "c8a88cc7-c93e-42b5-ba29-68859b5716e3",
+         "name": "התזמורת הפילהרמונית הישראלית"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "b5fd6fc7-8aae-3e96-b959-ca5e5eae9af7",
+     "position": 14,
+     "number": "14",
+     "title": "Suite from “On the Waterfront”: Andante largamente / More Flowing / Lento",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "aef1bc9a-c3f4-4b8d-87b6-675ed7f1df0c",
+      "title": "Symphonic Suite from On the Waterfront: III. Andante largamente - More Flowing - Lento",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Israel Philharmonic Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "c8a88cc7-c93e-42b5-ba29-68859b5716e3",
+         "name": "התזמורת הפילהרמונית הישראלית"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "1b66ec09-9908-3725-8616-4a7678586f19",
+     "position": 15,
+     "number": "15",
+     "title": "Suite from “On the Waterfront”: Moving Forward / Largamente / Andante come prima",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "1b2133ae-0b6d-47f1-be88-c4a60dfe2a08",
+      "title": "Symphonic Suite from On the Waterfront: IV. Moving forward, with warmth",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Israel Philharmonic Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "c8a88cc7-c93e-42b5-ba29-68859b5716e3",
+         "name": "התזמורת הפילהרמונית הישראלית"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "c93424b1-3793-3a06-b069-4a6abd1e6d44",
+     "position": 16,
+     "number": "16",
+     "title": "Suite from “On the Waterfront”: Allegro non troppo, molto marcato / Poco più sostenuto",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "ebc69383-15ab-4cb3-9af5-058c16306d42",
+      "title": "Symphonic Suite from On the Waterfront: V. Allegro non troppo, molto marcato",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Israel Philharmonic Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "c8a88cc7-c93e-42b5-ba29-68859b5716e3",
+         "name": "התזמורת הפילהרמונית הישראלית"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "5cb42c6c-b761-3d64-8d70-5f937c1a6ca0",
+     "position": 17,
+     "number": "17",
+     "title": "Suite from “On the Waterfront”: A tempo (Poco più sostenuto)",
+     "artist-credit": [
+      {
+       "name": "Leonard Bernstein",
+       "joinphrase": "",
+       "artist": {
+        "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+        "name": "Leonard Bernstein"
+       }
+      }
+     ],
+     "recording": {
+      "id": "54cafe7f-99c6-43d6-8e53-3c1bf9c0a96d",
+      "title": "Symphonic Suite from On the Waterfront: VI. A tempo",
+      "first-release-date": "1985-03-19",
+      "artist-credit": [
+       {
+        "name": "Israel Philharmonic Orchestra",
+        "joinphrase": ", ",
+        "artist": {
+         "id": "c8a88cc7-c93e-42b5-ba29-68859b5716e3",
+         "name": "התזמורת הפילהרמונית הישראלית"
+        }
+       },
+       {
+        "name": "Leonard Bernstein",
+        "joinphrase": "",
+        "artist": {
+         "id": "fa39bc82-9b27-4bbb-9425-d719a72e09ac",
+         "name": "Leonard Bernstein"
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

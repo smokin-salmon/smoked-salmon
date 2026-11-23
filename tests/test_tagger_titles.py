@@ -86,7 +86,11 @@ def test_qobuz_gives_a_track_s_version_apart_from_its_title() -> None:
 
 def test_deezer_gives_a_track_s_version_apart_from_its_title_without_its_brackets() -> None:
     tracks = anyio.run(
-        Deezer().parse_tracks, {"tracklist": [deezer_song(1, "(Mixed)"), deezer_song(2, ""), deezer_song(3, "(A) (B)")]}
+        Deezer().parse_tracks,
+        {
+            "tracklist": [deezer_song(1, "(Mixed)"), deezer_song(2, ""), deezer_song(3, "(A) (B)")],
+            "genres": {"data": []},
+        },
     )["1"]
 
     assert [(t["title"], t["version"]) for t in tracks.values()] == [
@@ -202,7 +206,9 @@ def test_the_merge_leaves_no_merge_only_key_behind_and_a_lone_scrape_is_written_
 def test_as_before_the_merge_reads_a_remixer_from_deezer_s_version() -> None:
     """Deezer credits no remixer: the merge reads them from its title and version, as from its folded title before."""
     deezer = release("Song")
-    deezer["tracks"] = anyio.run(Deezer().parse_tracks, {"tracklist": [deezer_song(1, "(Alice Remix)", "Song")]})
+    deezer["tracks"] = anyio.run(
+        Deezer().parse_tracks, {"tracklist": [deezer_song(1, "(Alice Remix)", "Song")], "genres": {"data": []}}
+    )
     merged = combine_metadatas(("Deezer", deezer), base=release("Song (Alice Remix)"))
 
     assert ("Alice", "remixer") in merged["tracks"]["1"]["1"]["artists"]
@@ -489,7 +495,7 @@ def test_as_before_a_track_and_its_featuring_version_pair_by_their_own_titles(
     tracklist = [deezer_song(1, "(feat. Bob)", "Intro"), deezer_song(2, "", "Intro")]
     tracklist[0]["ISRC"], tracklist[1]["ISRC"] = "FEAT", "PLAIN"
     deezer = release("x")
-    deezer["tracks"] = anyio.run(Deezer().parse_tracks, {"tracklist": tracklist})
+    deezer["tracks"] = anyio.run(Deezer().parse_tracks, {"tracklist": tracklist, "genres": {"data": []}})
 
     merged = combine_metadatas(("Deezer", deezer), base=release("Intro", "Intro (feat. Bob)", replay_gain="-7.0 dB"))
 

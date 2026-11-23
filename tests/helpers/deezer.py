@@ -20,6 +20,7 @@ def deezer_song(number: int, version: str = "", title: str = "Spellbound", contr
     }
 
 
-def deezer_tracks(*songs: dict) -> dict:
-    """The tracks Deezer's parser makes of these songs."""
-    return anyio.run(Scraper().parse_tracks, {"tracklist": list(songs)})
+def deezer_tracks(*songs: dict, genres: tuple[str, ...] = ()) -> dict:
+    """The tracks Deezer's parser makes of these songs, on an album of these genres."""
+    album = {"tracklist": list(songs), "genres": {"data": [{"name": genre} for genre in genres]}}
+    return anyio.run(Scraper().parse_tracks, album)

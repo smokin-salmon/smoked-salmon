@@ -19,9 +19,8 @@ from salmon.search.hints import search_hints
 from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES, without_tracking
-from salmon.tagger.sources.base import generate_artists, standardize_genres
+from salmon.tagger.sources.base import generate_artists, is_classical_release, standardize_genres
 from salmon.tagger.tag_urls import tag_urls
-from salmon.tagger.tags import is_classical_genre
 
 
 @dataclass
@@ -568,7 +567,7 @@ def remove_various_artists(metadata):
 
 
 def clean_metadata(metadata):
-    classical = any(is_classical_genre(genre) for genre in metadata.get("genres") or [])
+    classical = is_classical_release(metadata.get("genres") or [])
     for tracks in metadata["tracks"].values():
         for track in tracks.values():
             for credit, _why in _mains_to_drop(track["artists"], classical):
