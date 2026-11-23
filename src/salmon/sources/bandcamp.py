@@ -36,8 +36,9 @@ class BandcampBase(BaseScraper):
         # The retry asks for the page the check page came from, after any redirect. That URL carries the query asked
         # for, unless a redirect dropped it: only the params it lacks are passed again, so none is doubled.
         missing = {key: value for key, value in (params or {}).items() if key not in final.query}
-        # What the line shows is the retry's answer, not the check page's.
-        self.last_answer = None
+        # What the line shows is the retry's answer, not the check page's; a page that is not asked for again keeps it.
+        if bandcamp_challenge.asks_again(str(final)):
+            self.last_answer = None
         return await bandcamp_challenge.retry_as_browser(
             str(final), missing or None, PAGE_TIMEOUT, self.record_text_answer
         )

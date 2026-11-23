@@ -27,6 +27,12 @@ def is_challenge(soup: BeautifulSoup) -> bool:
     return soup.title is not None and soup.title.get_text().strip().lower() == "client challenge"
 
 
+def asks_again(url: str) -> bool:
+    """Whether `url` is a page of Bandcamp's own hosts, the only ones asked for again."""
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "bandcamp.com" or host.endswith(".bandcamp.com")
+
+
 async def retry_as_browser(
     url: str, params: dict | None, timeout: float, record: Callable[[int, str | None], None]
 ) -> BeautifulSoup:
@@ -40,8 +46,7 @@ async def retry_as_browser(
     Raises:
         ScrapeError: If the page is not asked for again, the request fails, or it answers with anything but the page.
     """
-    host = (urlsplit(url).hostname or "").lower()
-    if host != "bandcamp.com" and not host.endswith(".bandcamp.com"):
+    if not asks_again(url):
         raise ScrapeError(CHALLENGED)
     status, data = await _impersonated_get(url, params, curl_url("bandcamp"), timeout)
     record(status, data.decode("utf-8", errors="ignore"))
