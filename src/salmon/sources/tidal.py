@@ -78,7 +78,7 @@ class TidalBase(BaseScraper):
             if TidalBase._access_token and monotonic() < TidalBase._token_expiry - 60:
                 return TidalBase._access_token
             async with (
-                cls._session() as session,
+                cls._class_session() as session,
                 session.post(
                     cls.token_url,
                     data={
@@ -101,6 +101,7 @@ class TidalBase(BaseScraper):
             return token
 
     async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
+        self.record_answer(resp.status)
         if resp.status == 429:
             raise _RateLimitedError(parse_retry_after(resp.headers.get("Retry-After")))
         if resp.status == 401:
@@ -117,6 +118,8 @@ class TidalBase(BaseScraper):
         retries = 0
         token_replaced = False
         while True:
+            # A token refresh is no answer of this scrape's: a failure there must not show an earlier status.
+            self.last_answer = None
             token = await self._ensure_token()
             auth_headers = {
                 **(headers or {}),
@@ -287,4 +290,4 @@ class TidalBase(BaseScraper):
         except msgspec.DecodeError as e:
             raise ScrapeError("Tidal page did not return valid JSON.") from e
         except (KeyError, ScrapeError) as e:
-            raise ScrapeError(f"Failed to grab metadata for {url}.") from e
+            raise ScrapeError("Tidal: Failed to grab metadata.") from e

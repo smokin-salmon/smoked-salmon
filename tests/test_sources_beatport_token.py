@@ -96,7 +96,7 @@ def test_a_failed_first_login_falls_back_to_the_scraper_in_search(monkeypatch, c
 
     out = capsys.readouterr().out
     assert found == SCRAPED
-    assert "Beatport login failed: Failed to successfully scrape page. Status code: 500. Using the scraper." in out
+    assert "Beatport login failed: Beatport: HTTP 500. Using the scraper." in out
 
 
 async def _scrape_with_a_refused_refresh(monkeypatch) -> dict:

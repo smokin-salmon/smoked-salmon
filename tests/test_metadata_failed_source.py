@@ -202,11 +202,26 @@ def test_a_failed_source_asks_the_question_again(
     assert "Aborting upload..." in out
 
 
+def _scrape_error_line(out: str) -> str:
+    return next(line[line.index("Scrape error: ") :] for line in out.splitlines() if "Scrape error: " in line)
+
+
+@pytest.mark.parametrize("first", ["1", FAILING_URL], ids=["number", "url"])
+def test_a_number_and_a_url_that_fail_the_same_way_print_the_same_line(monkeypatch, capsys, dirs, first: str) -> None:
+    # #980: the line names the store, the release's URL, the status and the reason, whichever way it was asked for.
+    _code, out, _tracker, _store = _up(monkeypatch, capsys, dirs, lambda _store: [first, "a"], yyy=False)
+
+    assert _scrape_error_line(out) == (
+        "Scrape error: Discogs: could not read the release at https://www.discogs.com/release/1 (HTTP 404)."
+    )
+
+
 def test_an_answer_with_two_tracks_at_one_position_asks_again_naming_it(monkeypatch, capsys, dirs) -> None:
     code, out, tracker, store = _up(monkeypatch, capsys, dirs, lambda _store: [REPEATING_URL, "a"], yyy=True)
 
     assert (code, out.count(QUESTION), _upload_posts(tracker)) == (1, 2, 0), out
-    assert "Scrape error: Disc 3 has two tracks numbered 3." in out
+    assert "Scrape error: Discogs: could not read the release at https://www.discogs.com/release/3 (HTTP 200)" in out
+    assert "Disc 3 has two tracks numbered 3." in out
     assert store.requests == ["/releases/3"]
 
 

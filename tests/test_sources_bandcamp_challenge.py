@@ -190,7 +190,10 @@ def test_a_check_page_that_stays_is_named_instead_of_failing_to_parse(first_fetc
     with pytest.raises(ScrapeError) as excinfo:
         anyio.run(Scraper().scrape_release, ALBUM_URL)
 
-    assert str(excinfo.value) == STILL
+    # Named by the store, the URL and the check page's status and title, then the reason.
+    assert str(excinfo.value) == (
+        f'Bandcamp: could not read the release at {ALBUM_URL} (HTTP 200, page titled "Client Challenge"): {STILL}'
+    )
     assert len(retries[1]) == 1
 
 
@@ -202,6 +205,41 @@ def test_a_retry_answered_with_anything_but_the_page_is_a_check_page_that_stays(
     with pytest.raises(ScrapeError, match=r"also when asked again as a browser"):
         _fetch()
     assert len(retries[1]) == 1
+
+
+def test_the_line_shows_the_retrys_answer_not_the_first_ones(first_fetches, retries) -> None:
+    first_fetches[0](CHALLENGE)
+    retries[0]((503, b"<html><head><title>Try later</title></head></html>"))
+
+    with pytest.raises(ScrapeError) as excinfo:
+        anyio.run(Scraper().scrape_release, ALBUM_URL)
+
+    assert str(excinfo.value) == (
+        f'Bandcamp: could not read the release at {ALBUM_URL} (HTTP 503, page titled "Try later"): {STILL}'
+    )
+
+
+def test_a_retry_that_fails_before_an_answer_shows_no_status(first_fetches, retries) -> None:
+    first_fetches[0](CHALLENGE)
+    retries[0](_Timeout("timed out"))
+
+    with pytest.raises(ScrapeError) as excinfo:
+        anyio.run(Scraper().scrape_release, ALBUM_URL)
+
+    assert str(excinfo.value).startswith(f"Bandcamp: could not read the release at {ALBUM_URL}: ")
+
+
+def test_a_check_page_not_asked_for_again_keeps_its_own_status(first_fetches, retries) -> None:
+    first_fetches[0](CHALLENGE)
+    retries[0](AssertionError("no retry"))
+    url = "https://artist.example/album/variations"
+
+    with pytest.raises(ScrapeError) as excinfo:
+        anyio.run(Scraper().scrape_release, url)
+
+    assert str(excinfo.value) == (
+        f'Bandcamp: could not read the release at {url} (HTTP 200, page titled "Client Challenge"): {CUSTOM_DOMAIN}'
+    )
 
 
 def test_a_check_page_from_a_custom_domain_is_not_asked_for_again(first_fetches, retries) -> None:
