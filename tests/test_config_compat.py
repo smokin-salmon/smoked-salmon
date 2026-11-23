@@ -18,6 +18,7 @@ from aiolimiter import AsyncLimiter
 from helpers.config_compat import _base, _load
 
 import salmon.release_notification
+import salmon.trackers.credentials
 import salmon.trackers.ops
 import salmon.trackers.red
 from salmon.config import compat
@@ -182,6 +183,7 @@ def test_a_placeholder_session_with_an_api_key_keeps_that_tracker_without_a_cook
     ]
     monkeypatch.setattr(salmon.trackers.red, "cfg", cfg)
     monkeypatch.setattr(salmon.trackers.ops, "cfg", cfg)
+    monkeypatch.setattr(salmon.trackers.credentials, "cfg", cfg)
     api = salmon.trackers.red.RedApi() if code == "red" else salmon.trackers.ops.OpsApi()
     assert api.api_key == "a-real-key"
     assert api.has_session_cookie is False
@@ -244,6 +246,7 @@ def test_a_kept_tracker_without_a_cookie_skips_cookie_only_requests(
     raw["tracker"]["red"] = {"session": "get-from-site-cookie", "api_key": "a-real-key"}
     cfg, _ = _load(tmp_path, raw, capsys)
     monkeypatch.setattr(salmon.trackers.red, "cfg", cfg)
+    monkeypatch.setattr(salmon.trackers.credentials, "cfg", cfg)
 
     async def new_group(*args, **kwargs) -> str:
         return "n"

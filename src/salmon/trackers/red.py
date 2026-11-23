@@ -8,6 +8,7 @@ from salmon import cfg, dryrun
 from salmon.common import UploadFiles
 from salmon.errors import RequestFailedError
 from salmon.trackers.base import BaseGazelleApi, TagRules
+from salmon.trackers.credentials import credentials
 
 
 def _get_input_value(soup: BeautifulSoup, name: str) -> str | None:
@@ -122,13 +123,12 @@ class RedApi(BaseGazelleApi):
         self.base_url = "https://redacted.sh"
         self.tracker_url = "https://flacsfor.me"
         self.site_string = "RED"
+        if creds := credentials("RED"):
+            self.cookie = creds.session
+            if creds.api_key:
+                self.api_key = creds.api_key
         if cfg.tracker.red:
             red_cfg = cfg.tracker.red
-
-            self.cookie = red_cfg.session
-            if red_cfg.api_key:
-                self.api_key = red_cfg.api_key
-
             if red_cfg.dottorrents_dir:
                 self.dot_torrents_dir = red_cfg.dottorrents_dir
             else:

@@ -10,6 +10,7 @@ from salmon.errors import (
     RequestError,
 )
 from salmon.trackers.base import BaseGazelleApi, TagRules
+from salmon.trackers.credentials import credentials
 
 
 class OpsApi(BaseGazelleApi):
@@ -31,10 +32,10 @@ class OpsApi(BaseGazelleApi):
                 self.dot_torrents_dir = ops_cfg.dottorrents_dir
             else:
                 self.dot_torrents_dir = cfg.directory.dottorrents_dir
-
-            self.cookie = ops_cfg.session
-            if ops_cfg.api_key:
-                self.api_key = ops_cfg.api_key
+        if creds := credentials("OPS"):
+            self.cookie = creds.session
+            if creds.api_key:
+                self.api_key = creds.api_key
 
         super().__init__()
 
