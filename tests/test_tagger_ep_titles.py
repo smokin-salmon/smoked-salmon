@@ -1,7 +1,10 @@
+import random
+
 import anyio
 import pytest
 
 from salmon import cfg
+from salmon.common.strings import split_type_marker
 from salmon.tagger.sources.apple_music import Scraper as AppleMusicScraper
 from salmon.tagger.sources.qobuz import Scraper as QobuzScraper
 
@@ -224,3 +227,100 @@ def test_as_before_a_qobuz_single_named_with_single_in_it_keeps_its_name(monkeyp
     scraped = qobuz_scraped_title_and_type("Forever Single", "single", monkeypatch)
 
     assert scraped == ("Forever Single", "Single")
+
+
+@pytest.mark.parametrize("title", ["Space (EP)", "Space - EP", "Space [E.P.]"])
+def test_a_single_qobuz_names_keeps_an_ep_marker_as_an_ep_keeps_a_single_one(title: str) -> None:
+    assert QobuzScraper().determine_rls_type({"title": title, "rls_type": "Single"}) == (title, "Single")
+
+
+# split_type_marker's rules, as properties over generated titles (AGENTS.md, #1154).
+
+_WORDS = [
+    "Space",
+    "EP",
+    "Single",
+    "E.P.",
+    "Singles",
+    "Deep",
+    "Live",
+    "(Live)",
+    "[Remix]",
+    "Spider-Man",
+    "Café",
+    "-",
+    "–",
+]
+_MARKERS = {
+    " - EP": "EP",
+    " – Single": "Single",
+    " — EP": "EP",
+    " (EP)": "EP",
+    " [Single]": "Single",
+    " (E.P.)": "EP",
+    " (single)": "Single",
+    "(EP)": "EP",
+    " -Single": "Single",
+    " -EP": "EP",
+}
+
+
+def _generated_names(count: int):
+    rng = random.Random(969)
+    for _ in range(count):
+        yield " ".join(rng.choice(_WORDS) for _ in range(rng.randint(1, 4)))
+
+
+def _generated_titles(count: int):
+    """Names, some ending in a type: set apart, bare, or after a dash with no space before it; and some only a type."""
+    rng = random.Random(969)
+    endings = ["", *_MARKERS, " EP", " Single", "-EP", "–Single", "—EP"]
+    for name in _generated_names(count):
+        yield (name if rng.random() < 0.9 else "") + rng.choice(endings)
+
+
+def test_the_title_split_from_a_type_is_the_start_of_the_title_and_never_empty() -> None:
+    for title in _generated_titles(3000):
+        for bare in (True, False):
+            marker = split_type_marker(title, bare=bare)
+
+            assert title.startswith(marker.title), (title, bare, marker)
+            assert marker.title.strip() or not title.strip(), (title, bare, marker)
+
+
+def test_keeping_a_bare_type_never_cuts_what_reading_it_keeps() -> None:
+    for title in _generated_titles(3000):
+        kept = split_type_marker(title, bare=False)
+        read = split_type_marker(title, bare=True)
+
+        assert kept.rls_type is None or kept == read, (title, kept, read)
+
+
+@pytest.mark.parametrize("dash", ["-", "–", "—"])
+def test_a_type_after_a_dash_with_no_space_before_it_is_never_cut(dash: str) -> None:
+    """ "Spider-EP" is a name, as "Spider-Man" is."""
+    for name in _generated_names(1500):
+        for kind in ("EP", "Single"):
+            title = f"{name}{dash}{kind}"
+            for bare in (True, False):
+                marker = split_type_marker(title, bare=bare)
+
+                assert marker == (title, None, marker.reason), (title, bare, marker)
+
+
+def test_a_marker_set_apart_after_any_name_gives_back_the_name_and_its_type() -> None:
+    for name in _generated_names(3000):
+        for marker_text, kind in _MARKERS.items():
+            for bare in (True, False):
+                marker = split_type_marker(name + marker_text, bare=bare)
+
+                assert (marker.title, marker.rls_type) == (name, kind), (name, marker_text, bare, marker)
+
+
+def test_the_reason_says_how_the_type_was_read() -> None:
+    assert split_type_marker("Space - EP").reason == "set apart by a dash"
+    assert split_type_marker("Space (Single)").reason == "in brackets"
+    assert split_type_marker("Space EP").reason == "bare, read as the type"
+    assert split_type_marker("Space EP", bare=False).reason == "bare, kept as a word of the name"
+    assert split_type_marker("(EP)").reason == "the whole title, so a name"
+    assert split_type_marker("Space").reason == "no type ends it"

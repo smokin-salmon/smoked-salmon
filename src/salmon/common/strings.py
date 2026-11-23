@@ -249,23 +249,35 @@ def artists_or_various(names) -> str:
 
 
 class TypeMarker(NamedTuple):
-    """A title without the release type ending it, and that type: "EP", "Single", or None for none."""
+    """A title without the release type ending it, that type ("EP", "Single", or None for none), and why."""
 
     title: str
     rls_type: str | None = None
+    reason: str = "no type ends it"
 
 
 def split_type_marker(title: object, bare: bool = True) -> TypeMarker:
-    """Whether a release type ends the title, the one answer to it that every search and store reads (#969).
+    """Whether a release type ends the title, the one answer to it that every search and store reads (#969), with the
+    reason.
 
     Set apart by a dash or brackets, it is always the type. Bare ("Title EP", "Forever Single") it may be a word of the
     name: bare=False keeps it. A title that is only the type ("EP", "(Single)") is a name and has none.
     """
     text = "" if title is None else str(title)
     match = _RE_TYPE_MARKER.search(text)
-    if not match or not text[: match.start()].strip() or not (bare or match["dash"] or match["bracket"]):
+    if not match:
         return TypeMarker(text)
-    return TypeMarker(text[: match.start()], "Single" if match["type"].lower() == "single" else "EP")
+    if not text[: match.start()].strip():
+        return TypeMarker(text, reason="the whole title, so a name")
+    if match["dash"]:
+        reason = "set apart by a dash"
+    elif match["bracket"]:
+        reason = "in brackets"
+    elif bare:
+        reason = "bare, read as the type"
+    else:
+        return TypeMarker(text, reason="bare, kept as a word of the name")
+    return TypeMarker(text[: match.start()], "Single" if match["type"].lower() == "single" else "EP", reason)
 
 
 def make_searchstrs(artists, album, normalize=False) -> list[str]:

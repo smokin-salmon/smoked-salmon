@@ -352,8 +352,8 @@ def strip_ep_suffix(title):
     title ("Title EP") goes only with strip_ep_from_title, as it is often part of the
     release's name. An "EP" inside the title ("The EP Sessions") is part of it and stays.
     """
-    stripped, rls_type = split_type_marker(title, bare=cfg.upload.formatting.strip_ep_from_title)
-    return (stripped if rls_type == "EP" else title).strip() or title
+    marked = split_type_marker(title, bare=cfg.upload.formatting.strip_ep_from_title)
+    return (marked.title if marked.rls_type == "EP" else title).strip() or title
 
 
 def label_names_a_main_artist(label: str, artists) -> bool:
