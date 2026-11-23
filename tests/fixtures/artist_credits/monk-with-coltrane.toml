@@ -120,8 +120,9 @@ albumartist = ["Thelonious Monk"]
 date = ["2021-05-31"]
 
 # The files' tags as Picard writes them: a CD rip tagged from MusicBrainz.
-# Constructed from the case's MusicBrainz recording, not copied from anyone's
-# files. Shape: Picard 3.0.5's default settings (standardize artist names:
+# Constructed from the MusicBrainz release recorded as `picard_release` (the
+# edition these files are), not from `stores.musicbrainz`, and not copied
+# from anyone's files. Shape: Picard 3.0.5's default settings (standardize artist names:
 # variations only; release relationships on, track relationships off; no
 # translation): ARTIST and ALBUMARTIST each one joined credit, ARTISTS each
 # name. Only the tags salmon reads.
