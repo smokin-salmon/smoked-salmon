@@ -24,7 +24,7 @@ import tempfile
 import threading
 import traceback
 from collections import deque
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from contextlib import suppress
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -35,8 +35,10 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg, dryrun, interaction, prepared, ssrf
-from salmon.errors import UnknownOutcomeError
+from salmon.config.edit import Credentials
+from salmon.errors import LoginError, UnknownOutcomeError
 from salmon.prepared import Prepared
+from salmon.trackers import credentials
 from salmon.webui import output
 from salmon.webui.egress import Redactor
 from salmon.webui.interaction import NoAnswerError, WebInteraction
@@ -50,6 +52,11 @@ QUEUED: frozenset[Status] = frozenset({"queued", "preparing", "ready"})
 # A question left unanswered this long stops its job: there is no terminal to fall back to.
 QUESTION_TIMEOUT = 30 * 60
 UNKNOWN_OUTCOME = "The request may have reached the tracker: check the site before trying again."
+# Added to the error of a job a tracker sent to its login page.
+LOGIN_HINT = "Update the session cookie on the Settings page."
+
+# What a job's tracker credentials are read from when it starts: config.toml, as it is then (ADR 0008).
+CredentialsSource = Callable[[], Mapping[str, Credentials]]
 # Finished jobs kept, oldest dropped first; jobs waiting their turn at most.
 MAX_FINISHED_JOBS = 100
 MAX_QUEUED_JOBS = 100
@@ -353,10 +360,11 @@ class _JobAsker:
 class JobManager:
     """The jobs of one salmon web server. Its methods run on the server's loop."""
 
-    def __init__(self, max_jobs: int, redactor: Redactor) -> None:
+    def __init__(self, max_jobs: int, redactor: Redactor, credentials_source: CredentialsSource) -> None:
         self.max_jobs = max_jobs
         self.jobs: dict[str, Job] = {}
         self._redactor = redactor
+        self._credentials_source = credentials_source
         self._queue: list[Job] = []
         self._running: set[Job] = set()
         self._subscribers: set[_Subscriber] = set()
@@ -660,7 +668,11 @@ class JobManager:
         lines = output.Lines(lambda line, err: self._call(self._log, job, line, err))
         asker = _JobAsker(self, job, lines)
         try:
+            # Read now, before anything is sent: a save reaches the jobs that start after it, never a running one.
+            snapshot = self._credentials_source()
+            self._redactor.add(credentials.secrets_of(snapshot))
             with (
+                credentials.using(snapshot),
                 output.to(lines.write),
                 interaction.using(WebInteraction(asker)),
                 interaction.assuming_defaults(job.assume_defaults),
@@ -702,7 +714,10 @@ class JobManager:
         # The server's own stderr, never the job's log: a chained error may repeat a request's URL.
         print(f"salmon web: {job.id} ({job.kind.name}) failed:", file=output.real_stderr())
         traceback.print_exception(error, file=output.real_stderr())
-        return "failed", "; ".join(f"{type(leaf).__name__}: {leaf}" for leaf in leaves), result
+        message = "; ".join(f"{type(leaf).__name__}: {leaf}" for leaf in leaves)
+        if any(isinstance(leaf, LoginError) for leaf in leaves):
+            message = f"{message}. {LOGIN_HINT}"
+        return "failed", message, result
 
     # --- What a job's thread hands over -----------------------------------------------
 

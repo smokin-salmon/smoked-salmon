@@ -6,6 +6,7 @@ salmon knows them. What a tracker sends back may repeat them (an upload page's d
 and so may an error that quotes it. The idea is chodeus's (ad4f8034), applied here once for everything that leaves.
 """
 
+import threading
 from collections.abc import Iterable
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -71,10 +72,20 @@ class Redactor:
 
     def __init__(self, secrets: Iterable[str | None] = ()) -> None:
         self._secrets = [secret for secret in secrets if secret]
+        # A job's thread adds the credentials it read while the server's loop masks what it sends.
+        self._lock = threading.Lock()
+
+    def add(self, secrets: Iterable[str | None]) -> None:
+        """Mask these too from now on: tracker credentials saved or read while the server runs, empty ones left out."""
+        with self._lock:
+            known = set(self._secrets)
+            self._secrets = [*self._secrets, *(secret for secret in secrets if secret and secret not in known)]
 
     def text(self, text: str) -> str:
         # The authkeys and passkeys are looked up each time: an account may authenticate at any point.
-        return redact_tracker_text(text, [*self._secrets, *learned_secrets()])
+        with self._lock:
+            secrets = self._secrets
+        return redact_tracker_text(text, [*secrets, *learned_secrets()])
 
     def value(self, value: Any) -> Any:
         """`value` with every string in it masked: a string, or the dicts and lists of an event."""

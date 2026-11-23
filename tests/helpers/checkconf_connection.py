@@ -42,6 +42,8 @@ class FakeTracker:
         self.rate_limited = rate_limited
         self.hold = hold
         self.sent: list[Sent] = []
+        # The session cookie or API key each request carried, in order.
+        self.credentials: list[str] = []
         self.times: list[float] = []
         self.url = ""
 
@@ -49,6 +51,7 @@ class FakeTracker:
         by_key = "Authorization" in request.headers
         assert not (by_key and "Cookie" in request.headers), "a request carried both the key and the cookie"
         self.sent.append((request.query.get("action", ""), "api key" if by_key else "cookie"))
+        self.credentials.append(request.headers["Authorization"] if by_key else request.cookies.get("session", ""))
         self.times.append(time.monotonic())
         if self.hold is not None:
             await self.hold.wait()

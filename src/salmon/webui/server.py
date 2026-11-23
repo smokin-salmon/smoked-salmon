@@ -13,6 +13,7 @@ import shutil
 import signal
 import weakref
 from collections.abc import AsyncIterator
+from functools import partial
 from pathlib import Path
 from typing import Any, cast
 
@@ -30,6 +31,7 @@ import salmon.trackers
 from salmon import cfg, ssrf
 from salmon.checks.source import detect_source
 from salmon.config import compat
+from salmon.config.edit import read_credentials
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
 from salmon.errors import ScrapeError
@@ -40,7 +42,7 @@ from salmon.webui import kinds, output, paths  # kinds also registers the job ki
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
 from salmon.webui.egress import Redactor, config_secrets
 from salmon.webui.interaction import Picked
-from salmon.webui.jobs import FINISHED, KINDS, QUEUED, Job, JobError, JobManager
+from salmon.webui.jobs import FINISHED, KINDS, QUEUED, CredentialsSource, Job, JobError, JobManager
 from salmon.webui.security import DEV_ORIGINS, host_allowed, is_loopback, origin_allowed
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -57,6 +59,7 @@ JOBS = web.AppKey("jobs", JobManager)
 REDACTOR = web.AppKey("redactor", Redactor)
 SOCKETS = web.AppKey("sockets", weakref.WeakSet[web.WebSocketResponse])
 STORE_LOCK = web.AppKey("store_lock", asyncio.Lock)
+CONFIG_PATH = web.AppKey("config_path", Path)
 
 # The longest search query and metadata URL taken.
 MAX_QUERY_LENGTH = 200
@@ -593,8 +596,18 @@ async def front_end(request: web.Request) -> web.StreamResponse:
 
 
 def create_app(
-    token: str, bind_host: str, allowed_hosts: list[str], dev: bool = False, max_jobs: int | None = None
+    token: str,
+    bind_host: str,
+    allowed_hosts: list[str],
+    dev: bool = False,
+    max_jobs: int | None = None,
+    config_path: Path | None = None,
+    credentials_source: CredentialsSource | None = None,
 ) -> web.Application:
+    """salmon web's application. ``config_path`` is the config the Settings page edits (the one salmon loaded, by
+    default), and ``credentials_source`` what a job reads its tracker credentials from (that file, by default)."""
+    config_path = config_path or salmon.config.loaded_config_path
+    assert config_path is not None, "salmon web runs with the config salmon loaded"
     app = web.Application(middlewares=[dev_cors, request_rules] if dev else [request_rules])
     app[AUTH] = Auth(token)
     app[BIND_HOST] = bind_host
@@ -602,7 +615,10 @@ def create_app(
     app[DEV] = dev
     app[BUILD_FILES] = build_files(STATIC_DIR)
     app[REDACTOR] = Redactor([*config_secrets(cfg), token])
-    app[JOBS] = JobManager(max_jobs or cfg.web.max_jobs, app[REDACTOR])
+    app[CONFIG_PATH] = config_path
+    app[JOBS] = JobManager(
+        max_jobs or cfg.web.max_jobs, app[REDACTOR], credentials_source or partial(read_credentials, config_path)
+    )
     app[SOCKETS] = weakref.WeakSet()
     app[STORE_LOCK] = asyncio.Lock()
     app.cleanup_ctx.append(_jobs_running)
