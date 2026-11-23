@@ -44,6 +44,11 @@ release = ["Thelonious Monk (main)", "John Coltrane (main)"]
 tracks = 7
 credits = ["1.1: Thelonious Monk (main), John Coltrane (main)", "1.2: Thelonious Monk (main), John Coltrane (main)", "1.3: Thelonious Monk (main), John Coltrane (main)", "1.4: Thelonious Monk (main), John Coltrane (main)", "1.5: Thelonious Monk (main), John Coltrane (main)", "1.6: Thelonious Monk (main), John Coltrane (main)", "1.7: Thelonious Monk (main), John Coltrane (main)"]
 
+[today.merge-picard]
+release = ["Thelonious Monk with John Coltrane (main)"]
+tracks = 7
+credits = ["1.1: Thelonious Monk with John Coltrane (main)", "1.2: Thelonious Monk with John Coltrane (main)", "1.3: Thelonious Monk with John Coltrane (main)", "1.4: Thelonious Monk with John Coltrane (main)", "1.5: Thelonious Monk with John Coltrane (main)", "1.6: Thelonious Monk with John Coltrane (main)", "1.7: Thelonious Monk with John Coltrane (main)"]
+
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
 # deezer fixture, written as a download tagged from that store would be.

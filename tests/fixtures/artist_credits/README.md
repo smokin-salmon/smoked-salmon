@@ -13,7 +13,9 @@ Each `<album>.toml` holds, in this order:
   states its credits (`states_credits`), `today.<store>` is the undecided scrape the merge receives.
   With `output = true`, also `today.output` and `today.output-guests-in-title`: what is written from the merge with
   `guests_in_track_title` off and on, as ALBUMARTIST and per track "ARTIST | TITLE" (and "| REMIXER ..." when one is
-  written).
+  written). With `[[picard_track]]`, also `today.merge-picard` and (with `output = true`) `today.output-picard`: the
+  merge and the output with `guests_in_track_title` off, over the Picard-tagged files. Each is recorded only where it
+  differs from `today.merge` or `today.output`; where it is not recorded, the test holds it to that stage.
 - `right`: what is settled, and how we know (`how_we_know`). `release_main` (in order), `performers` (main or
   conductor, any order), `not_main` (never main: a composer, a placeholder, a guest, a remixer), `remixers`, `name_forms` (other spellings of a right name). `open` is what is
   not settled yet. Names and roles are judged, never the separators that join them.
@@ -60,6 +62,9 @@ release main there, and no `not_main` name.
 The case's `test_today` fails and names the stage and what salmon now gives, ready to paste. If the change is meant,
 set that `[today.<stage>]` to it in the same PR, and update `known_wrong`. The diff then shows which albums the fix
 moved, and the scoreboard's count shows whether it moved them towards `right`.
+
+A fix that moves `today.merge` or `today.output` but not its Picard stage asks you to set `[today.merge-picard]` or
+`[today.output-picard]` to the old value; one that makes them the same again asks you to remove it.
 
 ## Constructed cases
 

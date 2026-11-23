@@ -50,6 +50,15 @@ tracks = ["Earl Sweatshirt & SK La' Flare | Pre", "Earl Sweatshirt & Vince Stapl
 albumartist = "Various"
 tracks = ["Earl Sweatshirt & SK La' Flare | Pre", "Earl Sweatshirt & Vince Staples | Burgundy", "Earl Sweatshirt & Domo Genesis | 20 Wave Caps", "Earl Sweatshirt & Frank Ocean | Sunday", "Earl Sweatshirt, Vince Staples, Casey Veggies | Hive", "Earl Sweatshirt | Chum", "Earl Sweatshirt | Sasquatch (feat. Tyler, The Creator)", "Earl Sweatshirt & Vince Staples | Centurion", "Earl Sweatshirt | 523", "Earl Sweatshirt | Uncle Al", "Earl Sweatshirt & Mac Miller | Guild", "Earl Sweatshirt & RZA | Molasses", "Earl Sweatshirt | Whoa (feat. Tyler, The Creator)", "Earl Sweatshirt | Hoarse", "Earl Sweatshirt & Domo Genesis | Knight"]
 
+[today.merge-picard]
+release = ["SK La’Flare (guest)", "Earl Sweatshirt (main)", "Vince Staples (guest)", "Domo Genesis (guest)", "Frank Ocean (guest)", "Casey Veggies (guest)", "Tyler, The Creator (guest)", "Mac Miller (guest)", "RZA (guest)", "RZA (producer)"]
+tracks = 15
+credits = ["1.1: SK La’Flare (guest), Earl Sweatshirt (main)", "1.2: Vince Staples (guest), Earl Sweatshirt (main)", "1.3: Domo Genesis (guest), Earl Sweatshirt (main)", "1.4: Frank Ocean (guest), Earl Sweatshirt (main)", "1.5: Vince Staples (guest), Casey Veggies (guest), Earl Sweatshirt (main)", "1.6: Earl Sweatshirt (main)", "1.7: Earl Sweatshirt (main), Tyler, The Creator (guest)", "1.8: Vince Staples (guest), Earl Sweatshirt (main)", "1.9: Earl Sweatshirt (main)", "1.10: Earl Sweatshirt (main)", "1.11: Mac Miller (guest), Earl Sweatshirt (main)", "1.12: RZA (guest), Earl Sweatshirt (main), RZA (producer)", "1.13: Earl Sweatshirt (main), Tyler, The Creator (guest)", "1.14: Earl Sweatshirt (main)", "1.15: Domo Genesis (guest), Earl Sweatshirt (main)"]
+
+[today.output-picard]
+albumartist = "Earl Sweatshirt"
+tracks = ["Earl Sweatshirt (feat. SK La’Flare) | Pre", "Earl Sweatshirt (feat. Vince Staples) | Burgundy", "Earl Sweatshirt (feat. Domo Genesis) | 20 Wave Caps", "Earl Sweatshirt (feat. Frank Ocean) | Sunday", "Earl Sweatshirt (feat. Vince Staples & Casey Veggies) | Hive", "Earl Sweatshirt | Chum", "Earl Sweatshirt (feat. Tyler, The Creator) | Sasquatch", "Earl Sweatshirt (feat. Vince Staples) | Centurion", "Earl Sweatshirt | 523", "Earl Sweatshirt | Uncle Al", "Earl Sweatshirt (feat. Mac Miller) | Guild", "Earl Sweatshirt (feat. RZA) | Molasses", "Earl Sweatshirt (feat. Tyler, The Creator) | Whoa", "Earl Sweatshirt | Hoarse", "Earl Sweatshirt (feat. Domo Genesis) | Knight"]
+
 # The files' tags.
 # Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
 # from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,

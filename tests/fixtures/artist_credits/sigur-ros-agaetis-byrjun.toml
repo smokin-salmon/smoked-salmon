@@ -45,6 +45,10 @@ tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Sta
 albumartist = "Sigur Rós"
 tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný batterí", "Sigur Rós | Hjartað hamast (bamm bamm bamm)", "Sigur Rós | Viðrar vel til loftárása", "Sigur Rós | Olsen olsen", "Sigur Rós | Ágætis byrjun", "Sigur Rós | Avalon"]
 
+[today.output-picard]
+albumartist = "Sigur Rós"
+tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn‐g‐englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný batterí", "Sigur Rós | Hjartað hamast (bamm bamm bamm)", "Sigur Rós | Viðrar vel til loftárása", "Sigur Rós | Olsen Olsen", "Sigur Rós | Ágætis byrjun", "Sigur Rós | Avalon"]
+
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

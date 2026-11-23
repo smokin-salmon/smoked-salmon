@@ -45,6 +45,10 @@ tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's the 
 albumartist = "Earth, Wind & Fire"
 tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's the Way of the World", "Earth, Wind & Fire | Happy Feelin' (feat. Maurice White)", "Earth, Wind & Fire | All About Love (First Impression) (feat. Maurice White)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire | Reasons (feat. Maurice White)", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See the Light"]
 
+[today.output-picard]
+albumartist = "Earth, Wind & Fire"
+tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That’s the Way of the World", "Earth, Wind & Fire (feat. Maurice White) | Happy Feelin'", "Earth, Wind & Fire (feat. Maurice White) | All About Love (First Impression)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire (feat. Maurice White) | Reasons", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See the Light"]
+
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

@@ -40,6 +40,10 @@ tracks = ["Asking Alexandria | Bad Blood (Weird Genius Remix) | REMIXER Weird Ge
 albumartist = "Asking Alexandria"
 tracks = ["Asking Alexandria | Bad Blood (Weird Genius Remix) | REMIXER Weird Genius", "Asking Alexandria | Let Go (kodeblooded Remix) | REMIXER Kodeblooded", "Asking Alexandria | Nothing Left (Cass Dillon Remix) | REMIXER Cass Dillon", "Asking Alexandria | Where Do We Go From Here? (Fairlane Remix) | REMIXER Fairlane", "Asking Alexandria | Where Do We Go From Here", "Asking Alexandria | Dark Void (Sullivan King Remix) | REMIXER Sullivan King", "Asking Alexandria | Holding On To Something More"]
 
+[today.output-picard]
+albumartist = "Asking Alexandria"
+tracks = ["Asking Alexandria | Bad Blood (Weird Genius remix) | REMIXER Weird Genius", "Asking Alexandria | Let Go (kodeblooded remix) | REMIXER Kodeblooded", "Asking Alexandria | Nothing Left (Cass Dillon remix) | REMIXER Cass Dillon", "Asking Alexandria | Where Do We Go From Here? (Fairlane remix) | REMIXER Fairlane", "Asking Alexandria | Where Do We Go From Here?", "Asking Alexandria | Dark Void (Sullivan King remix) | REMIXER Sullivan King", "Asking Alexandria | Holding on to Something More"]
+
 # The files' tags.
 # Constructed from Qobuz data (the case's own qobuz fixture), not copied from anyone's files: TITLE the track's
 # title, with its version when it has one, ARTIST the track's performer, the album artist in ALBUMARTIST, the full
