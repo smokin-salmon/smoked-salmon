@@ -3,6 +3,7 @@
 The stores are a fake on 127.0.0.1 (helpers.ssrf.FakeStore); no real store is reached.
 """
 
+import json
 import time
 import types
 from collections.abc import Callable
@@ -370,3 +371,44 @@ def test_a_request_dropped_after_an_answer_never_shows_that_answers_status(monke
     assert len(requests) >= (2 if STORES[name][1] else 1)
     assert message.startswith(f"{name}: could not read the release at ")
     assert "(HTTP" not in message
+
+
+class ReleaseThenNoCover(FakeStore):
+    """MusicBrainz's release answers 200 with two tracks numbered alike (the parse refuses it); the archive, 404."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        track = {"number": "1", "title": "T", "recording": {"title": "T", "artist-credit": [{"artist": {"name": "A"}}]}}
+        self.release = json.dumps(
+            {
+                "id": "0a1b2c3d-0000-4000-8000-000000000001",
+                "title": "R",
+                "cover-art-archive": {"front": True},
+                "media": [{"position": 1, "tracks": [track, track]}],
+            }
+        )
+
+    async def _answer(self, request: web.Request) -> web.StreamResponse:
+        self.requests.append(request.path)
+        if request.path.startswith("/caa/"):
+            return web.Response(status=404, text="Not Found")
+        return web.Response(text=self.release, content_type="application/json")
+
+
+def test_a_parse_error_after_the_cover_art_lookup_shows_the_releases_status_not_the_archives(monkeypatch) -> None:
+    store = ReleaseThenNoCover()
+
+    async def run() -> str:
+        async with store.serving():
+            scraper, url, rls_id = _point_musicbrainz(monkeypatch, store.url(""))
+            monkeypatch.setattr(musicbrainz.Scraper, "caa_url", store.url("/caa"))
+            with anyio.fail_after(10), pytest.raises(ScrapeError) as excinfo:
+                await scraper.scrape_release(url, rls_id=rls_id)
+            return str(excinfo.value)
+
+    release_url = "https://musicbrainz.org/release/0a1b2c3d-0000-4000-8000-000000000001"
+    message = anyio.run(run)
+
+    assert any(path.startswith("/caa/") for path in store.requests)
+    assert message.startswith(f"MusicBrainz: could not read the release at {release_url} (HTTP 200): ")
+    assert "HTTP 404" not in message
