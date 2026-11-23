@@ -153,6 +153,68 @@ def test_title_words_leave_out_a_release_type_as_a_whole_word_as_before(title: s
     assert _title_words(title) == words
 
 
+@pytest.mark.parametrize(
+    "title", ["Title (EP)", "Title [EP]", "Title (E.P.)", "Title (Single)", "Title [Single]", "Title (single)"]
+)
+def test_title_words_leave_out_a_release_type_in_brackets(title: str) -> None:
+    assert _title_words(title) == {"title"}
+
+
+@pytest.mark.parametrize(
+    ("ours", "logged"),
+    [
+        ("Sunrise (EP)", "Moonlight (EP)"),
+        ("Sunrise [Single]", "Moonlight [Single]"),
+        ("Sunrise (single)", "Moonlight (Single)"),
+    ],
+)
+def test_two_titles_sharing_only_a_bracketed_release_type_are_not_a_recent_upload_match(ours: str, logged: str) -> None:
+    assert not _shares_only_the_type(ours, logged)
+
+
+def test_two_titles_sharing_only_a_bare_dotted_release_type_are_not_a_recent_upload_match() -> None:
+    # "E.P." bare at the end is no title word either, or its letters would match.
+    assert not _shares_only_the_type("Sunrise E.P.", "Moonlight E.P.")
+
+
+def _shares_only_the_type(ours: str, logged: str) -> bool:
+    artist = [("The Very Long Named Artist Of Art", "main")]
+
+    return _recent_upload_matches(
+        generate_dupe_check_searchstrs(artist, ours),
+        generate_dupe_check_searchstrs(artist, logged),
+        0.5,
+        our_title_words=_title_words(ours),
+        candidate_title_words=_title_words(logged),
+    )
+
+
+@pytest.mark.parametrize(
+    ("ours", "logged", "matches"),
+    [
+        ("Sunrise EP", "Moonlight EP", False),
+        ("Sunrise - EP", "Moonlight - EP", False),
+        ("Album (EP)", "Album", True),
+        ("Album", "Album - Single", True),
+    ],
+)
+def test_as_before_a_recent_upload_match_reads_the_title_without_its_release_type(
+    ours: str, logged: str, matches: bool
+) -> None:
+    artist = [("Artist", "main")]
+
+    assert (
+        _recent_upload_matches(
+            generate_dupe_check_searchstrs(artist, ours),
+            generate_dupe_check_searchstrs(artist, logged),
+            0.5,
+            our_title_words=_title_words(ours),
+            candidate_title_words=_title_words(logged),
+        )
+        is matches
+    )
+
+
 def test_the_singles_compares_with_a_logged_singles() -> None:
     assert _recent_upload_matches(
         ["artist the singles"],
@@ -404,6 +466,48 @@ def test_an_unreadable_site_log_asks_before_uploading_without_the_check(
 )
 def test_the_search_leaves_out_a_release_type_only_where_it_ends_the_title(title: str, searched: str) -> None:
     assert generate_dupe_check_searchstrs([("Artist", "main")], title)[0] == searched
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        # Set apart by brackets or a dash of any kind, in any case, with or without dots (#969).
+        "Title (EP)",
+        "Title [EP]",
+        "Title (ep)",
+        "Title – EP",
+        "Title \u2014 EP",
+        "Title E.P.",
+        "Title - E.P.",
+        "Title (Single)",
+        "Title [Single]",
+        "Title – Single",
+        # Bare, in any case: the search is wider for it, never narrower.
+        "Title ep",
+        "Title single",
+    ],
+)
+def test_the_search_leaves_out_any_release_type_marker_ending_the_title(title: str) -> None:
+    assert generate_dupe_check_searchstrs([("Artist", "main")], title) == ["artist title"]
+
+
+@pytest.mark.parametrize(
+    ("title", "searched"),
+    [
+        # A dash with no space before it is part of a name, and a title that is only the type is the title.
+        ("MAX-EP", "artist max ep"),
+        ("(EP)", "artist (ep)"),
+        ("Wholesingle", "artist wholesingle"),
+        # A bracket that never closes is part of the name.
+        ("Hits (EP", "artist hits (ep"),
+    ],
+)
+def test_as_before_the_search_keeps_what_is_not_a_release_type_marker(title: str, searched: str) -> None:
+    assert generate_dupe_check_searchstrs([("Artist", "main")], title) == [searched]
+
+
+def test_as_before_the_search_leaves_out_an_edition_and_a_store_marker_together() -> None:
+    assert generate_dupe_check_searchstrs([("Artist", "main")], "Album (Deluxe Edition) - EP") == ["artist album"]
 
 
 @pytest.mark.parametrize("threshold", [2, 10])
