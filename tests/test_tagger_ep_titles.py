@@ -1,3 +1,4 @@
+import anyio
 import pytest
 
 from salmon import cfg
@@ -182,3 +183,44 @@ def test_as_before_qobuz_finds_the_edition_ending_the_title(title: str, expected
 @pytest.mark.parametrize("title", ["Space - Single", "Space (Single)"])
 def test_as_before_an_ep_cut_leaves_a_single_marker_alone(title: str) -> None:
     assert QobuzScraper().determine_rls_type({"title": title, "rls_type": "EP"}) == (title, "EP")
+
+
+def qobuz_scraped_title_and_type(title: str, release_type: str, monkeypatch: pytest.MonkeyPatch) -> tuple[str, str]:
+    """The title and release type of a whole Qobuz scrape of a one-track release."""
+    album = {
+        "id": "x",
+        "title": title,
+        "release_type": release_type,
+        "tracks_count": 1,
+        "artist": {"name": "Alice"},
+        "artists": [{"name": "Alice", "roles": ["main-artist"]}],
+        "genres_list": ["Pop/Rock"],
+        "release_date_original": "2026-01-01",
+        "tracks": {"items": [{"track_number": 1, "title": "Space"}]},
+    }
+    scraper = QobuzScraper()
+
+    async def fetch_data(*_args: object, **_kwargs: object) -> dict:
+        return album
+
+    monkeypatch.setattr(scraper, "fetch_data", fetch_data)
+    scraped = anyio.run(scraper.scrape_release, "https://www.qobuz.com/album/space/x")
+    return scraped["title"], scraped["rls_type"]
+
+
+@pytest.mark.parametrize(
+    ("title", "release_type"),
+    [("Space (Single)", ""), ("Space - Single", ""), ("Space - Single", "single"), ("Space (Single)", "single")],
+)
+def test_a_qobuz_scrape_returns_a_single_s_title_without_its_marker(
+    title: str, release_type: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scraped = qobuz_scraped_title_and_type(title, release_type, monkeypatch)
+
+    assert scraped == ("Space", "Single")
+
+
+def test_as_before_a_qobuz_single_named_with_single_in_it_keeps_its_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    scraped = qobuz_scraped_title_and_type("Forever Single", "single", monkeypatch)
+
+    assert scraped == ("Forever Single", "Single")

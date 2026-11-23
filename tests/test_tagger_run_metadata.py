@@ -207,11 +207,15 @@ def _title_and_type(monkeypatch: pytest.MonkeyPatch, title: str) -> tuple[str, s
 def test_a_store_title_ending_in_single_in_brackets_is_a_single_of_the_title_before_it(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    assert _title_and_type(monkeypatch, "Album (Single)") == ("Album", "Single")
+    scraped = _title_and_type(monkeypatch, "Album (Single)")
+
+    assert scraped == ("Album", "Single")
 
 
 def test_as_before_a_store_title_ending_in_a_dash_and_single_is_a_single(monkeypatch: pytest.MonkeyPatch) -> None:
-    assert _title_and_type(monkeypatch, "Album - Single") == ("Album", "Single")
+    scraped = _title_and_type(monkeypatch, "Album - Single")
+
+    assert scraped == ("Album", "Single")
 
 
 def test_salmon_meta_saves_json(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

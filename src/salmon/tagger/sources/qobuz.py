@@ -504,8 +504,11 @@ class Scraper(QobuzBase, MetadataMixin):
         if data["rls_type"] == "EP":
             # The title may still carry the marker, as with any other store: the same rule drops it.
             return strip_ep_suffix(data["title"]), "EP"
-        if data["rls_type"] in ["Single", "Soundtrack"]:
-            return data["title"], data["rls_type"]
+        if data["rls_type"] == "Single":
+            # As for an EP: the title read before the type may still carry the marker.
+            return split_type_marker(data["title"], bare=False).title.strip(), "Single"
+        if data["rls_type"] == "Soundtrack":
+            return data["title"], "Soundtrack"
 
         # Otherwise, fall back to the base class's heuristics
         return super().determine_rls_type(data)
