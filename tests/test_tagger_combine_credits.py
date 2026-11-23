@@ -1,8 +1,11 @@
 """The merge's credits decided from each source's claims (ADR 0007): who each claim comes from, the spellings, and
 the disputes salmon prints."""
 
+import contextlib
+import io
 from copy import deepcopy
 
+import msgspec
 import pytest
 from helpers.tagger_combine import make_tracks, one_track, stating, stores_stating
 from test_common_credits import files_claim, store_claim
@@ -10,7 +13,8 @@ from test_common_credits import files_claim, store_claim
 from salmon import cfg
 from salmon.common.credits import Claim
 from salmon.tagger.combine import _decide_credits, _join_split_names, combine_metadatas, combine_tracks, decide_alone
-from salmon.tagger.sources.base import construct_replacement_list
+from salmon.tagger.retagger import create_remixer_list
+from salmon.tagger.sources.base import construct_replacement_list, generate_artists
 
 
 def release(*artists: tuple[str, str], label: str | None = None) -> dict:
@@ -304,14 +308,140 @@ def test_claims_the_decision_overrules_are_not_credited_beside_the_name_that_bea
     assert decided(claims, [("Ava Max", "composer")]) == [("Ava Max", "guest")]
 
 
-def test_as_before_one_title_naming_two_spellings_of_a_remixer_keeps_both() -> None:
+def test_a_split_name_is_joined_back_under_the_spelling_its_artist_takes() -> None:
+    # #1109 and #1131 together: "Ava" and "Max" join into the one artist "The Ava Max" / "Ava Max" is, spelled once.
+    files, deezer = release(), release()
+    files["tracks"] = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    deezer["tracks"] = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    files["tracks"]["1"]["1"]["artists"] = [("Ava", "main"), ("Max", "main")]
+    files["tracks"]["1"]["2"]["artists"] = [("The Ava Max", "composer")]
+    files["tracks"]["1"]["3"]["artists"] = [("Ava Max", "composer")]
+    for track in deezer["tracks"]["1"].values():
+        track["artists"] = []
+
+    combined = combine_metadatas(("Deezer", deezer), base=files)
+
+    assert [combined["tracks"]["1"][num]["artists"] for num in ("1", "2", "3")] == [
+        [("The Ava Max", "main")],
+        [("The Ava Max", "composer")],
+        [("The Ava Max", "composer")],
+    ]
+
+
+def test_as_before_a_featuring_clause_naming_a_dropped_fragment_stays(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The store's "Simon" is a fragment of "Simon & Garfunkel" and goes, so nothing credits the clause's Simon.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    files = release(("Simon & Garfunkel", "main"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. Simon)"
+
+    combined = combine_metadatas(("Deezer", release(("Simon & Garfunkel", "main"), ("Simon", "guest"))), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song (feat. Simon)"
+
+
+@pytest.mark.parametrize(
+    ("written", "expected"),
+    [("Herbaliser", "Herbaliser X"), ("The Herbaliser", "Herbaliser")],
+    ids=["the files' spelling, which salmon writes", "a store's spelling, which it doesn't"],
+)
+def test_a_corrected_artist_is_one_credit_under_every_spelling(
+    monkeypatch: pytest.MonkeyPatch, written: str, expected: str
+) -> None:
+    # A correction names the spelling salmon writes, and the artist's other spellings follow it: one credit either way.
+    stores_stating(monkeypatch, ("Qobuz",), ())
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {written: "Herbaliser X"})
+
+    combined = combine_metadatas(("Qobuz", release(("The Herbaliser", "main"))), base=release(("Herbaliser", "main")))
+
+    assert credits(combined) == [[(expected, "main")]]
+
+
+def test_a_correction_is_not_shown_as_a_join(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    stores_stating(monkeypatch, ("Qobuz",), ())
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {"Herbaliser": "Herbaliser X"})
+
+    combine_metadatas(("Qobuz", release(("The Herbaliser", "main"))), base=release(("Herbaliser", "main")))
+
+    out = capsys.readouterr().out
+    assert "Herbaliser: The Herbaliser (Qobuz)" in out
+    assert "Herbaliser X:" not in out
+
+
+def test_a_remixer_discogs_credits_under_another_name_takes_its_correction(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Discogs' credited name is a REMIXER name of its own, not a credit on the track: the correction still reaches it.
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {"Herbalizer": "Herbaliser X"})
+    discogs = credited_as(
+        release(("Bob", "main"), ("The Herbaliser", "remixer")), "The Herbaliser", "remixer", "Herbalizer"
+    )
+    discogs["tracks"]["1"]["1"]["credited_remixers"] = ["The Herbaliser", "Herbalizer"]  # as the parser lists them
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Bob", "main")))
+
+    assert combined["tracks"]["1"]["1"]["credited_remixers"] == ["The Herbaliser", "Herbaliser X"]
+
+
+def test_a_corrected_artist_keeps_the_name_discogs_credits_it_as(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cfg.metadata.corrections, "artists", {"Roger Taylor": "Roger Meddows Taylor"})
+    discogs = credited_as(
+        release(("Queen", "main"), ("Roger Taylor", "producer")), "Roger Taylor", "producer", "Taylor"
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Queen", "main"), ("Taylor", "guest")))
+
+    assert credits(combined) == [[("Queen", "main"), ("Taylor", "guest"), ("Taylor", "producer")]]
+
+
+def test_a_featuring_clause_naming_discogs_name_for_a_credited_name_goes(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Discogs credits "The Groove Unit Collective" as the files' "The Groove Unit": the clause names the guest.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    files = release(("Bob", "main"), ("Groove Unit", "guest"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. The Groove Unit Collective)"
+    discogs = credited_as(
+        release(("Bob", "main"), ("The Groove Unit Collective", "guest")),
+        "The Groove Unit Collective",
+        "guest",
+        "The Groove Unit",
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song"
+
+
+def test_remixers_split_and_joined_back_keep_their_remixer_tag() -> None:
+    # "Simon" and "Garfunkel" join into "Simon and Garfunkel" as remixer: the credited remixer follows, for REMIXER.
+    files = two_tracks(
+        [("Bob", "main"), ("Simon", "remixer"), ("Garfunkel", "remixer")], [("Simon and Garfunkel", "composer")]
+    )
+    files["tracks"]["1"]["1"]["credited_remixers"] = ["Simon", "Garfunkel"]
+
+    track = combine_metadatas(("Deezer", two_tracks([], [])), base=files)["tracks"]["1"]["1"]
+
+    assert track["artists"] == [("Bob", "main"), ("Simon and Garfunkel", "remixer")]
+    assert create_remixer_list(track) == ["Simon and Garfunkel"]
+
+
+def test_as_before_a_featuring_clause_is_not_admitted_by_a_producer_of_the_same_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The guest "Herbaliser" is a fragment of the main and goes; the producer "The Herbaliser" performs nothing.
+    monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
+    files = release(("Herbaliser Collective", "main"), ("Herbaliser", "guest"), ("The Herbaliser", "producer"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. Herbaliser)"
+
+    combined = combine_metadatas(("Deezer", release()), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song (feat. Herbaliser)"
+
+
+def test_one_title_naming_a_remixer_in_two_spellings_gives_one_remixer() -> None:
     files, deezer = release(("Bob", "main")), release(("Bob", "main"))
     for meta in (files, deezer):
         meta["tracks"]["1"]["1"]["title"] = "Song (Jay-Z & Jay Z Remix)"
 
     combined = combine_metadatas(("Deezer", deezer), base=files)
 
-    assert combined["tracks"]["1"]["1"]["artists"] == [("Bob", "main"), ("Jay-Z", "remixer"), ("Jay Z", "remixer")]
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Bob", "main"), ("Jay-Z", "remixer")]
 
 
 def test_as_before_a_store_alone_keeps_its_credits(capsys: pytest.CaptureFixture) -> None:
@@ -344,7 +474,7 @@ def test_each_claim_comes_from_its_source_with_the_name_as_printed() -> None:
         ("files", "Alice", "Alice", "main", False),
         ("files", "K-Ci and JoJo", "K-Ci and JoJo", "main", False),
         ("Discogs", "Alice", "Alice", "main", True),
-        ("Discogs", "K-Ci and JoJo", "K-Ci and JoJo", "main", True),
+        ("Discogs", "K-Ci & JoJo", "K-Ci and JoJo", "main", True),
         ("Discogs", "Bob", "Bob", "remixer", True),
     ]
 
@@ -482,3 +612,438 @@ def test_as_before_an_assuming_store_s_remixer_on_one_track_reads_no_title(monke
 
     assert tracks["1"]["artists"] == [("Alice", "main"), ("Remi Xer", "remixer")]
     assert tracks["2"]["artists"] == [("Alice", "main")]
+
+
+# One artist in two spellings is one credit (#1131): the name key, and Discogs' credited names (ANVs) on a track.
+
+DISCOGS_FIRST = "https://www.discogs.com/release/1"
+
+
+def credited_as(meta: dict, name: str, role: str, anv: str) -> dict:
+    """The release as Discogs hands it to the merge: `name` credited on its first track as `anv`."""
+    meta["tracks"]["1"]["1"].setdefault("artist_variations", []).append({"name": name, "role": role, "anv": anv})
+    return meta
+
+
+def credits(meta: dict) -> list[list[tuple[str, str]]]:
+    return [track["artists"] for disc in meta["tracks"].values() for track in disc.values()]
+
+
+@pytest.mark.parametrize("source_url", [None, DISCOGS_FIRST], ids=["by preference", "Discogs chosen"])
+def test_a_name_discogs_credits_under_another_is_one_remixer_whichever_store_comes_first(
+    source_url: str | None,
+) -> None:
+    """MusicBrainz's 'Rick “Hum” Vee' is Discogs' 'Rick "Hum" Vee', whom Discogs credits as the files' "Rick Vee"."""
+    combined = combine_metadatas(
+        ("MusicBrainz", release(("Alice", "main"), ("Rick “Hum” Vee", "remixer"))),
+        (
+            "Discogs",
+            credited_as(
+                release(("Alice", "main"), ('Rick "Hum" Vee', "remixer")), 'Rick "Hum" Vee', "remixer", "Rick Vee"
+            ),
+        ),
+        base=release(("Alice", "main"), ("Rick Vee", "remixer")),
+        source_url=source_url,
+    )
+
+    assert credits(combined) == [[("Alice", "main"), ("Rick Vee", "remixer")]]
+
+
+@pytest.mark.parametrize("source_url", [None, DISCOGS_FIRST], ids=["by preference", "Discogs chosen"])
+def test_a_name_discogs_credits_as_the_files_spelling_joins_another_store_s_canonical_name(
+    source_url: str | None,
+) -> None:
+    """Discogs credits "Bob Smith" as the files' "Bobby Smith", so MusicBrainz's "Bob Smith" is the same artist."""
+    combined = combine_metadatas(
+        ("MusicBrainz", release(("Bob Smith", "main"))),
+        ("Discogs", credited_as(release(("Bob Smith", "main")), "Bob Smith", "main", "Bobby Smith")),
+        base=release(("Bobby Smith", "main")),
+        source_url=source_url,
+    )
+
+    assert credits(combined) == [[("Bobby Smith", "main")]]
+
+
+def test_with_discogs_as_the_base_its_own_credited_names_join_another_store_s() -> None:
+    combined = combine_metadatas(
+        ("Discogs", credited_as(release(("Bob Smith", "main")), "Bob Smith", "main", "Bobby Smith")),
+        ("Deezer", release(("Bobby Smith", "main"))),
+        source_url=DISCOGS_FIRST,
+    )
+
+    assert credits(combined) == [[("Bob Smith", "main")]]
+
+
+def test_as_before_a_name_discogs_credits_on_one_track_joins_nothing_on_another() -> None:
+    """Discogs credits Roger Taylor as "Taylor" on the first track only; the second track's Taylor is someone else."""
+    tracks = two_tracks(
+        [("Queen", "main"), ("Roger Taylor", "remixer")],
+        [("Queen", "main"), ("Taylor", "guest"), ("Roger Taylor", "remixer")],
+    )["tracks"]
+    tracks["1"]["1"]["artist_variations"] = [{"name": "Roger Taylor", "role": "remixer", "anv": "Taylor"}]
+
+    _decide_credits(tracks, {}, "Discogs")
+
+    assert tracks["1"]["2"]["artists"] == [("Queen", "main"), ("Taylor", "guest"), ("Roger Taylor", "remixer")]
+
+
+def test_a_store_name_discogs_credits_with_the_article_keeps_the_files_spelling() -> None:
+    """Discogs credits "The Groove Unit Collective" as "The Groove Unit", the files' "Groove Unit": the merge matches
+    it to the files' credit, so its longer name never reaches the track to make the files' a fragment of it."""
+    discogs = credited_as(
+        release(("The Groove Unit Collective", "main")), "The Groove Unit Collective", "main", "The Groove Unit"
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Groove Unit", "main")))
+
+    assert credits(combined) == [[("Groove Unit", "main")]]
+
+
+def test_a_remixer_a_title_names_with_the_article_keeps_the_files_spelling() -> None:
+    deezer = release(("Alice", "main"))
+    deezer["tracks"]["1"]["1"]["title"] = "Song (The Marlowes Remix)"
+
+    combined = combine_metadatas(("Deezer", deezer), base=release(("Alice", "main"), ("Marlowes", "remixer")))
+
+    assert credits(combined) == [[("Alice", "main"), ("Marlowes", "remixer")]]
+
+
+@pytest.mark.parametrize("source_url", [None, DISCOGS_FIRST], ids=["by preference", "Discogs chosen"])
+def test_a_stated_main_spelled_without_the_article_is_kept_beside_a_store_s_guessed_guest(
+    monkeypatch: pytest.MonkeyPatch, source_url: str | None
+) -> None:
+    """DJ-Kicks: the files' "Herbaliser" is Discogs' "The Herbaliser", credited as Qobuz's "Herbalizer"."""
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("MusicBrainz", "Discogs"))
+    combined = combine_metadatas(
+        ("Qobuz", stating(release(("Herbalizer", "guest")), ("Herbalizer", "guest"))),
+        ("MusicBrainz", release(("The Herbaliser", "main"))),
+        ("Discogs", credited_as(release(("The Herbaliser", "main")), "The Herbaliser", "main", "Herbalizer")),
+        base=release(("Herbaliser", "main")),
+        source_url=source_url,
+    )
+
+    assert credits(combined) == [[("Herbaliser", "main")]]
+
+
+def test_a_group_spelled_with_and_without_the_article_is_one_artist_across_tracks() -> None:
+    files = two_tracks([("Ahmad Jamal Trio", "main")], [("Ahmad Jamal Trio", "main")])
+    musicbrainz = two_tracks([("Ahmad Jamal Trio", "main")], [("The Ahmad Jamal Trio", "main")])
+
+    combined = combine_metadatas(("MusicBrainz", musicbrainz), base=files)
+
+    assert credits(combined) == [[("Ahmad Jamal Trio", "main")], [("Ahmad Jamal Trio", "main")]]
+    assert combined["artists"] == [("Ahmad Jamal Trio", "main")]
+
+
+def test_a_group_written_with_and_or_an_ampersand_is_one_main() -> None:
+    combined = combine_metadatas(
+        ("Deezer", release(("Dick Dale and His Del-Tones", "main"))),
+        base=release(("Dick Dale & His Del-Tones", "main")),
+    )
+
+    assert credits(combined) == [[("Dick Dale & His Del-Tones", "main")]]
+
+
+def test_one_artist_in_two_spellings_and_two_roles_is_one_credit_the_files_state(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """MBDTF: the files' main "JAŸ-Z" is Deezer's guest "JAY Z", one by `comparable`, so not shown as a join."""
+    combined = combine_metadatas(("Deezer", release(("JAY Z", "guest"))), base=release(("JAŸ-Z", "main")))
+
+    assert credits(combined) == [[("JAŸ-Z", "main")]]
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out
+
+
+def test_names_read_as_one_artist_beyond_case_accents_and_punctuation_are_shown(capsys: pytest.CaptureFixture) -> None:
+    combine_metadatas(
+        ("MusicBrainz", release(("The Herbaliser", "main"))),
+        ("Discogs", credited_as(release(("The Herbaliser", "main")), "The Herbaliser", "main", "Herbalizer")),
+        ("Deezer", release(("HERBALISER", "main"))),
+        base=release(("Herbaliser", "main")),
+    )
+
+    out = capsys.readouterr().out
+    assert "Read as one artist:\n  Herbaliser: The Herbaliser (MusicBrainz, Discogs)\n" in out
+
+
+def test_a_duo_and_one_person_of_their_names_are_read_as_one_artist_and_shown(capsys: pytest.CaptureFixture) -> None:
+    """The key's known cost: "Peter and Gordon" and "Peter Gordon" are one key, so salmon says so."""
+    files = two_tracks([("Peter and Gordon", "main")], [("Peter Gordon", "main")])
+
+    combine_metadatas(("Deezer", deepcopy(files)), base=files)
+
+    out = capsys.readouterr().out
+    assert "Read as one artist:\n  Peter and Gordon: Peter Gordon (the files, Deezer)\n" in out
+
+
+def test_a_store_alone_shows_the_names_it_reads_as_one_artist(capsys: pytest.CaptureFixture) -> None:
+    combined = combine_metadatas(
+        ("Qobuz", two_tracks([("Miles Davis Quintet", "main")], [("The Miles Davis Quintet", "main")]))
+    )
+
+    assert credits(combined) == [[("Miles Davis Quintet", "main")], [("Miles Davis Quintet", "main")]]
+    out = capsys.readouterr().out
+    assert "Read as one artist:\n  Miles Davis Quintet: The Miles Davis Quintet (Qobuz)\n" in out
+
+
+def test_a_scrape_used_alone_shows_the_names_it_reads_as_one_artist(capsys: pytest.CaptureFixture) -> None:
+    meta = release()
+    meta["tracks"] = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    for num, name in (("1", "Miles Davis Quintet"), ("2", "The Miles Davis Quintet"), ("3", "The Miles Davis Quintet")):
+        meta["tracks"]["1"][num]["artists"] = [(name, "main")]
+
+    decide_alone(meta, "Qobuz")
+
+    assert credits(meta) == [[("Miles Davis Quintet", "main")]] * 3
+    out = capsys.readouterr().out
+    assert "Read as one artist:\n  Miles Davis Quintet: The Miles Davis Quintet (Qobuz)\n" in out
+
+
+def test_names_discogs_credits_under_one_another_on_a_track_are_one_artist() -> None:
+    """Discogs credits "Bob Smith" as "Bobby Smith", and "Bobby Smith" as the files' "Rob Smith": all three are one."""
+    discogs = release(("Bob Smith", "main"), ("Bobby Smith", "remixer"))
+    credited_as(credited_as(discogs, "Bob Smith", "main", "Bobby Smith"), "Bobby Smith", "remixer", "Rob Smith")
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Rob Smith", "main")))
+
+    assert credits(combined) == [[("Rob Smith", "main"), ("Rob Smith", "remixer")]]
+
+
+def test_a_duo_written_with_an_ampersand_and_one_person_of_their_names_are_shown() -> None:
+    """ "Peter & Gordon" and "Peter Gordon" are one by `comparable` too, but never were across tracks."""
+    files = two_tracks([("Peter & Gordon", "main")], [("Peter Gordon", "main")])
+    out = io.StringIO()
+
+    with contextlib.redirect_stdout(out):
+        combine_metadatas(("Deezer", deepcopy(files)), base=files)
+
+    assert "Read as one artist:\n  Peter & Gordon: Peter Gordon (the files, Deezer)\n" in out.getvalue()
+
+
+def test_a_name_only_a_dropped_credit_gave_is_not_shown(capsys: pytest.CaptureFixture) -> None:
+    """Discogs' "Bob Smith", credited as "Bobby Smith", is a fragment of "Bob Smith Band" and dropped: nothing of it
+    is read as one artist."""
+    discogs = credited_as(
+        release(("Bob Smith Band", "main"), ("Bob Smith", "guest")), "Bob Smith", "guest", "Bobby Smith"
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Bob Smith Band", "main")))
+
+    assert credits(combined) == [[("Bob Smith Band", "main")]]
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out
+
+
+def test_spellings_one_by_comparable_are_shown_once(capsys: pytest.CaptureFixture) -> None:
+    """Discogs credits Andrew Watt as "WATT", the spelling Deezer and Qobuz give (one by comparable): one line."""
+    combine_metadatas(
+        ("Deezer", release(("WATT", "guest"))),
+        ("Qobuz", release(("Watt", "guest"))),
+        ("Discogs", credited_as(release(("Andrew Watt", "guest")), "Andrew Watt", "guest", "WATT")),
+        base=release(("Andrew Watt", "main")),
+    )
+
+    out = capsys.readouterr().out
+    assert "Read as one artist:\n  Andrew Watt: WATT (Deezer, Qobuz)\n" in out
+
+
+def test_an_artist_and_their_own_remix_spelled_with_the_article_keep_both_credits() -> None:
+    """The files' main "Golden Lanterns" is no fragment of the title's remixer "The Golden Lanterns": one artist."""
+    deezer = release(("The Golden Lanterns", "main"))
+    deezer["tracks"]["1"]["1"]["title"] = "Song (The Golden Lanterns Remix)"
+
+    combined = combine_metadatas(("Deezer", deezer), base=release(("Golden Lanterns", "main")))
+
+    assert credits(combined) == [[("Golden Lanterns", "main"), ("Golden Lanterns", "remixer")]]
+
+
+def test_a_stated_main_beside_a_store_s_guest_spelled_with_the_article_is_kept_and_disputed(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    combined = combine_metadatas(("Deezer", release(("The Herbaliser", "guest"))), base=release(("Herbaliser", "main")))
+
+    assert credits(combined) == [[("Herbaliser", "main")]]
+    out = capsys.readouterr().out
+    assert "\n  Herbaliser (guest at Deezer)\n" in out
+
+
+def test_a_featuring_clause_naming_a_guest_as_a_store_spells_them_goes_from_the_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The guest is respelled to the files' "Herbaliser"; the title's "feat. The Herbaliser" still names them."""
+    formatting = msgspec.structs.replace(cfg.upload.formatting, strip_useless_versions=True)
+    monkeypatch.setattr(cfg.upload, "formatting", formatting)
+    files = two_tracks([("Herbaliser", "main")], [("Alice", "main")])
+    files["tracks"]["1"]["2"]["title"] = "Song (feat. The Herbaliser)"
+    deezer = two_tracks([("Herbaliser", "main")], [("Alice", "main"), ("The Herbaliser", "guest")])
+    deezer["tracks"]["1"]["2"]["title"] = "Song (feat. The Herbaliser)"
+
+    combined = combine_metadatas(("Deezer", deezer), base=files)
+
+    track = combined["tracks"]["1"]["2"]
+    assert (track["title"], track["artists"]) == ("Song", [("Alice", "main"), ("Herbaliser", "guest")])
+
+
+def test_a_remixer_a_store_credits_under_another_spelling_is_still_written_to_remixer() -> None:
+    deezer = release(("Alice", "main"), ("The Lantern Club", "remixer"))
+    deezer["tracks"]["1"]["1"]["credited_remixers"] = ["The Lantern Club"]
+
+    combined = combine_metadatas(("Deezer", deezer), base=release(("Alice", "main"), ("Lantern Club", "remixer")))
+
+    assert create_remixer_list(combined["tracks"]["1"]["1"]) == ["Lantern Club"]
+
+
+def test_a_scrape_of_discogs_used_alone_reads_its_credited_names_as_one_artist() -> None:
+    """As with Discogs as the base of a merge: "Bob Smith", credited as "Bobby Smith", is the guest "Bobby Smith"."""
+    meta = credited_as(release(("Bob Smith", "main"), ("Bobby Smith", "guest")), "Bob Smith", "main", "Bobby Smith")
+
+    decide_alone(meta, "Discogs")
+
+    assert credits(meta) == [[("Bob Smith", "main")]]
+
+
+def test_as_before_names_one_by_comparable_but_not_by_the_key_are_matched_by_the_merge() -> None:
+    """ "TheDream" keeps its article (no space or dash after it), but the merge still matches it to "The-Dream"."""
+    combined = combine_metadatas(("Deezer", release(("The-Dream", "main"))), base=release(("TheDream", "main")))
+
+    assert credits(combined) == [[("TheDream", "main")]]
+
+
+def test_a_joined_artist_is_spelled_as_its_first_credit_in_track_order_whatever_the_tracks_order() -> None:
+    tracks = {"1": {"2": one_track([("The Lanterns", "main")], "Two")["1"]["1"]}}
+    tracks["1"]["1"] = one_track([("Lanterns", "main")], "One")["1"]["1"]
+
+    _decide_credits(tracks, {}, "files")
+
+    assert [tracks["1"][num]["artists"] for num in ("1", "2")] == [[("Lanterns", "main")]] * 2
+
+
+def test_as_before_a_featuring_clause_naming_a_producer_discogs_credits_as_the_main_stays(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Discogs credits the producer Thomas Bangalter as "Daft Punk": the title's "feat. Thomas Bangalter" names no
+    performer, so it stays."""
+    formatting = msgspec.structs.replace(cfg.upload.formatting, strip_useless_versions=True)
+    monkeypatch.setattr(cfg.upload, "formatting", formatting)
+    files = release(("Daft Punk", "main"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. Thomas Bangalter)"
+    discogs = credited_as(
+        release(("Daft Punk", "main"), ("Thomas Bangalter", "producer")), "Thomas Bangalter", "producer", "Daft Punk"
+    )
+    discogs["tracks"]["1"]["1"]["title"] = "Song (feat. Thomas Bangalter)"
+
+    combined = combine_metadatas(("Discogs", discogs), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song (feat. Thomas Bangalter)"
+
+
+def test_a_featuring_clause_naming_a_guest_as_discogs_credits_them_goes_from_the_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    formatting = msgspec.structs.replace(cfg.upload.formatting, strip_useless_versions=True)
+    monkeypatch.setattr(cfg.upload, "formatting", formatting)
+    files = release(("Alice", "main"))
+    files["tracks"]["1"]["1"]["title"] = "Song (feat. Herbalizer)"
+    discogs = credited_as(
+        release(("Alice", "main"), ("The Herbaliser", "guest")), "The Herbaliser", "guest", "Herbalizer"
+    )
+    discogs["tracks"]["1"]["1"]["title"] = "Song (feat. Herbalizer)"
+
+    combined = combine_metadatas(("Discogs", discogs), base=files)
+
+    assert combined["tracks"]["1"]["1"]["title"] == "Song"
+
+
+def test_a_featuring_clause_naming_a_guest_as_discogs_used_alone_credits_them_goes_from_the_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """As with Discogs merged as a store: a lone Discogs scrape's own claims carry the names it credits them as."""
+    formatting = msgspec.structs.replace(cfg.upload.formatting, strip_useless_versions=True)
+    monkeypatch.setattr(cfg.upload, "formatting", formatting)
+    meta = credited_as(release(("Alice", "main"), ("The Herbaliser", "guest")), "The Herbaliser", "guest", "Herbalizer")
+    meta["tracks"]["1"]["1"]["title"] = "Song (feat. Herbalizer)"
+
+    decide_alone(meta, "Discogs")
+
+    assert meta["tracks"]["1"]["1"]["title"] == "Song"
+
+
+def test_a_stated_credit_discogs_credits_under_a_longer_name_is_no_fragment_of_it() -> None:
+    """Discogs credits Roger Taylor, producer, as the files' guest "Taylor": one artist, so the guest stays."""
+    discogs = credited_as(
+        release(("Queen", "main"), ("Roger Taylor", "producer")), "Roger Taylor", "producer", "Taylor"
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Queen", "main"), ("Taylor", "guest")))
+
+    assert credits(combined) == [[("Queen", "main"), ("Taylor", "guest"), ("Taylor", "producer")]]
+
+
+@pytest.mark.parametrize("source_url", [None, DISCOGS_FIRST], ids=["by preference", "Discogs chosen"])
+def test_a_stated_credit_discogs_credits_under_a_longer_name_stays_whichever_store_comes_first(
+    source_url: str | None,
+) -> None:
+    """By preference MusicBrainz merges first, with "Roger Taylor" and no credited name: the files' guest "Taylor"
+    waits for Discogs' "Taylor" before the fragment check weighs it."""
+    discogs = credited_as(
+        release(("Queen", "main"), ("Roger Taylor", "producer")), "Roger Taylor", "producer", "Taylor"
+    )
+    musicbrainz = release(("Queen", "main"), ("Roger Taylor", "producer"))
+
+    combined = combine_metadatas(
+        ("MusicBrainz", musicbrainz),
+        ("Discogs", discogs),
+        base=release(("Queen", "main"), ("Taylor", "guest")),
+        source_url=source_url,
+    )
+
+    assert credits(combined) == [[("Queen", "main"), ("Taylor", "guest"), ("Taylor", "producer")]]
+
+
+def test_a_name_credited_through_a_chain_of_discogs_names_is_no_fragment() -> None:
+    """Discogs credits Robert Taylor as "Bob Taylor", and Bob Taylor as "Taylor": the files' "Taylor" is one artist
+    with both, so it is no fragment of "Robert Taylor"."""
+    discogs = release(("Queen", "main"), ("Robert Taylor", "producer"), ("Bob Taylor", "remixer"))
+    discogs = credited_as(
+        credited_as(discogs, "Robert Taylor", "producer", "Bob Taylor"), "Bob Taylor", "remixer", "Taylor"
+    )
+
+    combined = combine_metadatas(("Discogs", discogs), base=release(("Queen", "main"), ("Taylor", "guest")))
+
+    assert ("Taylor", "guest") in credits(combined)[0]
+
+
+def test_as_before_two_artists_whose_names_look_alike_stay_two(capsys: pytest.CaptureFixture) -> None:
+    """On two tracks: on one, the merge's fragment check drops "Santana" beside "Carlos Santana" (#1112)."""
+    files = two_tracks([("Stevie Nicks", "main"), ("Carlos Santana", "main")], [("Santana", "main")])
+    deezer = two_tracks([("Stevie Nicks", "main"), ("Stevie Wonder", "guest")], [("Santana", "main")])
+
+    combined = combine_metadatas(("Deezer", deezer), base=files)
+
+    assert credits(combined) == [
+        [("Stevie Nicks", "main"), ("Carlos Santana", "main"), ("Stevie Wonder", "guest")],
+        [("Santana", "main")],
+    ]
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out
+
+
+def test_as_before_a_review_keeps_two_spellings_the_user_kept_apart() -> None:
+    """The list a review save rebuilds from the tracks keys names as before: the decision has already joined what the
+    sources gave, so two spellings left are the user's."""
+    tracks = two_tracks([("Lab Rats", "main")], [("The Lab Rats", "main")])["tracks"]
+
+    artists, _ = generate_artists(tracks)
+
+    assert artists == [("Lab Rats", "main"), ("The Lab Rats", "main")]
+
+
+def test_as_before_a_name_only_discogs_credits_an_artist_as_is_not_shown(capsys: pytest.CaptureFixture) -> None:
+    """Discogs credits Larry Dunn as "L. Dunn", but no source gives that name: nothing is read as one artist."""
+    discogs = credited_as(release(("Larry Dunn", "main")), "Larry Dunn", "main", "L. Dunn")
+
+    combine_metadatas(("Discogs", discogs), base=release(("Larry Dunn", "main")))
+
+    out = capsys.readouterr().out
+    assert "Read as one artist" not in out

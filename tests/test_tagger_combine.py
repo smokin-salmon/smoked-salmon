@@ -153,12 +153,14 @@ def test_combine_tracks_does_not_duplicate_artists_spelled_with_different_punctu
     ]
 
 
-def test_combine_tracks_issue_tag_with_vs_credit_gives_no_duplicate_or_suffix():
-    # The tag of track 1-16 is one string, "Selena (5) vs. X-Men", so it is one name to salmon
-    base = one_track(parse_artists("Selena (5) vs. X-Men"), "Give It Up (Jamm & Face Remix)")
-    meta = one_track(discogs_parse_artists([], DISCOGS_1_16), "Give It Up (Jamm & Face Remix)")
+def test_as_before_the_merge_issue_tag_with_vs_credit_gives_no_duplicate_or_suffix():
+    # The tag of track 1-16 is one string, "Selena (5) vs. X-Men", so it is one name to salmon. The merge's fragment
+    # check drops Discogs' "Selena" and "X-Men" once every store is in.
+    base, meta = make_metadata("Give It Up"), make_metadata("Give It Up")
+    base["tracks"] = one_track(parse_artists("Selena (5) vs. X-Men"), "Give It Up (Jamm & Face Remix)")
+    meta["tracks"] = one_track(discogs_parse_artists([], DISCOGS_1_16), "Give It Up (Jamm & Face Remix)")
 
-    combined = combine_tracks(deepcopy(base), deepcopy(meta), True)
+    combined = combine_metadatas(("Discogs", meta), base=base)["tracks"]
 
     assert combined["1"]["1"]["artists"] == [
         ("Selena vs. X-Men", "main"),
@@ -190,6 +192,27 @@ def test_fragment_check_matches_words_ignoring_case_and_punctuation():
     kept = check_for_artist_fragments(artists)
 
     assert kept == [("Selena vs. X-Men", "main")]
+
+
+def test_fragment_check_follows_a_chain_of_credited_names():
+    artists = [("Taylor", "guest"), ("Robert Taylor", "producer"), ("Bob Taylor", "remixer")]
+    variations = [
+        {"name": "Robert Taylor", "role": "producer", "anv": "Bob Taylor"},
+        {"name": "Bob Taylor", "role": "remixer", "anv": "Taylor"},
+    ]
+
+    assert check_for_artist_fragments(list(artists), variations) == artists
+
+
+def test_fragment_check_keeps_every_name_discogs_credits_one_artist_as():
+    # Roger Taylor credited as "Taylor" in one role and "R. Taylor" in another: the second doesn't replace the first.
+    artists = [("Taylor", "guest"), ("Roger Taylor", "producer"), ("Roger Taylor", "remixer")]
+    variations = [
+        {"name": "Roger Taylor", "role": "producer", "anv": "Taylor"},
+        {"name": "Roger Taylor", "role": "remixer", "anv": "R. Taylor"},
+    ]
+
+    assert check_for_artist_fragments(list(artists), variations) == artists
 
 
 def test_fragment_check_keeps_single_letter_names():

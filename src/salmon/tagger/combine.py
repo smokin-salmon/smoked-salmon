@@ -11,7 +11,7 @@ from salmon import cfg
 from salmon.common import normalize_accents
 from salmon.common.credits import Claim, resolve_credits
 from salmon.common.numbers import natural_key, number_or_text
-from salmon.common.strings import comparable, restore_accents, unbracketed
+from salmon.common.strings import comparable, restore_accents, same_artist_key, unbracketed
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
@@ -165,12 +165,14 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     if "url" in base:
         del base["url"]
 
+    _drop_fragments(base["tracks"], claims)
     # The titles first, from the performers as the sources credited them, before the decision corrects their names and
     # joins split ones: a featuring clause names them that way, and deciding changes only their roles.
-    _decide_titles(base["tracks"], base_source)
-    decisions = _decide_credits(base["tracks"], claims, base_source, corrected=True)
+    _decide_titles(base["tracks"], base_source, claims)
+    decisions, joined = _decide_credits(base["tracks"], claims, base_source, corrected=True)
     # After the decision: a base track no store paired is decided from its own marks.
     without_merge_only_keys(base)
+    _print_joined(joined)
     _print_disputes(decisions)
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
     base["genres"] = standardize_genres(_correct_genres(base["genres"]))
@@ -184,20 +186,6 @@ def _correction_key(name):
 
 def _artist_corrections():
     return {_correction_key(name): to for name, to in cfg.metadata.corrections.artists.items()}
-
-
-def _correct_artists(tracks):
-    """Rename each track artist that [metadata.corrections] artists names, keeping its role."""
-    corrections = _artist_corrections()
-    if not corrections:
-        return
-    for disc in tracks.values():
-        for track in disc.values():
-            track["artists"] = [(corrections.get(_correction_key(name), name), role) for name, role in track["artists"]]
-            if "credited_remixers" in track:
-                track["credited_remixers"] = [
-                    corrections.get(_correction_key(name), name) for name in track["credited_remixers"]
-                ]
 
 
 def _correct_genres(genres):
@@ -422,18 +410,21 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
             btrack.setdefault("store_titles", []).append((track["title"], track.get("version")))
 
             base_artists = {(comparable(a[0]), a[1]) for a in btrack["artists"]}
+            base_keys = {(same_artist_key(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
-            before = list(btrack["artists"])  # what this store's credits are matched against, as base_artists
             variations = {(v["name"], v["role"]): v["anv"] for v in track.get("artist_variations", [])}
             own = None if claims is None else claims.setdefault(id(btrack), _claims_of(btrack, base_source))
             if own is not None:
-                own += _store_claims(track["artists"], variations, before, store, track.get("assumed_artists", ()))
+                own += _store_claims(track["artists"], variations, store, track.get("assumed_artists", ()))
+                # Discogs' names and the names it credits them as, for _decide_credits to read as one artist. Gathered,
+                # not decided: the base's own (Discogs as the base) are on it already.
+                btrack.setdefault("artist_variations", []).extend(track.get("artist_variations", []))
             for a in track["artists"]:
                 if (comparable(a[0]), a[1]) in base_artists:
                     continue
-                # The tags may spell the artist the way the release credits them (Discogs ANV)
+                # The tags may spell the artist the way the release credits them (Discogs ANV), with or without "The"
                 anv = variations.get(a)
-                if anv and (comparable(anv), a[1]) in base_artists:
+                if anv and (same_artist_key(anv), a[1]) in base_keys:
                     continue
                 btrack["artists"].append(a)
 
@@ -443,9 +434,8 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                     if (comparable(remixer[0]), remixer[1]) not in base_artists:
                         btrack["artists"].append(remixer)
                 if own is not None:
-                    own += _store_claims(remixers, {}, before, store, guessed=remixers)
+                    own += _store_claims(remixers, {}, store, guessed=remixers)
 
-            btrack["artists"] = check_for_artist_fragments(btrack["artists"])
             btrack["credited_remixers"] = list(
                 dict.fromkeys([*btrack.get("credited_remixers", []), *track.get("credited_remixers", [])])
             )
@@ -493,25 +483,19 @@ def _assumed(source, credit, guesses):
 
 
 def _claims_of(track, source):
-    """A track's claims from its own credits and marks: the base's, or a scrape's used alone."""
-    guesses = track.get("assumed_artists", ())
+    """A track's claims from its own credits and marks: the base's, or a scrape's used alone, each credited as Discogs
+    credits it there (its own `artist_variations`), as a store's claims are."""
+    variations = {(v["name"], v["role"]): v["anv"] for v in track.get("artist_variations", ())}
+    return _store_claims(track["artists"], variations, source, track.get("assumed_artists", ()))
+
+
+def _store_claims(credits, variations, source, guessed):
+    """A store's credits on a base track as claims, each under the name the store gives it and the name it credits it
+    as (Discogs' ANV). Which names are one artist is decided later, by _artist_classes."""
     return [
-        Claim(source, name, name, role, assumed=_assumed(source, (name, role), guesses))
-        for name, role in track["artists"]
+        Claim(source, name, variations.get((name, role)) or name, role, assumed=_assumed(source, (name, role), guessed))
+        for name, role in credits
     ]
-
-
-def _store_claims(credits, variations, base_credits, source, guessed):
-    """A store's credits on a base track as claims, each named as the base already names that artist in that role
-    (the merge's match: `comparable`, or Discogs' credited name), so a match is one name to decide on. Whether each is
-    a guess is read before the match, on the name the store gave."""
-    named = {(comparable(name), role): name for name, role in base_credits}
-    claims = []
-    for name, role in credits:
-        anv = variations.get((name, role))
-        matched = named.get((comparable(name), role)) or (anv and named.get((comparable(anv), role))) or name
-        claims.append(Claim(source, matched, anv or name, role, assumed=_assumed(source, (name, role), guessed)))
-    return claims
 
 
 # A ripper's placeholder: "Track 01", "Audio Track 1", and its French, Spanish, Italian, German, Portuguese words.
@@ -523,11 +507,22 @@ def _untitled(title):
     return not title or bool(_RE_PLACEHOLDER_TITLE.fullmatch(title))
 
 
-def _decide_titles(tracks, base_source):
-    """Write each track's one title, from its own and each store's beside it (`store_titles`), in place."""
+def _decide_titles(tracks, base_source, claims):
+    """Write each track's one title, from its own and each store's beside it (`store_titles`), in place. A featuring
+    clause may name a performer under any name a source gave it, Discogs' credited name (ANV) included."""
     for disc in tracks.values():
         for track in disc.values():
-            track["title"], _why = _written_title(track, base_source == "files", _credited(track))
+            own = claims.get(id(track)) or _claims_of(track, base_source)
+            # Only an artist still credited as a performer on the track: a fragment the merge dropped performs nothing.
+            keys = {same_artist_key(name) for name, role in track["artists"] if role in {"main", "guest"}}
+            performers = {
+                comparable(name)
+                for claim in own
+                if claim.role in {"main", "guest"}
+                and {same_artist_key(claim.name), same_artist_key(claim.credited_as)} & keys
+                for name in (claim.name, claim.credited_as)
+            }
+            track["title"], _why = _written_title(track, base_source == "files", _credited(track) | performers)
 
 
 def _credited(track):
@@ -662,55 +657,138 @@ def _with_store_accents(title, stores):
     return title
 
 
-def _decide_credits(tracks, claims, base_source, corrected=False):
-    """Decide each track's credits from its claims (ADR 0007), in place, and return the reasons.
+def _drop_fragments(tracks, claims):
+    """Drop each paired track's fragments (#1112), once, after the last store, so the guard sees every name Discogs
+    credits on the track."""
+    for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
+        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()))
 
-    Each name first takes the spelling generate_artists gives it, so deciding never changes a spelling. A claim whose
-    credit the merge dropped (a fragment of another name) is left out. Every kept credit has a claim: the merge claims
-    each credit it adds to a track, under the name it adds it as. The track's badly split names are then joined back
-    over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). With `corrected`,
-    the configured artist corrections apply to the tracks' credits and the claims first, once each, so a corrected
-    part joins under its new name, as it did when the repair ran after the corrections.
+
+def _decide_credits(tracks, claims, base_source, corrected=False):
+    """Decide each track's credits from its claims (ADR 0007), in place. Returns the reasons and the names read as one
+    artist beyond what `comparable` joins (_print_joined).
+
+    Each claim first takes its artist's spelling (_artist_classes), so two spellings of one artist are one name to
+    decide on. With `corrected`, the configured artist corrections apply to that spelling, once, so a corrected artist
+    keeps every spelling it had, and a corrected part joins under its new name, as it did when the repair ran after the
+    corrections. A claim whose artist the merge dropped in that role (a fragment of another name) is left out. Every
+    kept credit has a claim: the merge claims each credit it adds to a track. The track's badly split names are joined
+    back over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). A credited
+    remixer takes its artist's spelling too, so the REMIXER tag still finds it.
     """
-    # Each track's claims before the corrections, so that each name is corrected once, as its credit is.
     own = {
         (disc, num): claims.get(id(track)) or _claims_of(track, base_source)
         for disc, disc_tracks in tracks.items()
         for num, track in disc_tracks.items()
     }
     corrections = _artist_corrections() if corrected else {}
-    if corrections:
-        _correct_artists(tracks)
-    spellings = artist_spellings(tracks)
+    shown = _artist_classes(tracks, own)
+    spelled = {
+        key: {name: corrections.get(_correction_key(as_)) or as_ for name, as_ in spelling.items()}
+        for key, spelling in shown.items()
+    }
     to_replace = construct_replacement_list(
-        [(spellings[normalize_accents(name.lower())], role) for name, role in _release_credits(tracks)]
+        [
+            (spelled[disc, num][name], role)
+            for disc, disc_tracks in tracks.items()
+            for num, track in disc_tracks.items()
+            for name, role in track["artists"]
+        ]
     )
-    by_track = {}
+    by_track, joined = {}, {}
     for disc, disc_tracks in tracks.items():
         for num, track in disc_tracks.items():
-            kept = {tuple(credit) for credit in track["artists"]}
-            by_track[disc, num] = _join_split_names(
-                [
-                    msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
-                    for claim in (_corrected_claim(claim, corrections) for claim in own[disc, num])
-                    if (claim.name, claim.role) in kept
-                ],
-                to_replace,
-            )
+            spelling = spelled[disc, num]
+            kept = {(spelling[name], role) for name, role in track["artists"]}
+            stays = [claim for claim in own[disc, num] if (spelling[claim.name], claim.role) in kept]
+            respelled = [msgspec.structs.replace(claim, name=spelling[claim.name]) for claim in stays]
+            by_track[disc, num] = _join_split_names(respelled, to_replace)
+            _note_joins(joined, stays, shown[disc, num])
+            if "credited_remixers" in track:
+                # A remixer split and joined back is credited under the whole name, so REMIXER finds it.
+                whole = {
+                    part.name: claim.name
+                    for part, claim in zip(respelled, by_track[disc, num], strict=True)
+                    if part.role == "remixer"
+                }
+                track["credited_remixers"] = list(
+                    dict.fromkeys(
+                        whole.get(written, written)
+                        for written in (
+                            spelling.get(name) or corrections.get(_correction_key(name), name)
+                            for name in track["credited_remixers"]
+                        )
+                    )
+                )
     decided = resolve_credits(by_track)
     for (disc, num), credits in decided.items():
         tracks[disc][num]["artists"] = [credit for credit, _ in credits]
-    return [decision for credits in decided.values() for decision in credits]
+    return [decision for credits in decided.values() for decision in credits], joined
 
 
-def _corrected_claim(claim, corrections):
-    to = corrections.get(_correction_key(claim.name))
-    return msgspec.structs.replace(claim, name=to) if to else claim
+def _artist_classes(tracks, own):
+    """Which names on each track are one artist, and how that artist is spelled (#1131): each track's
+    {name: spelling} for every name its credits and claims give.
+
+    Names are one artist across the release when they share a `same_artist_key`, and on a track when Discogs credits
+    one as the other there, whatever the role (its ANV: per track, as "Taylor" on one track is not every Taylor's). An
+    artist takes the spelling of its first credit the merge kept on that track, as the release first spells that
+    credit's key and generate_artists spells that (`artist_spellings`).
+    """
+    spellings = artist_spellings(tracks)
+    first = {}  # same_artist_key: the first credit the merge kept under it, in track order
+    for _, disc in _sorted_naturally(tracks.items()):
+        for _, track in _sorted_naturally(disc.items()):
+            for name, _ in track["artists"]:
+                first.setdefault(same_artist_key(name), name)
+    spelled = {}
+    for disc_no, disc in tracks.items():
+        for num, track in disc.items():
+            joins = _credited_joins(track.get("artist_variations", ()))
+            spelling_of = {}
+            for name, _ in track["artists"]:
+                spelling_of.setdefault(_joined(joins, same_artist_key(name)), first[same_artist_key(name)])
+            spelling = spelled[disc_no, num] = {}
+            for name in [*(name for name, _ in track["artists"]), *(claim.name for claim in own[disc_no, num])]:
+                spelled_as = spelling_of.get(_joined(joins, same_artist_key(name)), name)
+                spelling[name] = spellings.get(normalize_accents(spelled_as.lower()), spelled_as)
+    return spelled
 
 
-def _release_credits(tracks):
-    """Every credit on the release's tracks, in order."""
-    return [credit for disc in tracks.values() for track in disc.values() for credit in track["artists"]]
+def _note_joins(joined, claims, spelling):
+    """Add to `joined` ({spelling: {name: [sources]}}) each name `claims` give that is read as another spelling beyond
+    case, accents and punctuation, "&" read as "and": names `comparable` alone joins are not shown, but for that. The
+    name Discogs credits an artist as (its ANV) is why two names are one, not a name a source gave, so not shown."""
+    for claim in claims:
+        spelled_as = spelling[claim.name]
+        if _shown(claim.name) != _shown(spelled_as):
+            others = joined.setdefault(spelled_as, {})
+            # One entry per spelling as shown: "WATT" and "Watt" are one.
+            name = next((other for other in others if _shown(other) == _shown(claim.name)), claim.name)
+            if claim.source not in (sources := others.setdefault(name, [])):
+                sources.append(claim.source)
+
+
+def _shown(name):
+    return comparable(re.sub(r"\s*&\s*", " and ", name))
+
+
+def _credited_joins(variations):
+    """Each key to the one it is credited as on a track: Discogs' name to its ANV, through any chain."""
+    joins = {}
+    for variation in variations:
+        name = _joined(joins, same_artist_key(variation["name"]))
+        anv = _joined(joins, same_artist_key(variation["anv"]))
+        if name != anv:
+            joins[name] = anv
+    return joins
+
+
+def _joined(joins, key):
+    """The key `key` is read as on a track, following `joins` (each key to the one it is credited as)."""
+    while key in joins:
+        key = joins[key]
+    return key
 
 
 def _join_split_names(claims, to_replace):
@@ -753,12 +831,27 @@ def _overruled(claims):
 
 
 def decide_alone(metadata, source):
-    """Decide a scrape used alone as a merge of that one source, in place (no disputes to print): each track's
-    titles, from the names as the store credits them, as in combine_metadatas; then each track's credits from its
-    claims, and the release's from the tracks."""
-    _decide_titles(metadata["tracks"], source)
-    _decide_credits(metadata["tracks"], {}, source)
+    """Decide a scrape used alone as a merge of that one source, in place (no disputes to print, but the names it
+    reads as one artist): each track's titles, from the names as the store credits them, as in combine_metadatas;
+    then each track's credits from its claims, and the release's from the tracks."""
+    _decide_titles(metadata["tracks"], source, {})
+    _, joined = _decide_credits(metadata["tracks"], {}, source)
+    _print_joined(joined)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
+
+
+def _print_joined(joined):
+    """Show the names read as one artist that differ beyond case, accents and punctuation ("&" read as "and"): a wrong
+    join would drop an artist from the release, so it is shown, as a dispute is."""
+    if not joined:
+        return
+    click.secho("\nRead as one artist:", fg="yellow", bold=True)
+    for spelling, others in joined.items():
+        names = ", ".join(
+            f"{name} ({', '.join('the files' if source == 'files' else source for source in sources)})"
+            for name, sources in others.items()
+        )
+        click.secho(f"  {spelling}: {names}", fg="yellow")
 
 
 def _print_disputes(decisions):
@@ -782,15 +875,19 @@ def _print_disputes(decisions):
             click.secho(f"  {', '.join(line_names)} ({other} at {at})", fg="yellow")
 
 
-def check_for_artist_fragments(artists):
-    """Check for artists that may be a fragment of another artist in the release."""
-    names = [_comparable_words(a) for a, _ in artists]
+def check_for_artist_fragments(artists, variations=()):
+    """Check for artists that may be a fragment of another artist in the release. Two spellings of one artist are no
+    fragment of each other, the decision joins them: one `same_artist_key` ("Herbaliser", "The Herbaliser"), or a name
+    and the name Discogs credits it as on the track, through any chain (`variations`: "Roger Taylor" as "Taylor")."""
+    joins = _credited_joins(variations)
+    names = [(_comparable_words(a), _joined(joins, same_artist_key(a))) for a, _ in artists]
     for a, i in artists.copy():
-        words = _comparable_words(a)
+        words, key = _comparable_words(a), _joined(joins, same_artist_key(a))
         if len("".join(words)) <= 1:
             continue
-        for other in names:
-            if words != other and _is_word_run(words, other) and (a, i) in artists:
+        for other, other_key in names:
+            one = key == other_key
+            if words != other and not one and _is_word_run(words, other) and (a, i) in artists:
                 artists.remove((a, i))
     return artists
 

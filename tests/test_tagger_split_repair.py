@@ -123,3 +123,10 @@ def test_a_name_joined_beside_its_whole_self_in_another_performing_role_is_credi
     assert _repaired([("Tyler, The Creator", "main"), ("Tyler", "guest"), ("The Creator", "guest")]) == [
         [("Tyler, The Creator", "main")]
     ]
+
+
+def test_a_name_written_with_and_is_joined_back_from_its_two_parts() -> None:
+    """The merge spells a duo as the files do ("Pavel and Rhea"), where a title's "(Pavel & Rhea Remix)" was split."""
+    assert _repaired([("Zora Lund", "main"), ("Pavel", "remixer"), ("Rhea", "remixer")], [("Pavel and Rhea", "guest")])[
+        0
+    ] == [("Zora Lund", "main"), ("Pavel and Rhea", "remixer")]
