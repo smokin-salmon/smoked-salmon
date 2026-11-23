@@ -172,6 +172,43 @@ def test_a_cue_in_another_code_page_is_warned_about_where_its_names_did_not_foll
     assert "a.cue: read as cp1252, which may not be its encoding" in out
 
 
+def test_a_cue_in_cp1250_is_warned_about_where_a_folder_rename_moved_a_renamed_file(tmp_path, capsys) -> None:
+    """The forbidden-character rename renames the file, then its folder: the entry is moved, naming no file."""
+    _tracks(tmp_path, "AC?DC/01 ő?.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_bytes('FILE "AC?DC\\01 ő?.flac" WAVE\r\n'.encode("cp1250"))
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("AC?DC/01 ő?.flac", "AC?DC/01 ő_.flac"), ("AC?DC", "AC_DC")))
+
+    assert cue.read_bytes() == 'FILE "AC_DC\\01 ő?.flac" WAVE\r\n'.encode("cp1250")
+    assert "a.cue: read as cp1252, which may not be its encoding: check AC?DC\\01 õ?.flac" in capsys.readouterr().out
+
+
+def test_as_before_a_cue_is_not_warned_about_where_a_folder_rename_moved_a_file_that_is_there(tmp_path, capsys) -> None:
+    _tracks(tmp_path, "AC?DC/01 é.flac", "Ö/02.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_bytes('FILE "AC?DC\\01 é.flac" WAVE\r\n'.encode("cp1252"))
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("AC?DC", "AC_DC"), ("Ö/02.flac", "Ö/02_.flac")))
+
+    assert cue.read_bytes() == 'FILE "AC_DC\\01 é.flac" WAVE\r\n'.encode("cp1252")
+    assert capsys.readouterr().out == ""
+
+
+def test_as_before_a_cue_is_not_warned_about_where_a_folder_rename_moved_a_bare_entry_that_gained_a_space(
+    tmp_path, capsys
+) -> None:
+    """A bare entry renamed to a path with a space is quoted; the existence check uses the unquoted path."""
+    _tracks(tmp_path, "Café/01 é.flac")
+    cue = tmp_path / "a.cue"
+    cue.write_bytes("FILE Café\\01 é.flac WAVE\r\n".encode("cp1252"))
+
+    rewrite_playlists(str(tmp_path), _rename(tmp_path, ("Café", "Café Album")))
+
+    assert cue.read_bytes() == 'FILE "Café Album\\01 é.flac" WAVE\r\n'.encode("cp1252")
+    assert capsys.readouterr().out == ""
+
+
 def test_as_before_a_true_cp1252_cue_is_not_warned_about(tmp_path, capsys) -> None:
     """An untouched name that is there, and a name that was never there, read right as cp1252: nothing to check."""
     _tracks(tmp_path, "01 Café.flac", "02 Où.flac")

@@ -80,7 +80,8 @@ def rewrite_playlists(path: str, renames: Sequence[Rename]) -> None:
     never raises for one. An entry that pointed to an audio file before the renames and now points to none, and a
     new name the file's encoding cannot hold, are reported in yellow, one line each per playlist, as are the non-ASCII
     entries naming no file in a file read as cp1252, which may be in another code page, when a renamed path, taken
-    from the playlist's folder, is non-ASCII too.
+    from the playlist's folder, is non-ASCII too. An entry a rename moved is held to that as well, when its new path
+    names no file.
     """
     if not renames:
         return
@@ -191,11 +192,16 @@ def _rewrite_lines(
         except UnicodeEncodeError:
             outcome.unwritable.append(entry)
             continue
+        # A folder rename moves every entry under it, even one whose file was renamed too, and names it wrongly
+        # when the sheet was misread: the new path names no file. Test the unquoted path.
+        misread = unsure and not new_entry.isascii() and not any(map(os.path.lexists, _candidates(new_entry, folder)))
         if cue and not before.endswith('"') and " " in new_entry:
             # A bare name with a space needs its quotes.
             new_entry = f'"{new_entry}"'
         outcome.lines[index] = before + new_entry + after
         outcome.changed = True
+        if misread:
+            outcome.misread.append(entry)
     return outcome
 
 
