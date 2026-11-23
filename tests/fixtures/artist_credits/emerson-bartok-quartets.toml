@@ -1,7 +1,7 @@
 album = "Emerson String Quartet, Bartók: The String Quartets"
 why = "A string quartet as the performer, the composer in the title: the composer must not become the main artist."
 edition = "Qobuz 0002894236572 is the same UPC less its check digit, the same 23 tracks."
-known_wrong = ["Discogs parse: 0 tracks, no artists (index tracks)", "MusicBrainz parse and the merge: the four players made main beside the quartet"]
+known_wrong = ["Discogs parse: 0 tracks, no artists (index tracks)", "MusicBrainz parse and the merge: the four players made main beside the quartet", "merge-picard: the composer a main on every track as 'Bartók Béla', MusicBrainz's credited name in Hungarian order, beside 'Béla Bartók' (composer): Picard writes the track's ARTIST as MusicBrainz credits it, composer first"]
 files_from = "deezer"
 
 [sources]

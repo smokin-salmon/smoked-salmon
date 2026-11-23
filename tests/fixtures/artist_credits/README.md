@@ -19,7 +19,8 @@ Each `<album>.toml` holds, in this order:
 - `right`: what is settled, and how we know (`how_we_know`). `release_main` (in order), `performers` (main or
   conductor, any order), `not_main` (never main: a composer, a placeholder, a guest, a remixer), `remixers`, `name_forms` (other spellings of a right name). `open` is what is
   not settled yet. Names and roles are judged, never the separators that join them.
-- `known_wrong`: where today is wrong, in words.
+- `known_wrong`: where today is wrong, in words, each entry starting with the stage it is about ("merge: ...",
+  "merge-picard: ..."). A Picard stage has an entry of its own only where it is wrong differently from its Deezer stage.
 - `[[track]]`: the files' tags, built from one store's data the way a download from that store is tagged (the
   comment above them names the store and the shape). Nobody's real files.
 - `[salmon_tags]` (optional): each track's ARTIST and TITLE as salmon itself writes them, the other tags as in
