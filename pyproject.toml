@@ -35,6 +35,7 @@ dependencies = [
     "requests>=2.34.2",
     "send2trash>=2.2.0",
     "tenacity>=9.2.1",
+    "tomlkit>=0.15.2",
     "torf>=4.3.0",
     "tqdm>=4.70.1",
     "transmission-rpc>=7.0.12",
