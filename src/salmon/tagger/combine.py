@@ -835,10 +835,14 @@ def _overruled(claims):
 def decide_alone(metadata, source):
     """Decide a scrape used alone as a merge of that one source, in place (no disputes to print, but the names it
     reads as one artist): each track's titles, from the names as the store credits them, as in combine_metadatas;
-    then each track's credits from its claims, and the release's from the tracks."""
+    then each track's credits from its claims, cleaned as the merge's are (`clean_metadata`), and the release's from
+    the tracks."""
+    from salmon.tagger.metadata import clean_metadata  # metadata imports this module
+
     _decide_titles(metadata["tracks"], source, {})
     _, joined = _decide_credits(metadata["tracks"], {}, source)
     _print_joined(joined)
+    clean_metadata(metadata)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 
 
