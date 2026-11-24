@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import anyio
+import asyncclick as click
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
 from helpers.checkconf_connection import FakeTracker, point_at
@@ -22,7 +23,7 @@ import salmon.config
 import salmon.trackers
 from salmon.config.edit import CredentialsUpdate, update_credentials
 from salmon.errors import LoginError
-from salmon.trackers import base
+from salmon.trackers import base, credentials
 from salmon.webui import server
 from salmon.webui.jobs import LOGIN_HINT, Job, JobManager
 
@@ -103,22 +104,26 @@ def test_invalid_file_fails_job_before_sending(config: Path, monkeypatch: pytest
     assert fake.sent == []
 
 
-def test_new_cookie_is_masked_in_job_log(config: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_new_cookie_is_masked_in_job_log(config: Path, kind: Callable[[str, Any], None]) -> None:  # noqa: F811
+    """The job masks the cookie its snapshot read, wherever it is printed: the tracker client masks only its own."""
     planted = "planted-new-cookie-9f3a"
-    fake = FakeTracker(cookie_ok=False, error=f"your cookie {planted} is wrong")
-    point_at(monkeypatch, {"RED": fake})
+
+    async def run(_params: Params) -> None:
+        cookie = credentials.credentials("RED")
+        assert cookie is not None
+        click.echo(f"cookie {cookie.session} printed")
+
+    kind("leaky", run)
 
     async def test(client: TestClient, manager: JobManager) -> None:
         update_credentials(config, "RED", CredentialsUpdate(session=planted))
-        job = await _check(client, manager)
+        job = await _finished(manager, await _start(client, "leaky"))
         assert job.status == "done", job.error
-        shown = "\n".join(_log(job)) + str(job.result)
-        assert "is wrong" in shown
+        shown = "\n".join(_log(job))
+        assert "printed" in shown
         assert planted not in shown
 
-    _web(config, fake, test)
-
-    assert fake.credentials[0] == planted
+    _web(config, FakeTracker(), test)
 
 
 def test_login_error_points_to_settings(config: Path, kind: Callable[[str, Any], None]) -> None:  # noqa: F811
@@ -131,6 +136,8 @@ def test_login_error_points_to_settings(config: Path, kind: Callable[[str, Any],
         job = await _finished(manager, await _start(client, "logged_out"))
         assert job.status == "failed"
         assert job.error is not None and LOGIN_HINT in job.error
+        # A refused API key raises LoginError too (BaseGazelleApi._send): the hint names both.
+        assert "session cookie or API key" in job.error
 
     _web(config, FakeTracker(), test)
 

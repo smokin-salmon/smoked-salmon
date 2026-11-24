@@ -52,8 +52,8 @@ QUEUED: frozenset[Status] = frozenset({"queued", "preparing", "ready"})
 # A question left unanswered this long stops its job: there is no terminal to fall back to.
 QUESTION_TIMEOUT = 30 * 60
 UNKNOWN_OUTCOME = "The request may have reached the tracker: check the site before trying again."
-# Added to the error of a job a tracker sent to its login page.
-LOGIN_HINT = "Update the session cookie on the Settings page."
+# Added to the error of a job a tracker logged out: sent to its login page, or its API key refused.
+LOGIN_HINT = "Update the tracker's session cookie or API key on the Settings page."
 
 # What a job's tracker credentials are read from when it starts: config.toml, as it is then (ADR 0008).
 CredentialsSource = Callable[[], Mapping[str, Credentials]]

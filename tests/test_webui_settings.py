@@ -187,7 +187,8 @@ def test_post_needs_json_and_auth(tmp_path: Path) -> None:
         assert unauthenticated.status == 401
         form = await client.post("/api/settings/trackers/RED", data={"session": NEW_COOKIE}, headers=AUTH)
         assert form.status == 415
-        assert (await client.get("/api/settings/trackers")).status == 401
+        unauthenticated_get = await client.get("/api/settings/trackers")
+        assert unauthenticated_get.status == 401
 
     _with_client(config, test)
 
