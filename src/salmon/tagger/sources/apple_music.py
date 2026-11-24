@@ -249,13 +249,28 @@ def _covers_artist_name(names: list[str], artist_name: str) -> bool:
     return not re.sub(joiners, "", remainder, flags=re.IGNORECASE)
 
 
+_RE_GUEST_SEP_END = re.compile(r"(?:[&,;/\\]|\s(?:and|feat|ft|featuring|with)\.?)\s*$", re.IGNORECASE)
+_RE_GUEST_SEP_START = re.compile(r"^\s*(?:[&,;/\\]|(?:and|feat|ft|featuring|with)\.?(?:\s|$))", re.IGNORECASE)
+
+
+def _is_guest_unit(feat_text: str, start: int, end: int) -> bool:
+    """Whether ``feat_text[start:end]`` stands as a complete guest entry rather than words inside another name."""
+    before = feat_text[:start]
+    after = feat_text[end:]
+    left_ok = not before.strip() or bool(_RE_GUEST_SEP_END.search(before))
+    right_ok = not after.strip() or bool(_RE_GUEST_SEP_START.match(after))
+    return left_ok and right_ok
+
+
 def _extract_title_guests(feat_text: str, rel_names: list[str]) -> list[str]:
     """Parse guest artists from a title's feat. clause, keeping whole relationship names intact."""
     matched: list[tuple[int, int, str]] = []
     for name in sorted(rel_names, key=len, reverse=True):
-        match = re.search(_name_pattern(name), feat_text, flags=re.IGNORECASE)
-        if match and not any(start < match.end() and match.start() < end for start, end, _ in matched):
-            matched.append((match.start(), match.end(), name))
+        for match in re.finditer(re.escape(name), feat_text, flags=re.IGNORECASE):
+            start, end = match.start(), match.end()
+            if _is_guest_unit(feat_text, start, end) and not any(s < end and start < e for s, e, _ in matched):
+                matched.append((start, end, name))
+                break
     if not matched:
         return _parse_guest_artists(feat_text)
 

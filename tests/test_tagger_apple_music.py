@@ -145,6 +145,17 @@ def test_a_featured_artist_with_a_separator_beside_another_guest_keeps_both() ->
     ]
 
 
+def test_a_main_artist_name_inside_a_longer_guest_name_stays_main() -> None:
+    # "John" in relationships must not match inside "John Smith" in the title's feat. clause.
+    s = soup(["Main", "John"], title="Song (feat. John Smith)")
+    s["tracks"][0]["attributes"]["artistName"] = "Main & John"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("Main", "main"), ("John", "main"), ("John Smith", "guest")]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
 def test_an_incomplete_relationship_falls_back_to_the_whole_display_string() -> None:
     # C has no Apple artist page, so Apple leaves it out of the relationship. Keep it in the whole string.
     s = soup(["A", "B"], title="Song")
