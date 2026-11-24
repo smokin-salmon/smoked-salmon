@@ -1,7 +1,7 @@
 album = "Stan Getz and João Gilberto, Getz/Gilberto"
 why = "A famous two-leader album: Qobuz lists both as main-artist and salmon's parser makes Gilberto a guest; Deezer's roles give 'Various'."
 edition = "Discogs 170884 is master 85178's main release (1964 LP), the 8 tracks of the 18 here."
-known_wrong = ["Deezer parse: Jobim both guest and main, ALBUMARTIST 'Various'", "Deezer parse: 'João Gilberto Quintet' a main of the release, from Deezer's contributors on 1.7 and 1.15", "merge: 'João Gilberto Quintet' a main beside Stan Getz on 1.7 and 1.15, from the files and Deezer; Jobim and Astrud Gilberto main as well as guest", "merge-picard: 'João Gilberto Quintet' a main beside Stan Getz on 1.7 and 1.15, as in the merge; Jobim is a guest on every track and Astrud Gilberto a guest only"]
+known_wrong = ["Deezer parse: Jobim both guest and main, ALBUMARTIST 'Various'", "Deezer parse: 'João Gilberto Quintet' a main of the release, from Deezer's contributors on 1.7 and 1.15", "merge: 'João Gilberto Quintet' a main beside Stan Getz on 1.7 and 1.15, from the files and Deezer; Jobim and Astrud Gilberto main as well as guest", "merge-picard: 'João Gilberto Quintet' a main beside Stan Getz on 1.7 and 1.15, as in the merge (unlike the merge, Jobim and Astrud Gilberto are not mains)"]
 files_from = "deezer"
 # The release Picard tags these files from, found by their barcode (602567832690): the 18-track
 # expanded edition. stores.musicbrainz stays the 8-track original MusicBrainz answers with.
