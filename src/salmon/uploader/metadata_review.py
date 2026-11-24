@@ -202,7 +202,9 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
                 bold=True,
             )
             raise click.exceptions.Exit(1)
-        return await check_existing_group(gazelle_site, [], our_title=metadata["title"], release=metadata)
+        return await check_existing_group(
+            gazelle_site, [], our_title=metadata["title"], release=metadata, offer_missing=True
+        )
     if searchstrs and any(n not in searchstrs for n in new_searchstrs) or not searchstrs and new_searchstrs:
         click.secho(
             f"\nRechecking for dupes on {gazelle_site.site_string} due to metadata changes...",
@@ -210,7 +212,9 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
             bold=True,
             nl=False,
         )
-        return await check_existing_group(gazelle_site, new_searchstrs, our_title=metadata["title"], release=metadata)
+        return await check_existing_group(
+            gazelle_site, new_searchstrs, our_title=metadata["title"], release=metadata, offer_missing=True
+        )
     return None
 
 

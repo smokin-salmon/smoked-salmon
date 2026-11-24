@@ -26,6 +26,7 @@ from salmon.errors import (
     PickOtherResults,
     RequestError,
     SkipTracker,
+    UploadOnlyMissing,
 )
 from salmon.tagger import (
     validate_encoding,
@@ -787,6 +788,8 @@ async def _upload_staged(  # noqa: C901
     weighed_against: dict[str, Any] | None = None
     # That group as recheck_edition fetched it: the first tracker's upload reads its editions from it.
     rechecked: dict[str, Any] | None = None
+    # The group, as fetched, when the user chose to upload only what its edition is missing (#1169), for the next turn.
+    missing_group: dict[str, Any] | None = None
 
     dupe_searchstrs: list[str] = []
     # A release the first tracker's list forbids gets no group search there, so no prompt to pick a group. The
@@ -832,7 +835,7 @@ async def _upload_staged(  # noqa: C901
                 )
 
                 if group_fetch is not None:
-                    group_id, weighed_against, search_failed = await _take_group_search(
+                    group_id, weighed_against, search_failed, missing_group = await _take_group_search(
                         gazelle_site,
                         group_fetch,
                         group_id,
@@ -882,13 +885,17 @@ async def _upload_staged(  # noqa: C901
                 or files_refused
                 or _do_not_upload_refusal(gazelle_site.site_code, metadata, said=tags_refusal) is not None
             )
-            if not group_id and not first_listed:
-                group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
-                click.echo()
-            elif group_id and flac_group is None and not first_listed:
-                # The review may have moved the release into an edition the group holds. With
-                # --skip-flac-upload, choose_source_flac below weighs the reviewed edition instead.
-                group_id, rechecked = await recheck_edition(gazelle_site, group_id, metadata, weighed_against)
+            if not first_listed and (not group_id or flac_group is None):
+                # With --skip-flac-upload, choose_source_flac below weighs the reviewed edition instead.
+                group_id, rechecked, missing_group, first_listed = await _recheck_group(
+                    gazelle_site,
+                    group_id,
+                    searchstrs,
+                    metadata,
+                    weighed_against,
+                    missing_group,
+                    can_skip=_another_can_follow(gazelle_site.site_code, flac_group, reachable),
+                )
             # From here on, the review may have changed the artists, title or catno, so search strings and
             # our title come from the reviewed metadata, not the pre-review rls_data.
             searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
@@ -1031,6 +1038,8 @@ async def _upload_staged(  # noqa: C901
                     # A torrent already seeds from the folder: never offer to delete it. Once one is up, a tracker
                     # can be skipped (one that already has the release, say) and the run still finishes.
                     # Matched on the reviewed metadata: the review may have changed the artists, title or year.
+                    # This tracker's own answer: a first tracker skipped before its turn may have left one.
+                    rechecked = missing_group = None
                     try:
                         group_id = await check_existing_group(
                             gazelle_site,
@@ -1039,7 +1048,11 @@ async def _upload_staged(  # noqa: C901
                             our_title=our_title,
                             release=metadata,
                             offer_skip=bool(run.uploaded),
+                            offer_missing=True,
                         )
+                    except UploadOnlyMissing as chosen:
+                        # The group as fetched for the answer: the turn reads its editions from it.
+                        group_id, rechecked, missing_group = chosen.group_id, chosen.group, chosen.group
                     except (RequestError, SkipTracker) as e:
                         # Like a failed upload: skip this tracker, and offer the next one.
                         if isinstance(e, SkipTracker):
@@ -1057,10 +1070,15 @@ async def _upload_staged(  # noqa: C901
 
                 remaining_gazelle_sites.remove(tracker)
 
-                turn = await upload_to_tracker(release, gazelle_site, group_id, run, rechecked)
-                rechecked = None  # The first tracker's: a later tracker's group is another
+                turn = await upload_to_tracker(
+                    release, gazelle_site, group_id, run, rechecked, only_missing=missing_group
+                )
+                # The first tracker's, and that tracker's choice: a later tracker's group is another
+                rechecked = missing_group = None
                 tracker = None
-                if turn is Turn.SKIPPED:
+                if turn is Turn.NOTHING_MISSING:
+                    chose_to_skip += 1  # As a tracker skipped at its group question: the run still finishes
+                if turn is not Turn.ENDED:
                     if not remaining_gazelle_sites or not go_on:
                         break
                     continue
@@ -1147,18 +1165,27 @@ async def _take_group_search(
     *,
     flac_group: dict[str, Any] | None,
     reachable: list[str] | None,
-) -> tuple[int | None, dict[str, Any] | None, bool]:
+) -> tuple[int | None, dict[str, Any] | None, bool, dict[str, Any] | None]:
     """Ask which group to upload into, from what the background search found.
 
     Returns:
         The group (group_id unchanged when the search failed), the release as it was when the group was picked (None
-        when the search failed), and whether the search failed: the first tracker is then skipped.
+        when the search failed), whether the search failed: the first tracker is then skipped, and the group as fetched
+        when the user chose to upload only what its edition is missing (None: upload everything).
     """
     weighed_against: dict[str, Any] | None = None
     search_failed = False
+    missing_group: dict[str, Any] | None = None
     try:
         results, recent_uploads = await group_fetch.result()
+        try:
+            group_id = await resolve_existing_group(
+                gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data, offer_missing=True
+            )
+        except UploadOnlyMissing as chosen:
+            group_id, missing_group = chosen.group_id, chosen.group
     except RequestError as e:
+        # The search, or the group fetched to see what its edition is missing.
         # Skipped like a first tracker that refuses the release, when another can follow.
         if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
             click.secho(f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True)
@@ -1172,12 +1199,55 @@ async def _take_group_search(
         print_certificate_hint(e)
         search_failed = True
     else:
-        group_id = await resolve_existing_group(
-            gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
-        )
         # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
         weighed_against = dict(rls_data)
-    return group_id, weighed_against, search_failed
+    return group_id, weighed_against, search_failed, missing_group
+
+
+async def _recheck_group(
+    gazelle_site: "BaseGazelleApi",
+    group_id: int | None,
+    searchstrs: list[str] | None,
+    metadata: dict[str, Any],
+    weighed_against: dict[str, Any] | None,
+    missing_group: dict[str, Any] | None,
+    *,
+    can_skip: bool,
+) -> tuple[int | None, dict[str, Any] | None, dict[str, Any] | None, bool]:
+    """Weigh the first tracker's group against the reviewed release: recheck_dupe, or recheck_edition for a group.
+
+    The review may have moved the release into an edition the group holds. Here, not in missing_formats: the tests
+    stub recheck_dupe and recheck_edition where this module imports them.
+
+    Args:
+        can_skip: Whether another tracker can follow: a failed search or group fetch then skips this one, as a
+            failed search before the review does (_take_group_search); otherwise the error goes up, as before.
+
+    Returns:
+        The group (None: a new group), the group as recheck_edition fetched it ({} when that failed), the group as
+        fetched to upload only what its edition is missing (None: upload everything), and whether the tracker is
+        skipped for a failed request.
+    """
+    try:
+        if not group_id:
+            group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
+            click.echo()
+            return group_id, None, None, False
+        group_id, rechecked = await recheck_edition(
+            gazelle_site, group_id, metadata, weighed_against, only_missing=missing_group is not None
+        )
+    except UploadOnlyMissing as chosen:
+        # The group as fetched for the answer: the turn reads its editions from it.
+        return chosen.group_id, chosen.group, chosen.group, False
+    except RequestError as e:
+        site = gazelle_site.site_string
+        if not can_skip:
+            raise  # As before: main says it, and the run fails (tests/test_run_exit_status.py)
+        click.secho(f"\nCould not check {site} for dupes after the review ({e}): skipping it.", fg="red", bold=True)
+        print_certificate_hint(e)
+        return group_id, None, None, True
+    # A failed fetch ({}) leaves the choice made when the group was picked; an answer given again replaces it.
+    return group_id, rechecked, missing_group if rechecked == {} else None, False
 
 
 async def _spectrals_before_upload(
