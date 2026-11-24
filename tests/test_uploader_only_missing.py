@@ -106,6 +106,16 @@ def test_a_later_tracker_holding_the_source_gets_only_the_missing_conversions(mo
     assert "Not uploading WEB / FLAC / Lossless to RED" not in output
     # OPS's transcodes are filed as transcodes of the torrent it holds.
     assert "transcoding from" in output and "torrentid=11" in output
+    # Both uploaded conversions' descriptions name the torrent OPS holds, not only the console.
+    tracker = run.tracker
+    assert isinstance(tracker, TwoSites)
+    descriptions = [
+        str(dict(sent.fields)["release_desc"])
+        for sent, site in zip(tracker.sent, tracker.sites, strict=True)
+        if site == "OPS" and sent.method == "POST" and sent.query.get("action") == "upload"
+    ]
+    assert len(descriptions) == 2
+    assert all("torrentid=11" in description for description in descriptions), descriptions
 
 
 def test_the_held_format_is_the_only_request_left_out_at_a_later_tracker(monkeypatch, tmp_path) -> None:
