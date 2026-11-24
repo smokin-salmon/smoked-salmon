@@ -143,7 +143,9 @@ def test_an_editor_closed_without_saving_gives_no_notes(monkeypatch) -> None:
     monkeypatch.setattr(interaction, "confirm", yes)
     monkeypatch.setattr(interaction, "edit", closed)
 
-    assert anyio.run(ask_torrent_notes) is None
+    notes = anyio.run(ask_torrent_notes)
+
+    assert notes is None
 
 
 INPUT = "\ny\ny\n\ny\n\n\n\ny\n\nn\n"
