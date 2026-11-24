@@ -1156,6 +1156,28 @@ async def _check_files(
         _warn_about_provenance(provenance)
 
 
+def _skip_first_tracker(
+    gazelle_site: "BaseGazelleApi",
+    error: RequestError,
+    what: str,
+    flac_group: dict[str, Any] | None,
+    reachable: list[str] | None,
+) -> bool:
+    """Report a request that failed at the first tracker's question: exit when no other tracker can follow.
+
+    Returns:
+        True: the tracker is skipped.
+    """
+    what = what.format(site=gazelle_site.site_string)
+    if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+        click.secho(f"\nCould not {what}: {error}", fg="red", bold=True)
+        print_certificate_hint(error)
+        raise click.exceptions.Exit(1) from None
+    click.secho(f"\nCould not {what} ({error}): skipping it.", fg="red", bold=True)
+    print_certificate_hint(error)
+    return True
+
+
 async def _take_group_search(
     gazelle_site: "BaseGazelleApi",
     group_fetch: "GroupCandidatesFetch",
@@ -1176,31 +1198,32 @@ async def _take_group_search(
     weighed_against: dict[str, Any] | None = None
     search_failed = False
     missing_group: dict[str, Any] | None = None
+    # Skipped like a first tracker that refuses the release, when another can follow.
     try:
         results, recent_uploads = await group_fetch.result()
-        try:
-            group_id = await resolve_existing_group(
-                gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data, offer_missing=True
-            )
-        except UploadOnlyMissing as chosen:
-            group_id, missing_group = chosen.group_id, chosen.group
     except RequestError as e:
-        # The search, or the group fetched to see what its edition is missing.
-        # Skipped like a first tracker that refuses the release, when another can follow.
-        if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
-            click.secho(f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True)
-            print_certificate_hint(e)
-            raise click.exceptions.Exit(1) from None
-        click.secho(
-            f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
-            fg="red",
-            bold=True,
+        return (
+            group_id,
+            None,
+            _skip_first_tracker(gazelle_site, e, "search {site} for dupes", flac_group, reachable),
+            None,
         )
-        print_certificate_hint(e)
-        search_failed = True
-    else:
-        # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
-        weighed_against = dict(rls_data)
+    try:
+        group_id = await resolve_existing_group(
+            gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data, offer_missing=True
+        )
+    except UploadOnlyMissing as chosen:
+        group_id, missing_group = chosen.group_id, chosen.group
+    except RequestError as e:
+        # The group fetched to see what its edition is missing, or one looked up from an id or URL typed.
+        return (
+            group_id,
+            None,
+            _skip_first_tracker(gazelle_site, e, "look up the group on {site}", flac_group, reachable),
+            None,
+        )
+    # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
+    weighed_against = dict(rls_data)
     return group_id, weighed_against, search_failed, missing_group
 
 
