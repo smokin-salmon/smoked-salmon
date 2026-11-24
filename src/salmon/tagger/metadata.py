@@ -15,6 +15,7 @@ from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.common.strings import artist_keys, comparable, names_no_artist, numeric_id, split_type_marker
 from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
 from salmon.search.base import IdentData
+from salmon.search.hints import search_hints
 from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES, without_tracking
@@ -72,7 +73,12 @@ async def get_metadata(
     if search is None:
         search = MetadataSearch()
     search.results = await run_metasearch(
-        searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
+        searchstrs,
+        filter=False,
+        track_count=len(tags),
+        artists=artists_list,
+        album=album_title,
+        hints=search_hints(tags),
     )
     search.base = deepcopy(rls_data)
     return await pick_metadata(search, rls_data, path, len(tags))
