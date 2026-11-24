@@ -178,6 +178,25 @@ def test_relationship_coverage_does_not_match_inside_another_word() -> None:
     assert "explicit_main_artists" not in tracks["1"][1]
 
 
+@pytest.mark.parametrize(
+    ("rel_names", "display"),
+    [
+        (["Main"], "Main & And"),
+        (["Main"], "And & Main"),
+        (["Main", "Other"], "Main & And & Other"),
+    ],
+)
+def test_unmatched_artist_named_like_a_joiner_falls_back_to_display_string(rel_names: list[str], display: str) -> None:
+    # Joining words are only valid between matched names, so an unmatched artist named "And" is not dropped.
+    s = soup(rel_names, title="Song")
+    s["tracks"][0]["attributes"]["artistName"] = display
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [(display, "main")]
+    assert "explicit_main_artists" not in tracks["1"][1]
+
+
 def test_explicit_main_artists_survive_merge_onto_file_base() -> None:
     # Merging Apple Music onto local file metadata must keep explicit A and B separate even when another
     # track credits AB.

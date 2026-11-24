@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from itertools import pairwise
 
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.common.strings import split_type_marker
@@ -227,26 +228,44 @@ class Scraper(AppleMusicBase, MetadataMixin):
             raise ScrapeError("Could not parse tracks from Apple Music API") from e
 
 
-def _name_pattern(name: str) -> str:
-    """Regex matching ``name`` as a whole token without requiring word boundaries around punctuation."""
-    start = r"(?<!\w)" if re.match(r"\w", name) else ""
-    end = r"(?!\w)" if re.search(r"\w\Z", name) else ""
-    return f"{start}{re.escape(name)}{end}"
+_RE_ARTIST_GAP = re.compile(
+    r"^(?:\s*(?:,\s*)?[&,;/\\]\s*|(?:,\s*|\s+)(?:and|feat|ft|featuring|with)\.?\s+)$",
+    re.IGNORECASE,
+)
+
+
+def _is_word_char(char: str) -> bool:
+    return char.isalnum() or char == "_"
+
+
+def _is_whole_token(text: str, start: int, end: int) -> bool:
+    """Whether ``text[start:end]`` is not embedded inside a larger word."""
+    left_ok = start == 0 or not _is_word_char(text[start]) or not _is_word_char(text[start - 1])
+    right_ok = end == len(text) or not _is_word_char(text[end - 1]) or not _is_word_char(text[end])
+    return left_ok and right_ok
 
 
 def _covers_artist_name(names: list[str], artist_name: str) -> bool:
-    """Whether named artists account for the whole display string, with nothing left but separators.
+    """Whether named artists account for the whole display string, with only separators between them.
 
     Apple's relationship leaves out artists without an artist page. If it only accounts for part of
     ``artistName``, the missing name must come from the display string, kept whole.
     """
     if not names:
         return False
-    remainder = artist_name
+    matched: list[tuple[int, int]] = []
     for name in sorted(names, key=len, reverse=True):
-        remainder = re.sub(_name_pattern(name), " ", remainder, count=1, flags=re.IGNORECASE)
-    joiners = r"[\s&;,/\\]|\b(?:and|feat|ft|featuring|with)\b\.?"
-    return not re.sub(joiners, "", remainder, flags=re.IGNORECASE)
+        for match in re.finditer(re.escape(name), artist_name, flags=re.IGNORECASE):
+            start, end = match.start(), match.end()
+            if _is_whole_token(artist_name, start, end) and not any(s < end and start < e for s, e in matched):
+                matched.append((start, end))
+                break
+    if not matched:
+        return False
+    matched.sort()
+    if artist_name[: matched[0][0]].strip() or artist_name[matched[-1][1] :].strip():
+        return False
+    return all(_RE_ARTIST_GAP.match(artist_name[end:next_start]) for (_, end), (next_start, _) in pairwise(matched))
 
 
 _RE_GUEST_SEP_END = re.compile(r"(?:[&,;/\\]|\s(?:and|feat|ft|featuring|with)\.?)\s*$", re.IGNORECASE)
