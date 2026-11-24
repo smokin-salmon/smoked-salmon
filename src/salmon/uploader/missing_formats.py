@@ -6,8 +6,7 @@ from typing import Any
 import asyncclick as click
 
 from salmon.uploader.conversion_choice import downconversion_format, get_downconversion_options, wanted_conversions
-from salmon.uploader.dupe_checker import _site_edition as site_edition
-from salmon.uploader.dupe_checker import describe_torrent, held_in_group
+from salmon.uploader.dupe_checker import describe_torrent, filed_edition, held_in_group
 
 
 @dataclass(frozen=True)
@@ -55,10 +54,13 @@ def edition_holdings(
     conversions: dict[str, tuple[str, str]],
     wanted: frozenset[str] | None = None,
     source: dict[str, Any] | None = None,
+    *,
+    same_edition: bool = True,
 ) -> EditionHoldings:
     """Decide, for the source and each conversion, whether the release's edition in the group already holds it.
 
-    The one place that decides it. It reads only the group listing given and sends no request. The match is
+    The one place that decides it, for uploading only what is missing, --skip-flac-upload and cross-upload's
+    conversions (held_formats). It reads only the group listing given and sends no request. The match is
     held_in_group's: the edition's year and edition title, media, format and encoding.
 
     Args:
@@ -66,21 +68,27 @@ def edition_holdings(
         release: Our release, with its source, format, encoding, year and edition title.
         conversions: The format and encoding of each conversion offered, by name.
         wanted: The names of the conversions the run makes by default; None: all of them.
-        source: The held torrent the conversions are filed as transcodes of, picked among several: the source is
-            that one, and a conversion counts as held only in its edition as the site files it (catalogue number
-            included). None: every match counts.
+        source: The FLAC the conversions are made from and filed as transcodes of: the held torrent picked among
+            several, our FLAC just uploaded, or the one --skip-flac-upload transcodes. It is the source, and never
+            holds a conversion. Found in the group (by id), a conversion counts as held only in its edition as the
+            site files it (catalogue number included). None, or not in the group: every match counts.
+        same_edition: Whether the conversions are filed under the source's edition. False: every match counts,
+            the source's own torrent aside.
 
     Returns:
         Each decision with its reason, the source's first.
     """
     group_info = rset.get("group") or {}
-    filed_under = site_edition(source, rset) if source is not None else None
+    source_id = str(source.get("id")) if source is not None else None
+    placed = next((t for t in rset.get("torrents") or [] if str(t.get("id")) == source_id), None)
+    filed_under = filed_edition(placed, rset) if placed is not None and same_edition else None
 
     def decide(name: str, fmt: str, encoding: str) -> Holding:
         held = tuple(
             torrent
             for torrent in held_in_group(rset, {**release, "format": fmt, "encoding": encoding})
-            if filed_under is None or site_edition(torrent, rset) == filed_under
+            if str(torrent.get("id")) != source_id
+            and (filed_under is None or filed_edition(torrent, rset) == filed_under)
         )
         if held:
             return Holding(name, held, f"this edition has {describe_torrent(held[0], group_info)}")
@@ -88,9 +96,16 @@ def edition_holdings(
 
     return EditionHoldings(
         source=(
-            Holding("source", (source,), f"this edition has {describe_torrent(source, group_info)}")
-            if source is not None
-            else decide("source", release.get("format") or "", release.get("encoding") or "")
+            decide("source", release.get("format") or "", release.get("encoding") or "")
+            if source is None
+            else Holding(
+                "source",
+                (source,),
+                # Not listed (our FLAC just uploaded, the listing read before): its id is all there is to name.
+                f"this edition has {describe_torrent(placed, group_info)}"
+                if placed is not None
+                else f"torrent {source_id} is the source",
+            )
         ),
         conversions=tuple(decide(name, fmt, encoding) for name, (fmt, encoding) in conversions.items()),
         wanted=wanted,
