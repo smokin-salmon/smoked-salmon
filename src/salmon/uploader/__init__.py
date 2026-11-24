@@ -1156,6 +1156,25 @@ async def _check_files(
         _warn_about_provenance(provenance)
 
 
+def _skip_first_tracker(
+    gazelle_site: "BaseGazelleApi",
+    error: RequestError,
+    what: str,
+    flac_group: dict[str, Any] | None,
+    reachable: list[str] | None,
+) -> None:
+    """Report a request that failed at the first tracker's question, and exit when no other tracker can follow.
+
+    A tracker that is skipped is skipped like a first tracker that refuses the release, when another can follow.
+    """
+    if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+        click.secho(f"\nCould not {what}: {error}", fg="red", bold=True)
+        print_certificate_hint(error)
+        raise click.exceptions.Exit(1) from None
+    click.secho(f"\nCould not {what} ({error}): skipping it.", fg="red", bold=True)
+    print_certificate_hint(error)
+
+
 async def _take_group_search(
     gazelle_site: "BaseGazelleApi",
     group_fetch: "GroupCandidatesFetch",
@@ -1169,39 +1188,29 @@ async def _take_group_search(
     """Ask which group to upload into, from what the background search found.
 
     Returns:
-        The group (group_id unchanged when the search failed), the release as it was when the group was picked (None
-        when the search failed), whether the search failed: the first tracker is then skipped, and the group as fetched
-        when the user chose to upload only what its edition is missing (None: upload everything).
+        The group (group_id unchanged when the search or the group lookup failed), the release as it was when the
+        group was picked (None when either failed), whether one failed: the first tracker is then skipped, and the
+        group as fetched when the user chose to upload only what its edition is missing (None: upload everything).
     """
-    weighed_against: dict[str, Any] | None = None
-    search_failed = False
-    missing_group: dict[str, Any] | None = None
+    site = gazelle_site.site_string
     try:
         results, recent_uploads = await group_fetch.result()
-        try:
-            group_id = await resolve_existing_group(
-                gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data, offer_missing=True
-            )
-        except UploadOnlyMissing as chosen:
-            group_id, missing_group = chosen.group_id, chosen.group
     except RequestError as e:
-        # The search, or the group fetched to see what its edition is missing.
-        # Skipped like a first tracker that refuses the release, when another can follow.
-        if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
-            click.secho(f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True)
-            print_certificate_hint(e)
-            raise click.exceptions.Exit(1) from None
-        click.secho(
-            f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
-            fg="red",
-            bold=True,
+        _skip_first_tracker(gazelle_site, e, f"search {site} for dupes", flac_group, reachable)
+        return group_id, None, True, None
+    missing_group: dict[str, Any] | None = None
+    try:
+        group_id = await resolve_existing_group(
+            gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data, offer_missing=True
         )
-        print_certificate_hint(e)
-        search_failed = True
-    else:
-        # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
-        weighed_against = dict(rls_data)
-    return group_id, weighed_against, search_failed, missing_group
+    except UploadOnlyMissing as chosen:
+        group_id, missing_group = chosen.group_id, chosen.group
+    except RequestError as e:
+        # The group fetched to see what its edition is missing, or one looked up from an id or URL typed.
+        _skip_first_tracker(gazelle_site, e, f"look up the group on {site}", flac_group, reachable)
+        return group_id, None, True, None
+    # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
+    return group_id, dict(rls_data), False, missing_group
 
 
 async def _recheck_group(

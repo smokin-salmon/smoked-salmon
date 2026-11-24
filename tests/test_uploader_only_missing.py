@@ -349,3 +349,39 @@ def test_a_failed_fetch_on_a_later_tracker_skips_only_that_tracker(monkeypatch, 
     assert _uploads(run.tracker, "RED") == FULL
     assert "Upload to OPS failed" in output
     assert _uploads(run.tracker, "OPS") == []
+
+
+def _fail_group_fetch(monkeypatch, tracker: TwoSites, site: str) -> None:
+    handle = tracker._handle
+
+    async def failing(request: web.Request) -> web.StreamResponse:
+        if request.query.get("action") == "torrentgroup" and request.headers.get("Authorization") == API_KEYS[site]:
+            raise web.HTTPForbidden  # Not retried: a 5xx would be, with its waits
+        return await handle(request)
+
+    monkeypatch.setattr(tracker, "_handle", failing)
+
+
+def test_a_failed_group_fetch_at_the_first_tracker_is_not_reported_as_a_failed_search(monkeypatch, tmp_path) -> None:
+    tracker = TwoSites({"RED": [WEB_FLAC]})
+    _fail_group_fetch(monkeypatch, tracker, "RED")
+    run = _up(monkeypatch, tmp_path, tracker, trackers=("RED", "OPS"), input="1\n\n1\n\n" + "\n" * 10)
+
+    output = run.result.output
+    assert run.result.exit_code == 0, output
+    assert "Could not look up the group on RED (" in output
+    assert "): skipping it." in output
+    assert "Could not search RED for dupes" not in output
+    assert _uploads(run.tracker, "RED") == []
+    assert _uploads(run.tracker, "OPS") == FULL
+
+
+def test_a_failed_group_fetch_at_the_only_tracker_ends_the_run_naming_the_lookup(monkeypatch, tmp_path) -> None:
+    tracker = TwoSites({"RED": [WEB_FLAC]})
+    _fail_group_fetch(monkeypatch, tracker, "RED")
+    run = _up(monkeypatch, tmp_path, tracker, trackers=("RED",), input="1\n\n" + "\n" * 10)
+
+    output = run.result.output
+    assert run.result.exit_code == 1, output
+    assert "Could not look up the group on RED: " in output
+    assert "Could not search RED for dupes" not in output
