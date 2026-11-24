@@ -1,7 +1,7 @@
 album = "Ahmad Jamal, At the Pershing: But Not for Me"
 why = "A leader whose trio plays throughout: the leader's own group as a credit, or not."
 edition = "Qobuz rx2gtsiik9hjb has the same UPC and the same 8 tracks. Discogs 15510594 is master 59857's main release (1958 LP)."
-known_wrong = []
+known_wrong = ["MusicBrainz parse: Ahmad Jamal a main beside the trio, from the recordings' credit on 7 of 8 tracks, where the release and every track credit the Ahmad Jamal Trio", "Qobuz parse: Ahmad Jamal the release's main and the trio a guest, from Qobuz's album artist, where its performers line states the trio MainArtist on every track"]
 files_from = "deezer"
 
 [sources]
@@ -12,9 +12,11 @@ qobuz = "the API's album in the API's shape: what the parser reads, plus the cre
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
-how_we_know = "the stores disagree: Deezer credits the Ahmad Jamal Trio, MusicBrainz both Ahmad Jamal and The Ahmad Jamal Trio, Qobuz Ahmad Jamal on the album and the Ahmad Jamal Trio (MainArtist) on every track, Discogs the Ahmad Jamal Trio"
-open = "Ahmad Jamal, or the Ahmad Jamal Trio as the release credit with him in ARTIST?"
-settled = "nothing yet: see open"
+release_main = ["Ahmad Jamal Trio"]
+how_we_know = "The front cover credits 'ahmad jamal trio' (Argo LP-628, the 1958 mono LP, scans on Discogs release 15510594; the same front is on the fixture's MusicBrainz release in the Cover Art Archive); the back cover, spines and labels read 'Ahmad Jamal at the Pershing', which we take as the title, as Discogs and the stores title the album (a call: it could also be artist over title). The reissues split: MusicBrainz's release group has the trio on the 1958 Argo and several later reissues and Ahmad Jamal on others, and Wikipedia names him. We follow the original front cover, as Discogs, the MusicBrainz release's credit and Deezer do. The trio is Ahmad Jamal (piano), Israel Crosby (bass) and Vernell Fournier (drums), named in his liner notes. A stage giving Ahmad Jamal as the release's artist is judged wrong: the judge can't take both the man and his band without treating them as one artist"
+
+[right.name_forms]
+"Ahmad Jamal Trio" = ["The Ahmad Jamal Trio"]
 
 [today.deezer]
 release = ["Ahmad Jamal Trio (main)"]
