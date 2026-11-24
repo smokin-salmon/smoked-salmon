@@ -101,7 +101,7 @@ def edition_holdings(
             else Holding(
                 "source",
                 (source,),
-                # Not listed (our FLAC just uploaded, the listing read before): its id is all there is to name.
+                # Not in the listing given (held_formats' callers may pass an id alone): only its id names it.
                 f"this edition has {describe_torrent(placed, group_info)}"
                 if placed is not None
                 else f"torrent {source_id} is the source",
