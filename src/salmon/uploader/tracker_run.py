@@ -52,6 +52,7 @@ class ReleaseToUpload:
     flac_group: dict[str, Any] | None
     given_cover_url: str | None
     remove_downloaded_cover_image: bool
+    torrent_notes: str | None = None  # The user's notes for the top of every torrent description
 
 
 @dataclass(kw_only=True)
@@ -202,6 +203,7 @@ async def upload_to_tracker(
                 run.seedbox_uploader,
                 source=release.source,
                 conversion_note=converted_from_note(release.conversion, group_link),
+                torrent_notes=release.torrent_notes,
             )
 
             run.request_id = None
@@ -298,6 +300,7 @@ async def upload_to_tracker(
                     url,
                     uploaded=run.uploaded,
                     max_path_length=release.max_path_length,
+                    torrent_notes=release.torrent_notes,
                 )
                 if len(run.uploaded) - before < len(selected_tasks):
                     run.failed_trackers.append(gazelle_site.site_string)
