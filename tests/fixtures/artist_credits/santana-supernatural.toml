@@ -25,7 +25,7 @@ release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)",
 tracks = 14
 
 [today.discogs]
-release = ["Santana (main)", "Carlos Santana (guest)", "Karl Perazzo (guest)", "Tony Lindsay (guest)", "Dave Matthews (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Lauryn Hill (guest)", "Cee-Lo (guest)", "Lauryn Hill (arranger)", "KC Porter (guest)", "Maná (guest)", "Eagle-Eye Cherry (guest)", "Eric Clapton (guest)", "Jeanie Tracy (guest)", "No Artist (main)"]
+release = ["Santana (main)", "Carlos Santana (guest)", "Karl Perazzo (guest)", "Tony Lindsay (guest)", "Dave Matthews (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Lauryn Hill (guest)", "Cee-Lo (guest)", "Lauryn Hill (arranger)", "KC Porter (guest)", "Maná (guest)", "Eagle-Eye Cherry (guest)", "Eric Clapton (guest)", "Jeanie Tracy (guest)"]
 tracks = 15
 
 [today.qobuz]
