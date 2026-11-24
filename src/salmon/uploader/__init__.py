@@ -788,7 +788,7 @@ async def _upload_staged(  # noqa: C901
     weighed_against: dict[str, Any] | None = None
     # That group as recheck_edition fetched it: the first tracker's upload reads its editions from it.
     rechecked: dict[str, Any] | None = None
-    # The group listing when the user chose to upload only what its edition is missing (#1169), for the next turn.
+    # The group, as fetched, when the user chose to upload only what its edition is missing (#1169), for the next turn.
     missing_group: dict[str, Any] | None = None
 
     dupe_searchstrs: list[str] = []
@@ -1164,7 +1164,7 @@ async def _take_group_search(
 
     Returns:
         The group (group_id unchanged when the search failed), the release as it was when the group was picked (None
-        when the search failed), whether the search failed: the first tracker is then skipped, and the group listing
+        when the search failed), whether the search failed: the first tracker is then skipped, and the group as fetched
         when the user chose to upload only what its edition is missing (None: upload everything).
     """
     weighed_against: dict[str, Any] | None = None
@@ -1172,7 +1172,14 @@ async def _take_group_search(
     missing_group: dict[str, Any] | None = None
     try:
         results, recent_uploads = await group_fetch.result()
+        try:
+            group_id = await resolve_existing_group(
+                gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data, offer_missing=True
+            )
+        except UploadOnlyMissing as chosen:
+            group_id, missing_group = chosen.group_id, chosen.group
     except RequestError as e:
+        # The search, or the group fetched to see what its edition is missing.
         # Skipped like a first tracker that refuses the release, when another can follow.
         if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
             click.secho(f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True)
@@ -1186,12 +1193,6 @@ async def _take_group_search(
         print_certificate_hint(e)
         search_failed = True
     else:
-        try:
-            group_id = await resolve_existing_group(
-                gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data, offer_missing=True
-            )
-        except UploadOnlyMissing as chosen:
-            group_id, missing_group = chosen.group_id, chosen.group
         # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
         weighed_against = dict(rls_data)
     return group_id, weighed_against, search_failed, missing_group

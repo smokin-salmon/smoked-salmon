@@ -1133,22 +1133,16 @@ async def _fetched_group(gazelle_site: "BaseGazelleApi", group_id: int, rset: di
     """The group as torrentgroup gives it: rset if it is that already, else fetched.
 
     A search row names its torrents' ids and editions in other fields, or not at all: uploading only what the
-    edition is missing reads the held torrent's id and edition (#1169). The upload then reads the group from it
-    instead of fetching it, so the fetch is not one more request.
+    edition is missing reads the held torrent's id and edition (#1169). A later tracker's upload then reads the
+    group from it instead of fetching it; the first tracker's is fetched again after the review, as before.
+    Here, beside the question that needs it: missing_formats imports this module.
 
     Raises:
-        click.Abort: The fetch failed, said so; as before #1169, the run stops at an edition holding our format.
+        RequestError: The fetch failed: the tracker is skipped as on any other failed request at its question.
     """
     if "group" in rset:
         return rset
-    try:
-        return _group_as_result(await gazelle_site.torrentgroup(group_id))
-    except RequestError as err:
-        click.secho(
-            f"Could not fetch group {group_id} from {gazelle_site.site_string} to see what it is missing: {err}",
-            fg="red",
-        )
-        raise click.Abort from None
+    return _group_as_result(await gazelle_site.torrentgroup(group_id))
 
 
 async def _confirm_group_id(
@@ -1175,7 +1169,7 @@ async def _confirm_group_id(
         release: Our release, with its source, format, encoding and edition.
         offer_skip: Whether to offer skipping this tracker, which raises SkipTracker.
         offer_missing: Whether to offer, when the edition holds our format, uploading only the formats it is
-            missing (#1169), which raises UploadOnlyMissing with the group printed.
+            missing (#1169), which raises UploadOnlyMissing with the group as fetched.
 
     Returns:
         True if confirmed, False otherwise.

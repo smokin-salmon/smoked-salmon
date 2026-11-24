@@ -88,6 +88,21 @@ def test_another_edition_holding_the_format_is_not_held() -> None:
     assert holdings.held_conversions == set()
 
 
+def test_a_picked_source_counts_only_what_its_own_edition_holds() -> None:
+    # Two FLACs of our year, filed under two catalogue numbers: only CAT1's edition has the transcodes.
+    cat1_flac = _torrent(1, "FLAC", "24bit Lossless")
+    cat2_flac = {**_torrent(4, "FLAC", "24bit Lossless"), "remasterCatalogueNumber": "CAT2"}
+    group = _group(cat1_flac, cat2_flac, _torrent(2, "FLAC", "Lossless"), _torrent(3, "MP3", "V0 (VBR)"))
+
+    # Unpicked, every match counts: the tracker would be skipped with nothing missing.
+    assert edition_holdings(group, RELEASE, CONVERSIONS).nothing_missing
+    picked = edition_holdings(group, RELEASE, CONVERSIONS, source=cat2_flac)
+    assert picked.source.torrents == (cat2_flac,)
+    assert picked.held_conversions == set()
+    assert not picked.nothing_missing
+    assert edition_holdings(group, RELEASE, CONVERSIONS, source=cat1_flac).nothing_missing
+
+
 def test_a_search_row_reads_the_year_from_group_year() -> None:
     row = {
         "groupId": 7,

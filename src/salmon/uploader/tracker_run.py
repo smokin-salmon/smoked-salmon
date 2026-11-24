@@ -22,7 +22,7 @@ from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.cover_upload import resolve_cover_url
 from salmon.uploader.dupe_checker import choose_source_flac, print_torrents
 from salmon.uploader.held_edition import edition_in_group, edition_of_source, in_edition_of
-from salmon.uploader.missing_formats import EditionHoldings, holdings_for_turn
+from salmon.uploader.missing_formats import EditionHoldings, edition_holdings, holdings_for_turn
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import SpectralsDeclined, SpectralUploads, post_upload_spectral_check
@@ -128,35 +128,23 @@ async def _only_missing(
     files them.
     """
     site = gazelle_site.site_string
+    # Several held sources are asked about first: what else the edition holds is read in the one picked.
+    sources = edition_holdings(group, release.metadata, {}).source.torrents
+    held_source = sources[0] if len(sources) == 1 else None
+    if len(sources) > 1 and (held_source := await choose_source_flac(group, release.metadata)) is None:
+        click.secho(f"\nNot picking a held FLAC: skipping {site}.", fg="red", bold=True)
+        run.failed_trackers.append(site)
+        return Turn.SKIPPED
     holdings = holdings_for_turn(
-        site, group, release.metadata, release.rls_data, release.track_data, release.conversions
+        site, group, release.metadata, release.rls_data, release.track_data, release.conversions, held_source
     )
     if holdings.nothing_missing:
         click.secho(f"\n{site} has every format of this upload: skipping it.", fg="yellow", bold=True)
         run.failed_trackers.append(site)
         return Turn.NOTHING_MISSING
-    if not holdings.source.torrents:
-        return release, holdings
-    held_source = await _held_source(site, holdings, group, release.metadata, run.spectrals_after)
     if held_source is None:
-        run.failed_trackers.append(site)
-        return Turn.SKIPPED
-    flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={held_source['id']}"
-    return replace(release, source_flac=held_source, flac_url=flac_url, flac_group=group), holdings
-
-
-async def _held_source(
-    site: str,
-    holdings: EditionHoldings,
-    group: dict[str, Any],
-    metadata: dict[str, Any],
-    spectrals_after: bool,
-) -> dict[str, Any] | None:
-    """The held torrent this tracker's conversions are filed as transcodes of; None: skip the tracker, said why.
-
-    Several in the edition are asked about as --skip-flac-upload asks (choose_source_flac): -yyy picks none.
-    """
-    if spectrals_after:
+        return release, holdings
+    if run.spectrals_after:
         # As --skip-flac-upload refuses --spectrals-after: its check runs on our FLAC, once it is up.
         click.secho(
             f"\nNot uploading only the missing formats to {site} with --spectrals-after: the spectral check needs our "
@@ -164,13 +152,10 @@ async def _held_source(
             fg="red",
             bold=True,
         )
-        return None
-    if len(holdings.source.torrents) == 1:
-        return holdings.source.torrents[0]
-    chosen = await choose_source_flac(group, metadata)
-    if chosen is None:
-        click.secho(f"\nSkipping {site}.", fg="red", bold=True)
-    return chosen
+        run.failed_trackers.append(site)
+        return Turn.SKIPPED
+    flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={held_source['id']}"
+    return replace(release, source_flac=held_source, flac_url=flac_url, flac_group=group), holdings
 
 
 def _conversions_lost(run: TrackerRun, gazelle_site: "BaseGazelleApi", release: ReleaseToUpload) -> None:
@@ -196,7 +181,7 @@ async def upload_to_tracker(
     A tracker's error ends its turn, recorded in run.failed_trackers. An abort goes up to the loop, with run as it
     stood.
 
-    only_missing is the group listing when the user chose to upload only what its edition is missing (#1169): a
+    only_missing is the group, as fetched, when the user chose to upload only what its edition is missing (#1169): a
     held source is not uploaded, and its conversions are made from our files and filed as transcodes of the held
     torrent, as --skip-flac-upload does; a held conversion is not made.
     """

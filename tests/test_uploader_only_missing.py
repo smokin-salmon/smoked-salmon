@@ -21,7 +21,7 @@ from test_uploader_reviewed_edition import CONFIRM_GROUP, WEB_320, WEB_FLAC, Gro
 
 import salmon.uploader
 from salmon import interaction
-from salmon.errors import UploadOnlyMissing
+from salmon.errors import RequestFailedError, UploadOnlyMissing
 from salmon.uploader import dupe_checker
 from salmon.uploader.missing_formats import holdings_for_turn
 
@@ -278,3 +278,35 @@ def test_nothing_held_defaults_to_yes_and_fetches_nothing() -> None:
 def test_abort_is_still_there_by_hand() -> None:
     answer, _defaults, _asked = _ask(QuestionSite([WEB_FLAC]), answer="a")
     assert isinstance(answer, click.Abort)
+
+
+class FailingSite(QuestionSite):
+    async def torrentgroup(self, group_id: int) -> dict[str, Any]:
+        raise RequestFailedError("timed out")
+
+
+def test_a_failed_fetch_for_the_answer_is_a_failed_request_not_an_abort() -> None:
+    # The tracker loop skips this tracker on a RequestError, as on any other failed request at its question; an
+    # abort would end the whole run.
+    with pytest.raises(RequestFailedError):
+        _ask(FailingSite([WEB_FLAC]))
+
+
+def test_a_failed_fetch_on_a_later_tracker_skips_only_that_tracker(monkeypatch, tmp_path) -> None:
+    tracker = TwoSites({"OPS": [WEB_FLAC]})
+    handle = tracker._handle
+
+    async def failing(request: web.Request) -> web.StreamResponse:
+        if request.query.get("action") == "torrentgroup" and request.headers.get("Authorization") == API_KEYS["OPS"]:
+            raise web.HTTPForbidden  # Not retried: a 5xx would be, with its waits
+        return await handle(request)
+
+    monkeypatch.setattr(tracker, "_handle", failing)
+    run = _up(monkeypatch, tmp_path, tracker, trackers=("RED", "OPS"), input="1\n\n1\n\n" + "\n" * 10)
+
+    output = run.result.output
+    assert run.result.exit_code == 0, output
+    assert "Aborting" not in output
+    assert _uploads(run.tracker, "RED") == FULL
+    assert "Upload to OPS failed" in output
+    assert _uploads(run.tracker, "OPS") == []
