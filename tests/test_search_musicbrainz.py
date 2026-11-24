@@ -4,6 +4,8 @@ The answers are in tests/fixtures/stores/musicbrainz/search/, XML and JSON fetch
 the JSON must leave these results as they are.
 """
 
+import random
+import re
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +15,10 @@ import pytest
 from helpers.musicbrainz import serving_musicbrainz
 
 from salmon import cfg
+from salmon.search import deezer as deezer_search
 from salmon.search import musicbrainz as musicbrainz_search
+from salmon.search.hints import SearchHints
+from salmon.search.musicbrainz import fielded_query
 
 SEARCH = Path(__file__).parent / "fixtures" / "stores" / "musicbrainz" / "search"
 
@@ -178,3 +183,79 @@ def test_a_result_on_an_excluded_label_is_left_out(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(cfg.upload.search, "excluded_labels", ["parlophone"])
     results = _search("queen-greatest-hits", "Queen Greatest Hits", monkeypatch)
     assert set(results) == set(QUEEN) - set(PARLOPHONE_IN_QUEEN)
+
+
+# The fielded query MusicBrainz is sent when salmon searches from the files (#1178).
+
+_SPECIAL = '+-&|!(){}[]^"~*?:\\/'
+
+
+def test_the_fielded_query_has_every_field_in_order() -> None:
+    assert fielded_query(SearchHints("Miles Davis", "Kind of Blue", 5, "1959")) == (
+        "artist:(miles davis) release:(kind of blue) tracks:(5) date:(1959)"
+    )
+
+
+def test_a_missing_field_is_left_out() -> None:
+    assert fielded_query(SearchHints("Miles Davis", "Kind of Blue", 5, None)) == (
+        "artist:(miles davis) release:(kind of blue) tracks:(5)"
+    )
+    assert fielded_query(SearchHints(None, None, None, None)) == ""
+    assert fielded_query(SearchHints("", "", None, "")) == ""
+
+
+def test_special_characters_are_escaped() -> None:
+    assert fielded_query(SearchHints("AC/DC", 'Live: "1991" (Deluxe) [Disc 1]', None, None)) == (
+        r"artist:(ac\/dc) release:(live\: \"1991\" \(deluxe\) \[disc 1\])"
+    )
+
+
+@pytest.mark.parametrize("title", ["DO NOT DISTURB", "HIT ME HARD AND SOFT", "THIS OR THAT"])
+def test_an_upper_case_operator_word_is_sent_as_a_word(title: str) -> None:
+    assert not re.search(r"\b(AND|OR|NOT)\b", fielded_query(SearchHints("X", title, None, None)))
+
+
+def _generated_values(count: int):
+    rng = random.Random(1178)
+    alphabet = ["a", "Z", " ", "é", "1", *_SPECIAL]
+    for _ in range(count):
+        yield "".join(rng.choice(alphabet) for _ in range(rng.randint(1, 12)))
+
+
+def _unescaped_parentheses_balance(query: str) -> bool:
+    depth, chars = 0, iter(query)
+    for char in chars:
+        if char == "\\":
+            next(chars, None)
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth < 0:
+                return False
+    return depth == 0
+
+
+def test_every_special_character_round_trips_and_parentheses_balance() -> None:
+    for value in _generated_values(3000):
+        query = fielded_query(SearchHints(None, value, None, None))
+        assert query.startswith("release:(") and query.endswith(")"), (value, query)
+        assert re.sub(r"\\(.)", r"\1", query[len("release:(") : -1]) == value.lower(), (value, query)
+        assert _unescaped_parentheses_balance(query), (value, query)
+
+
+def test_without_hints_the_searchstrs_are_the_queries() -> None:
+    assert musicbrainz_search.Searcher().queries(["a b", "c b"], None) == ["a b", "c b"]
+
+
+def test_with_hints_one_fielded_query_replaces_every_searchstr() -> None:
+    hints = SearchHints("A", "B", 3, "2000")
+    assert musicbrainz_search.Searcher().queries(["a b", "c b"], hints) == [fielded_query(hints)]
+
+
+def test_with_hints_that_say_nothing_the_searchstrs_are_the_queries() -> None:
+    assert musicbrainz_search.Searcher().queries(["a b"], SearchHints(None, None, None, None)) == ["a b"]
+
+
+def test_another_store_ignores_hints() -> None:
+    assert deezer_search.Searcher().queries(["a b"], SearchHints("A", "B", 1, "2000")) == ["a b"]

@@ -1,9 +1,26 @@
+import re
 from typing import Any
 
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
+from salmon.search.hints import SearchHints
 from salmon.sources import MusicBrainzBase, is_placeholder_catno
+
+# Lucene's special characters, as Picard escapes them.
+_LUCENE_SPECIAL = re.compile(r'([+\-&|!(){}\[\]\^"~*?:\\/])')
+
+
+def fielded_query(hints: SearchHints) -> str:
+    """The release search for the files' hints: artist, release, tracks and date terms, each left out when its hint
+    is missing (#1178).
+
+    A value is lower-cased, so that an upper-case AND, OR or NOT in a title is a word and not an operator (MusicBrainz
+    matches case-blind), then escaped.
+    """
+    track_count = str(hints.track_count) if hints.track_count else None
+    fields = [("artist", hints.artist), ("release", hints.album), ("tracks", track_count), ("date", hints.year)]
+    return " ".join(f"{field}:({_LUCENE_SPECIAL.sub(r'\\\1', value.lower())})" for field, value in fields if value)
 
 
 def _label_and_catno(rls: dict[str, Any]) -> tuple[str, str]:
@@ -18,6 +35,11 @@ def _label_and_catno(rls: dict[str, Any]) -> tuple[str, str]:
 
 
 class Searcher(MusicBrainzBase, SearchMixin):
+    def queries(self, searchstrs: list[str], hints: SearchHints | None) -> list[str]:
+        """One fielded search when the files' hints say anything, in place of every searchstr; else the searchstrs."""
+        query = fielded_query(hints) if hints is not None else ""
+        return [query] if query else searchstrs
+
     async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any]]:
         """Search for releases on MusicBrainz.
 
