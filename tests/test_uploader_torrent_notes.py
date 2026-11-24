@@ -40,6 +40,10 @@ def test_notes_go_on_top_with_one_blank_line() -> None:
     assert with_notes("Encode Specifics", NOTES) == f"{NOTES}\n\nEncode Specifics"
 
 
+def test_the_editors_trailing_newlines_do_not_widen_the_blank_line() -> None:
+    assert with_notes("Encode Specifics", f"{NOTES}\n\n") == f"{NOTES}\n\nEncode Specifics"
+
+
 @pytest.mark.parametrize("notes", [None, "", "  \n\t "])
 def test_no_notes_leave_the_description_as_it_was(notes) -> None:
     assert with_notes("Encode Specifics", notes) == "Encode Specifics"

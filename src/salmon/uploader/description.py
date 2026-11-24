@@ -426,13 +426,13 @@ def generate_t_description(
 
 
 def with_notes(description: str, notes: str | None) -> str:
-    """The torrent description with the user's notes on top, as written, and a blank line between (#1076).
+    """The torrent description with the user's notes on top, as written, and one blank line between (#1076).
 
     No notes, or only whitespace: the description as it is.
     """
     if notes is None or not notes.strip():
         return description
-    return f"{notes}\n\n{description}"
+    return f"{notes.rstrip()}\n\n{description}"
 
 
 async def ask_torrent_notes() -> str | None:
