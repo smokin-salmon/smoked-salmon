@@ -288,8 +288,11 @@ def test_as_before_a_scrape_used_alone_keeps_the_only_main_of_a_track_they_remix
     remixing = [("Alice", "main"), ("Alice", "remixer")]
     conducting = [("Fritz Reiner", "main"), ("Fritz Reiner", "conductor"), ("Johann Strauss II", "composer")]
 
-    assert alone("Deezer", remixing, ["Pop"])["tracks"]["1"]["1"]["artists"] == remixing
-    assert alone("Qobuz", conducting, CLASSICAL)["tracks"]["1"]["1"]["artists"] == conducting
+    remixed = alone("Deezer", remixing, ["Pop"])
+    conducted = alone("Qobuz", conducting, CLASSICAL)
+
+    assert remixed["tracks"]["1"]["1"]["artists"] == remixing
+    assert conducted["tracks"]["1"]["1"]["artists"] == conducting
 
 
 def test_a_scrape_used_alone_credits_generated_tracks_as_descgen_does_from_its_url(monkeypatch) -> None:
