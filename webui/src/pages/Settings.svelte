@@ -30,6 +30,8 @@
   let saveErrors = $state<Record<string, string>>({})
   // The connection check each save started, per tracker.
   let checkIds = $state<Record<string, string>>({})
+  // Counts each tracker's saves that went through: a check whose values a later save replaced shows nothing.
+  const saveCount: Record<string, number> = {}
   // Over plain http to another machine, a save sends the cookie unencrypted: it takes a second, explicit click.
   const inClear = sentInClear()
   let confirming = $state<Record<string, boolean>>({})
@@ -46,6 +48,7 @@
   }
 
   async function save(code: string, body: { session?: string; api_key?: string | null }) {
+    let count: number
     saving[code] = true
     saveErrors[code] = ''
     try {
@@ -55,13 +58,14 @@
       if (typeof body.api_key === 'string' && keys[code]?.trim() === body.api_key) keys[code] = ''
       // The last check tested the old values: if the new one cannot start, its result must not stay on show.
       delete checkIds[code]
+      count = saveCount[code] = (saveCount[code] ?? 0) + 1
     } catch (e) {
       saveErrors[code] = e instanceof ApiError ? e.message : String(e)
       return
     } finally {
       saving[code] = false
     }
-    await check(code)
+    await check(code, count)
   }
 
   function saveTyped(code: string) {
@@ -81,11 +85,12 @@
   }
 
   // The same check as the Dashboard's button, for this tracker only: at most two requests, only after a save.
-  async function check(code: string) {
+  async function check(code: string, count: number) {
     try {
       const job = await apiPost<Job>('/jobs', { kind: 'connection_check', params: { trackers: [code] } })
-      checkIds[code] = job.id
+      if (saveCount[code] === count) checkIds[code] = job.id
     } catch (e) {
+      if (saveCount[code] !== count) return
       saveErrors[code] =
         e instanceof ApiError && e.status === 409
           ? 'Saved. A connection check is already running: run it again from the Dashboard once it ends.'
