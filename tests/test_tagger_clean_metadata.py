@@ -1,15 +1,17 @@
 """The merge's last cleaning of each track's credits (`clean_metadata`): a main also credited as the track's guest or
 remixer, or on a classical release its composer or conductor, loses main. The remixer and guest check, as before; and
 on a classical release the files' classical rule, applied to the decided credits, so a store's main can't undo it
-(ADR 0007, decision 3)."""
+(ADR 0007, decision 3). A scrape used alone runs the same rule (#1183)."""
 
 import random
+from copy import deepcopy
 
 from helpers.tagger_combine import stating, stores_stating
 from test_tagger_combine_credits import release
 
-from salmon.tagger.combine import combine_metadatas
+from salmon.tagger.combine import combine_metadatas, decide_alone
 from salmon.tagger.metadata import _mains_to_drop, clean_metadata
+from salmon.tagger.sources.base import generate_artists
 
 
 def cleaned(artists: list[tuple[str, str]], genres: list[str] | None = None) -> list[tuple[str, str]]:
@@ -221,3 +223,93 @@ def test_the_cleaning_keeps_its_promises_on_generated_tracks() -> None:
         elif any(name not in roles for name, _ in kept):
             # A main also composer or conductor is kept only when every main is.
             assert not any(name in roles for name, _ in kept), before
+
+
+# A scrape used alone (`salmon meta`, salmon web's lookup): the same rule, as descgen gives it from one URL (#1183)
+
+
+def alone(store: str, artists: list[tuple[str, str]], genres: list[str]) -> dict:
+    meta = release()
+    meta["genres"] = genres
+    meta["tracks"]["1"]["1"]["artists"] = list(artists)
+    decide_alone(meta, store)
+    return meta
+
+
+def test_a_scrape_used_alone_credits_a_conductor_it_states_as_main_as_conductor_on_a_classical_release(
+    monkeypatch,
+) -> None:
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=())
+    meta = alone(
+        "Qobuz",
+        [("Fritz Reiner", "main"), ("Chicago Symphony Orchestra", "main"), ("Fritz Reiner", "conductor")],
+        CLASSICAL,
+    )
+
+    want = [("Chicago Symphony Orchestra", "main"), ("Fritz Reiner", "conductor")]
+    assert meta["tracks"]["1"]["1"]["artists"] == want
+    assert meta["artists"] == want
+
+
+def test_a_scrape_used_alone_drops_the_main_of_a_track_they_remix(monkeypatch) -> None:
+    """Deezer's mixing DJ on Club Future Nostalgia, main on the tracks she remixes beside the singer."""
+    stores_stating(monkeypatch, stating=("Deezer",), assuming=())
+    meta = alone(
+        "Deezer",
+        [("Dua Lipa", "main"), ("The Blessed Madonna", "main"), ("The Blessed Madonna", "remixer")],
+        ["Pop"],
+    )
+
+    want = [("Dua Lipa", "main"), ("The Blessed Madonna", "remixer")]
+    assert meta["tracks"]["1"]["1"]["artists"] == want
+    assert meta["artists"] == want
+
+
+def test_a_scrape_used_alone_runs_the_whole_cleaning() -> None:
+    """All of `clean_metadata` runs, not only its credit rule. A real scrape has cleared this catno already
+    (`scrape_release`), so no user sees this step change."""
+    meta = release()
+    meta["catno"], meta["upc"] = "602 547 00", "60254700"
+
+    decide_alone(meta, "Deezer")
+
+    assert meta["catno"] is None
+
+
+def test_as_before_a_scrape_used_alone_keeps_a_composer_main_off_classical() -> None:
+    artists = [("Alice", "main"), ("Bob", "main"), ("Bob", "composer")]
+
+    meta = alone("Deezer", artists, ["Pop"])
+
+    assert meta["tracks"]["1"]["1"]["artists"] == artists
+
+
+def test_as_before_a_scrape_used_alone_keeps_the_only_main_of_a_track_they_remix_or_conduct() -> None:
+    remixing = [("Alice", "main"), ("Alice", "remixer")]
+    conducting = [("Fritz Reiner", "main"), ("Fritz Reiner", "conductor"), ("Johann Strauss II", "composer")]
+
+    remixed = alone("Deezer", remixing, ["Pop"])
+    conducted = alone("Qobuz", conducting, CLASSICAL)
+
+    assert remixed["tracks"]["1"]["1"]["artists"] == remixing
+    assert conducted["tracks"]["1"]["1"]["artists"] == conducting
+
+
+def test_a_scrape_used_alone_credits_generated_tracks_as_descgen_does_from_its_url(monkeypatch) -> None:
+    """descgen with one URL merges that one scrape and cleans it: the same credits, track by track and the release's."""
+    stores_stating(monkeypatch, stating=("Qobuz",), assuming=("Deezer",))
+    for at, (artists, classical) in enumerate(_generated_tracks(600)):
+        store = ("Qobuz", "Deezer")[at % 2]
+        genres = CLASSICAL if classical else ["Pop"]
+        meta = release()
+        meta["genres"] = genres
+        meta["tracks"]["1"]["1"]["artists"] = list(artists)
+        if store == "Qobuz":
+            stating(meta)
+        merged = clean_metadata(combine_metadatas((store, deepcopy(meta))))
+        merged["artists"], merged["tracks"] = generate_artists(merged["tracks"])
+
+        decide_alone(meta, store)
+
+        assert meta["tracks"]["1"]["1"]["artists"] == merged["tracks"]["1"]["1"]["artists"], (store, artists, genres)
+        assert meta["artists"] == merged["artists"], (store, artists, genres)

@@ -126,6 +126,9 @@ rule that decided, the sources it came from, and the sources that disagreed.
   them back (La Bohème, Deezer's Puccini). The conductor is credited as conductor, which ARTIST writes after the
   performers; ALBUMARTIST, the ARTISTS tag and the folder name read the mains only, so they no longer name him. Each
   dropped main has its reason.*
+  *Amended 2026-11-23 (#1183): a scrape used alone (`salmon meta`, salmon web's lookup) runs `clean_metadata` too,
+  after its decision and before its release's artists are built from the tracks, so it credits a release as descgen
+  does from that one URL, except for the `[metadata.corrections]` (genres, artists), which only the merge applies.*
 - **The tie-breaks, in order:** a stated role beats an assumed one; then the base, then the stores in
   the merge's order.
 - **Order:** a track's main artists keep the order the release gives them, from a store's album
