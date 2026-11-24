@@ -2,6 +2,7 @@ import contextlib
 import re
 import unicodedata
 from collections import defaultdict
+from collections.abc import Collection
 from itertools import chain
 
 import asyncclick as click
@@ -661,7 +662,8 @@ def _drop_fragments(tracks, claims):
     """Drop each paired track's fragments (#1112), once, after the last store, so the guard sees every name Discogs
     credits on the track."""
     for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
-        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()))
+        guesses = _guesses(track["artists"], claims[id(track)], track.get("artist_variations", ()))
+        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()), guesses)
 
 
 def _decide_credits(tracks, claims, base_source, corrected=False):
@@ -875,21 +877,42 @@ def _print_disputes(decisions):
             click.secho(f"  {', '.join(line_names)} ({other} at {at})", fg="yellow")
 
 
-def check_for_artist_fragments(artists, variations=()):
-    """Check for artists that may be a fragment of another artist in the release. Two spellings of one artist are no
-    fragment of each other, the decision joins them: one `same_artist_key` ("Herbaliser", "The Herbaliser"), or a name
-    and the name Discogs credits it as on the track, through any chain (`variations`: "Roger Taylor" as "Taylor")."""
+def check_for_artist_fragments(artists, variations=(), guesses: Collection[tuple[str, str]] = ()):
+    """Drop the credits that may be a fragment of another credit's name in the same role ("Ultra" of "Ultra Nate"); a
+    name in one role is no fragment of a name in another (#1112). Two spellings of one artist are no fragment of each
+    other, the decision joins them: one `same_artist_key` ("Herbaliser", "The Herbaliser"), or a name and the name
+    Discogs credits it as on the track, through any chain (`variations`: "Roger Taylor" as "Taylor"). `guesses` are the
+    credits no source states (`_guesses`): a guess never drops a credit that one states (#1112)."""
     joins = _credited_joins(variations)
-    names = [(_comparable_words(a), _joined(joins, same_artist_key(a))) for a, _ in artists]
+    names = [(_comparable_words(a), _joined(joins, same_artist_key(a)), i, (a, i) in guesses) for a, i in artists]
     for a, i in artists.copy():
         words, key = _comparable_words(a), _joined(joins, same_artist_key(a))
         if len("".join(words)) <= 1:
             continue
-        for other, other_key in names:
-            one = key == other_key
-            if words != other and not one and _is_word_run(words, other) and (a, i) in artists:
+        guessed = (a, i) in guesses
+        for other, other_key, other_role, other_guessed in names:
+            drops = other_role == i and (guessed or not other_guessed) and key != other_key
+            if drops and words != other and _is_word_run(words, other) and (a, i) in artists:
                 artists.remove((a, i))
     return artists
+
+
+def _guesses(artists, claims, variations=()):
+    """The track's credits that no source states (ADR 0007): every claim of each is assumed. A claim is of a credit in
+    its role under any spelling the merge reads as one artist, as the fragment check reads them (`same_artist_key`,
+    the name a source credits it as, Discogs' credited names on the track through any chain): the track keeps the
+    first source's spelling, and a store stating "Beyoncé" states the base's "Beyonce"."""
+    joins = _credited_joins(variations)
+    keys = {
+        (_joined(joins, same_artist_key(spelling)), claim.role, claim.assumed)
+        for claim in claims
+        for spelling in (claim.name, claim.credited_as)
+    }
+    return {
+        (name, role)
+        for name, role in artists
+        if (key := _joined(joins, same_artist_key(name)), role, True) in keys and (key, role, False) not in keys
+    }
 
 
 def _comparable_words(name):

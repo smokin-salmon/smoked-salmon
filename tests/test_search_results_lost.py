@@ -245,7 +245,7 @@ def test_apple_a_refusal_from_the_server_prints_its_status_and_not_its_body(
     assert [key[0] for key in releases] == ["us"]
     out = capsys.readouterr().out
     assert "Apple Music: storefront jp failed:" in out
-    assert "Status code 403" in out
+    assert "HTTP 403" in out
     assert "the refusal's body" not in out
     assert "127.0.0.1" not in out
 
@@ -324,7 +324,7 @@ def test_tidal_a_refusal_from_the_server_prints_neither_the_token_nor_the_body(
     assert results == ("Tidal", {})
     out = capsys.readouterr().out
     assert "Tidal: region DE failed:" in out
-    assert "Status code 500" in out
+    assert "HTTP 500" in out
     assert "the-access-token" not in out
     assert "the refusal's body" not in out
     assert "127.0.0.1" not in out

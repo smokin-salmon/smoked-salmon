@@ -333,12 +333,12 @@ def test_a_split_name_is_joined_back_under_the_spelling_its_artist_takes() -> No
 
 
 def test_as_before_a_featuring_clause_naming_a_dropped_fragment_stays(monkeypatch: pytest.MonkeyPatch) -> None:
-    # The store's "Simon" is a fragment of "Simon & Garfunkel" and goes, so nothing credits the clause's Simon.
+    # The store's main "Simon" is a fragment of "Simon & Garfunkel" and goes, so nothing credits the clause's Simon.
     monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
     files = release(("Simon & Garfunkel", "main"))
     files["tracks"]["1"]["1"]["title"] = "Song (feat. Simon)"
 
-    combined = combine_metadatas(("Deezer", release(("Simon & Garfunkel", "main"), ("Simon", "guest"))), base=files)
+    combined = combine_metadatas(("Deezer", release(("Simon & Garfunkel", "main"), ("Simon", "main"))), base=files)
 
     assert combined["tracks"]["1"]["1"]["title"] == "Song (feat. Simon)"
 
@@ -428,9 +428,9 @@ def test_remixers_split_and_joined_back_keep_their_remixer_tag() -> None:
 def test_as_before_a_featuring_clause_is_not_admitted_by_a_producer_of_the_same_name(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # The guest "Herbaliser" is a fragment of the main and goes; the producer "The Herbaliser" performs nothing.
+    # The main "Herbaliser" is a fragment of the other main and goes; the producer "The Herbaliser" performs nothing.
     monkeypatch.setattr(cfg.upload.formatting, "strip_useless_versions", True)
-    files = release(("Herbaliser Collective", "main"), ("Herbaliser", "guest"), ("The Herbaliser", "producer"))
+    files = release(("Herbaliser Collective", "main"), ("Herbaliser", "main"), ("The Herbaliser", "producer"))
     files["tracks"]["1"]["1"]["title"] = "Song (feat. Herbaliser)"
 
     combined = combine_metadatas(("Deezer", release()), base=files)
@@ -826,10 +826,10 @@ def test_a_duo_written_with_an_ampersand_and_one_person_of_their_names_are_shown
 
 
 def test_a_name_only_a_dropped_credit_gave_is_not_shown(capsys: pytest.CaptureFixture) -> None:
-    """Discogs' "Bob Smith", credited as "Bobby Smith", is a fragment of "Bob Smith Band" and dropped: nothing of it
-    is read as one artist."""
+    """Discogs' main "Bob Smith", credited as "Bobby Smith", is a fragment of "Bob Smith Band" and dropped: nothing of
+    it is read as one artist."""
     discogs = credited_as(
-        release(("Bob Smith Band", "main"), ("Bob Smith", "guest")), "Bob Smith", "guest", "Bobby Smith"
+        release(("Bob Smith Band", "main"), ("Bob Smith", "main")), "Bob Smith", "main", "Bobby Smith"
     )
 
     combined = combine_metadatas(("Discogs", discogs), base=release(("Bob Smith Band", "main")))

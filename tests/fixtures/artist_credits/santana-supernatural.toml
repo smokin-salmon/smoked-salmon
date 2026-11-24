@@ -1,7 +1,7 @@
 album = "Santana, Supernatural"
 why = "A band album full of one-track featured singers: Deezer and MusicBrainz agree track by track; Discogs adds band members as guests and a 'No Artist' main."
 edition = "Columbia/Legacy remaster, 14 tracks (Deezer 7040992 = MusicBrainz b43f421d by barcode); Discogs 807636 is master 77696's main release (1999 Arista CD); the Legacy Edition (Deezer 8248624, 24 tracks) left out"
-known_wrong = []
+known_wrong = ["merge: on 6 Lauryn Hill and Cee-Lo main, as the files' plain ARTIST has them, beside the guests 'Ms. Lauryn Hill' and 'CeeLo Green': the files win over the stores' guests on the same names, and the other spellings are not read as one"]
 files_from = "deezer"
 
 [sources]
@@ -33,9 +33,9 @@ release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)",
 tracks = 14
 
 [today.merge]
-release = ["Santana (main)", "Dave Matthews (main)", "Carter Beauford (main)", "Everlast (main)", "Rob Thomas (main)", "Ms. Lauryn Hill (guest)", "CeeLo Green (guest)", "The Product G&B (main)", "Maná (main)", "Eagle-Eye Cherry (main)", "Eric Clapton (main)"]
+release = ["Santana (main)", "Dave Matthews (main)", "Carter Beauford (main)", "Everlast (main)", "Rob Thomas (main)", "Lauryn Hill (main)", "Cee-Lo (main)", "Ms. Lauryn Hill (guest)", "CeeLo Green (guest)", "The Product G&B (main)", "Maná (main)", "Eagle-Eye Cherry (main)", "Eric Clapton (main)"]
 tracks = 14
-credits = ["1.1: Santana (main)", "1.2: Santana (main), Dave Matthews (main), Carter Beauford (main)", "1.3: Santana (main), Everlast (main)", "1.4: Santana (main)", "1.5: Santana (main), Rob Thomas (main)", "1.6: Santana (main), Ms. Lauryn Hill (guest), CeeLo Green (guest)", "1.7: Santana (main), The Product G&B (main)", "1.8: Santana (main)", "1.9: Santana (main), Maná (main)", "1.10: Santana (main), Eagle-Eye Cherry (main)", "1.11: Santana (main)", "1.12: Santana (main)", "1.13: Santana (main), Eric Clapton (main)", "1.14: Santana (main)"]
+credits = ["1.1: Santana (main)", "1.2: Santana (main), Dave Matthews (main), Carter Beauford (main)", "1.3: Santana (main), Everlast (main)", "1.4: Santana (main)", "1.5: Santana (main), Rob Thomas (main)", "1.6: Santana (main), Lauryn Hill (main), Cee-Lo (main), Ms. Lauryn Hill (guest), CeeLo Green (guest)", "1.7: Santana (main), The Product G&B (main)", "1.8: Santana (main)", "1.9: Santana (main), Maná (main)", "1.10: Santana (main), Eagle-Eye Cherry (main)", "1.11: Santana (main)", "1.12: Santana (main)", "1.13: Santana (main), Eric Clapton (main)", "1.14: Santana (main)"]
 
 [today.merge-picard]
 release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Ms. Lauryn Hill (guest)", "CeeLo Green (guest)", "The Product G&B (guest)", "Maná (guest)", "Eagle‐Eye Cherry (guest)", "Eric Clapton (guest)"]
