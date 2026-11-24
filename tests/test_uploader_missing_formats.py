@@ -276,4 +276,17 @@ def test_a_source_the_group_does_not_list_leaves_the_edition_to_year_and_title()
     ours = {**_torrent(9, "FLAC", "24bit Lossless"), "remasterCatalogueNumber": "CAT2"}
     holdings = edition_holdings(_group(_torrent(3, "MP3", "V0 (VBR)")), RELEASE, CONVERSIONS, source=ours)
     assert holdings.held_conversions == {"MP3 V0"}
-    assert edition_holdings(_group(), RELEASE, CONVERSIONS, source={"id": 9}).held_conversions == set()
+    assert "2020 / Label / CAT2 / WEB / FLAC / 24bit Lossless" in holdings.source.reason
+    by_id = edition_holdings(_group(), RELEASE, CONVERSIONS, source={"id": 9})
+    assert by_id.held_conversions == set()
+    assert by_id.source.reason == "torrent 9 is the source"
+
+
+def test_a_source_with_no_id_is_no_torrent_without_one() -> None:
+    # A torrent named by another field (a search row's torrentId) is not the source for lacking an id.
+    flac, mp3 = (
+        {k: v for k, v in _torrent(tid, fmt, enc).items() if k != "id"}
+        for tid, fmt, enc in ((1, "FLAC", "24bit Lossless"), (2, "MP3", "V0 (VBR)"))
+    )
+    holdings = edition_holdings(_group(flac, mp3), RELEASE, CONVERSIONS, source=flac)
+    assert holdings.held_conversions == {"MP3 V0"}

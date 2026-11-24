@@ -48,6 +48,19 @@ class EditionHoldings:
         return bool(self.source.torrents) and all(holding.torrents for holding in self.wanted_conversions)
 
 
+def _torrent_id(torrent: dict[str, Any]) -> str | None:
+    """A listed torrent's id as text (an id sent as text is the same torrent); None when it has none."""
+    return str(torrent["id"]) if torrent.get("id") is not None else None
+
+
+def _source_reason(shown: dict[str, Any], source_id: str | None, group_info: dict[str, Any]) -> str:
+    """Why the source's format is held: the source as listed, or as given when the listing lacks it."""
+    if all(shown.get(key) for key in ("media", "format", "encoding")):
+        return f"this edition has {describe_torrent(shown, group_info)}"
+    # held_formats' callers may pass an id alone, of a torrent the listing given does not have.
+    return f"torrent {source_id} is the source"
+
+
 def edition_holdings(
     rset: dict[str, Any],
     release: dict[str, Any],
@@ -79,15 +92,16 @@ def edition_holdings(
         Each decision with its reason, the source's first.
     """
     group_info = rset.get("group") or {}
-    source_id = str(source.get("id")) if source is not None else None
-    placed = next((t for t in rset.get("torrents") or [] if str(t.get("id")) == source_id), None)
+    # A source with no id is no torrent of the listing: none without an id is taken for it.
+    source_id = _torrent_id(source) if source is not None else None
+    placed = next((t for t in rset.get("torrents") or [] if _torrent_id(t) == source_id), None) if source_id else None
     filed_under = filed_edition(placed, rset) if placed is not None and same_edition else None
 
     def decide(name: str, fmt: str, encoding: str) -> Holding:
         held = tuple(
             torrent
             for torrent in held_in_group(rset, {**release, "format": fmt, "encoding": encoding})
-            if str(torrent.get("id")) != source_id
+            if (source_id is None or _torrent_id(torrent) != source_id)
             and (filed_under is None or filed_edition(torrent, rset) == filed_under)
         )
         if held:
@@ -98,14 +112,7 @@ def edition_holdings(
         source=(
             decide("source", release.get("format") or "", release.get("encoding") or "")
             if source is None
-            else Holding(
-                "source",
-                (source,),
-                # Not in the listing given (held_formats' callers may pass an id alone): only its id names it.
-                f"this edition has {describe_torrent(placed, group_info)}"
-                if placed is not None
-                else f"torrent {source_id} is the source",
-            )
+            else Holding("source", (source,), _source_reason(placed or source, source_id, group_info))
         ),
         conversions=tuple(decide(name, fmt, encoding) for name, (fmt, encoding) in conversions.items()),
         wanted=wanted,
