@@ -22,7 +22,7 @@ from test_uploader_reviewed_edition import CONFIRM_GROUP, WEB_320, WEB_FLAC, Gro
 import salmon.uploader
 from salmon import interaction
 from salmon.errors import RequestFailedError, UploadOnlyMissing
-from salmon.uploader import dupe_checker
+from salmon.uploader import dupe_checker, tracker_run
 from salmon.uploader.missing_formats import holdings_for_turn
 
 pytestmark = pytest.mark.usefixtures("image_uploads")
@@ -194,6 +194,45 @@ def test_every_offered_conversion_is_decided_and_only_the_default_ones_need_to_b
     assert not holdings.nothing_missing
     with_320 = {**group, "torrents": [WEB_FLAC, WEB_320]}
     assert holdings_for_turn("RED", with_320, release, rls_data, track_data, ("320",)).nothing_missing
+
+
+# What CodeRabbit found on #1185
+
+
+def test_a_failed_search_after_the_review_skips_the_first_tracker(monkeypatch, tmp_path) -> None:
+    # RED's group is left to the search after the review (new group at the question), which fails: as a failed
+    # search before it, RED is skipped and OPS still runs.
+    async def failing(*_args: Any, **_kwargs: Any) -> int | None:
+        raise RequestFailedError("timed out")
+
+    monkeypatch.setattr(salmon.uploader, "recheck_dupe", failing)
+    run = _up(monkeypatch, tmp_path, TwoSites({}), trackers=("RED", "OPS"), input="N\n1\n\n" + "\n" * 10)
+
+    output = run.result.output
+    assert run.result.exit_code == 0, output
+    assert "Could not check RED for dupes after the review (timed out): skipping it." in output
+    assert _uploads(run.tracker, "RED") == []
+    assert _uploads(run.tracker, "OPS") == FULL
+
+
+def test_conversions_filed_under_our_edition_are_weighed_against_it(monkeypatch, tmp_path) -> None:
+    # Two held FLACs: CAT2's is picked, and its edition fields are declined, so the conversions go under ours
+    # (CAT1), which holds the 320.
+    cat2_flac = {**WEB_FLAC, "id": 15, "remasterCatalogueNumber": "CAT2"}
+
+    async def pick_cat2(_group: dict[str, Any], _metadata: dict[str, Any]) -> dict[str, Any]:
+        return cat2_flac
+
+    async def declined(_site: Any, _source: Any, metadata: dict[str, Any]) -> dict[str, Any]:
+        return metadata
+
+    monkeypatch.setattr(tracker_run, "choose_source_flac", pick_cat2)
+    monkeypatch.setattr(tracker_run, "edition_of_source", declined)
+    held = [WEB_FLAC, cat2_flac, WEB_320]
+    run = _up(monkeypatch, tmp_path, TwoSites({"RED": held}), trackers=("RED",), input="1\n\n" + "\n" * 10)
+
+    assert run.result.exit_code == 0, run.result.output
+    assert _uploads(run.tracker, "RED") == ["MP3 V0 (VBR)"]
 
 
 # The group question

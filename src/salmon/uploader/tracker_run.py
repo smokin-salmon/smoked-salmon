@@ -232,16 +232,19 @@ async def upload_to_tracker(
         if release.flac_url and release.source_flac is not None:
             click.secho(f"\nNot uploading the FLAC: transcoding from {release.flac_url}", fg="yellow")
             url = release.flac_url
+            same_edition = in_edition_of(release.source_flac, metadata)
+            # What was decided holds when the conversions go into the held FLAC's edition; filed under ours (the
+            # site's fields declined), they are weighed against ours, as --skip-flac-upload weighs them.
             held = (
                 holdings.held_conversions
-                if holdings is not None
+                if holdings is not None and same_edition
                 else _held_conversions(
                     release.flac_group or {},
                     metadata,
                     release.source_flac,
                     release.rls_data,
                     release.track_data,
-                    same_edition=in_edition_of(release.source_flac, metadata),
+                    same_edition=same_edition,
                 )
             )
         else:
