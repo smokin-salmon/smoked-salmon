@@ -169,7 +169,6 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 raw_title = attrs.get("name", "").strip()
                 title = RE_FEAT.sub("", raw_title)
 
-                artists: list[tuple[str, str]] = []
                 artist_rels = (item.get("relationships") or {}).get("artists") or {}
                 rel_names: list[str] = []
                 for rel in artist_rels.get("data") or []:
@@ -185,20 +184,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 guest_keys = {guest.casefold() for guest in guests}
 
                 artist_name = (attrs.get("artistName") or "").strip()
-                explicit_main_artists = False
-                # Apple leaves artists without an artist page out of the relationship. Use it only when its
-                # names account for the whole display string; otherwise the string is all we have.
-                if artist_name and _covers_artist_name(rel_names, artist_name):
-                    for name in rel_names:
-                        if name.casefold() not in guest_keys and (name, "main") not in artists:
-                            artists.append((name, "main"))
-                    explicit_main_artists = bool(artists)
-
-                # Older/cached responses without the artists, or an incomplete relationship: keep the
-                # display string whole, so a name with no Apple artist page isn't lost or mis-split.
-                if not artists and artist_name:
-                    artists.append((artist_name, "main"))
-
+                artists, explicit_main_artists, _reason = _decide_main_artists(rel_names, artist_name, guest_keys)
                 for guest in guests:
                     if (guest, "guest") not in artists:
                         artists.append((guest, "guest"))
@@ -226,6 +212,31 @@ class Scraper(AppleMusicBase, MetadataMixin):
 
         except (TypeError, KeyError, ValueError) as e:
             raise ScrapeError("Could not parse tracks from Apple Music API") from e
+
+
+def _decide_main_artists(
+    rel_names: list[str], artist_name: str, guest_keys: set[str]
+) -> tuple[list[tuple[str, str]], bool, str]:
+    """Decide a track's main artist credits, whether they are explicit, and why.
+
+    Apple leaves artists without an artist page out of ``relationships.artists``. Use the relationship
+    only when its names account for the whole ``artistName`` display string; otherwise keep the display
+    string whole so an unlinked name is neither dropped nor mis-split.
+    """
+    if not artist_name:
+        return [], False, "no display artist"
+    if not rel_names:
+        return [(artist_name, "main")], False, "no relationship artists"
+    if not _covers_artist_name(rel_names, artist_name):
+        return [(artist_name, "main")], False, "relationship incomplete for display artist"
+
+    mains: list[tuple[str, str]] = []
+    for name in rel_names:
+        if name.casefold() not in guest_keys and (name, "main") not in mains:
+            mains.append((name, "main"))
+    if not mains:
+        return [(artist_name, "main")], False, "all relationship artists are title guests"
+    return mains, True, "relationship covers display artist"
 
 
 _RE_ARTIST_GAP = re.compile(

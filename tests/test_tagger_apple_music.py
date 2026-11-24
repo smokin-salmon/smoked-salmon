@@ -4,7 +4,7 @@ from helpers.tagger_combine import make_tracks
 
 from salmon.sources.apple_music import AppleMusicBase
 from salmon.tagger.combine import combine_metadatas
-from salmon.tagger.sources.apple_music import Scraper
+from salmon.tagger.sources.apple_music import Scraper, _decide_main_artists
 from salmon.tagger.sources.base import generate_artists
 
 
@@ -195,6 +195,32 @@ def test_unmatched_artist_named_like_a_joiner_falls_back_to_display_string(rel_n
 
     assert tracks["1"][1]["artists"] == [(display, "main")]
     assert "explicit_main_artists" not in tracks["1"][1]
+
+
+@pytest.mark.parametrize(
+    ("rel_names", "artist_name", "guest_keys", "expected_mains", "expected_explicit", "expected_reason"),
+    [
+        (["A", "B"], "A & B", set(), [("A", "main"), ("B", "main")], True, "relationship covers display artist"),
+        (["A", "X"], "A feat. X", {"x"}, [("A", "main")], True, "relationship covers display artist"),
+        ([], "A & B", set(), [("A & B", "main")], False, "no relationship artists"),
+        (["A"], "A & B", set(), [("A & B", "main")], False, "relationship incomplete for display artist"),
+        (["X"], "X", {"x"}, [("X", "main")], False, "all relationship artists are title guests"),
+        (["A"], "", set(), [], False, "no display artist"),
+    ],
+)
+def test_decide_main_artists(
+    rel_names: list[str],
+    artist_name: str,
+    guest_keys: set[str],
+    expected_mains: list[tuple[str, str]],
+    expected_explicit: bool,
+    expected_reason: str,
+) -> None:
+    mains, explicit, reason = _decide_main_artists(rel_names, artist_name, guest_keys)
+
+    assert mains == expected_mains
+    assert explicit is expected_explicit
+    assert reason == expected_reason
 
 
 def test_explicit_main_artists_survive_merge_onto_file_base() -> None:
