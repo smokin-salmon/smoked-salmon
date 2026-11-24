@@ -24,6 +24,9 @@ TRACKER_CODES = ("RED", "OPS", "DIC")
 
 # Saves run one at a time: each reads the file afresh, changes it and writes it back.
 _saving = threading.Lock()
+# Held while the file is written and while a job reads it as it starts: a file written in place is read before or
+# after, never half of each. Not _saving, which a save holds while it checks every folder the config names.
+_writing = threading.Lock()
 
 
 class Credentials(msgspec.Struct, frozen=True):
@@ -69,7 +72,8 @@ def read_credentials(path: Path) -> dict[str, Credentials]:
     Raises:
         ConfigEditError: If the file cannot be read, or its trackers' session or api_key would be refused.
     """
-    text = _read(path)
+    with _writing:
+        text = _read(path)
     try:
         with compat.quiet():
             raw = msgspec.toml.decode(text)
@@ -180,7 +184,11 @@ def _write_in_place(real: Path, text: str) -> None:
     """Write ``text`` over the file ``real``, for a file that cannot be replaced.
 
     The file first grows to the new text's length, padded with spaces TOML ignores, so a full disk fails before the
-    old text is touched. If writing over it fails all the same, the old text is put back.
+    old text is touched. If writing over it fails all the same (a copy-on-write filesystem needs new blocks even to
+    write over old ones), the old text is put back.
+
+    Raises:
+        ConfigEditError: If the old text could not be put back either: the file may be cut short.
     """
     new = text.encode("utf-8")
     old = real.read_bytes()
@@ -196,9 +204,15 @@ def _write_in_place(real: Path, text: str) -> None:
             _write_at(fd, 0, new)
             os.ftruncate(fd, len(new))
             os.fsync(fd)
-        except OSError:
-            _write_at(fd, 0, old)
-            os.ftruncate(fd, len(old))
+        except OSError as e:
+            try:
+                _write_at(fd, 0, old)
+                os.ftruncate(fd, len(old))
+            except OSError:
+                raise ConfigEditError(
+                    f"Could not write {real}, and it may now be cut short: {e}. Check it by hand before salmon "
+                    "restarts."
+                ) from None
             raise
     finally:
         os.close(fd)
@@ -216,7 +230,8 @@ def update_credentials(path: Path, code: str, update: CredentialsUpdate) -> None
 
     Raises:
         ConfigEditError: If the file cannot be read or written, has no table for the tracker, or would be refused
-            once changed. The file is then left as it was.
+            once changed. The file is then left as it was, unless the message says it may be cut short (written in
+            place, see ``_write_in_place``).
     """
     with _saving:
         if not writable(path):
@@ -224,6 +239,7 @@ def update_credentials(path: Path, code: str, update: CredentialsUpdate) -> None
         text = _edited(_read(path), path, code, update)
         _parsed(text, path)
         try:
-            _write(path, text)
+            with _writing:
+                _write(path, text)
         except OSError as e:
             raise ConfigEditError(f"Could not write {path}: {e}. Edit it by hand.") from None

@@ -66,6 +66,8 @@ rewrites the user's config file").
   (salmon not running as the file's owner, nor as root) or the move fails (a config bind-mounted on its own into a
   container), the file is written in place instead: it first grows to the new length, padded with spaces, so a full
   disk fails before the old text is touched, and if writing over it fails all the same the old text is put back. A
+  write in place cannot be atomic: if putting the old text back fails too (a copy-on-write filesystem that is full),
+  the save says the file may be cut short. A job that starts during a write reads the file before or after it. A
   temporary file that cannot be written for any reason but a permission (a full disk) leaves the config as it was.
 - A file salmon may not write is never written, and the page says so. A file with no write bit set counts as one
   even for root, who could write it anyway, as salmon does in the Docker image. `chmod a-w config.toml` is how a user

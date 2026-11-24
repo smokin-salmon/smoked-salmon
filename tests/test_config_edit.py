@@ -8,12 +8,13 @@ import errno
 import os
 import stat
 import tempfile
+import threading
 from pathlib import Path
 
 import pytest
 from helpers.shipped_config import shipped_config
 
-from salmon.config import compat
+from salmon.config import compat, edit
 from salmon.config.edit import ConfigEditError, CredentialsUpdate, read_credentials, update_credentials, writable
 
 RED_TABLE = "\n[tracker.red]\nsession = 'test-session-red'\n"
@@ -314,12 +315,18 @@ def test_update_writes_in_place_when_folder_takes_no_new_file(tmp_path: Path, mo
     assert read_credentials(path)["RED"].session == "new-cookie"
 
 
-def _in_place_fsync_fails_on(monkeypatch: pytest.MonkeyPatch, call: int) -> None:
-    """Make the save write in place (the owner cannot be kept), and its `call`th fsync fail on a full disk."""
+def _refuse_owner(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make the save write in place: the owner cannot be kept."""
 
     def refuse(_fd: int, _uid: int, _gid: int) -> None:
         raise PermissionError(errno.EPERM, "Operation not permitted")
 
+    monkeypatch.setattr(os, "fchown", refuse)
+
+
+def _in_place_fsync_fails_on(monkeypatch: pytest.MonkeyPatch, call: int) -> None:
+    """Make the save write in place, and its `call`th fsync fail on a full disk."""
+    _refuse_owner(monkeypatch)
     calls: list[int] = []
 
     def fsync(_fd: int) -> None:
@@ -327,7 +334,6 @@ def _in_place_fsync_fails_on(monkeypatch: pytest.MonkeyPatch, call: int) -> None
         if len(calls) == call:
             raise OSError(errno.ENOSPC, "No space left on device")
 
-    monkeypatch.setattr(os, "fchown", refuse)
     monkeypatch.setattr(os, "fsync", fsync)
 
 
@@ -381,3 +387,46 @@ def test_read_credentials_of_a_file_with_no_tracker_finds_none(tmp_path: Path) -
     path.write_text("", encoding="utf-8")
 
     assert read_credentials(path) == {}
+
+
+def test_failed_restore_says_the_file_may_be_cut_short(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A copy-on-write filesystem can fill up part way through the overwrite, and again putting the old text back."""
+    path = _config(tmp_path)
+    _refuse_owner(monkeypatch)
+    write_at = edit._write_at
+
+    def full_part_way(fd: int, offset: int, data: bytes) -> None:
+        if offset == 0:
+            write_at(fd, 0, data[: len(data) // 2])
+            raise OSError(errno.ENOSPC, "No space left on device")
+        write_at(fd, offset, data)
+
+    monkeypatch.setattr(edit, "_write_at", full_part_way)
+
+    with pytest.raises(ConfigEditError, match="may now be cut short") as raised:
+        update_credentials(path, "RED", CredentialsUpdate(session=LONG_COOKIE))
+
+    assert str(path.resolve()) in str(raised.value)
+
+
+def test_job_start_waits_for_an_in_place_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A job starting while the file is written over reads it before or after, never half of each."""
+    path = _config(tmp_path)
+    _refuse_owner(monkeypatch)
+    write_at = edit._write_at
+    found: list[str] = []
+    reader = threading.Thread(target=lambda: found.append(read_credentials(path)["RED"].session))
+
+    def overwrite(fd: int, offset: int, data: bytes) -> None:
+        if offset == 0 and not reader.is_alive():
+            reader.start()
+            reader.join(timeout=0.5)
+            assert reader.is_alive(), "the job's read did not wait for the write"
+        write_at(fd, offset, data)
+
+    monkeypatch.setattr(edit, "_write_at", overwrite)
+
+    update_credentials(path, "RED", CredentialsUpdate(session=LONG_COOKIE))
+    reader.join()
+
+    assert found == [LONG_COOKIE]
