@@ -1,7 +1,7 @@
 """One tracker's turn in an upload run, and what the turns of a run share."""
 
 import enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any, cast
 
 import asyncclick as click
@@ -22,6 +22,7 @@ from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.cover_upload import resolve_cover_url
 from salmon.uploader.dupe_checker import print_torrents
 from salmon.uploader.held_edition import edition_in_group, edition_of_source, in_edition_of
+from salmon.uploader.missing_formats import holdings_for_turn
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import SpectralsDeclined, SpectralUploads, post_upload_spectral_check
@@ -79,6 +80,9 @@ class Turn(enum.Enum):
     ENDED = enum.auto()  # Ran to its end, whether or not anything went up: the loop may say it is done
     # Refused at the cover, or without the spectrals that failed: skipped, and nothing was sent
     SKIPPED = enum.auto()
+    # The user chose to upload only what the edition is missing, and it holds everything: skipped as the user's
+    # choice, as at the group question, and nothing was sent (#1169)
+    NOTHING_MISSING = enum.auto()
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -129,12 +133,41 @@ async def upload_to_tracker(
     group_id: int | None,
     run: TrackerRun,
     fetched_group: dict[str, Any] | None = None,  # {} = the fetch failed: do not fetch again
+    *,
+    only_missing: dict[str, Any] | None = None,
 ) -> Turn:
     """Upload the release to one tracker: its cover, spectrals, request, torrent and conversions.
 
     A tracker's error ends its turn, recorded in run.failed_trackers. An abort goes up to the loop, with run as it
     stood.
+
+    only_missing is the group listing when the user chose to upload only what its edition is missing (#1169): a
+    held source is not uploaded, and its conversions are made from our files and filed as transcodes of the held
+    torrent, as --skip-flac-upload does; a held conversion is not made.
     """
+    holdings = None
+    if only_missing is not None:
+        holdings = holdings_for_turn(
+            gazelle_site.site_string,
+            only_missing,
+            release.metadata,
+            release.rls_data,
+            release.track_data,
+            release.conversions,
+        )
+        if holdings.nothing_missing:
+            click.secho(
+                f"\n{gazelle_site.site_string} has every format of this upload: skipping it.", fg="yellow", bold=True
+            )
+            run.failed_trackers.append(gazelle_site.site_string)
+            return Turn.NOTHING_MISSING
+        if (held_source := holdings.source.torrent) is not None:
+            release = replace(
+                release,
+                source_flac=held_source,
+                flac_url=f"{gazelle_site.base_url}/torrents.php?torrentid={held_source['id']}",
+                flac_group=only_missing,
+            )
     # Handle cover image for this tracker
     proceed, cover_url = await resolve_cover_url(
         gazelle_site,
@@ -175,13 +208,17 @@ async def upload_to_tracker(
         if release.flac_url and release.source_flac is not None:
             click.secho(f"\nNot uploading the FLAC: transcoding from {release.flac_url}", fg="yellow")
             url = release.flac_url
-            held = _held_conversions(
-                release.flac_group or {},
-                metadata,
-                release.source_flac,
-                release.rls_data,
-                release.track_data,
-                same_edition=in_edition_of(release.source_flac, metadata),
+            held = (
+                holdings.held_conversions
+                if holdings is not None
+                else _held_conversions(
+                    release.flac_group or {},
+                    metadata,
+                    release.source_flac,
+                    release.rls_data,
+                    release.track_data,
+                    same_edition=in_edition_of(release.source_flac, metadata),
+                )
             )
         else:
             group_link = f"{gazelle_site.base_url}/torrents.php?id={group_id}" if group_id else release.source_url

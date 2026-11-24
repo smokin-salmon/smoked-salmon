@@ -19,6 +19,18 @@ class SkipTracker(Exception):
     """The user skipped this tracker at its group questions: the run goes on to the next one."""
 
 
+class UploadOnlyMissing(Exception):
+    """The user chose to upload into this group only the formats its edition is missing (#1169).
+
+    It carries the group, as the question printed it: the tracker's turn reads what the edition holds from it.
+    """
+
+    def __init__(self, group_id: int, group: dict) -> None:
+        super().__init__(group_id)
+        self.group_id = group_id
+        self.group = group
+
+
 class PickOtherResults(Exception):
     """The user went back from the metadata review to pick other metadata results."""
 
