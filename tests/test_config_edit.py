@@ -7,6 +7,7 @@ The tests write config files built from the shipped template into a temporary fo
 import errno
 import os
 import stat
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -278,3 +279,105 @@ def test_control_characters_are_written_escaped(tmp_path: Path) -> None:
     update_credentials(path, "RED", CredentialsUpdate(session=value))
 
     assert read_credentials(path)["RED"].session == value
+
+
+# --- From the PR review (#1180) -----------------------------------------------------------
+
+LONG_COOKIE = "new-cookie-" + "x" * 200
+
+
+def test_full_disk_for_the_temp_file_leaves_file_untouched(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = _config(tmp_path)
+    before = path.read_bytes()
+
+    def full(**_kwargs: object) -> tuple[int, str]:
+        raise OSError(errno.ENOSPC, "No space left on device")
+
+    monkeypatch.setattr(tempfile, "mkstemp", full)
+
+    with pytest.raises(ConfigEditError, match=str(path)):
+        update_credentials(path, "RED", CredentialsUpdate(session=LONG_COOKIE))
+
+    assert path.read_bytes() == before
+
+
+def test_update_writes_in_place_when_folder_takes_no_new_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = _config(tmp_path)
+
+    def refuse(**_kwargs: object) -> tuple[int, str]:
+        raise PermissionError(errno.EACCES, "Permission denied")
+
+    monkeypatch.setattr(tempfile, "mkstemp", refuse)
+
+    update_credentials(path, "RED", CredentialsUpdate(session="new-cookie"))
+
+    assert read_credentials(path)["RED"].session == "new-cookie"
+
+
+def _in_place_fsync_fails_on(monkeypatch: pytest.MonkeyPatch, call: int) -> None:
+    """Make the save write in place (the owner cannot be kept), and its `call`th fsync fail on a full disk."""
+
+    def refuse(_fd: int, _uid: int, _gid: int) -> None:
+        raise PermissionError(errno.EPERM, "Operation not permitted")
+
+    calls: list[int] = []
+
+    def fsync(_fd: int) -> None:
+        calls.append(_fd)
+        if len(calls) == call:
+            raise OSError(errno.ENOSPC, "No space left on device")
+
+    monkeypatch.setattr(os, "fchown", refuse)
+    monkeypatch.setattr(os, "fsync", fsync)
+
+
+def test_in_place_write_on_a_full_disk_leaves_file_untouched(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The file grows to the new text's length before the old text is written over: a full disk fails first."""
+    path = _config(tmp_path)
+    before = path.read_bytes()
+    _in_place_fsync_fails_on(monkeypatch, 1)
+
+    with pytest.raises(ConfigEditError, match=str(path)):
+        update_credentials(path, "RED", CredentialsUpdate(session=LONG_COOKIE))
+
+    assert path.read_bytes() == before
+
+
+def test_failed_in_place_write_puts_the_old_text_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = _config(tmp_path)
+    before = path.read_bytes()
+    _in_place_fsync_fails_on(monkeypatch, 2)
+
+    with pytest.raises(ConfigEditError, match=str(path)):
+        update_credentials(path, "RED", CredentialsUpdate(session=LONG_COOKIE))
+
+    assert path.read_bytes() == before
+
+
+def test_file_with_no_write_bit_is_read_only_even_for_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """`chmod a-w config.toml` turns saving off, also in the Docker image, where salmon runs as root."""
+    path = _config(tmp_path)
+    path.chmod(0o444)
+    before = path.read_bytes()
+    monkeypatch.setattr(os, "access", lambda _path, _mode: True)
+
+    assert writable(path) is False
+    with pytest.raises(ConfigEditError, match=str(path)):
+        update_credentials(path, "RED", CredentialsUpdate(session="new-cookie"))
+
+    assert path.read_bytes() == before
+
+
+def test_read_credentials_refuses_a_tracker_that_is_not_a_table(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("tracker = 5\n", encoding="utf-8")
+
+    with pytest.raises(ConfigEditError, match=str(path)):
+        read_credentials(path)
+
+
+def test_read_credentials_of_a_file_with_no_tracker_finds_none(tmp_path: Path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("", encoding="utf-8")
+
+    assert read_credentials(path) == {}

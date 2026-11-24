@@ -74,10 +74,12 @@ def read_credentials(path: Path) -> dict[str, Credentials]:
         with compat.quiet():
             raw = msgspec.toml.decode(text)
             compat.apply(raw, path)
-        tables = raw.get("tracker")
+        tables = raw.get("tracker", {})
+        if not isinstance(tables, dict):
+            raise ValueError("tracker must be a table")
         found: dict[str, Credentials] = {}
         for code in TRACKER_CODES:
-            table = tables.get(code.lower()) if isinstance(tables, dict) else None
+            table = tables.get(code.lower())
             if table is not None:
                 found[code] = msgspec.convert(table, type=Credentials)
         return found
@@ -86,8 +88,14 @@ def read_credentials(path: Path) -> dict[str, Credentials]:
 
 
 def writable(path: Path) -> bool:
-    """Whether salmon may write the config file itself (not only the folder it is in)."""
-    return os.access(path.resolve(), os.W_OK)
+    """Whether salmon may write the config file itself (not only the folder it is in).
+
+    A file with no write bit set is read-only even to root, who may write it anyway (the Docker image runs as root):
+    ``chmod a-w config.toml`` turns saving off.
+    """
+    real = path.resolve()
+    no_write_bit = not real.stat().st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+    return not no_write_bit and os.access(real, os.W_OK)
 
 
 def _string(old: object, value: str) -> String:
@@ -126,14 +134,13 @@ def _write(path: Path, text: str) -> None:
     be kept or the move fails (a config bind-mounted on its own into a container), the file is written in place.
 
     Raises:
-        OSError: If the new file cannot be written (a full disk), the file being left as it was, or the write in
-            place fails.
+        OSError: If the new file or the file in place cannot be written (a full disk), the file being left as it was.
     """
     real = path.resolve()
     try:
         fd, temp = tempfile.mkstemp(dir=real.parent, prefix=".config.toml.")
-    except OSError:
-        real.write_text(text, encoding="utf-8")
+    except PermissionError:
+        _write_in_place(real, text)
         return
     try:
         moved = _replace(real, fd, temp, text)
@@ -141,7 +148,7 @@ def _write(path: Path, text: str) -> None:
         with suppress(FileNotFoundError):
             os.unlink(temp)
     if not moved:
-        real.write_text(text, encoding="utf-8")
+        _write_in_place(real, text)
 
 
 def _replace(real: Path, fd: int, temp: str, text: str) -> bool:
@@ -167,6 +174,41 @@ def _replace(real: Path, fd: int, temp: str, text: str) -> bool:
     except OSError:
         return False
     return True
+
+
+def _write_in_place(real: Path, text: str) -> None:
+    """Write ``text`` over the file ``real``, for a file that cannot be replaced.
+
+    The file first grows to the new text's length, padded with spaces TOML ignores, so a full disk fails before the
+    old text is touched. If writing over it fails all the same, the old text is put back.
+    """
+    new = text.encode("utf-8")
+    old = real.read_bytes()
+    fd = os.open(real, os.O_RDWR)
+    try:
+        try:
+            _write_at(fd, len(old), b" " * (len(new) - len(old)))
+            os.fsync(fd)
+        except OSError:
+            os.ftruncate(fd, len(old))
+            raise
+        try:
+            _write_at(fd, 0, new)
+            os.ftruncate(fd, len(new))
+            os.fsync(fd)
+        except OSError:
+            _write_at(fd, 0, old)
+            os.ftruncate(fd, len(old))
+            raise
+    finally:
+        os.close(fd)
+
+
+def _write_at(fd: int, offset: int, data: bytes) -> None:
+    os.lseek(fd, offset, os.SEEK_SET)
+    view = memoryview(data)
+    while view:
+        view = view[os.write(fd, view) :]
 
 
 def update_credentials(path: Path, code: str, update: CredentialsUpdate) -> None:

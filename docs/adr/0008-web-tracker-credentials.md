@@ -1,6 +1,6 @@
 # 0008. salmon web edits tracker credentials in config.toml; each job reads them when it starts
 
-- **Status:** Accepted
+- **Status:** Proposed
 - **Date:** 2026-11-23
 - **Links:** #1034, amends [0004](0004-web-interface.md) sections 1 and 3 and [0005](0005-config-compatibility.md)
   decision 6
@@ -64,8 +64,12 @@ rewrites the user's config file").
 - The file is written to a temporary file in the same folder, then moved over it with `os.replace`, keeping its mode,
   its owner and the symlink it may be reached through. When the folder takes no new file, the owner cannot be kept
   (salmon not running as the file's owner, nor as root) or the move fails (a config bind-mounted on its own into a
-  container), the file is written in place instead. A temporary file that cannot be written (a full disk) leaves the
-  config as it was. A file salmon may not write is never written, and the page says so.
+  container), the file is written in place instead: it first grows to the new length, padded with spaces, so a full
+  disk fails before the old text is touched, and if writing over it fails all the same the old text is put back. A
+  temporary file that cannot be written for any reason but a permission (a full disk) leaves the config as it was.
+- A file salmon may not write is never written, and the page says so. A file with no write bit set counts as one
+  even for root, who could write it anyway, as salmon does in the Docker image. `chmod a-w config.toml` is how a user
+  turns saving off.
 - `GET /api/settings/trackers` never returns a stored value. For each credential it gives whether it is set and,
   for a value of 16 characters or more, its last 4. Each saved value is added to the redaction filter before
   anything could repeat it.
