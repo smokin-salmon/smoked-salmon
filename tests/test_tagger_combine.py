@@ -674,24 +674,60 @@ def source_track(num: str, disc: str, tracktotal: int, disctotal: int) -> dict:
     return track | {"track#": num, "disc#": disc, "tracktotal": str(tracktotal), "disctotal": str(disctotal)}
 
 
+# Discogs release 74364 (#765): heading, S, heading, 5, one record, parse as disc 1 tracks S and 5 (#984).
+DISCOGS_74364 = {
+    "artists": [{"name": "Adam F"}],
+    "tracklist": [
+        {"type_": "heading", "position": "", "title": "Other Side"},
+        {"type_": "track", "position": "S", "title": "Burning Deep"},
+        {"type_": "heading", "position": "", "title": "This Side"},
+        {"type_": "track", "position": "5", "title": "Lighter Style"},
+    ],
+}
+
+
 def test_discogs_vinyl_sides_keep_the_files_numbers_and_give_no_totals():
-    # Discogs release 74364 (#765): heading, S, heading, 5, one record, parse as disc 1 tracks S and 5 (#984).
-    soup = {
-        "artists": [{"name": "Adam F"}],
-        "tracklist": [
-            {"type_": "heading", "position": "", "title": "Other Side"},
-            {"type_": "track", "position": "S", "title": "Burning Deep"},
-            {"type_": "heading", "position": "", "title": "This Side"},
-            {"type_": "track", "position": "5", "title": "Lighter Style"},
-        ],
-    }
-    meta = asyncio.run(Scraper().parse_tracks(soup))
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
     assert {disc: list(numbers) for disc, numbers in meta.items()} == {"1": ["S", "5"]}
 
     combined = combine_tracks(local_files("01", "02"), meta, True)
 
     assert [t["track#"] for t in combined["1"].values()] == ["01", "02"]
     assert all(t["tracktotal"] is None and t["disctotal"] is None for t in combined["1"].values())
+
+
+def test_discogs_vinyl_sides_pair_the_files_in_the_release_s_order():
+    # "S" comes before "5" on the record, so untitled files, paired by position, take the titles in that order.
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01", "02")
+    for local in base["1"].values():
+        local["title"] = ""
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {n: t["title"] for n, t in combined["1"].items()} == {"01": "Burning Deep", "02": "Lighter Style"}
+
+
+def test_as_before_a_discogs_vinyl_side_paired_by_title_merges_into_that_file():
+    # File 01 is titled as the record's second track, so it pairs with "5" by title, and the untitled 02 takes "S".
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01", "02")
+    base["1"]["01"]["title"] = "Lighter Style"
+    base["1"]["02"]["title"] = ""
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {n: t["title"] for n, t in combined["1"].items()} == {"01": "Lighter Style", "02": "Burning Deep"}
+
+
+def test_discogs_vinyl_side_without_a_file_is_named_in_the_release_s_order():
+    # One untitled file pairs with "S", the record's first track, so "5" is the one that has no file.
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01")
+    base["1"]["01"]["title"] = ""
+
+    with pytest.raises(TrackCombineError, match="Disc 1 track 5 does not exist"):
+        combine_tracks(base, meta, True)
 
 
 def test_as_before_a_one_cd_discogs_release_numbering_movements_by_dots_merges_its_files():
