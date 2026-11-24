@@ -56,6 +56,7 @@ from salmon.uploader.conversion_choice import (
     validate_conversions,
 )
 from salmon.uploader.conversion_upload import _max_path_length_for_run
+from salmon.uploader.description import ask_torrent_notes
 from salmon.uploader.dupe_checker import (
     NO_DUPE_SEARCH,
     check_existing_group,
@@ -901,6 +902,7 @@ async def _upload_staged(  # noqa: C901
                     raise click.Abort
             if not scene:
                 await _prepare_pictures(path, metadata, remove_downloaded_cover_image)
+            torrent_notes = await ask_torrent_notes()
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder as deletion:
@@ -976,6 +978,7 @@ async def _upload_staged(  # noqa: C901
             flac_group=flac_group,
             given_cover_url=given_cover_url,
             remove_downloaded_cover_image=remove_downloaded_cover_image,
+            torrent_notes=torrent_notes,
         )
 
         try:

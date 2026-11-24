@@ -16,7 +16,7 @@ from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RateLimitedError, TLSCertificateError, UploadRefusedError
 from salmon.trackers.base import RetryableError
 from salmon.uploader import record
-from salmon.uploader.description import generate_description, generate_t_description
+from salmon.uploader.description import generate_description, generate_t_description, with_notes
 from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
 from salmon.uploader.spectrals import report_lossy_master
 
@@ -40,6 +40,7 @@ async def prepare_and_upload(
     source_url: str | None = None,
     override_description: str | None = None,
     conversion_note: str | None = None,
+    torrent_notes: str | None = None,
 ) -> tuple[int, int, str, Torrent]:
     """Compile data and upload torrent to tracker.
 
@@ -59,6 +60,7 @@ async def prepare_and_upload(
         source_url: Source URL.
         override_description: Override torrent description.
         conversion_note: How the folder was converted, added to the generated description.
+        torrent_notes: The user's notes, put on top of the torrent description.
 
     Returns:
         Tuple of (torrent_id, group_id, torrent_path, torrent_content). In a dry run, nothing is uploaded: the
@@ -83,6 +85,7 @@ async def prepare_and_upload(
             source_url=source_url,
             override_description=override_description,
             conversion_note=conversion_note,
+            torrent_notes=torrent_notes,
         )
     else:
         data = compile_data_existing_group(
@@ -99,6 +102,7 @@ async def prepare_and_upload(
             source_url=source_url,
             override_description=override_description,
             conversion_note=conversion_note,
+            torrent_notes=torrent_notes,
         )
     await gazelle_site.ensure_authenticated()
     torrent_path, torrent_content = generate_torrent(gazelle_site, path)
@@ -189,6 +193,7 @@ def compile_data_new_group(
     source_url: str | None = None,
     override_description: str | None = None,
     conversion_note: str | None = None,
+    torrent_notes: str | None = None,
 ) -> dict[str, Any]:
     """Compile data for a new torrent group upload.
 
@@ -206,6 +211,7 @@ def compile_data_new_group(
         source_url: Source URL.
         override_description: Override torrent description.
         conversion_note: How the folder was converted, added to the generated description.
+        torrent_notes: The user's notes, put on top of the torrent description.
 
     Returns:
         Data dict for upload POST.
@@ -237,18 +243,21 @@ def compile_data_new_group(
         "tags": metadata["tags"],
         "image": cover_url,
         "album_desc": generate_description(track_data, metadata),
-        "release_desc": override_description
-        if override_description
-        else generate_t_description(
-            metadata,
-            track_data,
-            hybrid,
-            metadata["urls"],
-            spectral_urls,
-            spectral_ids,
-            lossy_comment,
-            source_url,
-            conversion_note,
+        "release_desc": with_notes(
+            override_description
+            if override_description
+            else generate_t_description(
+                metadata,
+                track_data,
+                hybrid,
+                metadata["urls"],
+                spectral_urls,
+                spectral_ids,
+                lossy_comment,
+                source_url,
+                conversion_note,
+            ),
+            torrent_notes,
         ),
         "requestid": request_id,
     }
@@ -268,6 +277,7 @@ def compile_data_existing_group(
     source_url: str | None = None,
     override_description: str | None = None,
     conversion_note: str | None = None,
+    torrent_notes: str | None = None,
 ) -> dict[str, Any]:
     """Compile data for upload to an existing group.
 
@@ -285,6 +295,7 @@ def compile_data_existing_group(
         source_url: Source URL.
         override_description: Override torrent description.
         conversion_note: How the folder was converted, added to the generated description.
+        torrent_notes: The user's notes, put on top of the torrent description.
 
     Returns:
         Data dict for upload POST.
@@ -306,18 +317,21 @@ def compile_data_existing_group(
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
         **tracker_fields,
-        "release_desc": override_description
-        if override_description
-        else generate_t_description(
-            metadata,
-            track_data,
-            hybrid,
-            metadata["urls"],
-            spectral_urls,
-            spectral_ids,
-            lossy_comment,
-            source_url,
-            conversion_note,
+        "release_desc": with_notes(
+            override_description
+            if override_description
+            else generate_t_description(
+                metadata,
+                track_data,
+                hybrid,
+                metadata["urls"],
+                spectral_urls,
+                spectral_ids,
+                lossy_comment,
+                source_url,
+                conversion_note,
+            ),
+            torrent_notes,
         ),
         "requestid": request_id,
     }
@@ -474,6 +488,7 @@ async def upload_and_report(
     override_description: str | None = None,
     override_lossy_comment: str | None = None,
     conversion_note: str | None = None,
+    torrent_notes: str | None = None,
 ) -> tuple[int, int, str, Any, str]:
     """Upload torrent and report lossy master if needed.
 
@@ -496,6 +511,7 @@ async def upload_and_report(
         override_description: Override torrent description.
         override_lossy_comment: Override lossy comment.
         conversion_note: How the folder was converted, added to the generated description.
+        torrent_notes: The user's notes, put on top of the torrent description.
 
     Returns:
         Tuple of (torrent_id, group_id, torrent_path, torrent_content, url). In a dry run, what
@@ -518,6 +534,7 @@ async def upload_and_report(
         "source_url": source_url,
         **({"override_description": override_description} if override_description else {}),
         **({"conversion_note": conversion_note} if conversion_note else {}),
+        **({"torrent_notes": torrent_notes} if torrent_notes else {}),
     }
 
     # Execute upload

@@ -76,6 +76,7 @@ async def execute_downconversion_tasks(
     *,
     uploaded: list[str] | None = None,
     max_path_length: int | None = None,
+    torrent_notes: str | None = None,
 ) -> None:
     """Execute the selected downconversion tasks.
 
@@ -189,6 +190,7 @@ async def execute_downconversion_tasks(
                 source=source,
                 override_description=description,
                 override_lossy_comment=override_lossy_comment,
+                torrent_notes=torrent_notes,
             )
             uploaded.append(new_url)
 
@@ -235,6 +237,7 @@ async def execute_downconversion_tasks(
                 source=source,
                 override_description=description,
                 override_lossy_comment=override_lossy_comment,
+                torrent_notes=torrent_notes,
             )
             uploaded.append(new_url)
 
