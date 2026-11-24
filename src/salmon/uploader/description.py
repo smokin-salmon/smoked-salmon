@@ -5,7 +5,7 @@ import re
 from collections.abc import Sequence
 from typing import Any, NamedTuple
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import re_split
 from salmon.common.dsd import track_dsd_encoding
 from salmon.common.numbers import tag_number, unreadable_number
@@ -423,6 +423,29 @@ def generate_t_description(
         f"{spectrals}{encode_specifics}{release_date}{tracklist}{lossy_notes}{source}{more_info}{conversion}"
         f"{upload_footer()}"
     )
+
+
+def with_notes(description: str, notes: str | None) -> str:
+    """The torrent description with the user's notes on top, as written, and a blank line between (#1076).
+
+    No notes, or only whitespace: the description as it is.
+    """
+    if notes is None or not notes.strip():
+        return description
+    return f"{notes}\n\n{description}"
+
+
+async def ask_torrent_notes() -> str | None:
+    """Ask once per run for notes to put at the top of every torrent description; None when there are none.
+
+    Nothing is asked with -yyy. An editor closed without saving, or notes of whitespace, are no notes.
+    """
+    if await interaction.assume_defaults():
+        return None
+    if not await interaction.confirm("Would you like to add notes to the torrent description?", default=False):
+        return None
+    notes = await interaction.edit("")
+    return notes if notes is not None and notes.strip() else None
 
 
 def upload_footer() -> str:
