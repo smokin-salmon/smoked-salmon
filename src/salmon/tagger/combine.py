@@ -291,6 +291,16 @@ def _numbers_usable(meta):
     return True
 
 
+def _in_source_order(meta):
+    """The source's discs in natural order, each with its (number, track) pairs: by number where a disc's numbers are
+    all digits (a store may list them out of order), else as the source gave them, since vinyl positions ("S" and
+    "5" on Discogs, #765) have no order of their own."""
+    return [
+        (disc, _sorted_naturally(tracks.items()) if all(str(n).isdecimal() for n in tracks) else list(tracks.items()))
+        for disc, tracks in _sorted_naturally(meta.items())
+    ]
+
+
 def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
     """The new track number of each paired local track (None where there is no local track), in the order of
     `mtracks`. Used by both the merge and the check that it loses no track, so the two never disagree.
@@ -369,9 +379,8 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
 
     # Pair on content instead of on sorted rank, so unnumbered local files don't
     # have to already be in the source's real tracklist order.
-    mtracks_flat = [
-        track for _, tracks in _sorted_naturally(meta.items()) for _, track in _sorted_naturally(tracks.items())
-    ]
+    scraped_discs = _in_source_order(meta)
+    mtracks_flat = [track for _, tracks in scraped_discs for _, track in tracks]
     ordered_btracks, pair_reasons = _pair_base_tracks(btracks_flat, mtracks_flat)
     usable = _numbers_usable(meta)
     new_numbers = iter(_new_track_numbers(mtracks_flat, ordered_btracks, usable, update_track_numbers))
@@ -385,9 +394,7 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
     )
 
     # Before the merge: combine_metadatas goes on past a TrackCombineError, keeping whatever was merged.
-    scraped = [
-        (disc, num) for disc, tracks in _sorted_naturally(meta.items()) for num, _ in _sorted_naturally(tracks.items())
-    ]
+    scraped = [(disc, num) for disc, tracks in scraped_discs for num, _ in tracks]
     for (disc, num), btrack in zip(scraped, ordered_btracks, strict=True):
         if btrack is None:
             raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
@@ -398,8 +405,8 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
 
     # One entry per scraped track, in the order this loop visits them.
     paired_btracks = iter([btrack for btrack in ordered_btracks if btrack is not None])
-    for _disc, tracks in _sorted_naturally(meta.items()):
-        for _num, track in _sorted_naturally(tracks.items()):
+    for _disc, tracks in scraped_discs:
+        for _num, track in tracks:
             btrack = next(paired_btracks)
 
             if _untitled(btrack["title"]):
