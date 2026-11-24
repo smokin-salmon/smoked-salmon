@@ -441,6 +441,8 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
                 dict.fromkeys([*btrack.get("credited_remixers", []), *track.get("credited_remixers", [])])
             )
 
+            if track.get("explicit_main_artists"):
+                btrack["explicit_main_artists"] = True
             if track["explicit"]:
                 btrack["explicit"] = True
             if not btrack["format"]:
@@ -704,7 +706,7 @@ def _decide_credits(tracks, claims, base_source, corrected=False):
             kept = {(spelling[name], role) for name, role in track["artists"]}
             stays = [claim for claim in own[disc, num] if (spelling[claim.name], claim.role) in kept]
             respelled = [msgspec.structs.replace(claim, name=spelling[claim.name]) for claim in stays]
-            by_track[disc, num] = _join_split_names(respelled, to_replace)
+            by_track[disc, num] = _join_split_names(respelled, to_replace, track.get("explicit_main_artists", False))
             _note_joins(joined, stays, shown[disc, num])
             if "credited_remixers" in track:
                 # A remixer split and joined back is credited under the whole name, so REMIXER finds it.
@@ -793,7 +795,7 @@ def _joined(joins, key):
     return key
 
 
-def _join_split_names(claims, to_replace):
+def _join_split_names(claims, to_replace, explicit_main_artists=False):
     """A track's claims with its badly split names joined back, as generate_artists' repair joins a track's credits
     (fix_artists_list, with `to_replace` from the release's names), over the claims of every source: in a role where
     every part of a name is claimed, each claim of a part becomes a claim of the whole name, keeping its source and
@@ -806,7 +808,8 @@ def _join_split_names(claims, to_replace):
     overruled = _overruled(claims)
     kept = dict.fromkeys((claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled)
     joined = {}
-    fix_artists_list(list(kept), to_replace, joined)  # a list of its own: the repair changes the one it is given
+    repairable = [credit for credit in kept if not (explicit_main_artists and credit[1] == "main")]
+    fix_artists_list(repairable, to_replace, joined)  # a list of its own: the repair changes the one it is given
     renamed = []
     for at, claim in enumerate(claims):
         key = (claim.name, claim.role if (claim.name, claim.role) in kept else overruled[at])

@@ -1,7 +1,9 @@
 import anyio
 import pytest
+from helpers.tagger_combine import make_tracks
 
 from salmon.sources.apple_music import AppleMusicBase
+from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources.apple_music import Scraper
 from salmon.tagger.sources.base import generate_artists
 
@@ -118,6 +120,31 @@ def test_a_featured_artist_in_the_relationship_is_a_guest_not_a_main() -> None:
     assert tracks["1"][1]["explicit_main_artists"] is True
 
 
+def test_a_featured_artist_with_a_separator_in_the_relationship_stays_a_single_guest() -> None:
+    # "Simon & Garfunkel" in the relationship and title's feat. clause must stay one guest, not be split
+    # or promoted to a main credit.
+    s = soup(["Main", "Simon & Garfunkel"], title="Song (feat. Simon & Garfunkel)")
+    s["tracks"][0]["attributes"]["artistName"] = "Main feat. Simon & Garfunkel"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("Main", "main"), ("Simon & Garfunkel", "guest")]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
+def test_a_featured_artist_with_a_separator_beside_another_guest_keeps_both() -> None:
+    s = soup(["Main", "Simon & Garfunkel"], title="Song (feat. Guest A & Simon & Garfunkel)")
+    s["tracks"][0]["attributes"]["artistName"] = "Main"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [
+        ("Main", "main"),
+        ("Guest A", "guest"),
+        ("Simon & Garfunkel", "guest"),
+    ]
+
+
 def test_an_incomplete_relationship_falls_back_to_the_whole_display_string() -> None:
     # C has no Apple artist page, so Apple leaves it out of the relationship. Keep it in the whole string.
     s = soup(["A", "B"], title="Song")
@@ -127,6 +154,58 @@ def test_an_incomplete_relationship_falls_back_to_the_whole_display_string() -> 
 
     assert tracks["1"][1]["artists"] == [("A, B & C", "main")]
     assert "explicit_main_artists" not in tracks["1"][1]
+
+
+def test_relationship_coverage_does_not_match_inside_another_word() -> None:
+    # "B" must not match the start of "Band" and leave "and" to be stripped as a joiner.
+    s = soup(["B"], title="Song")
+    s["tracks"][0]["attributes"]["artistName"] = "Band"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("Band", "main")]
+    assert "explicit_main_artists" not in tracks["1"][1]
+
+
+def test_explicit_main_artists_survive_merge_onto_file_base() -> None:
+    # Merging Apple Music onto local file metadata must keep explicit A and B separate even when another
+    # track credits AB.
+    first = soup(["A", "B"], title="First")
+    second = soup(["AB"], title="Second")
+    second["tracks"][0]["attributes"]["trackNumber"] = 2
+    apple_tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
+
+    base_tracks = make_tracks({"1": ["1", "2"]}, isrc_prefix=None)
+    base_tracks["1"]["1"]["artists"] = []
+    base_tracks["1"]["1"]["title"] = "First"
+    base_tracks["1"]["2"]["artists"] = []
+    base_tracks["1"]["2"]["title"] = "Second"
+
+    def release(tracks: dict) -> dict:
+        return {
+            "artists": [],
+            "title": "An Album",
+            "group_year": "2026",
+            "year": "2026",
+            "date": None,
+            "edition_title": None,
+            "label": None,
+            "catno": None,
+            "rls_type": "Album",
+            "genres": [],
+            "source": "WEB",
+            "cover": None,
+            "upc": None,
+            "comment": None,
+            "urls": [],
+            "tracks": tracks,
+        }
+
+    merged = combine_metadatas(("Apple Music", release(apple_tracks)), base=release(base_tracks))
+
+    assert merged["artists"] == [("A", "main"), ("B", "main"), ("AB", "main")]
+    assert merged["tracks"]["1"]["1"]["artists"] == [("A", "main"), ("B", "main")]
+    assert merged["tracks"]["1"]["1"]["explicit_main_artists"] is True
 
 
 def test_featured_guests_from_the_title_are_still_split() -> None:

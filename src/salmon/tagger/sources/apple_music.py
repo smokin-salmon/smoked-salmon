@@ -168,19 +168,20 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 raw_title = attrs.get("name", "").strip()
                 title = RE_FEAT.sub("", raw_title)
 
-                # A title's feat. clause lists guests in free text, even when Apple also lists them in the
-                # relationship.
-                feat_match = RE_FEAT.search(raw_title)
-                guests = _parse_guest_artists(feat_match.group(1)) if feat_match else []
-                guest_keys = {guest.casefold() for guest in guests}
-
                 artists: list[tuple[str, str]] = []
                 artist_rels = (item.get("relationships") or {}).get("artists") or {}
                 rel_names: list[str] = []
                 for rel in artist_rels.get("data") or []:
-                    name = (rel.get("attributes") or {}).get("name", "")
+                    name = (rel.get("attributes") or {}).get("name", "").strip()
                     if rel.get("type") == "artists" and name and name not in rel_names:
                         rel_names.append(name)
+
+                # A title's feat. clause lists guests in free text, even when Apple also lists them in the
+                # relationship. Match whole relationship names first so a guest like "Simon & Garfunkel"
+                # stays a single guest and is excluded from mains.
+                feat_match = RE_FEAT.search(raw_title)
+                guests = _extract_title_guests(feat_match.group(1), rel_names) if feat_match else []
+                guest_keys = {guest.casefold() for guest in guests}
 
                 artist_name = (attrs.get("artistName") or "").strip()
                 explicit_main_artists = False
@@ -226,17 +227,58 @@ class Scraper(AppleMusicBase, MetadataMixin):
             raise ScrapeError("Could not parse tracks from Apple Music API") from e
 
 
+def _name_pattern(name: str) -> str:
+    """Regex matching ``name`` as a whole token without requiring word boundaries around punctuation."""
+    start = r"(?<!\w)" if re.match(r"\w", name) else ""
+    end = r"(?!\w)" if re.search(r"\w\Z", name) else ""
+    return f"{start}{re.escape(name)}{end}"
+
+
 def _covers_artist_name(names: list[str], artist_name: str) -> bool:
     """Whether named artists account for the whole display string, with nothing left but separators.
 
     Apple's relationship leaves out artists without an artist page. If it only accounts for part of
     ``artistName``, the missing name must come from the display string, kept whole.
     """
+    if not names:
+        return False
     remainder = artist_name
     for name in sorted(names, key=len, reverse=True):
-        remainder = re.sub(re.escape(name), "", remainder, count=1, flags=re.IGNORECASE)
+        remainder = re.sub(_name_pattern(name), " ", remainder, count=1, flags=re.IGNORECASE)
     joiners = r"[\s&;,/\\]|\b(?:and|feat|ft|featuring|with)\b\.?"
     return not re.sub(joiners, "", remainder, flags=re.IGNORECASE)
+
+
+def _extract_title_guests(feat_text: str, rel_names: list[str]) -> list[str]:
+    """Parse guest artists from a title's feat. clause, keeping whole relationship names intact."""
+    matched: list[tuple[int, int, str]] = []
+    for name in sorted(rel_names, key=len, reverse=True):
+        match = re.search(_name_pattern(name), feat_text, flags=re.IGNORECASE)
+        if match and not any(start < match.end() and match.start() < end for start, end, _ in matched):
+            matched.append((match.start(), match.end(), name))
+    if not matched:
+        return _parse_guest_artists(feat_text)
+
+    matched.sort()
+    guests: list[str] = []
+    seen: set[str] = set()
+    pos = 0
+    for start, end, name in matched:
+        for guest in _parse_guest_artists(feat_text[pos:start]):
+            guest = guest.strip(" &,;/\\")
+            if guest and guest.casefold() not in seen:
+                seen.add(guest.casefold())
+                guests.append(guest)
+        if name.casefold() not in seen:
+            seen.add(name.casefold())
+            guests.append(name)
+        pos = end
+    for guest in _parse_guest_artists(feat_text[pos:]):
+        guest = guest.strip(" &,;/\\")
+        if guest and guest.casefold() not in seen:
+            seen.add(guest.casefold())
+            guests.append(guest)
+    return guests
 
 
 def _parse_guest_artists(artist_string: str) -> list[str]:
