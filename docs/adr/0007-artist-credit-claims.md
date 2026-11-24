@@ -120,6 +120,15 @@ rule that decided, the sources it came from, and the sources that disagreed.
   sources weighed. On *The Remix*, the files' plain ARTIST lists LoveGame's remixer Chew Fu beside
   the singers; Discogs credits him as "Chew-Fu Phat", so the rule doesn't see one name. Once Qobuz
   states him as remixer under the files' spelling, his main goes: the case moves in step 3.
+  *Amended 2026-11-23 (#869): on a release whose genres are classical, a track's main who is also its composer or
+  conductor loses main too, while a main who is neither is left. This is the files' classical rule, applied to the
+  decided credits in the same place, so a store that lists the composer or the conductor as a main artist can't put
+  them back (La Bohème, Deezer's Puccini). The conductor is credited as conductor, which ARTIST writes after the
+  performers; ALBUMARTIST, the ARTISTS tag and the folder name read the mains only, so they no longer name him. Each
+  dropped main has its reason.*
+  *Amended 2026-11-23 (#1183): a scrape used alone (`salmon meta`, salmon web's lookup) runs `clean_metadata` too,
+  after its decision and before its release's artists are built from the tracks, so it credits a release as descgen
+  does from that one URL, except for the `[metadata.corrections]` (genres, artists), which only the merge applies.*
 - **The tie-breaks, in order:** a stated role beats an assumed one; then the base, then the stores in
   the merge's order.
 - **Order:** a track's main artists keep the order the release gives them, from a store's album
@@ -182,6 +191,8 @@ stays on the store's title with its version folded back in: a remix can sit in a
   decided too, as a merge of that one source. Parsers never decide.*
 - **Step 4:** the files' plain ARTIST becomes assumed, ALBUMARTIST gives the order, and the classical
   rule becomes part of the files' claims.
+  *Amended 2026-11-23 (#869): the classical rule also runs on the decided credits (decision 3), as a store's main can
+  undo the files' rule; like the remixer check, it stays there until a case needs the sources weighed.*
 - **What stays, on purpose:** a review edit has no sources to weigh, so it doesn't go through
   `resolve_credits` (#854). A rule about reading one source stays in that source's parser, such as
   Tidal's inference. The name repairs stay where they are.
@@ -197,6 +208,8 @@ stays on the store's title with its version folded back in: a remix can sit in a
   nothing. Across roles it can show sooner: a store's stated remixer drops the files' main through
   `clean_metadata` (decision 3, LoveGame). The files wait until the stores are fixed, because stating
   today's stores first would let their known errors win.
+  *Amended 2026-11-23 (#869): a store's stated composer or conductor does the same on a classical release: files
+  tagged by Picard, whose ARTIST is often the composer alone, lose him as main once a store credits him as composer.*
 
 ### 6. The rules follow the cases, and are expected to change
 

@@ -20,7 +20,7 @@ from salmon.common.strings import (
     numeric_id,
     split_type_marker,
 )
-from salmon.errors import AbortAndDeleteFolder, RequestError, SkipTracker
+from salmon.errors import AbortAndDeleteFolder, RequestError, SkipTracker, UploadOnlyMissing
 from salmon.trackers.base import hold_request_messages
 from salmon.uploader.upload import generate_catno
 
@@ -405,6 +405,8 @@ async def resolve_existing_group(
     offer_deletion: bool = True,
     release: dict[str, Any] | None = None,
     offer_skip: bool = False,
+    *,
+    offer_missing: bool = False,
 ) -> int | None:
     """Show the candidates fetch_existing_group_candidates found, and prompt the user for a group.
 
@@ -418,6 +420,8 @@ async def resolve_existing_group(
             the prompts offer: the one result it matches, and abort when the group already holds it.
         offer_skip: Whether the prompts offer skipping this tracker, which raises SkipTracker: once a torrent
             is up, so that a tracker which already has the release can be passed over without aborting the run.
+        offer_missing: Whether the group question offers uploading only the formats the edition is missing, which
+            raises UploadOnlyMissing (see _confirm_group_id).
 
     Returns:
         Group ID or None for new group.
@@ -440,7 +444,9 @@ async def resolve_existing_group(
             gazelle_site, results, offer_deletion, default=suggest_group(results, release), offer_skip=offer_skip
         )
     if group_id:
-        confirmation = await _confirm_group_id(gazelle_site, group_id, results, offer_deletion, release, offer_skip)
+        confirmation = await _confirm_group_id(
+            gazelle_site, group_id, results, offer_deletion, release, offer_skip, offer_missing=offer_missing
+        )
         if confirmation is True:
             return group_id
         return None
@@ -454,6 +460,8 @@ async def check_existing_group(
     our_title: str | None = None,
     release: dict[str, Any] | None = None,
     offer_skip: bool = False,
+    *,
+    offer_missing: bool = False,
 ) -> int | None:
     """Check for existing group and prompt user for selection.
 
@@ -466,13 +474,21 @@ async def check_existing_group(
         our_title: Our release's title, passed through to fetch_existing_group_candidates.
         release: Our release, passed through to resolve_existing_group.
         offer_skip: Whether to offer skipping this tracker, passed through to resolve_existing_group.
+        offer_missing: Passed through to resolve_existing_group.
 
     Returns:
         Group ID or None for new group.
     """
     results, recent_uploads = await fetch_existing_group_candidates(gazelle_site, searchstrs, our_title)
     return await resolve_existing_group(
-        gazelle_site, searchstrs, results, recent_uploads, offer_deletion, release, offer_skip
+        gazelle_site,
+        searchstrs,
+        results,
+        recent_uploads,
+        offer_deletion,
+        release,
+        offer_skip,
+        offer_missing=offer_missing,
     )
 
 
@@ -777,7 +793,12 @@ def _group_as_result(group: dict) -> dict:
 
 
 async def recheck_edition(
-    gazelle_site: "BaseGazelleApi", group_id: int, release: dict[str, Any], weighed_against: dict[str, Any] | None
+    gazelle_site: "BaseGazelleApi",
+    group_id: int,
+    release: dict[str, Any],
+    weighed_against: dict[str, Any] | None,
+    *,
+    only_missing: bool = False,
 ) -> tuple[int | None, dict | None]:
     """Weigh a group picked or given before the review against the reviewed edition.
 
@@ -789,6 +810,8 @@ async def recheck_edition(
         release: The reviewed release.
         weighed_against: The release the group was picked for, as it was then; None for a group given with
             --group-id, which nothing weighed.
+        only_missing: Whether the user chose, when the group was picked, to upload only the formats its edition is
+            missing. That choice stands unless the question is asked again, which offers it too.
 
     Returns:
         The group to upload to (None: a new group), and that group as fetched ({} if the fetch failed: do not refetch).
@@ -796,6 +819,8 @@ async def recheck_edition(
     Raises:
         click.Abort: If the user aborts.
         AbortAndDeleteFolder: If the user chooses to delete the music folder.
+        UploadOnlyMissing: The user chose, now or when the group was picked, to upload only what the edition is
+            missing; it carries the group as fetched here.
     """
     try:
         group = _group_as_result(await gazelle_site.torrentgroup(group_id))
@@ -810,10 +835,12 @@ async def recheck_edition(
         return group_id, {}
     named = {torrent.get("id") for torrent in held_in_group(group, weighed_against)}
     if all(torrent.get("id") in named for torrent in held_in_group(group, release)):
+        if only_missing:
+            raise UploadOnlyMissing(group_id, group)
         return group_id, group
     click.secho(f"\nThe reviewed edition is already in group {group_id}:", fg="red", bold=True)
     # The fetched group's own id, so the row is found and not fetched again.
-    confirmed = await _confirm_group_id(gazelle_site, group["groupId"], [group], release=release)
+    confirmed = await _confirm_group_id(gazelle_site, group["groupId"], [group], release=release, offer_missing=True)
     return (group_id, group) if confirmed else (None, None)
 
 
@@ -1102,6 +1129,22 @@ def _printable_row(row: dict) -> bool:
     )
 
 
+async def _fetched_group(gazelle_site: "BaseGazelleApi", group_id: int, rset: dict) -> dict:
+    """The group as torrentgroup gives it: rset if it is that already, else fetched.
+
+    A search row names its torrents' ids and editions in other fields, or not at all: uploading only what the
+    edition is missing reads the held torrent's id and edition (#1169). A later tracker's upload then reads the
+    group from it instead of fetching it; the first tracker's is fetched again after the review, as before.
+    Here, beside the question that needs it: missing_formats imports this module.
+
+    Raises:
+        RequestError: The fetch failed: the tracker is skipped as on any other failed request at its question.
+    """
+    if "group" in rset:
+        return rset
+    return _group_as_result(await gazelle_site.torrentgroup(group_id))
+
+
 async def _confirm_group_id(
     gazelle_site: "BaseGazelleApi",
     group_id: int,
@@ -1109,11 +1152,14 @@ async def _confirm_group_id(
     offer_deletion: bool = True,
     release: dict[str, Any] | None = None,
     offer_skip: bool = False,
+    *,
+    offer_missing: bool = False,
 ) -> bool:
     """Confirm upload to a torrent group.
 
     When the group's edition already holds our media, format and encoding, that torrent is named and
-    the default answer is abort. It is not refused: a trump is a legitimate upload.
+    the default answer is abort, or with offer_missing uploading only what the edition is missing. It is not
+    refused: a trump is a legitimate upload.
 
     Args:
         gazelle_site: The tracker API instance.
@@ -1122,6 +1168,8 @@ async def _confirm_group_id(
         offer_deletion: Whether to offer folder deletion option.
         release: Our release, with its source, format, encoding and edition.
         offer_skip: Whether to offer skipping this tracker, which raises SkipTracker.
+        offer_missing: Whether to offer, when the edition holds our format, uploading only the formats it is
+            missing (#1169), which raises UploadOnlyMissing with the group as fetched.
 
     Returns:
         True if confirmed, False otherwise.
@@ -1145,19 +1193,22 @@ async def _confirm_group_id(
             fg="red",
             bold=True,
         )
+    missing = bool(held) and offer_missing
     while True:
         answer = (
             await interaction.prompt(
                 click.style(
                     "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
+                    f"{'upload only the [m]issing formats, ' if missing else ''}"
                     f"[n]ew group, {'[s]kip this tracker, ' if offer_skip else ''}[a]bort"
                     f"{', [d]elete music folder' if offer_deletion else ''}",
                     fg="magenta",
                 ),
-                default="a" if held else "Y",
+                default=("m" if missing else "a") if held else "Y",
                 options=interaction.Options(
                     (
                         interaction.Option("y", "Upload to this group"),
+                        *((interaction.Option("m", "Upload only the missing formats"),) if missing else ()),
                         interaction.Option("n", "New group"),
                         *((interaction.Option("s", "Skip this tracker", action=True),) if offer_skip else ()),
                         interaction.Option("a", "Abort", action=True),
@@ -1177,6 +1228,8 @@ async def _confirm_group_id(
             raise SkipTracker
         elif answer == "d" and offer_deletion:
             raise AbortAndDeleteFolder
+        elif resp == "m" and missing:
+            raise UploadOnlyMissing(group_id, await _fetched_group(gazelle_site, group_id, rset))
         elif resp == "y":
             return True
         elif resp == "n":

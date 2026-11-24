@@ -194,12 +194,13 @@ def test_a_review_moving_the_release_into_an_edition_the_group_holds_asks_again(
             return {**rls_data, "source": "WEB", "label": "Label", "cover": None}, None
 
         fakes["get_metadata"] = get_metadata
-    # The group (1), then yes: the tags' 2019 edition is not in it. The review gives 2020, which is.
+    # The group (1), then yes: the tags' 2019 edition is not in it. The review gives 2020, which is: abort, by hand
+    # (the default uploads only what the edition is missing, #1169).
     run = _up(
         monkeypatch,
         tmp_path,
         GroupTracker([WEB_FLAC], found=True),
-        input="1\n\n\n",
+        input="1\n\na\n",
         construct_rls_data=_returning_async(tags_release),
         **fakes,
     )
@@ -209,7 +210,7 @@ def test_a_review_moving_the_release_into_an_edition_the_group_holds_asks_again(
     assert output.count(CONFIRM_GROUP) == 2
     assert REVIEWED_IN_GROUP in output
     assert "DUPE RISK: this edition already has 2020 / Label / CAT1 / WEB / FLAC / Lossless" in output
-    # Abort was the default the second time.
+    # Asked again, and abort is still there.
     assert "Aborting upload..." in output
     assert _uploads(run) == []
     assert _group_fetches(run) == 1
@@ -303,7 +304,7 @@ def test_a_group_id_given_as_text_is_fetched_once(monkeypatch) -> None:
     # The group fetched, handed on so the upload reads its editions without fetching it again.
     assert group is not None
     assert group["torrents"] == [{**WEB_FLAC, "id": 7}]
-    assert defaults == ["a"]
+    assert defaults == ["m"]  # The edition holds our format: upload only what it is missing (#1169)
     assert site.calls == ["555"]
 
 

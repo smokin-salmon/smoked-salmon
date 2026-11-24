@@ -324,6 +324,6 @@ def test_a_release_at_one_sample_rate_still_gets_its_downconversions(capsys, rat
     assert "different sample rates" not in capsys.readouterr().out
 
 
-async def _same_group(_site, group_id, *_args):
+async def _same_group(_site, group_id, *_args, **_kwargs):
     """Stands in for recheck_edition: the group picked or given is kept, fetched holding no torrent."""
     return group_id, {"torrents": []}

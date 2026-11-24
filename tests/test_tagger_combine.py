@@ -26,7 +26,7 @@ from salmon.tagger.combine import (
 )
 from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.retagger import create_artist_str
-from salmon.tagger.sources.base import append_remixers_to_track_titles
+from salmon.tagger.sources.base import append_remixers_to_track_titles, artist_spellings, generate_artists
 from salmon.tagger.sources.discogs import Scraper, parse_credits
 from salmon.tagger.sources.discogs import parse_artists as discogs_parse_artists
 
@@ -98,6 +98,57 @@ def test_combine_tracks_keeps_all_tracks_when_updating_track_numbers():
     assert list(combined["1"].keys()) == ordered_tracks
     assert len(combined["1"]) == 11
     assert [combined["1"][str(i)]["isrc"] for i in range(1, 12)] == [f"ISRC 1-{i}" for i in range(1, 12)]
+
+
+def test_of_spellings_tied_on_capitals_the_one_on_more_tracks_is_kept() -> None:
+    # Getz/Gilberto: a store adds "Antônio" to track 1, where the files name no Jobim; the files spell him "Antonio"
+    # on the other tracks. "ô" is lower case, so the two tie on capitals.
+    tracks = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    tracks["1"]["1"]["artists"] = [("Antônio Carlos Jobim", "guest")]
+    tracks["1"]["2"]["artists"] = [("Antonio Carlos Jobim", "main")]
+    tracks["1"]["3"]["artists"] = [("Antonio Carlos Jobim", "main")]
+
+    assert artist_spellings(tracks)["antonio carlos jobim"] == "Antonio Carlos Jobim"
+
+
+def test_a_name_credited_twice_on_a_track_counts_one_track() -> None:
+    tracks = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    tracks["1"]["1"]["artists"] = [("Antonio Carlos Jobim", "main"), ("Antonio Carlos Jobim", "composer")]
+    tracks["1"]["2"]["artists"] = [("Antônio Carlos Jobim", "main")]
+    tracks["1"]["3"]["artists"] = [("Antônio Carlos Jobim", "main")]
+
+    assert artist_spellings(tracks)["antonio carlos jobim"] == "Antônio Carlos Jobim"
+
+
+def test_a_store_pairing_some_tracks_does_not_change_a_tied_spelling() -> None:
+    # The merge moves the tracks a store pairs to the end of their disc, so the first spelling seen was the unpaired
+    # track's (La Bohème under #1135's Discogs reader).
+    base = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    for num, name in (("1", "Nicolai Ghiaurov"), ("2", "Nicolai Ghiaurov"), ("3", "Nicolaï Ghiaurov")):
+        base["1"][num]["artists"] = [(name, "main")]
+    meta = make_tracks({"1": ["1", "2"]}, isrc_prefix="ISRC")
+    for track in meta["1"].values():
+        track["artists"] = []
+
+    artists, _ = generate_artists(combine_tracks(base, meta, False))
+
+    assert artists == [("Nicolai Ghiaurov", "main")]
+
+
+@pytest.mark.parametrize(
+    ("spellings", "kept"),
+    [
+        (["Kool & The Gang", "Kool & The Gang", "Kool & the Gang"], "Kool & the Gang"),
+        (["Nicolaï Ghiaurov", "Nicolai Ghiaurov"], "Nicolaï Ghiaurov"),
+    ],
+    ids=["fewer capitals on fewer tracks", "tied on capitals and tracks: the first"],
+)
+def test_spellings_as_before(spellings: list[str], kept: str) -> None:
+    tracks = make_tracks({"1": [str(n) for n in range(1, len(spellings) + 1)]}, isrc_prefix=None)
+    for track, name in zip(tracks["1"].values(), spellings, strict=True):
+        track["artists"] = [(name, "main")]
+
+    assert set(artist_spellings(tracks).values()) == {kept}
 
 
 def test_combine_tracks_sorts_multi_disc_provider_tracks_and_discs():
@@ -674,24 +725,60 @@ def source_track(num: str, disc: str, tracktotal: int, disctotal: int) -> dict:
     return track | {"track#": num, "disc#": disc, "tracktotal": str(tracktotal), "disctotal": str(disctotal)}
 
 
+# Discogs release 74364 (#765): heading, S, heading, 5, one record, parse as disc 1 tracks S and 5 (#984).
+DISCOGS_74364 = {
+    "artists": [{"name": "Adam F"}],
+    "tracklist": [
+        {"type_": "heading", "position": "", "title": "Other Side"},
+        {"type_": "track", "position": "S", "title": "Burning Deep"},
+        {"type_": "heading", "position": "", "title": "This Side"},
+        {"type_": "track", "position": "5", "title": "Lighter Style"},
+    ],
+}
+
+
 def test_discogs_vinyl_sides_keep_the_files_numbers_and_give_no_totals():
-    # Discogs release 74364 (#765): heading, S, heading, 5, one record, parse as disc 1 tracks S and 5 (#984).
-    soup = {
-        "artists": [{"name": "Adam F"}],
-        "tracklist": [
-            {"type_": "heading", "position": "", "title": "Other Side"},
-            {"type_": "track", "position": "S", "title": "Burning Deep"},
-            {"type_": "heading", "position": "", "title": "This Side"},
-            {"type_": "track", "position": "5", "title": "Lighter Style"},
-        ],
-    }
-    meta = asyncio.run(Scraper().parse_tracks(soup))
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
     assert {disc: list(numbers) for disc, numbers in meta.items()} == {"1": ["S", "5"]}
 
     combined = combine_tracks(local_files("01", "02"), meta, True)
 
     assert [t["track#"] for t in combined["1"].values()] == ["01", "02"]
     assert all(t["tracktotal"] is None and t["disctotal"] is None for t in combined["1"].values())
+
+
+def test_discogs_vinyl_sides_pair_the_files_in_the_release_s_order():
+    # "S" comes before "5" on the record, so untitled files, paired by position, take the titles in that order.
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01", "02")
+    for local in base["1"].values():
+        local["title"] = ""
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {n: t["title"] for n, t in combined["1"].items()} == {"01": "Burning Deep", "02": "Lighter Style"}
+
+
+def test_as_before_a_discogs_vinyl_side_paired_by_title_merges_into_that_file():
+    # File 01 is titled as the record's second track, so it pairs with "5" by title, and the untitled 02 takes "S".
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01", "02")
+    base["1"]["01"]["title"] = "Lighter Style"
+    base["1"]["02"]["title"] = ""
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {n: t["title"] for n, t in combined["1"].items()} == {"01": "Lighter Style", "02": "Burning Deep"}
+
+
+def test_discogs_vinyl_side_without_a_file_is_named_in_the_release_s_order():
+    # One untitled file pairs with "S", the record's first track, so "5" is the one that has no file.
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01")
+    base["1"]["01"]["title"] = ""
+
+    with pytest.raises(TrackCombineError, match="Disc 1 track 5 does not exist"):
+        combine_tracks(base, meta, True)
 
 
 def test_as_before_a_one_cd_discogs_release_numbering_movements_by_dots_merges_its_files():

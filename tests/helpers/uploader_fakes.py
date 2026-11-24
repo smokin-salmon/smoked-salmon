@@ -43,7 +43,15 @@ CALLED_FROM = {
 
 
 def stub_uploader(monkeypatch, fakes: dict[str, Any]) -> None:
-    """Replace each name with its fake wherever the upload run calls it."""
-    for name, fake in fakes.items():
+    """Replace each name with its fake wherever the upload run calls it.
+
+    The question for notes on the torrent description is answered "no" unless a fake says otherwise: only
+    test_uploader_torrent_notes asks it, and the other runs' answers do not make room for it.
+    """
+
+    async def no_notes() -> None:
+        return None
+
+    for name, fake in {"ask_torrent_notes": no_notes, **fakes}.items():
         for module in CALLED_FROM.get(name, (salmon.uploader,)):
             monkeypatch.setattr(module, name, fake)

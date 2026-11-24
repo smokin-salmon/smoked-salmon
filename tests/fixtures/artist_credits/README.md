@@ -17,7 +17,7 @@ Each `<album>.toml` holds, in this order:
   merge and the output with `guests_in_track_title` off, over the Picard-tagged files. Each is recorded only where it
   differs from `today.merge` or `today.output`; where it is not recorded, the test holds it to that stage.
 - `right`: what is settled, and how we know (`how_we_know`). `release_main` (in order), `performers` (main or
-  conductor, any order), `not_main` (never main: a composer, a placeholder, a guest, a remixer), `remixers`, `name_forms` (other spellings of a right name). `open` is what is
+  conductor, any order), `not_main` (never main: a composer, a conductor, a placeholder, a guest, a remixer), `remixers`, `name_forms` (other spellings of a right name). `open` is what is
   not settled yet. Names and roles are judged, never the separators that join them.
 - `known_wrong`: where today is wrong, in words, each entry starting with the stage it is about ("merge: ...",
   "merge-picard: ..."). A Picard stage has an entry of its own only where it is wrong differently from its Deezer stage.
