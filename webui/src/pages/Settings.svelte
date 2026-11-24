@@ -50,8 +50,11 @@
     saveErrors[code] = ''
     try {
       answer = await apiPost<Answer>(`/settings/trackers/${code}`, body)
-      sessions[code] = ''
-      keys[code] = ''
+      // Only what was sent, and only if it was not changed meanwhile: a cookie typed before Remove API key stays.
+      if (body.session !== undefined && sessions[code]?.trim() === body.session) sessions[code] = ''
+      if (typeof body.api_key === 'string' && keys[code]?.trim() === body.api_key) keys[code] = ''
+      // The last check tested the old values: if the new one cannot start, its result must not stay on show.
+      delete checkIds[code]
     } catch (e) {
       saveErrors[code] = e instanceof ApiError ? e.message : String(e)
       return
