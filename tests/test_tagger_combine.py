@@ -26,7 +26,7 @@ from salmon.tagger.combine import (
 )
 from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.retagger import create_artist_str
-from salmon.tagger.sources.base import append_remixers_to_track_titles
+from salmon.tagger.sources.base import append_remixers_to_track_titles, artist_spellings, generate_artists
 from salmon.tagger.sources.discogs import Scraper, parse_credits
 from salmon.tagger.sources.discogs import parse_artists as discogs_parse_artists
 
@@ -98,6 +98,57 @@ def test_combine_tracks_keeps_all_tracks_when_updating_track_numbers():
     assert list(combined["1"].keys()) == ordered_tracks
     assert len(combined["1"]) == 11
     assert [combined["1"][str(i)]["isrc"] for i in range(1, 12)] == [f"ISRC 1-{i}" for i in range(1, 12)]
+
+
+def test_of_spellings_tied_on_capitals_the_one_on_more_tracks_is_kept() -> None:
+    # Getz/Gilberto: a store adds "Antônio" to track 1, where the files name no Jobim; the files spell him "Antonio"
+    # on the other tracks. "ô" is lower case, so the two tie on capitals.
+    tracks = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    tracks["1"]["1"]["artists"] = [("Antônio Carlos Jobim", "guest")]
+    tracks["1"]["2"]["artists"] = [("Antonio Carlos Jobim", "main")]
+    tracks["1"]["3"]["artists"] = [("Antonio Carlos Jobim", "main")]
+
+    assert artist_spellings(tracks)["antonio carlos jobim"] == "Antonio Carlos Jobim"
+
+
+def test_a_name_credited_twice_on_a_track_counts_one_track() -> None:
+    tracks = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    tracks["1"]["1"]["artists"] = [("Antonio Carlos Jobim", "main"), ("Antonio Carlos Jobim", "composer")]
+    tracks["1"]["2"]["artists"] = [("Antônio Carlos Jobim", "main")]
+    tracks["1"]["3"]["artists"] = [("Antônio Carlos Jobim", "main")]
+
+    assert artist_spellings(tracks)["antonio carlos jobim"] == "Antônio Carlos Jobim"
+
+
+def test_a_store_pairing_some_tracks_does_not_change_a_tied_spelling() -> None:
+    # The merge moves the tracks a store pairs to the end of their disc, so the first spelling seen was the unpaired
+    # track's (La Bohème under #1135's Discogs reader).
+    base = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    for num, name in (("1", "Nicolai Ghiaurov"), ("2", "Nicolai Ghiaurov"), ("3", "Nicolaï Ghiaurov")):
+        base["1"][num]["artists"] = [(name, "main")]
+    meta = make_tracks({"1": ["1", "2"]}, isrc_prefix="ISRC")
+    for track in meta["1"].values():
+        track["artists"] = []
+
+    artists, _ = generate_artists(combine_tracks(base, meta, False))
+
+    assert artists == [("Nicolai Ghiaurov", "main")]
+
+
+@pytest.mark.parametrize(
+    ("spellings", "kept"),
+    [
+        (["Kool & The Gang", "Kool & The Gang", "Kool & the Gang"], "Kool & the Gang"),
+        (["Nicolaï Ghiaurov", "Nicolai Ghiaurov"], "Nicolaï Ghiaurov"),
+    ],
+    ids=["fewer capitals on fewer tracks", "tied on capitals and tracks: the first"],
+)
+def test_spellings_as_before(spellings: list[str], kept: str) -> None:
+    tracks = make_tracks({"1": [str(n) for n in range(1, len(spellings) + 1)]}, isrc_prefix=None)
+    for track, name in zip(tracks["1"].values(), spellings, strict=True):
+        track["artists"] = [(name, "main")]
+
+    assert set(artist_spellings(tracks).values()) == {kept}
 
 
 def test_combine_tracks_sorts_multi_disc_provider_tracks_and_discs():

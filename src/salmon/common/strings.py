@@ -335,13 +335,6 @@ def normalize_accents(*strs: str) -> str | list[str]:
     return normalized if len(normalized) > 1 else normalized[0]
 
 
-def less_uppers(one, two):
-    """Return the string with less uppercase letters."""
-    one_count = sum(1 for c in one if c.islower())
-    two_count = sum(1 for c in two if c.islower())
-    return one if one_count >= two_count else two
-
-
 def fetch_genre(genre: str) -> set[str]:
     """Fetch standardized genre from whitelist.
 

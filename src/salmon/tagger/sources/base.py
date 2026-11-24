@@ -1,12 +1,13 @@
 import re
 from abc import ABC, abstractmethod
+from collections import Counter
 from collections.abc import Callable
 from itertools import chain
 from typing import Any
 from urllib.parse import urlsplit
 
 from salmon import cfg
-from salmon.common import RE_USELESS_VERSION, fetch_genre, less_uppers, normalize_accents, split_genre
+from salmon.common import RE_USELESS_VERSION, fetch_genre, normalize_accents, split_genre
 from salmon.common.strings import (
     join_artists,
     names_no_artist,
@@ -422,16 +423,24 @@ def determine_label_type(label, artists):
 
 def artist_spellings(tracks):
     """Each name's spelling on the release, by its accent-folded lower case: of two spellings, the one with fewer
-    capitals ("Kool & the Gang" over "Kool & The Gang")."""
+    capitals ("Kool & the Gang" over "Kool & The Gang"), then the one on more tracks, then the first seen. The
+    tracks' order decides only a full tie: the merge moves the tracks a store pairs to the end of their disc."""
+    on_tracks = Counter(
+        name
+        for track in chain.from_iterable([d.values() for d in tracks.values()])
+        for name in dict.fromkeys(name for name, _ in track["artists"])
+    )
     artist_pool = {}
-    for track in chain.from_iterable([d.values() for d in tracks.values()]):
-        for name, _ in track["artists"]:
-            strip_name = normalize_accents(name.lower())
-            if strip_name not in artist_pool:
-                artist_pool[strip_name] = name
-            elif artist_pool[strip_name] != name:
-                artist_pool[strip_name] = less_uppers(artist_pool[strip_name], name)
+    for name, count in on_tracks.items():
+        strip_name = normalize_accents(name.lower())
+        kept = artist_pool.get(strip_name)
+        if kept is None or (_lowers(name), count) > (_lowers(kept), on_tracks[kept]):
+            artist_pool[strip_name] = name
     return artist_pool
+
+
+def _lowers(name):
+    return sum(1 for c in name if c.islower())
 
 
 def generate_artists(tracks):
