@@ -73,9 +73,11 @@ def _requests(tracker: FakeTracker) -> Counter[tuple[str, str, str]]:
     )
 
 
-def _two_trackers(monkeypatch, tmp_path, held: dict[str, list[dict[str, Any]]], red_answer: str = ""):
+def _two_trackers(
+    monkeypatch, tmp_path, held: dict[str, list[dict[str, Any]]], red_answer: str = "", ops_answer: str = ""
+):
     # RED, then OPS, named with -t: for each, the group (1) the search finds, then the group question.
-    answers = f"1\n{red_answer}\n1\n\n" + "\n" * 10
+    answers = f"1\n{red_answer}\n1\n{ops_answer}\n" + "\n" * 10
     return _up(monkeypatch, tmp_path, TwoSites(held), trackers=("RED", "OPS"), input=answers)
 
 
@@ -90,6 +92,35 @@ def test_a_tracker_holding_the_source_gets_only_the_missing_conversions(monkeypa
     assert "Not uploading WEB / FLAC / Lossless to RED: this edition has 2020 / Label / CAT1 / WEB / FLAC" in output
     # RED's transcodes are filed as transcodes of the torrent it holds.
     assert "transcoding from" in output and "torrentid=11" in output
+
+
+def test_a_later_tracker_holding_the_source_gets_only_the_missing_conversions(monkeypatch, tmp_path) -> None:
+    run = _two_trackers(monkeypatch, tmp_path, {"OPS": [WEB_FLAC]})
+
+    output = run.result.output
+    assert run.result.exit_code == 0, output
+    assert "Aborting" not in output
+    assert _uploads(run.tracker, "RED") == FULL
+    assert _uploads(run.tracker, "OPS") == ["MP3 320", "MP3 V0 (VBR)"]
+    assert "Not uploading WEB / FLAC / Lossless to OPS: this edition has 2020 / Label / CAT1 / WEB / FLAC" in output
+    assert "Not uploading WEB / FLAC / Lossless to RED" not in output
+    # OPS's transcodes are filed as transcodes of the torrent it holds.
+    assert "transcoding from" in output and "torrentid=11" in output
+
+
+def test_the_held_format_is_the_only_request_left_out_at_a_later_tracker(monkeypatch, tmp_path) -> None:
+    (tmp_path / "yes").mkdir()
+    (tmp_path / "missing").mkdir()
+    before = _two_trackers(monkeypatch, tmp_path / "yes", {"OPS": [WEB_FLAC]}, ops_answer="y").tracker
+    after = _two_trackers(monkeypatch, tmp_path / "missing", {"OPS": [WEB_FLAC]}).tracker
+
+    sent_before, sent_after = _requests(before), _requests(after)
+    for request, count in sent_after.items():
+        assert count <= sent_before[request], request
+    assert _uploads(after, "OPS") == ["MP3 320", "MP3 V0 (VBR)"]
+    assert _uploads(before, "OPS") == FULL
+    assert _uploads(after, "RED") == _uploads(before, "RED") == FULL
+    assert sum(sent_after.values()) < sum(sent_before.values())
 
 
 def test_a_tracker_holding_everything_is_skipped_and_the_next_one_uploaded(monkeypatch, tmp_path) -> None:
