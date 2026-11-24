@@ -1032,6 +1032,8 @@ async def _upload_staged(  # noqa: C901
                     # A torrent already seeds from the folder: never offer to delete it. Once one is up, a tracker
                     # can be skipped (one that already has the release, say) and the run still finishes.
                     # Matched on the reviewed metadata: the review may have changed the artists, title or year.
+                    # This tracker's own answer: a first tracker skipped before its turn may have left one.
+                    rechecked = missing_group = None
                     try:
                         group_id = await check_existing_group(
                             gazelle_site,
@@ -1043,7 +1045,8 @@ async def _upload_staged(  # noqa: C901
                             offer_missing=True,
                         )
                     except UploadOnlyMissing as chosen:
-                        group_id, missing_group = chosen.group_id, chosen.group
+                        # The group as fetched for the answer: the turn reads its editions from it.
+                        group_id, rechecked, missing_group = chosen.group_id, chosen.group, chosen.group
                     except (RequestError, SkipTracker) as e:
                         # Like a failed upload: skip this tracker, and offer the next one.
                         if isinstance(e, SkipTracker):
@@ -1204,7 +1207,8 @@ async def _recheck_group(
 ) -> tuple[int | None, dict[str, Any] | None, dict[str, Any] | None]:
     """Weigh the first tracker's group against the reviewed release: recheck_dupe, or recheck_edition for a group.
 
-    The review may have moved the release into an edition the group holds.
+    The review may have moved the release into an edition the group holds. Here, not in missing_formats: the tests
+    stub recheck_dupe and recheck_edition where this module imports them.
 
     Returns:
         The group (None: a new group), the group as recheck_edition fetched it ({} when that failed), and the group
@@ -1219,8 +1223,8 @@ async def _recheck_group(
             gazelle_site, group_id, metadata, weighed_against, only_missing=missing_group is not None
         )
     except UploadOnlyMissing as chosen:
-        # From recheck_edition, the group it fetched; from recheck_dupe, a search row the upload does not read.
-        return chosen.group_id, chosen.group if group_id else None, chosen.group
+        # The group as fetched for the answer: the turn reads its editions from it.
+        return chosen.group_id, chosen.group, chosen.group
     # A failed fetch ({}) leaves the choice made when the group was picked; an answer given again replaces it.
     return group_id, rechecked, missing_group if rechecked == {} else None
 

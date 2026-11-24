@@ -19,14 +19,21 @@ from test_uploader_dry_run import (
 )
 from test_uploader_reviewed_edition import CONFIRM_GROUP, WEB_320, WEB_FLAC, GroupTracker, _torrent, _up
 
+import salmon.uploader
 from salmon import interaction
 from salmon.errors import UploadOnlyMissing
 from salmon.uploader import dupe_checker
+from salmon.uploader.missing_formats import holdings_for_turn
 
 pytestmark = pytest.mark.usefixtures("image_uploads")
 
 WEB_V0 = _torrent(14, fmt="MP3", encoding="V0 (VBR)")
 FULL = ["FLAC Lossless", "MP3 320", "MP3 V0 (VBR)"]
+
+
+def _as_search_row(torrent: dict[str, Any]) -> dict[str, Any]:
+    row = {key: value for key, value in torrent.items() if key not in ("id", "remasterRecordLabel")}
+    return {**row, "torrentId": torrent["id"]}
 
 
 class TwoSites(GroupTracker):
@@ -40,7 +47,10 @@ class TwoSites(GroupTracker):
     async def _handle(self, request: web.Request) -> web.StreamResponse:
         key = request.headers.get("Authorization")
         site = next((code for code, api_key in API_KEYS.items() if api_key and api_key == key), "?")
-        self._group_torrents = self._held.get(site, [])
+        held = self._held.get(site, [])
+        # As a search row names them: the id as torrentId, and no label.
+        browse = request.path == "/ajax.php" and request.query.get("action") == "browse"
+        self._group_torrents = [_as_search_row(torrent) for torrent in held] if browse else held
         answer = await super()._handle(request)
         self.sites += [site] * (len(self.sent) - len(self.sites))
         return answer
@@ -125,67 +135,146 @@ def test_the_held_format_is_the_only_request_left_out(monkeypatch, tmp_path) -> 
     assert sum(sent_after.values()) < sum(sent_before.values())
 
 
+# What the code review of #1169 found
+
+
+def test_a_tracker_answered_before_a_listed_first_tracker_leaves_no_answer_behind(monkeypatch, tmp_path) -> None:
+    # RED holds the FLAC and "m" is taken, then the review leaves the release on RED's Do-Not-Upload list: OPS, which
+    # holds nothing, is answered on its own and gets everything.
+    calls = Counter[str]()
+
+    def refusal(tracker: str, _release: dict[str, Any], said: str | None = None) -> str | None:
+        calls[tracker] += 1
+        return "listed" if tracker == "RED" and calls[tracker] > 1 else None
+
+    monkeypatch.setattr(salmon.uploader, "_do_not_upload_refusal", refusal)
+    run = _two_trackers(monkeypatch, tmp_path, {"RED": [WEB_FLAC]})
+
+    assert run.result.exit_code == 0, run.result.output
+    assert _uploads(run.tracker, "RED") == []
+    assert _uploads(run.tracker, "OPS") == FULL
+
+
+def test_spectrals_after_skips_a_tracker_holding_the_source(monkeypatch, tmp_path) -> None:
+    # Its check runs on our FLAC once it is up, as --skip-flac-upload with --spectrals-after is refused.
+    run = _up(
+        monkeypatch,
+        tmp_path,
+        TwoSites({"RED": [WEB_FLAC]}),
+        args=("--spectrals-after",),
+        trackers=("RED",),
+        input="1\n\n" + "\n" * 10,
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Not uploading only the missing formats to RED with --spectrals-after" in run.result.output
+    assert _uploads(run.tracker, "RED") == []
+
+
+def test_several_held_sources_are_not_guessed_with_yyy(monkeypatch, tmp_path) -> None:
+    run = _two_trackers(monkeypatch, tmp_path, {"RED": [WEB_FLAC, {**WEB_FLAC, "id": 15}]})
+
+    output = run.result.output
+    assert run.result.exit_code == 0, output
+    assert "Not picking the FLAC the transcodes are made from with -yyy" in output
+    assert _uploads(run.tracker, "RED") == []
+    assert _uploads(run.tracker, "OPS") == FULL
+
+
+def test_every_offered_conversion_is_decided_and_only_the_default_ones_need_to_be_held(monkeypatch) -> None:
+    rls_data = {"format": "FLAC", "encoding": "Lossless"}
+    track_data = {"01.flac": {"sample rate": 44100}}
+    group = {"group": {"id": 7, "year": 2020}, "torrents": [WEB_FLAC, WEB_V0]}
+    release = {"source": "WEB", "format": "FLAC", "encoding": "Lossless", "year": 2020}
+
+    holdings = holdings_for_turn("RED", group, release, rls_data, track_data, ("320",))
+
+    # V0 is not made by default, but the conversion question may pick it: it is a dupe there.
+    assert holdings.held_conversions == {"MP3 V0"}
+    assert not holdings.nothing_missing
+    with_320 = {**group, "torrents": [WEB_FLAC, WEB_320]}
+    assert holdings_for_turn("RED", with_320, release, rls_data, track_data, ("320",)).nothing_missing
+
+
 # The group question
 
 
-def _question(monkeypatch, torrents: list[dict[str, Any]]) -> tuple[Any, list[Any]]:
-    """Ask the group question for a printed search row, with -yyy; the answer and the default it offered."""
+class QuestionSite:
+    """The group question's tracker: the group it fetches, counted."""
+
+    site_string = "RED"
+
+    def __init__(self, torrents: list[dict[str, Any]]) -> None:
+        self.torrents = torrents
+        self.fetches = 0
+
+    async def torrentgroup(self, group_id: int) -> dict[str, Any]:
+        self.fetches += 1
+        info = {"id": group_id, "name": "Album", "year": 2020, "musicInfo": {"artists": [{"name": "Artist"}]}}
+        return {"group": info, "torrents": self.torrents}
+
+
+RELEASE = {"source": "WEB", "format": "FLAC", "encoding": "Lossless", "year": 2020}
+
+
+def _row(torrents: list[dict[str, Any]]) -> dict[str, Any]:
+    """A search row: its torrents as a search names them."""
+    rows = [_as_search_row(torrent) for torrent in torrents]
+    return {"groupId": 5, "artist": "Artist", "groupName": "Album", "groupYear": 2020, "torrents": rows}
+
+
+def _ask(site: QuestionSite, answer: str | None = None) -> tuple[Any, list[Any], list[str]]:
+    """Ask the group question for a search row, with -yyy; the outcome, the default offered and the text asked."""
     defaults: list[Any] = []
+    asked: list[str] = []
 
-    async def prompt(_text: str, *, default: Any = None, **_kwargs: Any) -> Any:
+    async def prompt(text: str, *, default: Any = None, **_kwargs: Any) -> Any:
         defaults.append(default)
-        return default
-
-    monkeypatch.setattr(dupe_checker.interaction, "prompt", prompt)
-    row = {"groupId": 5, "artist": "Artist", "groupName": "Album", "groupYear": 2020, "torrents": torrents}
-    release = {"source": "WEB", "format": "FLAC", "encoding": "Lossless", "year": 2020}
+        asked.append(click.unstyle(text))
+        return answer or default
 
     async def ask() -> Any:
         with interaction.assuming_defaults(True):
             try:
-                return await dupe_checker._confirm_group_id(None, 5, [row], False, release, offer_missing=True)  # pyright: ignore[reportArgumentType]
-            except UploadOnlyMissing as chosen:
-                return chosen
+                return await dupe_checker._confirm_group_id(
+                    site,  # pyright: ignore[reportArgumentType]
+                    5,
+                    [_row(site.torrents)],
+                    False,
+                    RELEASE,
+                    offer_missing=True,
+                )
+            except (UploadOnlyMissing, click.Abort) as outcome:
+                return outcome
 
-    return anyio.run(ask), defaults
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(dupe_checker.interaction, "prompt", prompt)
+        return anyio.run(ask), defaults, asked
 
 
-def test_a_held_source_defaults_to_upload_only_what_is_missing(monkeypatch) -> None:
-    answer, defaults = _question(monkeypatch, [WEB_FLAC])
+def test_a_held_source_defaults_to_upload_only_what_is_missing_with_the_group_fetched() -> None:
+    site = QuestionSite([WEB_FLAC])
+    answer, defaults, asked = _ask(site)
+
     assert defaults == ["m"]
     assert isinstance(answer, UploadOnlyMissing)
     assert answer.group_id == 5
+    # The search row names the torrent torrentId: the group is fetched, once, for the held torrent's id.
     assert answer.group["torrents"] == [WEB_FLAC]
-
-
-def test_nothing_held_defaults_to_yes(monkeypatch) -> None:
-    answer, defaults = _question(monkeypatch, [WEB_320])
-    assert defaults == ["Y"]
-    assert answer is True
-
-
-def test_abort_is_still_there_by_hand(monkeypatch) -> None:
-    async def prompt(_text: str, **_kwargs: Any) -> str:
-        return "a"
-
-    monkeypatch.setattr(dupe_checker.interaction, "prompt", prompt)
-    row = {"groupId": 5, "artist": "Artist", "groupName": "Album", "groupYear": 2020, "torrents": [WEB_FLAC]}
-    release = {"source": "WEB", "format": "FLAC", "encoding": "Lossless", "year": 2020}
-    with pytest.raises(click.Abort):
-        anyio.run(lambda: dupe_checker._confirm_group_id(None, 5, [row], False, release, offer_missing=True))  # pyright: ignore[reportArgumentType]
-
-
-def test_the_question_names_the_new_answer(monkeypatch) -> None:
-    asked: list[str] = []
-
-    async def prompt(text: str, *, default: Any = None, **_kwargs: Any) -> Any:
-        asked.append(click.unstyle(text))
-        return default
-
-    monkeypatch.setattr(dupe_checker.interaction, "prompt", prompt)
-    row = {"groupId": 5, "artist": "Artist", "groupName": "Album", "groupYear": 2020, "torrents": [WEB_FLAC]}
-    release = {"source": "WEB", "format": "FLAC", "encoding": "Lossless", "year": 2020}
-    with pytest.raises(UploadOnlyMissing):
-        anyio.run(lambda: dupe_checker._confirm_group_id(None, 5, [row], False, release, offer_missing=True))  # pyright: ignore[reportArgumentType]
+    assert site.fetches == 1
     assert CONFIRM_GROUP in asked[0]
     assert "upload only the [m]issing formats" in asked[0]
+
+
+def test_nothing_held_defaults_to_yes_and_fetches_nothing() -> None:
+    site = QuestionSite([WEB_320])
+    answer, defaults, _asked = _ask(site)
+
+    assert defaults == ["Y"]
+    assert answer is True
+    assert site.fetches == 0
+
+
+def test_abort_is_still_there_by_hand() -> None:
+    answer, _defaults, _asked = _ask(QuestionSite([WEB_FLAC]), answer="a")
+    assert isinstance(answer, click.Abort)

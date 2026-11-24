@@ -1129,6 +1129,28 @@ def _printable_row(row: dict) -> bool:
     )
 
 
+async def _fetched_group(gazelle_site: "BaseGazelleApi", group_id: int, rset: dict) -> dict:
+    """The group as torrentgroup gives it: rset if it is that already, else fetched.
+
+    A search row names its torrents' ids and editions in other fields, or not at all: uploading only what the
+    edition is missing reads the held torrent's id and edition (#1169). The upload then reads the group from it
+    instead of fetching it, so the fetch is not one more request.
+
+    Raises:
+        click.Abort: The fetch failed, said so; as before #1169, the run stops at an edition holding our format.
+    """
+    if "group" in rset:
+        return rset
+    try:
+        return _group_as_result(await gazelle_site.torrentgroup(group_id))
+    except RequestError as err:
+        click.secho(
+            f"Could not fetch group {group_id} from {gazelle_site.site_string} to see what it is missing: {err}",
+            fg="red",
+        )
+        raise click.Abort from None
+
+
 async def _confirm_group_id(
     gazelle_site: "BaseGazelleApi",
     group_id: int,
@@ -1213,7 +1235,7 @@ async def _confirm_group_id(
         elif answer == "d" and offer_deletion:
             raise AbortAndDeleteFolder
         elif resp == "m" and missing:
-            raise UploadOnlyMissing(group_id, rset)
+            raise UploadOnlyMissing(group_id, await _fetched_group(gazelle_site, group_id, rset))
         elif resp == "y":
             return True
         elif resp == "n":

@@ -20,9 +20,9 @@ from salmon.uploader.conversion_choice import (
 )
 from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.cover_upload import resolve_cover_url
-from salmon.uploader.dupe_checker import print_torrents
+from salmon.uploader.dupe_checker import choose_source_flac, print_torrents
 from salmon.uploader.held_edition import edition_in_group, edition_of_source, in_edition_of
-from salmon.uploader.missing_formats import holdings_for_turn
+from salmon.uploader.missing_formats import EditionHoldings, holdings_for_turn
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import SpectralsDeclined, SpectralUploads, post_upload_spectral_check
@@ -119,6 +119,60 @@ async def _upload_edition(
     return metadata
 
 
+async def _only_missing(
+    release: ReleaseToUpload, gazelle_site: "BaseGazelleApi", run: TrackerRun, group: dict[str, Any]
+) -> tuple[ReleaseToUpload, EditionHoldings] | Turn:
+    """The release to upload when only what the edition is missing goes up, and what it holds; or the turn's end.
+
+    A held source is not uploaded: its conversions are filed as transcodes of the held torrent, as --skip-flac-upload
+    files them.
+    """
+    site = gazelle_site.site_string
+    holdings = holdings_for_turn(
+        site, group, release.metadata, release.rls_data, release.track_data, release.conversions
+    )
+    if holdings.nothing_missing:
+        click.secho(f"\n{site} has every format of this upload: skipping it.", fg="yellow", bold=True)
+        run.failed_trackers.append(site)
+        return Turn.NOTHING_MISSING
+    if not holdings.source.torrents:
+        return release, holdings
+    held_source = await _held_source(site, holdings, group, release.metadata, run.spectrals_after)
+    if held_source is None:
+        run.failed_trackers.append(site)
+        return Turn.SKIPPED
+    flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={held_source['id']}"
+    return replace(release, source_flac=held_source, flac_url=flac_url, flac_group=group), holdings
+
+
+async def _held_source(
+    site: str,
+    holdings: EditionHoldings,
+    group: dict[str, Any],
+    metadata: dict[str, Any],
+    spectrals_after: bool,
+) -> dict[str, Any] | None:
+    """The held torrent this tracker's conversions are filed as transcodes of; None: skip the tracker, said why.
+
+    Several in the edition are asked about as --skip-flac-upload asks (choose_source_flac): -yyy picks none.
+    """
+    if spectrals_after:
+        # As --skip-flac-upload refuses --spectrals-after: its check runs on our FLAC, once it is up.
+        click.secho(
+            f"\nNot uploading only the missing formats to {site} with --spectrals-after: the spectral check needs our "
+            f"FLAC up first. Skipping {site}.",
+            fg="red",
+            bold=True,
+        )
+        return None
+    if len(holdings.source.torrents) == 1:
+        return holdings.source.torrents[0]
+    chosen = await choose_source_flac(group, metadata)
+    if chosen is None:
+        click.secho(f"\nSkipping {site}.", fg="red", bold=True)
+    return chosen
+
+
 def _conversions_lost(run: TrackerRun, gazelle_site: "BaseGazelleApi", release: ReleaseToUpload) -> None:
     """Count the tracker as failed when conversions were wanted and cannot be offered for it."""
     if _applicable_conversions(
@@ -148,27 +202,10 @@ async def upload_to_tracker(
     """
     holdings = None
     if only_missing is not None:
-        holdings = holdings_for_turn(
-            gazelle_site.site_string,
-            only_missing,
-            release.metadata,
-            release.rls_data,
-            release.track_data,
-            release.conversions,
-        )
-        if holdings.nothing_missing:
-            click.secho(
-                f"\n{gazelle_site.site_string} has every format of this upload: skipping it.", fg="yellow", bold=True
-            )
-            run.failed_trackers.append(gazelle_site.site_string)
-            return Turn.NOTHING_MISSING
-        if (held_source := holdings.source.torrent) is not None:
-            release = replace(
-                release,
-                source_flac=held_source,
-                flac_url=f"{gazelle_site.base_url}/torrents.php?torrentid={held_source['id']}",
-                flac_group=only_missing,
-            )
+        only = await _only_missing(release, gazelle_site, run, only_missing)
+        if isinstance(only, Turn):
+            return only
+        release, holdings = only
     # Handle cover image for this tracker
     proceed, cover_url = await resolve_cover_url(
         gazelle_site,
@@ -205,7 +242,8 @@ async def upload_to_tracker(
         if metadata is None:
             run.failed_trackers.append(gazelle_site.site_string)
             return Turn.SKIPPED
-        held: set[str] = set()
+        # What the edition holds, as said already; recomputed from the group printed after the upload.
+        held: set[str] = holdings.held_conversions if holdings is not None else set()
         if release.flac_url and release.source_flac is not None:
             click.secho(f"\nNot uploading the FLAC: transcoding from {release.flac_url}", fg="yellow")
             url = release.flac_url
