@@ -15,7 +15,7 @@ Each `<album>.toml` holds, in this order:
   `guests_in_track_title` off and on, as ALBUMARTIST and per track "ARTIST | TITLE" (and "| REMIXER ..." when one is
   written).
 - `right`: what is settled, and how we know (`how_we_know`). `release_main` (in order), `performers` (main or
-  conductor, any order), `not_main` (never main: a composer, a placeholder, a guest, a remixer), `remixers`, `name_forms` (other spellings of a right name). `open` is what is
+  conductor, any order), `not_main` (never main: a composer, a conductor, a placeholder, a guest, a remixer), `remixers`, `name_forms` (other spellings of a right name). `open` is what is
   not settled yet. Names and roles are judged, never the separators that join them.
 - `known_wrong`: where today is wrong, in words.
 - `[[track]]`: the files' tags, built from one store's data the way a download from that store is tagged (the
