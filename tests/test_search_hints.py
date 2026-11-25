@@ -28,8 +28,22 @@ def test_without_an_album_artist_the_artist_is_used_joined() -> None:
     assert search_hints(_tags(file, file)).artist == "A; B"
 
 
-def test_no_artist_tags_give_various_artists() -> None:
-    assert search_hints(_tags({"album": "X"}, {"album": "X"})).artist == "Various Artists"
+def test_no_artist_tags_give_no_artist() -> None:
+    assert search_hints(_tags({"album": "X"}, {"album": "X"})).artist is None
+
+
+def test_files_without_artist_tags_do_not_outvote_the_tagged_one() -> None:
+    files = [
+        {"albumartist": "Miles Davis", "album": "Kind of Blue"},
+        {"album": "Kind of Blue"},
+        {"album": "Kind of Blue"},
+    ]
+    assert search_hints(_tags(*files)).artist == "Miles Davis"
+
+
+def test_an_explicit_various_artists_credit_is_kept() -> None:
+    files = [{"albumartist": "Various Artists"}, {"albumartist": "Various Artists"}, {"artist": "Someone"}]
+    assert search_hints(_tags(*files)).artist == "Various Artists"
 
 
 def test_the_most_common_artist_wins_grouped_case_and_punctuation_blind() -> None:
@@ -66,7 +80,7 @@ def test_the_year_needs_a_majority_that_agrees(dates: list[str | None], year: st
 
 def test_a_blank_tag_is_no_tag() -> None:
     blank = {"albumartist": " ", "artist": [" "], "album": "  ", "date": " "}
-    assert search_hints(_tags(blank, blank)) == SearchHints("Various Artists", None, 2, None)
+    assert search_hints(_tags(blank, blank)) == SearchHints(None, None, 2, None)
 
 
 def test_a_zero_year_is_no_year() -> None:
@@ -80,4 +94,4 @@ def test_overwrite_keeps_only_the_album_and_the_track_count() -> None:
 
 
 def test_a_file_without_tags_gives_no_hints_from_it() -> None:
-    assert search_hints({"01.flac": None, "02.flac": {}}) == SearchHints("Various Artists", None, 2, None)
+    assert search_hints({"01.flac": None, "02.flac": {}}) == SearchHints(None, None, 2, None)

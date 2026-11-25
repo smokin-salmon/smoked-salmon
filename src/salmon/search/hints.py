@@ -1,7 +1,8 @@
 """What the files say about their release, for a store that can search by field (MusicBrainz, #1178).
 
 The rules are Picard 3.0.5's cluster lookup, which the fielded search was measured with: the album artist and album
-are the files' most common values, and the date counts only when most files carry it and all of them agree.
+are the files' most common values, and the date counts only when most files carry it and all of them agree. Unlike
+Picard, a file without an artist tag gives no artist, rather than a vote for Various Artists.
 """
 
 import re
@@ -11,7 +12,6 @@ from typing import Any
 
 import msgspec
 
-VARIOUS_ARTISTS = "Various Artists"
 _NON_WORD = re.compile(r"\W", re.UNICODE)
 _SPACE = re.compile(r"\s", re.UNICODE)
 _YEAR = re.compile(r"\d{4}")
@@ -47,8 +47,8 @@ def _tag(file: Any, name: str) -> str:
 def _artist(files: list[Any]) -> str | None:
     spellings: dict[str, Counter[str]] = {}
     for file in files:
-        name = _tag(file, "albumartist") or _tag(file, "artist") or VARIOUS_ARTISTS
-        spellings.setdefault(_token(name), Counter())[name] += 1
+        if name := _tag(file, "albumartist") or _tag(file, "artist"):
+            spellings.setdefault(_token(name), Counter())[name] += 1
     if not spellings:
         return None
     group = max(spellings.values(), key=lambda counts: counts.total())
