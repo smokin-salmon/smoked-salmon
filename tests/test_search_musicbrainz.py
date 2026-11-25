@@ -202,6 +202,8 @@ def test_a_missing_field_is_left_out() -> None:
     )
     assert fielded_query(SearchHints(None, None, None, None)) == ""
     assert fielded_query(SearchHints("", "", None, "")) == ""
+    assert fielded_query(SearchHints("  ", " ", None, " ")) == ""
+    assert fielded_query(SearchHints(" Miles Davis ", None, None, None)) == "artist:(miles davis)"
 
 
 def test_special_characters_are_escaped() -> None:
@@ -239,8 +241,11 @@ def _unescaped_parentheses_balance(query: str) -> bool:
 def test_every_special_character_round_trips_and_parentheses_balance() -> None:
     for value in _generated_values(3000):
         query = fielded_query(SearchHints(None, value, None, None))
+        if not value.strip():
+            assert query == "", (value, query)
+            continue
         assert query.startswith("release:(") and query.endswith(")"), (value, query)
-        assert re.sub(r"\\(.)", r"\1", query[len("release:(") : -1]) == value.lower(), (value, query)
+        assert re.sub(r"\\(.)", r"\1", query[len("release:(") : -1]) == value.strip().lower(), (value, query)
         assert _unescaped_parentheses_balance(query), (value, query)
 
 

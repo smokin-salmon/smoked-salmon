@@ -27,10 +27,11 @@ class SearchHints(msgspec.Struct, frozen=True):
 
 
 def _text(value: Any) -> str:
-    """A tag's value as one string: a list's values joined with "; ", as TagFile joins them; "" when absent."""
+    """A tag's value as one string: a list's values joined with "; ", as TagFile joins them; "" when absent or
+    blank."""
     if isinstance(value, list | tuple):
-        return "; ".join(str(v) for v in value if str(v))
-    return str(value) if value else ""
+        return "; ".join(text for v in value if (text := str(v).strip()))
+    return str(value).strip() if value else ""
 
 
 def _token(name: str) -> str:
@@ -64,7 +65,7 @@ def _year(files: list[Any]) -> str | None:
     if len(dates) <= len(files) / 2 or len(set(dates)) != 1:
         return None
     match = _YEAR.match(dates[0])
-    return match.group() if match else None
+    return match.group() if match and match.group() != "0000" else None
 
 
 def search_hints(tags: Mapping[str, Any]) -> SearchHints:

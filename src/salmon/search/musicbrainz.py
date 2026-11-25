@@ -20,7 +20,8 @@ def fielded_query(hints: SearchHints) -> str:
     """
     track_count = str(hints.track_count) if hints.track_count else None
     fields = [("artist", hints.artist), ("release", hints.album), ("tracks", track_count), ("date", hints.year)]
-    return " ".join(f"{field}:({_LUCENE_SPECIAL.sub(r'\\\1', value.lower())})" for field, value in fields if value)
+    values = [(field, value.strip().lower()) for field, value in fields if value]
+    return " ".join(f"{field}:({_LUCENE_SPECIAL.sub(r'\\\1', value)})" for field, value in values if value)
 
 
 def _label_and_catno(rls: dict[str, Any]) -> tuple[str, str]:
