@@ -1,8 +1,8 @@
 """What the files say about their release, for a store that can search by field (MusicBrainz, #1178).
 
-The rules are Picard 3.0.5's cluster lookup, which the fielded search was measured with: the album artist and album
-are the files' most common values, and the date counts only when most files carry it and all of them agree. Unlike
-Picard, a file without an artist tag gives no artist, rather than a vote for Various Artists.
+The rules are based on Picard 3's cluster search, which the fielded search was measured with: the album artist and
+album are the files' most common values, and the date counts only when most files carry it and all of them agree.
+Unlike Picard, a file without an artist tag gives no artist, rather than a vote for Various Artists.
 """
 
 import re
