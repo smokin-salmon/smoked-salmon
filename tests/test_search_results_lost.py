@@ -33,7 +33,7 @@ def _add_store(monkeypatch: pytest.MonkeyPatch, answer: Callable[[str], Any]) ->
     """Add a store called Store whose search of a string gives answer(string): its releases, or raises."""
 
     class _Searcher(SearchMixin):
-        async def search_releases(self, searchstr: str, _limit: int) -> tuple[str, Any]:
+        async def search_releases(self, searchstr: str, limit: int) -> tuple[str, Any]:
             return "Store", answer(searchstr)
 
     monkeypatch.setitem(salmon_search.SEARCHSOURCES, "Store", SimpleNamespace(Searcher=_Searcher))
@@ -86,7 +86,7 @@ def test_a_release_found_twice_keeps_the_first_searchs_entry(monkeypatch: pytest
 
 def test_a_tidal_release_found_from_two_regions_is_one_release(monkeypatch: pytest.MonkeyPatch) -> None:
     class _Searcher(SearchMixin):
-        async def search_releases(self, searchstr: str, _limit: int) -> tuple[str, Any]:
+        async def search_releases(self, searchstr: str, limit: int) -> tuple[str, Any]:
             return "Tidal", {("US", 111): "US"} if searchstr == "one" else {("DE", 111): "DE", ("DE", 222): "DE"}
 
     monkeypatch.setitem(salmon_search.SEARCHSOURCES, "Tidal", SimpleNamespace(Searcher=_Searcher))
@@ -477,7 +477,7 @@ def test_two_stores_failing_alike_each_print_their_line_once(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     class _Searcher(SearchMixin):
-        async def search_releases(self, _searchstr: str, _limit: int) -> tuple[str, Any]:
+        async def search_releases(self, searchstr: str, limit: int) -> tuple[str, Any]:
             raise ScrapeError("timed out")
 
     monkeypatch.setitem(salmon_search.SEARCHSOURCES, "One", SimpleNamespace(Searcher=_Searcher))

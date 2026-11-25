@@ -38,10 +38,15 @@ def _token(name: str) -> str:
     return _NON_WORD.sub("", name.lower()) or _SPACE.sub("", name.lower())
 
 
+def _tag(file: Any, name: str) -> str:
+    """The file's tag as one string; "" when the file has no such tag, or no tags at all."""
+    return _text(getattr(file, name, None))
+
+
 def _artist(files: list[Any]) -> str | None:
     spellings: dict[str, Counter[str]] = {}
     for file in files:
-        name = _text(file.albumartist) or _text(file.artist) or VARIOUS_ARTISTS
+        name = _tag(file, "albumartist") or _tag(file, "artist") or VARIOUS_ARTISTS
         spellings.setdefault(_token(name), Counter())[name] += 1
     if not spellings:
         return None
@@ -50,12 +55,12 @@ def _artist(files: list[Any]) -> str | None:
 
 
 def _album(files: list[Any]) -> str | None:
-    albums = Counter(album for file in files if (album := _text(file.album)))
+    albums = Counter(album for file in files if (album := _tag(file, "album")))
     return albums.most_common(1)[0][0] if albums else None
 
 
 def _year(files: list[Any]) -> str | None:
-    dates = [date for file in files if (date := _text(file.date))]
+    dates = [date for file in files if (date := _tag(file, "date"))]
     if len(dates) <= len(files) / 2 or len(set(dates)) != 1:
         return None
     match = _YEAR.match(dates[0])

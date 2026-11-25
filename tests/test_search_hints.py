@@ -62,3 +62,7 @@ def test_track_count_is_the_file_count() -> None:
 )
 def test_the_year_needs_a_majority_that_agrees(dates: list[str | None], year: str | None) -> None:
     assert search_hints(_tags(*({"date": d} for d in dates))).year == year
+
+
+def test_a_file_without_tags_gives_no_hints_from_it() -> None:
+    assert search_hints({"01.flac": None, "02.flac": {}}) == SearchHints("Various Artists", None, 2, None)
