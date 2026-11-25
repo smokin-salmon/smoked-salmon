@@ -37,9 +37,11 @@ def _label_and_catno(rls: dict[str, Any]) -> tuple[str, str]:
 
 class Searcher(MusicBrainzBase, SearchMixin):
     def queries(self, searchstrs: list[str], hints: SearchHints | None) -> list[str]:
-        """One fielded search when the files' hints say anything, in place of every searchstr; else the searchstrs."""
-        query = fielded_query(hints) if hints is not None else ""
-        return [query] if query else searchstrs
+        """One fielded search when the files' hints name an artist or album, in place of every searchstr; else the
+        searchstrs, since a track count and year alone match almost anything."""
+        if hints is None or not fielded_query(SearchHints(hints.artist, hints.album, None, None)):
+            return searchstrs
+        return [fielded_query(hints)]
 
     async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any]]:
         """Search for releases on MusicBrainz.

@@ -262,6 +262,24 @@ def test_with_hints_that_say_nothing_the_searchstrs_are_the_queries() -> None:
     assert musicbrainz_search.Searcher().queries(["a b"], SearchHints(None, None, None, None)) == ["a b"]
 
 
+@pytest.mark.parametrize(
+    "hints",
+    [SearchHints(None, None, 12, None), SearchHints(None, None, 12, "1999")],
+    ids=["track count only", "track count and year"],
+)
+def test_without_an_artist_or_album_the_searchstrs_are_the_queries(hints: SearchHints) -> None:
+    assert musicbrainz_search.Searcher().queries(["a b"], hints) == ["a b"]
+
+
+@pytest.mark.parametrize(
+    "hints",
+    [SearchHints("A", None, 12, None), SearchHints(None, "B", 12, None)],
+    ids=["artist", "album"],
+)
+def test_an_artist_or_album_is_enough_for_the_fielded_query(hints: SearchHints) -> None:
+    assert musicbrainz_search.Searcher().queries(["a b"], hints) == [fielded_query(hints)]
+
+
 def test_another_store_ignores_hints() -> None:
     assert deezer_search.Searcher().queries(["a b"], SearchHints("A", "B", 1, "2000")) == ["a b"]
 
