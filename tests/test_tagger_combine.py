@@ -413,6 +413,42 @@ def test_as_before_a_remix_in_a_title(title, remixers):
     assert _extract_remixers_from_title(title) == remixers
 
 
+@pytest.mark.parametrize(
+    ("title", "remixers"),
+    [
+        # The Prodigy, Invaders Must Die (Deezer's title).
+        ("Take Me to the Hospital (Losers Middlesex A&E Remix)", [("Losers Middlesex A&E", "remixer")]),
+        ("Song (Remi Xer &Other Xer Remix)", [("Remi Xer &Other Xer", "remixer")]),
+        ("Song (Remi Xer+ Other Xer Remix)", [("Remi Xer+ Other Xer", "remixer")]),
+        ("Song (Florence+The Machine Remix)", [("Florence+The Machine", "remixer")]),
+    ],
+)
+def test_an_ampersand_or_plus_inside_a_name_does_not_split_it(title, remixers):
+    # A name holds "&" or "+" with no space on one side or both; between two remixers they are spaced.
+    assert _extract_remixers_from_title(title) == remixers
+
+
+@pytest.mark.parametrize(
+    ("title", "remixers"),
+    [
+        ("Song (Remi Xer / Other Xer Remix)", [("Remi Xer", "remixer"), ("Other Xer", "remixer")]),
+        # Fugees, "Ready or Not": a slash separates, spaced or not.
+        ("Ready or Not (Clark Kent/Django Remix)", [("Clark Kent", "remixer"), ("Django", "remixer")]),
+        ("Song (Remi Xer + Other Xer Remix)", [("Remi Xer", "remixer"), ("Other Xer", "remixer")]),
+        ("Song (Remi Xer, Other Xer Remix)", [("Remi Xer", "remixer"), ("Other Xer", "remixer")]),
+        (
+            "Song (Remi Xer,Other Xer;Third Xer Remix)",
+            [("Remi Xer", "remixer"), ("Other Xer", "remixer"), ("Third Xer", "remixer")],
+        ),
+        # The known limit, kept as it is: a duo's spaced "&" reads as two remixers, as only a stated credit can tell
+        # a duo from two.
+        ("Invaders Must Die (Chase & Status Remix)", [("Chase", "remixer"), ("Status", "remixer")]),
+    ],
+)
+def test_as_before_spaced_separators_and_commas_split_remixers(title, remixers):
+    assert _extract_remixers_from_title(title) == remixers
+
+
 def test_a_mix_name_in_a_stores_title_adds_no_remixer_to_the_track():
     base = one_track([("Lead", "main")], "Song")
     meta = one_track([("Lead", "main")], "Song (Extended Disco Mix)")
