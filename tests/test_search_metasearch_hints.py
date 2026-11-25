@@ -50,15 +50,18 @@ def test_a_failing_musicbrainz_with_hints_leaves_the_other_stores(monkeypatch, c
     assert click.unstyle(capsys.readouterr().out).count("MusicBrainz is down") == 1
 
 
-def test_get_metadata_passes_the_files_hints(monkeypatch) -> None:
-    tags = {
-        f"0{n}.flac": SimpleNamespace(albumartist="The Artist", artist=["The Artist"], album="The Album", date="2020")
-        for n in (1, 2)
-    }
+TAGS = {
+    f"0{n}.flac": SimpleNamespace(albumartist="The Artist", artist=["The Artist"], album="The Album", date="2020")
+    for n in (1, 2)
+}
+
+
+def _hints_sent(monkeypatch, **kwargs: Any) -> SearchHints:
+    """The hints get_metadata gives the search for TAGS, called with kwargs."""
     sent: dict[str, Any] = {}
 
-    async def search(searchstrs: list[str], **kwargs: Any) -> dict[str, Any]:
-        sent.update(kwargs)
+    async def search(_searchstrs: list[str], **search_kwargs: Any) -> dict[str, Any]:
+        sent.update(search_kwargs)
         return {}
 
     async def pick(*_args: Any) -> tuple[dict[str, Any], None]:
@@ -67,5 +70,13 @@ def test_get_metadata_passes_the_files_hints(monkeypatch) -> None:
     monkeypatch.setattr(metadata_mod, "run_metasearch", search)
     monkeypatch.setattr(metadata_mod, "pick_metadata", pick)
     rls_data = {"artists": [("The Artist", "main")], "title": "The Album"}
-    anyio.run(metadata_mod.get_metadata, "/nowhere", tags, rls_data)
-    assert sent["hints"] == search_hints(tags) == SearchHints("The Artist", "The Album", 2, "2020")
+    anyio.run(partial(metadata_mod.get_metadata, "/nowhere", TAGS, rls_data, **kwargs))
+    return sent["hints"]
+
+
+def test_with_overwrite_get_metadata_sends_only_the_album_and_track_count(monkeypatch) -> None:
+    assert _hints_sent(monkeypatch, overwrite=True) == SearchHints(None, "The Album", 2, None)
+
+
+def test_get_metadata_passes_the_files_hints(monkeypatch) -> None:
+    assert _hints_sent(monkeypatch) == search_hints(TAGS) == SearchHints("The Artist", "The Album", 2, "2020")

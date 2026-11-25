@@ -233,10 +233,10 @@ def _metadata() -> dict[str, Any]:
     }
 
 
-def _run_tag(monkeypatch, album: Path, **real: Any) -> Any:
+def _run_tag(monkeypatch, album: Path, args: tuple[str, ...] = (), **real: Any) -> Any:
     """Run `salmon tag ALBUM` with the real staging, tag standardizing and folder rename, remove_source_dir on.
 
-    `real` gives a step its function back, by name, in place of the fake.
+    `args` are more of the command's options. `real` gives a step its function back, by name, in place of the fake.
     """
     metadata = {**_metadata(), "cover": None}
     for name, fake in {
@@ -258,7 +258,7 @@ def _run_tag(monkeypatch, album: Path, **real: Any) -> Any:
     monkeypatch.setattr(cfg.upload, "yes_all", True)
 
     async def run():
-        return await CliRunner().invoke(salmon.tagger.tag, [str(album), "-s", "WEB", "-n"])
+        return await CliRunner().invoke(salmon.tagger.tag, [str(album), "-s", "WEB", "-n", *args])
 
     return anyio.run(run)
 

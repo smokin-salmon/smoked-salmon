@@ -42,6 +42,7 @@ async def get_metadata(
     skip_search_url: str | None = None,
     skip_search: bool = False,
     search: MetadataSearch | None = None,
+    overwrite: bool = False,
 ) -> tuple[dict[str, Any], str | None]:
     """Get metadata pertaining to a release from various metadata sources.
 
@@ -54,6 +55,7 @@ async def get_metadata(
         skip_search_url: The --source-url the user gave.
         skip_search: --skip-search: take the metadata from skip_search_url without searching the stores.
         search: Filled with the store search, when one runs, so that pick_metadata can pick from it again.
+        overwrite: --overwrite: the search hints leave out the tags' artist and year, as rls_data does.
 
     Returns:
         Tuple of (metadata dict, source URL or None).
@@ -78,7 +80,7 @@ async def get_metadata(
         track_count=len(tags),
         artists=artists_list,
         album=album_title,
-        hints=search_hints(tags),
+        hints=search_hints(tags, overwrite=overwrite),
     )
     search.base = deepcopy(rls_data)
     return await pick_metadata(search, rls_data, path, len(tags))

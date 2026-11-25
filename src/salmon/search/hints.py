@@ -68,7 +68,13 @@ def _year(files: list[Any]) -> str | None:
     return match.group() if match and match.group() != "0000" else None
 
 
-def search_hints(tags: Mapping[str, Any]) -> SearchHints:
-    """The hints in the files' tags ({filename: TagFile}, as get_metadata has them)."""
+def search_hints(tags: Mapping[str, Any], *, overwrite: bool = False) -> SearchHints:
+    """The hints in the files' tags ({filename: TagFile}, as get_metadata has them).
+
+    With overwrite (--overwrite), the release data ignores the tags' artists and year, so the hints do too: only the
+    album and the track count are kept.
+    """
     files = list(tags.values())
+    if overwrite:
+        return SearchHints(None, _album(files), len(files) or None, None)
     return SearchHints(_artist(files), _album(files), len(files) or None, _year(files))

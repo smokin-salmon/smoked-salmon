@@ -74,5 +74,10 @@ def test_a_zero_year_is_no_year() -> None:
     assert search_hints(_tags({"date": "0000"}, {"date": "0000"})).year is None
 
 
+def test_overwrite_keeps_only_the_album_and_the_track_count() -> None:
+    file = {"albumartist": "Miles Davis", "artist": ["Miles Davis"], "album": "Kind of Blue", "date": "1959"}
+    assert search_hints(_tags(file, file), overwrite=True) == SearchHints(None, "Kind of Blue", 2, None)
+
+
 def test_a_file_without_tags_gives_no_hints_from_it() -> None:
     assert search_hints({"01.flac": None, "02.flac": {}}) == SearchHints("Various Artists", None, 2, None)
