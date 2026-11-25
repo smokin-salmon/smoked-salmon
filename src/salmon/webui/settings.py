@@ -31,6 +31,8 @@ MIN_SHOWN_LENGTH = 16
 SHOWN_CHARS = 4
 # The trackers that take no API key: no field for one.
 NO_API_KEY = frozenset({"DIC"})
+# A browser keeps a cookie of at most 4096 bytes (RFC 6265): anything longer was not copied from one.
+MAX_VALUE_LENGTH = 4096
 
 
 @dataclass(frozen=True)
@@ -78,11 +80,24 @@ async def trackers(request: web.Request) -> web.Response:
     return web.json_response(settings.redactor.value(await asyncio.to_thread(_answer, settings)))
 
 
+def _header_safe(value: str) -> bool:
+    """Whether a request header can carry ``value`` as it is: printable ASCII, with no space."""
+    return len(value) <= MAX_VALUE_LENGTH and all("!" <= char <= "~" for char in value)
+
+
 def _refusal(code: str, update: CredentialsUpdate) -> str | None:
+    """Why the update cannot be saved, if it cannot. A blank API key becomes a removal."""
     if code in NO_API_KEY and update.api_key is not msgspec.UNSET:
         return f"{code} takes no API key: salmon uses its session cookie."
-    if isinstance(update.session, str) and not update.session.strip():
-        return "The session cookie cannot be empty."
+    if isinstance(update.api_key, str) and not update.api_key.strip():
+        update.api_key = None
+    if isinstance(update.session, str):
+        if not update.session.strip():
+            return "The session cookie cannot be empty."
+        if not _header_safe(update.session):
+            return f"A session cookie is printable ASCII with no spaces, at most {MAX_VALUE_LENGTH} characters."
+    if isinstance(update.api_key, str) and not _header_safe(update.api_key):
+        return f"An API key is printable ASCII with no spaces, at most {MAX_VALUE_LENGTH} characters."
     return None
 
 
@@ -99,12 +114,14 @@ async def save(request: web.Request) -> web.Response:
         return _error(422, refusal)
     session = update.session if isinstance(update.session, str) else ""
     api_key = update.api_key if isinstance(update.api_key, str) else None
-    # Masked before anything could repeat them: an error about the change, the next job's log.
-    settings.redactor.add(secrets_of({code: Credentials(session, api_key)}))
+    sent = secrets_of({code: Credentials(session, api_key)})
     try:
         await asyncio.to_thread(update_credentials, settings.config_path, code, update)
     except ConfigEditError as e:
-        return _error(422, settings.redactor.text(e.format_message()))
+        # Masked where the refusal could repeat them, and nowhere else: a value never saved masks no later log.
+        return _error(422, Redactor(sent).text(settings.redactor.text(e.format_message())))
+    # Saved: masked from now on, before the answer or the next job could repeat them.
+    settings.redactor.add(sent)
     return web.json_response(settings.redactor.value(await asyncio.to_thread(_answer, settings)))
 
 

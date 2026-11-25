@@ -4,7 +4,6 @@ The routes edit a copy of the config in tmp_path, never the one the run loaded. 
 page's connection check after a save is the existing connection_check job, tested in test_webui_connection_check.py.
 """
 
-import os
 import stat
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -16,8 +15,9 @@ from aiohttp.test_utils import TestClient, TestServer
 from helpers.webui_jobs import AUTH, SECRETS, TOKEN
 
 import salmon.config
-from salmon.config.edit import read_credentials
+from salmon.config.edit import ConfigEditError, read_credentials
 from salmon.webui import server
+from salmon.webui import settings as settings_route
 
 RED_TABLE = "\n[tracker.red]\nsession = 'test-session-red'\n"
 NEW_COOKIE = "a-new-cookie-0123456789"
@@ -123,6 +123,13 @@ def test_saved_values_are_masked_from_then_on(tmp_path: Path) -> None:
         ("RED", {"session": ""}, 422),
         ("RED", {"bogus": 1}, 400),
         ("RED", {"session": 5}, 400),
+        # What a header cannot carry, refused before it is saved and every job on the tracker fails.
+        ("RED", {"api_key": "a-key-with\na-line-break"}, 422),
+        ("RED", {"session": "a cookie-with-a-space"}, 422),
+        ("RED", {"session": "a-cookie-\x00-0123456789"}, 422),
+        ("RED", {"session": "a-cookie-\u00e9-0123456789"}, 422),
+        ("RED", {"session": "x" * 4097}, 422),
+        ("RED", {"api_key": "x" * 4097}, 422),
     ],
 )
 def test_post_refusals(tmp_path: Path, code: str, body: dict[str, Any], status: int) -> None:
@@ -161,7 +168,6 @@ def test_invalid_save_is_refused_with_its_reason(tmp_path: Path) -> None:
     assert config.read_bytes() == before
 
 
-@pytest.mark.skipif(hasattr(os, "geteuid") and os.geteuid() == 0, reason="root writes a read-only file anyway")
 def test_read_only_file_reports_unwritable(tmp_path: Path) -> None:
     config = _config(tmp_path)
     config.chmod(0o444)
@@ -203,5 +209,40 @@ def test_save_on_an_unparsable_file_is_refused_not_crashed(tmp_path: Path) -> No
         response = await client.post("/api/settings/trackers/RED", json={"session": NEW_COOKIE}, headers=AUTH)
         assert response.status == 422
         assert str(config) in (await response.json())["detail"]
+
+    _with_client(config, test)
+
+
+# --- From the PR review (#1180) -----------------------------------------------------------
+
+
+def test_blank_api_key_removes_it(tmp_path: Path) -> None:
+    config = _config(tmp_path, "api_key = 'an-old-key-0123456789'")
+
+    async def test(client: TestClient, _app: Any) -> None:
+        response = await client.post("/api/settings/trackers/RED", json={"api_key": "   "}, headers=AUTH)
+        assert response.status == 200, await response.text()
+
+    _with_client(config, test)
+
+    assert read_credentials(config)["RED"].api_key is None
+
+
+def test_refused_save_masks_its_value_in_the_error_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A value that was never saved is masked where the save repeats it, and nowhere after."""
+    config = _config(tmp_path)
+
+    def refuse(_path: Path, _code: str, update: Any) -> None:
+        raise ConfigEditError(f"refused {update.session}")
+
+    monkeypatch.setattr(settings_route, "update_credentials", refuse)
+
+    async def test(client: TestClient, app: Any) -> None:
+        response = await client.post("/api/settings/trackers/RED", json={"session": NEW_COOKIE}, headers=AUTH)
+        assert response.status == 422
+        detail = (await response.json())["detail"]
+        assert detail.startswith("refused ")
+        assert NEW_COOKIE not in detail
+        assert NEW_COOKIE in app[server.REDACTOR].text(f"cookie {NEW_COOKIE} sent")
 
     _with_client(config, test)

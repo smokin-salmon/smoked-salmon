@@ -73,8 +73,12 @@ rewrites the user's config file").
   even for root, who could write it anyway, as salmon does in the Docker image. `chmod a-w config.toml` is how a user
   turns saving off.
 - `GET /api/settings/trackers` never returns a stored value. For each credential it gives whether it is set and,
-  for a value of 16 characters or more, its last 4. Each saved value is added to the redaction filter before
-  anything could repeat it.
+  for a value of 16 characters or more, its last 4. Each saved value is added to the redaction filter once it is
+  written, before the answer or a job could repeat it. A refused save masks its values in its own message only, so
+  a value never saved masks nothing after.
+- A save takes only what a request header can carry: printable ASCII with no spaces, at most 4096 characters (a
+  browser's cookie limit). Anything else is refused before it is written, rather than failing every job on that
+  tracker. A blank API key removes the key.
 - A request a tracker sends to its login page says, under salmon web, that a new cookie can be pasted on the
   Settings page.
 - salmon web serves plain HTTP (0004 section 3). When the page is open over plain HTTP from another machine (not

@@ -103,7 +103,6 @@ def test_missing_tracker_table_is_refused(tmp_path: Path) -> None:
         update_credentials(path, "OPS", CredentialsUpdate(session="new-cookie"))
 
 
-@pytest.mark.skipif(hasattr(os, "geteuid") and os.geteuid() == 0, reason="root writes a read-only file anyway")
 def test_unwritable_file_raises_with_path(tmp_path: Path) -> None:
     # The folder stays writable: a rename there would replace a read-only file without a word.
     path = _config(tmp_path)
