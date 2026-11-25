@@ -12,7 +12,7 @@ from typing import Any
 import anyio
 import asyncclick as click
 import pytest
-from helpers.musicbrainz import serving_musicbrainz
+from helpers.musicbrainz import serving_musicbrainz, slug
 
 from salmon import cfg
 from salmon.search import deezer as deezer_search
@@ -259,3 +259,27 @@ def test_with_hints_that_say_nothing_the_searchstrs_are_the_queries() -> None:
 
 def test_another_store_ignores_hints() -> None:
     assert deezer_search.Searcher().queries(["a b"], SearchHints("A", "B", 1, "2000")) == ["a b"]
+
+
+@pytest.mark.parametrize(
+    ("hints", "first", "title"),
+    [
+        (SearchHints("Miles Davis", "Kind of Blue", 5, "1959"), "ca6b19c7", "Kind of Blue"),
+        (SearchHints("Miles Davis", "Kind of Blue", 5, None), "e32a3f0b", "Kind of Blue"),
+        (SearchHints("AC/DC", "Back in Black", 10, "1980"), "f7c680af", "Back in Black"),
+        (
+            SearchHints("Various Artists", "Pulp Fiction (Music From the Motion Picture)", 16, "1994"),
+            "161cc82c",
+            "Pulp Fiction: Music From the Motion Picture",
+        ),
+    ],
+)
+def test_a_fielded_search_parses_the_recorded_answer(
+    hints: SearchHints, first: str, title: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    query = fielded_query(hints)
+    results = _search(slug(query), query, monkeypatch)
+    assert len(results) == 10
+    assert next(iter(results)).startswith(first)
+    idents = [ident for ident, _line in results.values()]
+    assert all(ident["album"] == title and ident["track_count"] == hints.track_count for ident in idents[:3])
