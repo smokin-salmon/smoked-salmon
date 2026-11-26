@@ -12,7 +12,9 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from salmon.uploader.dupe_checker import matching_torrents
+from salmon.common.strings import comparable
+from salmon.uploader import dupe_checker
+from salmon.uploader.dupe_checker import describe_torrent, held_in_group, matching_torrents, remaster_text
 from salmon.uploader.missing_formats import edition_holdings
 
 RELEASE = {"source": "WEB", "format": "FLAC", "encoding": "24bit Lossless", "year": 2020, "edition_title": ""}
@@ -155,3 +157,136 @@ def test_a_format_is_held_only_when_the_edition_holds_it(seed: int) -> None:
         if holding.torrent is not None:
             assert holding.torrent in in_edition
     assert holdings.nothing_missing == all(h.torrent is not None for h in (holdings.source, *holdings.conversions))
+
+
+# One decider (#1192): held_formats, for --skip-flac-upload and cross-upload, asks edition_holdings. The oracles
+# below are both deciders as they stood before, copied from dupe_checker and missing_formats at 020d250f.
+def _old_site_edition(torrent: dict, group: dict) -> tuple[str, ...]:
+    fields = remaster_text(torrent)
+    if fields is None:
+        info = group.get("group") or {}
+        fields = (info.get("year"), "", info.get("recordLabel"), info.get("catalogueNumber"))
+    return tuple(comparable(str(field or "")) for field in fields)
+
+
+def _old_held_formats(group, release, source_flac, formats, *, same_edition=False) -> set[str]:
+    source_id = str(source_flac.get("id"))
+    placed = None
+    if same_edition:
+        placed = next((t for t in group.get("torrents") or [] if str(t.get("id")) == source_id), None)
+    filed_under = _old_site_edition(placed, group) if placed is not None else None
+    held = set()
+    for name, (fmt, encoding) in formats.items():
+        in_edition = matching_torrents(group, {**release, "format": fmt, "encoding": encoding})
+        if any(
+            str(t.get("id")) != source_id and (filed_under is None or _old_site_edition(t, group) == filed_under)
+            for t in in_edition
+        ):
+            held.add(name)
+    return held
+
+
+def _old_edition_holdings(rset, release, conversions, source=None) -> list[tuple[str, tuple[dict, ...], str]]:
+    group_info = rset.get("group") or {}
+    filed_under = _old_site_edition(source, rset) if source is not None else None
+
+    def decide(name: str, fmt: str, encoding: str) -> tuple[str, tuple[dict, ...], str]:
+        held = tuple(
+            torrent
+            for torrent in held_in_group(rset, {**release, "format": fmt, "encoding": encoding})
+            if filed_under is None or _old_site_edition(torrent, rset) == filed_under
+        )
+        if held:
+            return name, held, f"this edition has {describe_torrent(held[0], group_info)}"
+        return name, (), f"no torrent of this edition is {release.get('source')} / {fmt} / {encoding}"
+
+    first = (
+        ("source", (source,), f"this edition has {describe_torrent(source, group_info)}")
+        if source is not None
+        else decide("source", release.get("format") or "", release.get("encoding") or "")
+    )
+    return [first, *(decide(name, fmt, encoding) for name, (fmt, encoding) in conversions.items())]
+
+
+def _filed_group(rng: random.Random) -> dict:
+    """A torrentgroup response whose torrents spread over editions told apart by any of their fields."""
+    torrents = []
+    for tid in rng.sample(range(1, 10_000), rng.randrange(9)):
+        fmt, encoding = rng.choice(_FORMATS)
+        torrent = {"id": tid, "media": rng.choice(["WEB", "CD"]), "format": fmt, "encoding": encoding}
+        if rng.random() < 0.7:
+            torrent |= {
+                "remastered": True,
+                "remasterYear": rng.choice([2015, 2020, 0]),
+                "remasterTitle": rng.choice(["", "Deluxe"]),
+                "remasterRecordLabel": rng.choice(["Label", ""]),
+                "remasterCatalogueNumber": rng.choice(["CAT1", "cat-1", "CAT2", ""]),
+            }
+        torrents.append(torrent)
+    return {"group": {"id": 7, "year": 2020, "recordLabel": "Label", "catalogueNumber": "CAT1"}, "torrents": torrents}
+
+
+def _source_flac(rng: random.Random, group: dict) -> dict:
+    """The source as each caller passes it: a torrent of the group, its id alone or as text, or one not listed."""
+    if group["torrents"] and rng.random() < 0.75:
+        torrent = rng.choice(group["torrents"])
+        return rng.choice([torrent, {"id": torrent["id"]}, {"id": str(torrent["id"])}])
+    return {"id": 99_999}
+
+
+@pytest.mark.parametrize("seed", range(500))
+def test_held_formats_still_decide_as_before_through_the_one_decider(seed: int) -> None:
+    rng = random.Random(seed)
+    group = _filed_group(rng)
+    release = {**RELEASE, "year": rng.choice([2020, "2015", ""]), "edition_title": rng.choice(["", "deluxe"])}
+    # The source's own format may be among them: the source never holds it.
+    formats = {f"{fmt} {encoding}": (fmt, encoding) for fmt, encoding in rng.sample(_FORMATS, rng.randrange(5))}
+    source = _source_flac(rng, group)
+    same_edition = rng.random() < 0.5
+
+    expected = _old_held_formats(group, release, source, formats, same_edition=same_edition)
+
+    assert dupe_checker.held_formats(group, release, source, formats, same_edition=same_edition) == expected
+    holdings = edition_holdings(group, release, formats, source=source, same_edition=same_edition)
+    assert holdings.held_conversions == expected
+
+
+@pytest.mark.parametrize("seed", range(500))
+def test_upload_only_missing_still_decides_as_before(seed: int) -> None:
+    # Its callers' inputs: no source, or one of the group's FLACs of our edition, and conversions of other formats.
+    rng = random.Random(seed)
+    group = _filed_group(rng)
+    release = {**RELEASE, "year": rng.choice([2020, "2015", ""]), "edition_title": rng.choice(["", "deluxe"])}
+    source = rng.choice([None, *matching_torrents(group, release)])
+
+    holdings = edition_holdings(group, release, CONVERSIONS, source=source)
+
+    found = [(h.name, h.torrents, h.reason) for h in (holdings.source, *holdings.conversions)]
+    assert found == _old_edition_holdings(group, release, CONVERSIONS, source)
+
+
+def test_the_source_never_holds_a_conversion_of_its_own_format() -> None:
+    flac = _torrent(1, "FLAC", "Lossless")
+    holdings = edition_holdings(_group(flac), RELEASE, {"16bit": ("FLAC", "Lossless")}, source=flac)
+    assert holdings.held_conversions == set()
+
+
+def test_a_source_the_group_does_not_list_leaves_the_edition_to_year_and_title() -> None:
+    # Our FLAC, not in the listing yet: its catalogue number does not narrow what counts.
+    ours = {**_torrent(9, "FLAC", "24bit Lossless"), "remasterCatalogueNumber": "CAT2"}
+    holdings = edition_holdings(_group(_torrent(3, "MP3", "V0 (VBR)")), RELEASE, CONVERSIONS, source=ours)
+    assert holdings.held_conversions == {"MP3 V0"}
+    assert "2020 / Label / CAT2 / WEB / FLAC / 24bit Lossless" in holdings.source.reason
+    by_id = edition_holdings(_group(), RELEASE, CONVERSIONS, source={"id": 9})
+    assert by_id.held_conversions == set()
+    assert by_id.source.reason == "torrent 9 is the source"
+
+
+def test_a_source_with_no_id_is_no_torrent_without_one() -> None:
+    # A torrent named by another field (a search row's torrentId) is not the source for lacking an id.
+    flac, mp3 = (
+        {k: v for k, v in _torrent(tid, fmt, enc).items() if k != "id"}
+        for tid, fmt, enc in ((1, "FLAC", "24bit Lossless"), (2, "MP3", "V0 (VBR)"))
+    )
+    holdings = edition_holdings(_group(flac, mp3), RELEASE, CONVERSIONS, source=flac)
+    assert holdings.held_conversions == {"MP3 V0"}

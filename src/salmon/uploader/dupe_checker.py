@@ -955,7 +955,7 @@ def _edition_catno(torrent: dict, group: dict) -> str:
     return ((group.get("group") or {}).get("catalogueNumber") or "").strip()
 
 
-def _site_edition(torrent: dict, group: dict) -> tuple[str, str, str, str]:
+def filed_edition(torrent: dict, group: dict) -> tuple[str, str, str, str]:
     """A torrent's edition as the site files it: year, title, label and catalogue number, each comparable().
 
     An original release has no edition fields of its own and takes the group's year, label and catalogue number.
@@ -1073,6 +1073,8 @@ def held_formats(
 ) -> set[str]:
     """Find the formats that the release's edition in the group already holds, the source FLAC aside.
 
+    missing_formats.edition_holdings decides it, as it does for uploading only what is missing (#1192).
+
     Args:
         group: The group, as the tracker's torrentgroup API returns it.
         release: The reviewed release metadata.
@@ -1085,20 +1087,9 @@ def held_formats(
     Returns:
         The names of the candidates the edition already has.
     """
-    source_id = str(source_flac.get("id"))
-    placed = None
-    if same_edition:
-        placed = next((t for t in group.get("torrents") or [] if str(t.get("id")) == source_id), None)
-    filed_under = _site_edition(placed, group) if placed is not None else None
-    held = set()
-    for name, (fmt, encoding) in formats.items():
-        in_edition = matching_torrents(group, {**release, "format": fmt, "encoding": encoding})
-        if any(
-            str(t.get("id")) != source_id and (filed_under is None or _site_edition(t, group) == filed_under)
-            for t in in_edition
-        ):
-            held.add(name)
-    return held
+    from salmon.uploader.missing_formats import edition_holdings  # missing_formats imports this module
+
+    return edition_holdings(group, release, formats, source=source_flac, same_edition=same_edition).held_conversions
 
 
 def held_in_group(rset: dict, release: dict[str, Any] | None) -> list[dict]:
