@@ -1,7 +1,7 @@
 album = "Stan Getz and João Gilberto, Getz/Gilberto"
 why = "A famous two-leader album: Qobuz lists both as main-artist and salmon's parser makes Gilberto a guest; Deezer's roles give 'Various'."
 edition = "Discogs 170884 is master 85178's main release (1964 LP), the 8 tracks of the 18 here."
-known_wrong = ["Deezer parse: Jobim both guest and main, ALBUMARTIST 'Various'"]
+known_wrong = ["Deezer parse: Jobim both guest and main, ALBUMARTIST 'Various'", "Deezer parse: 'João Gilberto Quintet' a main of the release, from Deezer's contributors on 1.7 and 1.15", "merge: 'João Gilberto Quintet' a main beside Stan Getz on 1.7 and 1.15, from the files and Deezer; Jobim and Astrud Gilberto main as well as guest", "merge-picard: 'João Gilberto Quintet' a main beside Stan Getz on 1.7 and 1.15, as in the merge (unlike the merge, Jobim and Astrud Gilberto are not mains)"]
 files_from = "deezer"
 # The release Picard tags these files from, found by their barcode (602567832690): the 18-track
 # expanded edition. stores.musicbrainz stays the 8-track original MusicBrainz answers with.
@@ -16,8 +16,11 @@ tags = "constructed from the store data named in the comment above [[track]], ne
 
 [right]
 release_main = ["Stan Getz", "João Gilberto"]
-how_we_know = "Qobuz's album artists (both main-artist), MusicBrainz, Discogs and Deezer's album contributors agree"
-open = "Antônio Carlos Jobim (piano, composer): guest, or nothing? Astrud Gilberto on two tracks: guest (feat.)"
+not_main = ["João Gilberto Quintet", "Antônio Carlos Jobim", "Astrud Gilberto"]
+how_we_know = "The sleeve and labels credit 'Stan Getz, João Gilberto featuring Antonio Carlos Jobim' (scans on Discogs release 170884, the 1964 mono LP), and Qobuz's album artists (both main-artist), MusicBrainz, Discogs and Deezer's album contributors agree. Jobim (piano) is featured, a guest on every track, never a main. Astrud Gilberto is not named on the sleeve or labels; Wikipedia's personnel list credits her vocals on The Girl from Ipanema and Corcovado (and their single versions), so she is a guest on those tracks, never a main. The João Gilberto Quintet, which Deezer and Qobuz both state as a main beside Stan Getz on 1.7 and 1.15 (O Grande Amor, stereo and mono; salmon's Qobuz parse makes it a guest), is not one of the release's mains: the sleeve and labels name no quintet, O Grande Amor included, nor does Wikipedia's personnel list, and MusicBrainz credits those tracks as the album's other tracks"
+
+[right.name_forms]
+"Antônio Carlos Jobim" = ["Antonio Carlos Jobim", "António Carlos Jobim"]
 
 [today.deezer]
 release = ["Stan Getz (main)", "João Gilberto (main)", "Antonio Carlos Jobim (guest)", "Antonio Carlos Jobim (main)", "Astrud Gilberto (guest)", "João Gilberto Quintet (main)"]
@@ -39,6 +42,11 @@ tracks = 18
 release = ["Stan Getz (main)", "João Gilberto (main)", "Antonio Carlos Jobim (main)", "Astrud Gilberto (main)", "João Gilberto Quintet (main)", "Antonio Carlos Jobim (guest)", "Astrud Gilberto (guest)"]
 tracks = 18
 credits = ["1.1: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (guest), Astrud Gilberto (guest)", "1.2: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.3: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.4: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (guest)", "1.5: Stan Getz (main), João Gilberto (main), Astrud Gilberto (main), Antonio Carlos Jobim (main)", "1.6: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.7: Stan Getz (main), João Gilberto Quintet (main), Antonio Carlos Jobim (main)", "1.8: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.9: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main), Astrud Gilberto (main)", "1.10: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.11: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.12: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.13: Stan Getz (main), João Gilberto (main), Astrud Gilberto (main), Antonio Carlos Jobim (main)", "1.14: Stan Getz (main), João Gilberto (main), Antonio Carlos Jobim (main)", "1.15: Stan Getz (main), João Gilberto Quintet (main), Antonio Carlos Jobim (main)", "1.16: Antonio Carlos Jobim (main), Stan Getz (main), João Gilberto (main)", "1.17: Stan Getz (main), João Gilberto (main), Astrud Gilberto (main), Antonio Carlos Jobim (main)", "1.18: Stan Getz (main), João Gilberto (main), Astrud Gilberto (main), Antonio Carlos Jobim (main)"]
+
+[today.merge-picard]
+release = ["Antônio Carlos Jobim (guest)", "Stan Getz (main)", "João Gilberto (main)", "Astrud Gilberto (guest)", "João Gilberto Quintet (main)"]
+tracks = 18
+credits = ["1.1: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main), Astrud Gilberto (guest)", "1.2: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.3: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.4: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.5: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main), Astrud Gilberto (guest)", "1.6: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.7: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto Quintet (main)", "1.8: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.9: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main), Astrud Gilberto (guest)", "1.10: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.11: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.12: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.13: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main), Astrud Gilberto (guest)", "1.14: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.15: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto Quintet (main)", "1.16: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main)", "1.17: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main), Astrud Gilberto (guest)", "1.18: Antônio Carlos Jobim (guest), Stan Getz (main), João Gilberto (main), Astrud Gilberto (guest)"]
 
 
 # The files' tags.
