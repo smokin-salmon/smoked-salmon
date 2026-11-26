@@ -1,10 +1,12 @@
 """Stubbing what an upload run calls, in every module of the uploader that calls it."""
 
 import importlib
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 import salmon.uploader
-from salmon.uploader import conversion_upload, cover_upload, metadata_review, tracker_run, upload_checks
+from salmon.uploader import conversion_upload, cover_upload, metadata_review, spectrals, tracker_run, upload_checks
 
 # Not `from salmon.uploader import upload`: that is the function salmon.uploader defines, which hides the module.
 upload = importlib.import_module("salmon.uploader.upload")
@@ -47,11 +49,26 @@ def stub_uploader(monkeypatch, fakes: dict[str, Any]) -> None:
 
     The question for notes on the torrent description is answered "no" unless a fake says otherwise: only
     test_uploader_torrent_notes asks it, and the other runs' answers do not make room for it.
+
+    A fake check_spectrals also makes the run start no spectrals in the background, unless a fake
+    spectrals_in_background is given: the real check_spectrals waits for them before it touches the spectrals folder.
+    A fake does not, and sox, where it is installed, went on writing into the folder the fake replaced (#1199).
     """
 
     async def no_notes() -> None:
         return None
 
+    if "check_spectrals" in fakes:
+        real = fakes["check_spectrals"] is spectrals.check_spectrals
+        # The real one again with the real check_spectrals: a harness may stub both, then a test the real one.
+        generation = spectrals.spectrals_in_background if real else _no_spectrals_in_background
+        fakes = {"spectrals_in_background": generation, **fakes}
     for name, fake in {"ask_torrent_notes": no_notes, **fakes}.items():
         for module in CALLED_FROM.get(name, (salmon.uploader,)):
             monkeypatch.setattr(module, name, fake)
+
+
+@asynccontextmanager
+async def _no_spectrals_in_background(*_args: Any, **_kwargs: Any) -> AsyncIterator[None]:
+    """Stands in for spectrals_in_background: none are made, as for a format that has no spectrals."""
+    yield None

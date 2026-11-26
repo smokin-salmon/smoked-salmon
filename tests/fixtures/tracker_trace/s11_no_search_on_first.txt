@@ -19,6 +19,8 @@ waited (s): []
 == files ==
 downloads/Artist - Album (2020) [WEB FLAC]/01. one.flac
 downloads/Artist - Album (2020) [WEB FLAC]/02. two.flac
+downloads/Artist - Album (2020) [WEB FLAC]/Spectrals/01 Full.png
+downloads/Artist - Album (2020) [WEB FLAC]/Spectrals/01 Zoom.png
 downloads/Artist - Album (2020) [WEB FLAC]/cover.jpg
 seeding/Album/01 - one.flac
 seeding/Album/02 - two.flac
