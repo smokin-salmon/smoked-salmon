@@ -52,6 +52,11 @@ def test_the_most_common_artist_wins_grouped_case_and_punctuation_blind() -> Non
     assert search_hints(_tags(*files)).artist == "AC/DC"
 
 
+def test_an_underscore_is_punctuation_to_the_artist_grouping() -> None:
+    files = [{"albumartist": "Foo_Bar"}] * 2 + [{"albumartist": "Foo Bar"}] * 2 + [{"albumartist": "Other"}] * 3
+    assert search_hints(_tags(*files)).artist in {"Foo_Bar", "Foo Bar"}
+
+
 def test_the_most_common_album_wins_and_none_when_absent() -> None:
     assert search_hints(_tags({"album": "A"}, {"album": "B"}, {"album": "B"})).album == "B"
     assert search_hints(_tags({}, {})).album is None

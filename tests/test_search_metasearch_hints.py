@@ -75,8 +75,10 @@ def _hints_sent(monkeypatch, **kwargs: Any) -> SearchHints:
 
 
 def test_with_overwrite_get_metadata_sends_only_the_album_and_track_count(monkeypatch) -> None:
-    assert _hints_sent(monkeypatch, overwrite=True) == SearchHints(None, "The Album", 2, None)
+    sent = _hints_sent(monkeypatch, overwrite=True)
+    assert sent == SearchHints(None, "The Album", 2, None)
 
 
 def test_get_metadata_passes_the_files_hints(monkeypatch) -> None:
-    assert _hints_sent(monkeypatch) == search_hints(TAGS) == SearchHints("The Artist", "The Album", 2, "2020")
+    sent = _hints_sent(monkeypatch)
+    assert sent == search_hints(TAGS) == SearchHints("The Artist", "The Album", 2, "2020")

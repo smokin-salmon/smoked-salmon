@@ -12,7 +12,7 @@ from typing import Any
 
 import msgspec
 
-_NON_WORD = re.compile(r"\W", re.UNICODE)
+_NON_WORD = re.compile(r"[\W_]", re.UNICODE)
 _SPACE = re.compile(r"\s", re.UNICODE)
 _YEAR = re.compile(r"\d{4}")
 
