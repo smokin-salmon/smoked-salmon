@@ -232,8 +232,9 @@ def _extract_remixers_from_title(title):
     match = re.search(r"\(([^()]*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*Remix\)", title, re.IGNORECASE)
     if match:
         remixers = match.group(1).strip()
-        # Split on common delimiters and strip each name
-        remixer_list = [r.strip() for r in re.split(r"\s*(?:&|,|/|;|\+)\s*", remixers)]
+        # Split on commas, semicolons and slashes, which separate ("LP/single"), and on "&" and "+" only with a space
+        # on each side: unspaced, they join a name ("Losers Middlesex A&E").
+        remixer_list = [r.strip() for r in re.split(r"\s*[,;/]\s*|\s+[&+]\s+", remixers)]
         # Filter out common mix types and return remaining as remixers
         return [(r, "remixer") for r in remixer_list if r.lower() not in common_mix_types]
     return []
