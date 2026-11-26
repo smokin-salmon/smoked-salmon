@@ -1,0 +1,324 @@
+{
+ "count": 611247,
+ "offset": 0,
+ "releases": [
+  {
+   "id": "e32a3f0b-1c19-3170-bb1c-650893774744",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CK 40579",
+     "label": {
+      "name": "Columbia"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "375526b3-aa4a-4cf5-9078-e3688a229dd4",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CJ 40579",
+     "label": {
+      "name": "Columbia"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "9c56aa14-559f-4742-ae3c-34781cd83bcf",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CBS 62066",
+     "label": {
+      "name": "CBS"
+     }
+    },
+    {
+     "catalog-number": "32109",
+     "label": {
+      "name": "CBS"
+     }
+    },
+    {
+     "catalog-number": "CBS 32109",
+     "label": {
+      "name": "CBS"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "5272927b-2b43-355d-b914-550ea06eb7e9",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CS 8163",
+     "label": {
+      "name": "Classic Records"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "607f2c9a-3ece-3a44-bbcf-030e3f62f936",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CBS 460603 2",
+     "label": {
+      "name": "CBS"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "5fec116b-a6f7-4738-b452-0846cfb6dd0a",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CK 64403",
+     "label": {
+      "name": "Legacy"
+     }
+    },
+    {
+     "catalog-number": "CK 64403",
+     "label": {
+      "name": "Columbia"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "fa731de1-331d-4713-adcc-2c304817cb88",
+   "title": "Kind of Blue",
+   "track-count": 15,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "SICP-10083",
+     "label": {
+      "name": "Sony Records International"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "Hybrid SACD (CD layer)",
+     "track-count": 5
+    },
+    {
+     "format": "Hybrid SACD (SACD layer, 2 channels)",
+     "track-count": 5
+    },
+    {
+     "format": "Hybrid SACD (SACD layer, multichannel)",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "d7b496d8-f044-4e34-830a-1dd93c31cabf",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "88875111921",
+     "label": {
+      "name": "Sony Music"
+     }
+    },
+    {
+     "catalog-number": "88875111921",
+     "label": {
+      "name": "Legacy"
+     }
+    },
+    {
+     "catalog-number": "88875111921",
+     "label": {
+      "name": "Columbia"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "dc3d4846-6bad-4243-8939-82e53bea0403",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "SICP 1206",
+     "label": {
+      "name": "Sony Records International"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "CD",
+     "track-count": 5
+    }
+   ]
+  },
+  {
+   "id": "4c8af71f-5746-4981-92d7-0d6c64db1155",
+   "title": "Kind of Blue",
+   "track-count": 5,
+   "artist-credit": [
+    {
+     "name": "Miles Davis",
+     "artist": {
+      "id": "561d854a-6a28-4aa7-8c99-323e6ce46c2a",
+      "name": "Miles Davis"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": null,
+     "label": {
+      "name": "Columbia"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "Digital Media",
+     "track-count": 5
+    }
+   ]
+  }
+ ]
+}

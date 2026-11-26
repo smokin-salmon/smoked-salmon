@@ -1,0 +1,298 @@
+{
+ "count": 669433,
+ "offset": 0,
+ "releases": [
+  {
+   "id": "f7c680af-5b09-3fea-be84-5e00a7da56a0",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "SD 16018",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "bf20db7b-9c70-4c76-b2c4-a2c9f778603f",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "S 90.273",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "92646054-d5b7-46db-a6b3-5c03bd8bc867",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "XSD 16018",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "9ec3fe51-4bf1-49ac-bf28-78076a74ed84",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "ATL 50735",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "e47ac3b4-8d22-3aac-bde0-64fe87a01390",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "SD16018",
+     "label": {
+      "name": "Atlantic"
+     }
+    },
+    {
+     "catalog-number": "K 50735",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "4f76244b-b340-3362-9b6e-8cbaa29c51f3",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "APLP-046",
+     "label": {
+      "name": "Albert Productions"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "4bbe3188-d626-4aff-82c0-87d455262f49",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "CS-16018",
+     "label": {
+      "name": "ATCO Records"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "Cassette",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "f7c38364-1acc-31ee-879a-ce084449eb10",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "ATL 50 735",
+     "label": {
+      "name": "Atlantic"
+     }
+    },
+    {
+     "catalog-number": "SD 16018",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "64c55d6f-2618-45db-8699-7e9f307e1e4d",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "P-10906A",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "Vinyl",
+     "track-count": 10
+    }
+   ]
+  },
+  {
+   "id": "a5985d9e-d38f-4625-9639-d6790d98a0d4",
+   "title": "Back in Black",
+   "track-count": 10,
+   "artist-credit": [
+    {
+     "name": "AC/DC",
+     "artist": {
+      "id": "66c662b6-6e2f-4930-8610-912e24c63ed1",
+      "name": "AC/DC"
+     }
+    }
+   ],
+   "label-info": [
+    {
+     "catalog-number": "SD 16018",
+     "label": {
+      "name": "Atlantic"
+     }
+    }
+   ],
+   "media": [
+    {
+     "format": "12\" Vinyl",
+     "track-count": 10
+    }
+   ]
+  }
+ ]
+}

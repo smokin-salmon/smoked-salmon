@@ -180,7 +180,7 @@ async def run_tag(options: TagOptions) -> str:
             tags, audio_info, options.source, options.encoding, overwrite=options.overwrite
         )
 
-        metadata, source_url = await get_metadata(path, tags, rls_data)
+        metadata, source_url = await get_metadata(path, tags, rls_data, overwrite=options.overwrite)
         durations = [info.get("duration") or 0 for info in audio_info.values()]
         metadata = await review_metadata_with_ai(
             metadata,

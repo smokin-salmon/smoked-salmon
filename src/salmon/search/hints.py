@@ -1,0 +1,80 @@
+"""What the files say about their release, for a store that can search by field (MusicBrainz, #1178).
+
+The rules are based on Picard 3's cluster search, which the fielded search was measured with: the album artist and
+album are the files' most common values, and the date counts only when most files carry it and all of them agree.
+Unlike Picard, a file without an artist tag gives no artist, rather than a vote for Various Artists.
+"""
+
+import re
+from collections import Counter
+from collections.abc import Mapping
+from typing import Any
+
+import msgspec
+
+_NON_WORD = re.compile(r"[\W_]", re.UNICODE)
+_SPACE = re.compile(r"\s", re.UNICODE)
+_YEAR = re.compile(r"\d{4}")
+
+
+class SearchHints(msgspec.Struct, frozen=True):
+    """The files' album artist, album, track count and year; None where the tags don't settle it."""
+
+    artist: str | None
+    album: str | None
+    track_count: int | None
+    year: str | None
+
+
+def _text(value: Any) -> str:
+    """A tag's value as one string: a list's values joined with "; ", as TagFile joins them; "" when absent or
+    blank."""
+    if isinstance(value, list | tuple):
+        return "; ".join(text for v in value if (text := str(v).strip()))
+    return str(value).strip() if value else ""
+
+
+def _token(name: str) -> str:
+    """The name lower-cased without its non-word characters, so "AC/DC" and "ac dc" count as one artist."""
+    return _NON_WORD.sub("", name.lower()) or _SPACE.sub("", name.lower())
+
+
+def _tag(file: Any, name: str) -> str:
+    """The file's tag as one string; "" when the file has no such tag, or no tags at all."""
+    return _text(getattr(file, name, None))
+
+
+def _artist(files: list[Any]) -> str | None:
+    spellings: dict[str, Counter[str]] = {}
+    for file in files:
+        if name := _tag(file, "albumartist") or _tag(file, "artist"):
+            spellings.setdefault(_token(name), Counter())[name] += 1
+    if not spellings:
+        return None
+    group = max(spellings.values(), key=lambda counts: counts.total())
+    return group.most_common(1)[0][0]
+
+
+def _album(files: list[Any]) -> str | None:
+    albums = Counter(album for file in files if (album := _tag(file, "album")))
+    return albums.most_common(1)[0][0] if albums else None
+
+
+def _year(files: list[Any]) -> str | None:
+    dates = [date for file in files if (date := _tag(file, "date"))]
+    if len(dates) <= len(files) / 2 or len(set(dates)) != 1:
+        return None
+    match = _YEAR.match(dates[0])
+    return match.group() if match and match.group() != "0000" else None
+
+
+def search_hints(tags: Mapping[str, Any], *, overwrite: bool = False) -> SearchHints:
+    """The hints in the files' tags ({filename: TagFile}, as get_metadata has them).
+
+    With overwrite (--overwrite), the release data ignores the tags' artists and year, so the hints do too: only the
+    album and the track count are kept.
+    """
+    files = list(tags.values())
+    if overwrite:
+        return SearchHints(None, _album(files), len(files) or None, None)
+    return SearchHints(_artist(files), _album(files), len(files) or None, _year(files))

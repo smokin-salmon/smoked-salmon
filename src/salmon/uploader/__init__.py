@@ -868,6 +868,7 @@ async def _upload_staged(  # noqa: C901
                 source_url,
                 spectral_ids,
                 skip_search=skip_search,
+                overwrite_meta=overwrite_meta,
                 recompress=recompress,
                 auto_rename=auto_rename,
                 skip_integrity_check=skip_integrity_check,
@@ -1316,6 +1317,7 @@ async def _review_until_confirmed(
     spectral_ids: dict[int, str] | None,
     *,
     skip_search: bool,
+    overwrite_meta: bool,
     recompress: bool,
     auto_rename: bool,
     skip_integrity_check: bool,
@@ -1334,7 +1336,13 @@ async def _review_until_confirmed(
     run_source_url = source_url
     metadata_search = MetadataSearch()
     metadata, picked_source_url = await get_metadata(
-        path, tags, rls_data, skip_search=skip_search, skip_search_url=source_url, search=metadata_search
+        path,
+        tags,
+        rls_data,
+        skip_search=skip_search,
+        skip_search_url=source_url,
+        search=metadata_search,
+        overwrite=overwrite_meta,
     )
     while True:
         # Each pick's starred URL replaces the run's --source-url; a pick with none keeps the run's.

@@ -100,7 +100,7 @@ def fake_tagger(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """
     tagged: list[str] = []
 
-    async def get_metadata(_path: str, _tags: dict, _rls_data: dict) -> tuple[dict, None]:
+    async def get_metadata(_path: str, _tags: dict, _rls_data: dict, **_kwargs: Any) -> tuple[dict, None]:
         reply = await interaction.prompt(click.style("\nWhich metadata results would you like to use?", fg="magenta"))
         if reply.lower().startswith("a"):
             raise click.Abort
@@ -377,7 +377,7 @@ def test_the_job_passes_the_options_of_the_form_to_the_tagger(
         seen.append((skip_initial_review, apply_suggestions))
         return metadata
 
-    async def get_metadata(*_args: Any) -> tuple[dict, None]:
+    async def get_metadata(*_args: Any, **_kwargs: Any) -> tuple[dict, None]:
         return dict(METADATA), None
 
     monkeypatch.setattr(salmon.tagger, "construct_rls_data", rls_data)
@@ -545,7 +545,7 @@ def test_a_failed_tag_says_why_and_its_traceback_goes_to_the_servers_stderr(
 ) -> None:
     album = _album(roots.downloads / "Album")
 
-    async def failing(*_args: Any) -> None:
+    async def failing(*_args: Any, **_kwargs: Any) -> None:
         raise salmon.tagger.ScrapeError("the store page changed")
 
     monkeypatch.setattr(salmon.tagger, "get_metadata", failing)
