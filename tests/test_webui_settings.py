@@ -16,11 +16,19 @@ from helpers.webui_jobs import AUTH, SECRETS, TOKEN
 
 import salmon.config
 from salmon.config.edit import ConfigEditError, read_credentials
+from salmon.trackers import base
 from salmon.webui import server
 from salmon.webui import settings as settings_route
 
 RED_TABLE = "\n[tracker.red]\nsession = 'test-session-red'\n"
 NEW_COOKIE = "a-new-cookie-0123456789"
+
+
+@pytest.fixture(autouse=True)
+def _no_learned_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The redactor masks every secret a tracker client learned in this process (a fake server's short authkey
+    "a" among them, which masks the leading "a" of NEW_COOKIE): start from none, and keep these tests' out of others."""
+    monkeypatch.setattr(base, "_learned_secrets", set())
 
 
 def _config(tmp_path: Path, *red_lines: str, session: str = "test-session-red", extra: str = "") -> Path:
