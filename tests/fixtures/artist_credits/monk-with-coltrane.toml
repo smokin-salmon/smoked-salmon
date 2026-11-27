@@ -1,7 +1,7 @@
 album = "Thelonious Monk with John Coltrane"
 why = "'X with Y': a leader plus a famous sideman named on the cover. Four stores, three answers: Bandcamp Monk alone, Deezer Monk with Coltrane featured, MusicBrainz and Discogs both as main."
 edition = "Bandcamp: Craft 2023 remaster, 6 tracks (page UPC 888072479050; MusicBrainz edd0341d, no barcode). Deezer has no album for 888072479050, so 515710: OJC Remaster (888072319899, 7 tracks, another edition). Discogs 2062892 is master 75869's main release (1961 Jazzland JLP-46)"
-known_wrong = ["Bandcamp parse: UPC None (page has 888072479050); Coltrane nowhere"]
+known_wrong = ["Bandcamp parse: UPC None (page has 888072479050); Coltrane nowhere", "merge-picard: John Coltrane a guest on every track beside the main 'Thelonious Monk with John Coltrane', MusicBrainz's joint credit kept whole, so he is credited twice, once inside the main"]
 bandcamp_url = "https://theloniousmonk.bandcamp.com/album/thelonious-monk-with-john-coltrane-remastered-2023"
 files_from = "deezer"
 # The release Picard tags these files from, found by their barcode (888072319899): the 7-track OJC
@@ -43,6 +43,11 @@ tracks = 6
 release = ["Thelonious Monk (main)", "John Coltrane (main)"]
 tracks = 7
 credits = ["1.1: Thelonious Monk (main), John Coltrane (main)", "1.2: Thelonious Monk (main), John Coltrane (main)", "1.3: Thelonious Monk (main), John Coltrane (main)", "1.4: Thelonious Monk (main), John Coltrane (main)", "1.5: Thelonious Monk (main), John Coltrane (main)", "1.6: Thelonious Monk (main), John Coltrane (main)", "1.7: Thelonious Monk (main), John Coltrane (main)"]
+
+[today.merge-picard]
+release = ["Thelonious Monk with John Coltrane (main)", "John Coltrane (guest)"]
+tracks = 7
+credits = ["1.1: Thelonious Monk with John Coltrane (main), John Coltrane (guest)", "1.2: Thelonious Monk with John Coltrane (main), John Coltrane (guest)", "1.3: Thelonious Monk with John Coltrane (main), John Coltrane (guest)", "1.4: Thelonious Monk with John Coltrane (main), John Coltrane (guest)", "1.5: Thelonious Monk with John Coltrane (main), John Coltrane (guest)", "1.6: Thelonious Monk with John Coltrane (main), John Coltrane (guest)", "1.7: Thelonious Monk with John Coltrane (main), John Coltrane (guest)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own

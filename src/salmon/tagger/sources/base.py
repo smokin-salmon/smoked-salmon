@@ -1,11 +1,13 @@
 import re
 from abc import ABC, abstractmethod
+from collections import Counter
 from collections.abc import Callable
 from itertools import chain
 from typing import Any
+from urllib.parse import urlsplit
 
 from salmon import cfg
-from salmon.common import RE_USELESS_VERSION, fetch_genre, less_uppers, normalize_accents, split_genre
+from salmon.common import RE_USELESS_VERSION, fetch_genre, normalize_accents, split_genre
 from salmon.common.strings import (
     join_artists,
     names_no_artist,
@@ -15,6 +17,29 @@ from salmon.common.strings import (
     unbracketed,
 )
 from salmon.errors import GenreNotInWhitelist, ScrapeError
+from salmon.sources.base import Answer
+
+
+def scrape_error_with_context(scraper: Any, url: str, error: ScrapeError) -> ScrapeError:
+    """`error` said again with the store, the release's URL and what the store answered (#980).
+
+    The URL has no query or fragment: those can carry tokens, and messages keep request URLs out. The parenthesis
+    holds the scraper's last answer (its status, and its page's title if it had one), and is left out when no answer
+    came back.
+    """
+    store = scraper.store or type(scraper).__name__
+    parts = urlsplit(url)
+    bare = f"{parts.scheme}://{parts.netloc.rpartition('@')[2]}{parts.path}"
+    answer: Answer | None = scraper.last_answer
+    seen = ""
+    if answer:
+        title = f', page titled "{answer.title}"' if answer.title else ""
+        seen = f" (HTTP {answer.status}{title})"
+    reason = str(error).strip().removeprefix(f"{store}: ") or type(error).__name__
+    # The store's status line says what the parenthesis already does.
+    if answer and reason == f"HTTP {answer.status}.":
+        return ScrapeError(f"{store}: could not read the release at {bare}{seen}.", error.payload)
+    return ScrapeError(f"{store}: could not read the release at {bare}{seen}: {reason}", error.payload)
 
 
 class MetadataMixin(ABC):
@@ -23,6 +48,8 @@ class MetadataMixin(ABC):
     is_json_api: bool
     fetch_page: Callable  # HTML path: BaseScraper.fetch_page
     fetch_data: Callable  # JSON path: defined on JSON source bases
+    store: str | None
+    last_answer: Answer | None
 
     # Whether the parser reads the store's credits as it states them (ADR 0007, step 3). Its tracks' credits are then
     # left as read, for the merge to decide, and any credit not marked a guess counts as the store's word. So the
@@ -39,7 +66,19 @@ class MetadataMixin(ABC):
         Scrape the metadata of a release and return a dictionary of scraped data.
         Data may vary depending on the source; unavailable keys will be left
         as None.
+
+        Raises:
+            ScrapeError: If the fetch or the parse fails. Its message names the store, the URL without its query,
+                and the status and title of the answer last received.
         """
+        try:
+            data = await self._read_release(url, rls_id)
+        except ScrapeError as e:
+            raise scrape_error_with_context(self, url, e) from e
+        return self._settle_release(data, url, rls_id)
+
+    async def _read_release(self, url, rls_id=None):
+        """The store's page or answer for `url`, parsed into the release's dictionary."""
         if self.is_json_api:
             soup = await self.fetch_data(url, rls_id=rls_id)
         else:
@@ -74,7 +113,10 @@ class MetadataMixin(ABC):
             "source": None,
             "url": url,
         }
+        return data
 
+    def _settle_release(self, data: dict[str, Any], url, rls_id) -> dict[str, Any]:
+        """The parsed release with its URLs, artists, tracks, type and label settled."""
         if rls_id:
             data["url"] = self.format_url(rls_id=rls_id, rls_name=data["title"])
         data["urls"] = [data["url"]]
@@ -381,16 +423,24 @@ def determine_label_type(label, artists):
 
 def artist_spellings(tracks):
     """Each name's spelling on the release, by its accent-folded lower case: of two spellings, the one with fewer
-    capitals ("Kool & the Gang" over "Kool & The Gang")."""
+    capitals ("Kool & the Gang" over "Kool & The Gang"), then the one on more tracks, then the first seen. The
+    tracks' order decides only a full tie: the merge moves the tracks a store pairs to the end of their disc."""
+    on_tracks = Counter(
+        name
+        for track in chain.from_iterable([d.values() for d in tracks.values()])
+        for name in dict.fromkeys(name for name, _ in track["artists"])
+    )
     artist_pool = {}
-    for track in chain.from_iterable([d.values() for d in tracks.values()]):
-        for name, _ in track["artists"]:
-            strip_name = normalize_accents(name.lower())
-            if strip_name not in artist_pool:
-                artist_pool[strip_name] = name
-            elif artist_pool[strip_name] != name:
-                artist_pool[strip_name] = less_uppers(artist_pool[strip_name], name)
+    for name, count in on_tracks.items():
+        strip_name = normalize_accents(name.lower())
+        kept = artist_pool.get(strip_name)
+        if kept is None or (_lowers(name), count) > (_lowers(kept), on_tracks[kept]):
+            artist_pool[strip_name] = name
     return artist_pool
+
+
+def _lowers(name):
+    return sum(1 for c in name if c.islower())
 
 
 def generate_artists(tracks):

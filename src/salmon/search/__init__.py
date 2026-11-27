@@ -28,6 +28,7 @@ from salmon.search import (
     tidal,
 )
 from salmon.search.base import each_failed_part_said_once, say_store_failed
+from salmon.search.hints import SearchHints
 
 SEARCHSOURCES = {
     "Bandcamp": bandcamp,
@@ -107,6 +108,7 @@ async def run_metasearch(
     artists: list[str] | None = None,
     album: str | None = None,
     filter: bool = True,
+    hints: SearchHints | None = None,
 ) -> dict[str, Any]:
     """Run a search for releases matching the searchstr.
 
@@ -118,16 +120,21 @@ async def run_metasearch(
         artists: Filter by artists if specified.
         album: Filter by album name if specified.
         filter: Whether to apply filtering.
+        hints: What the files say about the release, for a store that searches by field (MusicBrainz, #1178).
 
     Returns:
         Dict mapping source names to search results.
     """
     sources = searched_sources() if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
     answers: dict[str, list[Any]] = {}
+    store_queries = {name: s.Searcher().queries(searchstrs, hints) for name, s in sources.items()}
     tasks = [
-        handle_scrape_errors(s.Searcher().search_releases(search, limit), say=partial(say_store_failed, name))
-        for search in searchstrs
-        for name, s in sources.items()
+        handle_scrape_errors(
+            sources[name].Searcher().search_releases(queries[rank], limit), say=partial(say_store_failed, name)
+        )
+        for rank in range(max(map(len, store_queries.values()), default=0))
+        for name, queries in store_queries.items()
+        if rank < len(queries)
     ]
     with each_failed_part_said_once():
         task_responses = await asyncio.gather(*tasks)

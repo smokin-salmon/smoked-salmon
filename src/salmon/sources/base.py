@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from random import choice
 from string import Formatter
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import aiohttp
 import msgspec
@@ -20,6 +20,24 @@ if TYPE_CHECKING:
 HEADERS = {"User-Agent": choice(UAGENTS)}
 # Seconds a fetch_page request may take in all.
 PAGE_TIMEOUT = 7
+
+
+# The longest page title an error message quotes.
+TITLE_CAP = 80
+_TITLE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
+
+
+class Answer(NamedTuple):
+    """What a store answered: its HTTP status, and the page's <title> when it sent an HTML page that has one."""
+
+    status: int
+    title: str | None = None
+
+
+def _tidy_title(title: str | None) -> str | None:
+    """A <title> on one line, at most TITLE_CAP characters, without control characters; None if it has no text."""
+    printable = "".join(c for c in title or "" if c.isprintable() or c.isspace())
+    return " ".join(printable.split())[:TITLE_CAP] or None
 
 
 class IdentData(msgspec.Struct, frozen=True):
@@ -48,18 +66,47 @@ class BaseScraper:
     # The store's name in error messages ("Apple Music"), so a multi-store search says which one failed; None: the
     # class's name.
     store: str | None = None
+    # The last answer this scraper instance received, status checked or not: what a failed scrape reports. An
+    # instance serves one scrape, so it is safe state; None until a store answers, and again as each request is sent
+    # (see _session), so a request that gets no answer never reports the one before.
+    last_answer: Answer | None = None
+
+    def record_answer(self, status: int, title: str | None = None) -> None:
+        """Remember the answer just received (see last_answer)."""
+        self.last_answer = Answer(status, _tidy_title(title))
+
+    @asynccontextmanager
+    async def _session(self, timeout: float | None = None) -> AsyncIterator[aiohttp.ClientSession]:
+        """_class_session for this scraper's own requests: each one it sends first forgets last_answer.
+
+        So a request that fails before any answer (a dropped connection, a timeout) never shows the status of the
+        request before it (#980). The requests that do not go through here clear last_answer themselves: Tidal's
+        token and Apple Music's bootstrap (classmethods, on _class_session) and Bandcamp's retry as a browser (curl).
+        """
+
+        async def forget(*_: object) -> None:
+            self.last_answer = None
+
+        trace = aiohttp.TraceConfig()
+        trace.on_request_start.append(forget)
+        async with self._class_session(timeout, trace_configs=[trace]) as session:
+            yield session
 
     @classmethod
     @asynccontextmanager
-    async def _session(cls, timeout: float | None = None) -> AsyncIterator[aiohttp.ClientSession]:
+    async def _class_session(
+        cls, timeout: float | None = None, trace_configs: list[aiohttp.TraceConfig] | None = None
+    ) -> AsyncIterator[aiohttp.ClientSession]:
         """An aiohttp session with the store's timeout and proxy; its aiohttp errors and timeouts become ScrapeError.
 
         It adds no headers, parameters or status checks: each caller keeps its own. A ScrapeError raised inside
         passes through. aiohttp puts the request URL, query included, in some of its error texts, so a message
-        names the error type, except a refused internal address, which names the host.
+        names the error type, except a refused internal address, which names the host. A scraper instance uses
+        _session; this is for a classmethod, which has no last_answer to forget.
 
         Args:
             timeout: Seconds for each request in all; ``timeout`` (10) when None.
+            trace_configs: aiohttp's request hooks for the session.
 
         Raises:
             ScrapeError: If a request in the session fails or times out.
@@ -68,7 +115,9 @@ class BaseScraper:
         name = cls.store or cls.__name__
         try:
             async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=total), **session_kwargs(cls.proxy_service)
+                timeout=aiohttp.ClientTimeout(total=total),
+                trace_configs=trace_configs,
+                **session_kwargs(cls.proxy_service),
             ) as session:
                 yield session
         except ssrf.NonPublicAddressError as e:
@@ -99,18 +148,26 @@ class BaseScraper:
         rls_id_str = rls_id[1] if isinstance(rls_id, tuple) else rls_id
         return cls.site_url + cls.release_format.format(rls_id=rls_id_str)
 
+    def record_text_answer(self, status: int, text: str | None) -> None:
+        """Remember the answer just received, with the <title> of `text` if it holds one (see last_answer)."""
+        match = _TITLE.search(text or "")
+        self.record_answer(status, match[1] if match else None)
+
     async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
+        self.record_answer(resp.status)
         if resp.status != 200:
-            class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
-            error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
             try:
                 error_data = await resp.text()
             except Exception:
                 error_data = None
-            raise ScrapeError(error_msg, error_data)
+            self.record_text_answer(resp.status, error_data)
+            raise ScrapeError(f"{self.store or self.__class__.__name__}: HTTP {resp.status}.", error_data)
+        body = await resp.read()
         try:
-            return msgspec.json.decode(await resp.read())
+            return msgspec.json.decode(body)
         except msgspec.DecodeError as e:
+            # A check page answered with 200: its title says so.
+            self.record_text_answer(resp.status, body.decode("utf-8", errors="ignore"))
             raise ScrapeError(f"{self.store or self.__class__.__name__}: Did not receive JSON from API.") from e
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
@@ -165,10 +222,13 @@ class BaseScraper:
             self._session(timeout=PAGE_TIMEOUT) as session,
             session.get(url, params=params, headers=headers or HEADERS, allow_redirects=follow_redirects) as r,
         ):
-            if r.status != 200:
-                raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
+            self.record_answer(r.status)
             data = await r.read()
-            return BeautifulSoup(data, "lxml"), r.url
+            soup = BeautifulSoup(data, "lxml")
+            self.record_answer(r.status, soup.title.get_text() if soup.title else None)
+            if r.status != 200:
+                raise ScrapeError(f"{self.store or self.__class__.__name__}: HTTP {r.status}.")
+            return soup, r.url
 
     async def fetch_data(
         self,

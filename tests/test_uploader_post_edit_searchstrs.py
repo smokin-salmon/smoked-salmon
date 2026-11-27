@@ -82,7 +82,13 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         return None
 
     async def fake_check_existing_group(
-        gazelle_site, searchstrs, offer_deletion=True, our_title=None, release=None, offer_skip=False
+        gazelle_site,
+        searchstrs,
+        offer_deletion=True,
+        our_title=None,
+        release=None,
+        offer_skip=False,
+        offer_missing=False,
     ):
         recorder.check_existing_group_calls.append((gazelle_site, list(searchstrs), our_title))
         return None
@@ -258,6 +264,6 @@ def test_the_upload_describes_the_files_by_the_names_the_review_gave_them(monkey
     assert uploaded == [{"01. One.flac": {**info, "t": "tags as reviewed"}}]
 
 
-async def _same_group(_site, group_id, *_args):
+async def _same_group(_site, group_id, *_args, **_kwargs):
     """Stands in for recheck_edition: the group picked or given is kept, fetched holding no torrent."""
     return group_id, {"torrents": []}

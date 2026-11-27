@@ -7,6 +7,8 @@ from typing import Any
 import asyncclick as click
 import msgspec
 
+from salmon.search.hints import SearchHints
+
 # Inside each_failed_part_said_once, the styled line of each store, storefront or region that failed so far, by what.
 _failed_parts: ContextVar[dict[str, str] | None] = ContextVar("failed_search_parts", default=None)
 
@@ -58,6 +60,11 @@ class SearchMixin(ABC):
     async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any] | None]:
         """Return (source name, {release id: result}); None instead of the dict means inactive (no credentials)."""
         pass
+
+    def queries(self, searchstrs: list[str], hints: SearchHints | None) -> list[str]:
+        """The searches this store sends for one search: the searchstrs, unless it can make better use of the
+        files' hints."""
+        return searchstrs
 
     @staticmethod
     def edition(*parts) -> str:

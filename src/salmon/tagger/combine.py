@@ -2,6 +2,7 @@ import contextlib
 import re
 import unicodedata
 from collections import defaultdict
+from collections.abc import Collection
 from itertools import chain
 
 import asyncclick as click
@@ -231,8 +232,9 @@ def _extract_remixers_from_title(title):
     match = re.search(r"\(([^()]*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*Remix\)", title, re.IGNORECASE)
     if match:
         remixers = match.group(1).strip()
-        # Split on common delimiters and strip each name
-        remixer_list = [r.strip() for r in re.split(r"\s*(?:&|,|/|;|\+)\s*", remixers)]
+        # Split on commas, semicolons and slashes, which separate ("LP/single"), and on "&" and "+" only with a space
+        # on each side: unspaced, they join a name ("Losers Middlesex A&E").
+        remixer_list = [r.strip() for r in re.split(r"\s*[,;/]\s*|\s+[&+]\s+", remixers)]
         # Filter out common mix types and return remaining as remixers
         return [(r, "remixer") for r in remixer_list if r.lower() not in common_mix_types]
     return []
@@ -288,6 +290,16 @@ def _numbers_usable(meta):
         if sorted(nums) != list(range(1, len(nums) + 1)):
             return False
     return True
+
+
+def _in_source_order(meta):
+    """The source's discs in natural order, each with its (number, track) pairs: by number where a disc's numbers are
+    all digits (a store may list them out of order), else as the source gave them, since vinyl positions ("S" and
+    "5" on Discogs, #765) have no order of their own."""
+    return [
+        (disc, _sorted_naturally(tracks.items()) if all(str(n).isdecimal() for n in tracks) else list(tracks.items()))
+        for disc, tracks in _sorted_naturally(meta.items())
+    ]
 
 
 def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
@@ -368,9 +380,8 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
 
     # Pair on content instead of on sorted rank, so unnumbered local files don't
     # have to already be in the source's real tracklist order.
-    mtracks_flat = [
-        track for _, tracks in _sorted_naturally(meta.items()) for _, track in _sorted_naturally(tracks.items())
-    ]
+    scraped_discs = _in_source_order(meta)
+    mtracks_flat = [track for _, tracks in scraped_discs for _, track in tracks]
     ordered_btracks, pair_reasons = _pair_base_tracks(btracks_flat, mtracks_flat)
     usable = _numbers_usable(meta)
     new_numbers = iter(_new_track_numbers(mtracks_flat, ordered_btracks, usable, update_track_numbers))
@@ -384,9 +395,7 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
     )
 
     # Before the merge: combine_metadatas goes on past a TrackCombineError, keeping whatever was merged.
-    scraped = [
-        (disc, num) for disc, tracks in _sorted_naturally(meta.items()) for num, _ in _sorted_naturally(tracks.items())
-    ]
+    scraped = [(disc, num) for disc, tracks in scraped_discs for num, _ in tracks]
     for (disc, num), btrack in zip(scraped, ordered_btracks, strict=True):
         if btrack is None:
             raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
@@ -397,8 +406,8 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
 
     # One entry per scraped track, in the order this loop visits them.
     paired_btracks = iter([btrack for btrack in ordered_btracks if btrack is not None])
-    for _disc, tracks in _sorted_naturally(meta.items()):
-        for _num, track in _sorted_naturally(tracks.items()):
+    for _disc, tracks in scraped_discs:
+        for _num, track in tracks:
             btrack = next(paired_btracks)
 
             if _untitled(btrack["title"]):
@@ -661,7 +670,8 @@ def _drop_fragments(tracks, claims):
     """Drop each paired track's fragments (#1112), once, after the last store, so the guard sees every name Discogs
     credits on the track."""
     for track in (track for disc in tracks.values() for track in disc.values() if id(track) in claims):
-        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()))
+        guesses = _guesses(track["artists"], claims[id(track)], track.get("artist_variations", ()))
+        track["artists"] = check_for_artist_fragments(track["artists"], track.get("artist_variations", ()), guesses)
 
 
 def _decide_credits(tracks, claims, base_source, corrected=False):
@@ -833,10 +843,14 @@ def _overruled(claims):
 def decide_alone(metadata, source):
     """Decide a scrape used alone as a merge of that one source, in place (no disputes to print, but the names it
     reads as one artist): each track's titles, from the names as the store credits them, as in combine_metadatas;
-    then each track's credits from its claims, and the release's from the tracks."""
+    then each track's credits from its claims, cleaned as the merge's are (`clean_metadata`), and the release's from
+    the tracks."""
+    from salmon.tagger.metadata import clean_metadata  # metadata imports this module
+
     _decide_titles(metadata["tracks"], source, {})
     _, joined = _decide_credits(metadata["tracks"], {}, source)
     _print_joined(joined)
+    clean_metadata(metadata)
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
 
 
@@ -875,21 +889,42 @@ def _print_disputes(decisions):
             click.secho(f"  {', '.join(line_names)} ({other} at {at})", fg="yellow")
 
 
-def check_for_artist_fragments(artists, variations=()):
-    """Check for artists that may be a fragment of another artist in the release. Two spellings of one artist are no
-    fragment of each other, the decision joins them: one `same_artist_key` ("Herbaliser", "The Herbaliser"), or a name
-    and the name Discogs credits it as on the track, through any chain (`variations`: "Roger Taylor" as "Taylor")."""
+def check_for_artist_fragments(artists, variations=(), guesses: Collection[tuple[str, str]] = ()):
+    """Drop the credits that may be a fragment of another credit's name in the same role ("Ultra" of "Ultra Nate"); a
+    name in one role is no fragment of a name in another (#1112). Two spellings of one artist are no fragment of each
+    other, the decision joins them: one `same_artist_key` ("Herbaliser", "The Herbaliser"), or a name and the name
+    Discogs credits it as on the track, through any chain (`variations`: "Roger Taylor" as "Taylor"). `guesses` are the
+    credits no source states (`_guesses`): a guess never drops a credit that one states (#1112)."""
     joins = _credited_joins(variations)
-    names = [(_comparable_words(a), _joined(joins, same_artist_key(a))) for a, _ in artists]
+    names = [(_comparable_words(a), _joined(joins, same_artist_key(a)), i, (a, i) in guesses) for a, i in artists]
     for a, i in artists.copy():
         words, key = _comparable_words(a), _joined(joins, same_artist_key(a))
         if len("".join(words)) <= 1:
             continue
-        for other, other_key in names:
-            one = key == other_key
-            if words != other and not one and _is_word_run(words, other) and (a, i) in artists:
+        guessed = (a, i) in guesses
+        for other, other_key, other_role, other_guessed in names:
+            drops = other_role == i and (guessed or not other_guessed) and key != other_key
+            if drops and words != other and _is_word_run(words, other) and (a, i) in artists:
                 artists.remove((a, i))
     return artists
+
+
+def _guesses(artists, claims, variations=()):
+    """The track's credits that no source states (ADR 0007): every claim of each is assumed. A claim is of a credit in
+    its role under any spelling the merge reads as one artist, as the fragment check reads them (`same_artist_key`,
+    the name a source credits it as, Discogs' credited names on the track through any chain): the track keeps the
+    first source's spelling, and a store stating "Beyoncé" states the base's "Beyonce"."""
+    joins = _credited_joins(variations)
+    keys = {
+        (_joined(joins, same_artist_key(spelling)), claim.role, claim.assumed)
+        for claim in claims
+        for spelling in (claim.name, claim.credited_as)
+    }
+    return {
+        (name, role)
+        for name, role in artists
+        if (key := _joined(joins, same_artist_key(name)), role, True) in keys and (key, role, False) not in keys
+    }
 
 
 def _comparable_words(name):

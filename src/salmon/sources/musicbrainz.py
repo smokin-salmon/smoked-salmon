@@ -209,6 +209,7 @@ class MusicBrainzBase(BaseScraper):
         raise ScrapeError(f"{self.store}: Request failed (too many redirects).")
 
     def _check_status(self, resp: aiohttp.ClientResponse) -> None:
+        self.record_answer(resp.status)
         if resp.status == 404:
             raise NotFoundError()
         if resp.status == 503:

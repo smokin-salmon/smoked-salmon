@@ -1,5 +1,6 @@
 import asyncio
 import json
+import random
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -10,9 +11,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from helpers.tagger_combine import make_tracks, one_track, stating
 
+from salmon.common.credits import Claim
 from salmon.common.numbers import natural_key
+from salmon.common.strings import same_artist_key
 from salmon.errors import TrackCombineError
 from salmon.tagger.combine import (
+    _drop_fragments,
     _extract_remixers_from_title,
     _new_track_numbers,
     _refuse_renumbering_that_loses_a_track,
@@ -22,7 +26,7 @@ from salmon.tagger.combine import (
 )
 from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.retagger import create_artist_str
-from salmon.tagger.sources.base import append_remixers_to_track_titles
+from salmon.tagger.sources.base import append_remixers_to_track_titles, artist_spellings, generate_artists
 from salmon.tagger.sources.discogs import Scraper, parse_credits
 from salmon.tagger.sources.discogs import parse_artists as discogs_parse_artists
 
@@ -94,6 +98,57 @@ def test_combine_tracks_keeps_all_tracks_when_updating_track_numbers():
     assert list(combined["1"].keys()) == ordered_tracks
     assert len(combined["1"]) == 11
     assert [combined["1"][str(i)]["isrc"] for i in range(1, 12)] == [f"ISRC 1-{i}" for i in range(1, 12)]
+
+
+def test_of_spellings_tied_on_capitals_the_one_on_more_tracks_is_kept() -> None:
+    # Getz/Gilberto: a store adds "Antônio" to track 1, where the files name no Jobim; the files spell him "Antonio"
+    # on the other tracks. "ô" is lower case, so the two tie on capitals.
+    tracks = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    tracks["1"]["1"]["artists"] = [("Antônio Carlos Jobim", "guest")]
+    tracks["1"]["2"]["artists"] = [("Antonio Carlos Jobim", "main")]
+    tracks["1"]["3"]["artists"] = [("Antonio Carlos Jobim", "main")]
+
+    assert artist_spellings(tracks)["antonio carlos jobim"] == "Antonio Carlos Jobim"
+
+
+def test_a_name_credited_twice_on_a_track_counts_one_track() -> None:
+    tracks = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    tracks["1"]["1"]["artists"] = [("Antonio Carlos Jobim", "main"), ("Antonio Carlos Jobim", "composer")]
+    tracks["1"]["2"]["artists"] = [("Antônio Carlos Jobim", "main")]
+    tracks["1"]["3"]["artists"] = [("Antônio Carlos Jobim", "main")]
+
+    assert artist_spellings(tracks)["antonio carlos jobim"] == "Antônio Carlos Jobim"
+
+
+def test_a_store_pairing_some_tracks_does_not_change_a_tied_spelling() -> None:
+    # The merge moves the tracks a store pairs to the end of their disc, so the first spelling seen was the unpaired
+    # track's (La Bohème under #1135's Discogs reader).
+    base = make_tracks({"1": ["1", "2", "3"]}, isrc_prefix=None)
+    for num, name in (("1", "Nicolai Ghiaurov"), ("2", "Nicolai Ghiaurov"), ("3", "Nicolaï Ghiaurov")):
+        base["1"][num]["artists"] = [(name, "main")]
+    meta = make_tracks({"1": ["1", "2"]}, isrc_prefix="ISRC")
+    for track in meta["1"].values():
+        track["artists"] = []
+
+    artists, _ = generate_artists(combine_tracks(base, meta, False))
+
+    assert artists == [("Nicolai Ghiaurov", "main")]
+
+
+@pytest.mark.parametrize(
+    ("spellings", "kept"),
+    [
+        (["Kool & The Gang", "Kool & The Gang", "Kool & the Gang"], "Kool & the Gang"),
+        (["Nicolaï Ghiaurov", "Nicolai Ghiaurov"], "Nicolaï Ghiaurov"),
+    ],
+    ids=["fewer capitals on fewer tracks", "tied on capitals and tracks: the first"],
+)
+def test_spellings_as_before(spellings: list[str], kept: str) -> None:
+    tracks = make_tracks({"1": [str(n) for n in range(1, len(spellings) + 1)]}, isrc_prefix=None)
+    for track, name in zip(tracks["1"].values(), spellings, strict=True):
+        track["artists"] = [(name, "main")]
+
+    assert set(artist_spellings(tracks).values()) == {kept}
 
 
 def test_combine_tracks_sorts_multi_disc_provider_tracks_and_discs():
@@ -179,11 +234,78 @@ def test_fragment_check_keeps_names_that_only_share_letters():
 
 
 def test_fragment_check_drops_a_name_that_is_whole_words_of_another():
-    artists = [("Ultra", "main"), ("Ultra Nate", "main"), ("Nate", "guest")]
+    artists = [("Ultra", "main"), ("Ultra Nate", "main"), ("Nate", "main")]
 
     kept = check_for_artist_fragments(artists)
 
     assert kept == [("Ultra Nate", "main")]
+
+
+@pytest.mark.parametrize("role", ["guest", "conductor", "remixer", "composer"])
+def test_fragment_check_keeps_a_name_held_by_a_name_in_another_role(role):
+    artists = [("Alice", "main"), ("Bob", "main"), ("Alice & Bob", role)]
+
+    kept = check_for_artist_fragments(list(artists))
+
+    assert kept == artists
+
+
+@pytest.mark.parametrize(
+    ("artists", "guesses", "kept"),
+    [
+        # A guess never removes a stated credit.
+        (
+            [("Alice", "main"), ("Alice & Bob", "main")],
+            {("Alice & Bob", "main")},
+            [("Alice", "main"), ("Alice & Bob", "main")],
+        ),
+        # As before: a stated credit removes a guess, and a guess another guess.
+        ([("Alice", "main"), ("Alice & Bob", "main")], {("Alice", "main")}, [("Alice & Bob", "main")]),
+        (
+            [("Alice", "main"), ("Alice & Bob", "main")],
+            {("Alice", "main"), ("Alice & Bob", "main")},
+            [("Alice & Bob", "main")],
+        ),
+    ],
+)
+def test_fragment_check_weighs_guesses(artists, guesses, kept):
+    assert check_for_artist_fragments(list(artists), guesses=guesses) == kept
+
+
+_FRAGMENT_NAMES = ["Alice", "Bob", "Bobby", "Alice & Bob", "Alice Bob Carol", "Bob Carol", "Carol", "The Bob"]
+_FRAGMENT_ROLES = ["main", "guest", "conductor", "remixer"]
+
+
+def _words(name: str) -> list[str]:
+    return name.lower().replace("&", "").split()
+
+
+def _whole_words_of(name: str, other: str) -> bool:
+    words, others = _words(name), _words(other)
+    return words != others and any(others[at : at + len(words)] == words for at in range(len(others)))
+
+
+def test_fragment_check_drops_exactly_the_names_held_in_their_role_by_a_credit_that_may_drop_them():
+    """Over generated credits: a credit goes exactly when another in its role holds its name as whole words, is not
+    a spelling of the same artist, and is stated or holds a guess."""
+    rng = random.Random(1112)
+    for _ in range(2000):
+        pool = [(name, role) for name in _FRAGMENT_NAMES for role in _FRAGMENT_ROLES]
+        artists = rng.sample(pool, rng.randint(2, 6))
+        guesses = {credit for credit in artists if rng.random() < 0.4}
+
+        kept = check_for_artist_fragments(list(artists), guesses=guesses)
+
+        dropped = {
+            (name, role)
+            for name, role in artists
+            for other, other_role in artists
+            if other_role == role
+            and _whole_words_of(name, other)
+            and same_artist_key(name) != same_artist_key(other)
+            and ((name, role) in guesses or (other, other_role) not in guesses)
+        }
+        assert kept == [credit for credit in artists if credit not in dropped], (artists, guesses)
 
 
 def test_fragment_check_matches_words_ignoring_case_and_punctuation():
@@ -195,10 +317,11 @@ def test_fragment_check_matches_words_ignoring_case_and_punctuation():
 
 
 def test_fragment_check_follows_a_chain_of_credited_names():
-    artists = [("Taylor", "guest"), ("Robert Taylor", "producer"), ("Bob Taylor", "remixer")]
+    # One role: a name in another is no fragment of it (#1112), so the chain would not be needed.
+    artists = [("Taylor", "main"), ("Robert Taylor", "main"), ("Bob Taylor", "main")]
     variations = [
-        {"name": "Robert Taylor", "role": "producer", "anv": "Bob Taylor"},
-        {"name": "Bob Taylor", "role": "remixer", "anv": "Taylor"},
+        {"name": "Robert Taylor", "role": "main", "anv": "Bob Taylor"},
+        {"name": "Bob Taylor", "role": "main", "anv": "Taylor"},
     ]
 
     assert check_for_artist_fragments(list(artists), variations) == artists
@@ -206,7 +329,8 @@ def test_fragment_check_follows_a_chain_of_credited_names():
 
 def test_fragment_check_keeps_every_name_discogs_credits_one_artist_as():
     # Roger Taylor credited as "Taylor" in one role and "R. Taylor" in another: the second doesn't replace the first.
-    artists = [("Taylor", "guest"), ("Roger Taylor", "producer"), ("Roger Taylor", "remixer")]
+    # "Taylor" is in the first's role, where it would be a fragment of "Roger Taylor" (#1112).
+    artists = [("Taylor", "producer"), ("Roger Taylor", "producer"), ("Roger Taylor", "remixer")]
     variations = [
         {"name": "Roger Taylor", "role": "producer", "anv": "Taylor"},
         {"name": "Roger Taylor", "role": "remixer", "anv": "R. Taylor"},
@@ -286,6 +410,42 @@ def test_a_mix_or_an_edit_in_a_title_names_no_remixer(title):
     ],
 )
 def test_as_before_a_remix_in_a_title(title, remixers):
+    assert _extract_remixers_from_title(title) == remixers
+
+
+@pytest.mark.parametrize(
+    ("title", "remixers"),
+    [
+        # The Prodigy, Invaders Must Die (Deezer's title).
+        ("Take Me to the Hospital (Losers Middlesex A&E Remix)", [("Losers Middlesex A&E", "remixer")]),
+        ("Song (Remi Xer &Other Xer Remix)", [("Remi Xer &Other Xer", "remixer")]),
+        ("Song (Remi Xer+ Other Xer Remix)", [("Remi Xer+ Other Xer", "remixer")]),
+        ("Song (Florence+The Machine Remix)", [("Florence+The Machine", "remixer")]),
+    ],
+)
+def test_an_ampersand_or_plus_inside_a_name_does_not_split_it(title, remixers):
+    # A name holds "&" or "+" with no space on one side or both; between two remixers they are spaced.
+    assert _extract_remixers_from_title(title) == remixers
+
+
+@pytest.mark.parametrize(
+    ("title", "remixers"),
+    [
+        ("Song (Remi Xer / Other Xer Remix)", [("Remi Xer", "remixer"), ("Other Xer", "remixer")]),
+        # Fugees, "Ready or Not": a slash separates, spaced or not.
+        ("Ready or Not (Clark Kent/Django Remix)", [("Clark Kent", "remixer"), ("Django", "remixer")]),
+        ("Song (Remi Xer + Other Xer Remix)", [("Remi Xer", "remixer"), ("Other Xer", "remixer")]),
+        ("Song (Remi Xer, Other Xer Remix)", [("Remi Xer", "remixer"), ("Other Xer", "remixer")]),
+        (
+            "Song (Remi Xer,Other Xer;Third Xer Remix)",
+            [("Remi Xer", "remixer"), ("Other Xer", "remixer"), ("Third Xer", "remixer")],
+        ),
+        # The known limit, kept as it is: a duo's spaced "&" reads as two remixers, as only a stated credit can tell
+        # a duo from two.
+        ("Invaders Must Die (Chase & Status Remix)", [("Chase", "remixer"), ("Status", "remixer")]),
+    ],
+)
+def test_as_before_spaced_separators_and_commas_split_remixers(title, remixers):
     assert _extract_remixers_from_title(title) == remixers
 
 
@@ -417,6 +577,85 @@ def test_combine_metadatas_from_discogs_alone_leaves_the_anv_out_too():
     assert "artist_variations" not in combined["tracks"]["1"]["1"]
 
 
+def credited(artists: list[tuple[str, str]], title: str = "Good Funky BD") -> dict:
+    meta = make_metadata("Album")
+    meta["tracks"]["1"]["1"]["artists"] = artists
+    meta["tracks"]["1"]["1"]["title"] = title
+    return meta
+
+
+def test_a_guest_named_inside_a_main_s_joint_name_stays_a_guest():
+    # #1107: Deezer's parse of the contributor "Alice & Bob" and the title's "feat. Bob & Carol".
+    title = "Song (feat. Bob & Carol)"
+    deezer = credited([("Bob", "guest"), ("Carol", "guest"), ("Alice & Bob", "main")], title)
+
+    combined = combine_metadatas(("Deezer", deezer), base=credited([], title))
+
+    assert ("Bob", "guest") in combined["tracks"]["1"]["1"]["artists"]
+
+
+def test_a_joint_name_in_another_role_leaves_the_mains_it_names():
+    files = credited([("Alice", "main"), ("Bob", "main")])
+    qobuz = stating(credited([("Alice", "main"), ("Bob", "main"), ("Alice & Bob", "conductor")]))
+
+    combined = combine_metadatas(("Qobuz", qobuz), base=files)
+
+    # The mains survive the fragment check; the split-name repair (#1109) then joins them under the name the release
+    # gives them. Compared across roles, the conductor removed both and left the track with no main.
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Alice & Bob", "main"), ("Alice & Bob", "conductor")]
+
+
+def test_a_store_s_guess_leaves_a_stated_credit_it_names():
+    # Lady Gaga's The Remix: MusicBrainz's remixer comes with the remix's name, Qobuz states the remixer alone.
+    files = credited([("Alice", "main")])
+    qobuz = stating(credited([("Alice", "main"), ("Bob", "remixer")]))
+    musicbrainz = credited([("Alice", "main"), ('Bob "Club Edit"', "remixer")])
+
+    combined = combine_metadatas(("Qobuz", qobuz), ("MusicBrainz", musicbrainz), base=files)
+
+    assert ("Bob", "remixer") in combined["tracks"]["1"]["1"]["artists"]
+
+
+def test_a_credit_a_store_states_in_another_spelling_is_no_guess():
+    # The track keeps the base's "Beyonce"; Qobuz states her as "Beyoncé", which the merge reads as the same credit.
+    tidal = credited([("Beyonce", "main"), ("Beyonce & Jay-Z", "main")])
+    qobuz = stating(credited([("Beyoncé", "main")]))
+
+    # No files (descgen, salmon web): the first store, Tidal, which states no credits, is the base.
+    combined = combine_metadatas(("Tidal", tidal), ("Qobuz", qobuz))
+
+    assert ("Beyonce", "main") in combined["tracks"]["1"]["1"]["artists"]
+
+
+def test_a_credit_stated_under_the_name_discogs_credits_it_as_is_no_guess():
+    # Discogs credits Roger Taylor as "Taylor" on the track; Qobuz states Roger Taylor, so the track's "Taylor" is
+    # stated, and the guessed "Taylor Band" does not drop it.
+    track = {
+        "artists": [("Taylor", "main"), ("Roger Taylor", "main"), ("Taylor Band", "main")],
+        "artist_variations": [{"name": "Roger Taylor", "role": "main", "anv": "Taylor"}],
+    }
+    claims = {
+        id(track): [
+            Claim("Tidal", "Taylor", "Taylor", "main", assumed=True),
+            Claim("Qobuz", "Roger Taylor", "Roger Taylor", "main", assumed=False),
+            Claim("Tidal", "Taylor Band", "Taylor Band", "main", assumed=True),
+        ]
+    }
+
+    _drop_fragments({"1": {"1": track}}, claims)
+
+    assert ("Taylor", "main") in track["artists"]
+
+
+def test_as_before_the_files_credit_removes_a_store_s_guess_it_names():
+    files = credited([("Ultra Nate", "main")])
+    musicbrainz = credited([("Nate", "main")])
+
+    combined = combine_metadatas(("MusicBrainz", musicbrainz), base=files)
+
+    assert combined["tracks"]["1"]["1"]["artists"] == [("Ultra Nate", "main")]
+
+
 def guessing_bob() -> dict:
     meta = make_metadata("Album")
     meta["tracks"]["1"]["1"]["artists"] = [("Marius Acke", "main"), ("Bob", "guest")]
@@ -522,24 +761,60 @@ def source_track(num: str, disc: str, tracktotal: int, disctotal: int) -> dict:
     return track | {"track#": num, "disc#": disc, "tracktotal": str(tracktotal), "disctotal": str(disctotal)}
 
 
+# Discogs release 74364 (#765): heading, S, heading, 5, one record, parse as disc 1 tracks S and 5 (#984).
+DISCOGS_74364 = {
+    "artists": [{"name": "Adam F"}],
+    "tracklist": [
+        {"type_": "heading", "position": "", "title": "Other Side"},
+        {"type_": "track", "position": "S", "title": "Burning Deep"},
+        {"type_": "heading", "position": "", "title": "This Side"},
+        {"type_": "track", "position": "5", "title": "Lighter Style"},
+    ],
+}
+
+
 def test_discogs_vinyl_sides_keep_the_files_numbers_and_give_no_totals():
-    # Discogs release 74364 (#765): heading, S, heading, 5, one record, parse as disc 1 tracks S and 5 (#984).
-    soup = {
-        "artists": [{"name": "Adam F"}],
-        "tracklist": [
-            {"type_": "heading", "position": "", "title": "Other Side"},
-            {"type_": "track", "position": "S", "title": "Burning Deep"},
-            {"type_": "heading", "position": "", "title": "This Side"},
-            {"type_": "track", "position": "5", "title": "Lighter Style"},
-        ],
-    }
-    meta = asyncio.run(Scraper().parse_tracks(soup))
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
     assert {disc: list(numbers) for disc, numbers in meta.items()} == {"1": ["S", "5"]}
 
     combined = combine_tracks(local_files("01", "02"), meta, True)
 
     assert [t["track#"] for t in combined["1"].values()] == ["01", "02"]
     assert all(t["tracktotal"] is None and t["disctotal"] is None for t in combined["1"].values())
+
+
+def test_discogs_vinyl_sides_pair_the_files_in_the_release_s_order():
+    # "S" comes before "5" on the record, so untitled files, paired by position, take the titles in that order.
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01", "02")
+    for local in base["1"].values():
+        local["title"] = ""
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {n: t["title"] for n, t in combined["1"].items()} == {"01": "Burning Deep", "02": "Lighter Style"}
+
+
+def test_as_before_a_discogs_vinyl_side_paired_by_title_merges_into_that_file():
+    # File 01 is titled as the record's second track, so it pairs with "5" by title, and the untitled 02 takes "S".
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01", "02")
+    base["1"]["01"]["title"] = "Lighter Style"
+    base["1"]["02"]["title"] = ""
+
+    combined = combine_tracks(base, meta, True)
+
+    assert {n: t["title"] for n, t in combined["1"].items()} == {"01": "Lighter Style", "02": "Burning Deep"}
+
+
+def test_discogs_vinyl_side_without_a_file_is_named_in_the_release_s_order():
+    # One untitled file pairs with "S", the record's first track, so "5" is the one that has no file.
+    meta = asyncio.run(Scraper().parse_tracks(DISCOGS_74364))
+    base = local_files("01")
+    base["1"]["01"]["title"] = ""
+
+    with pytest.raises(TrackCombineError, match="Disc 1 track 5 does not exist"):
+        combine_tracks(base, meta, True)
 
 
 def test_as_before_a_one_cd_discogs_release_numbering_movements_by_dots_merges_its_files():

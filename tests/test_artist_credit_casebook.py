@@ -14,6 +14,9 @@ Stages, each recorded as the release's artists ("name (role)") and its track cou
   "ARTIST | TITLE", with "| REMIXER ..." when one is written.
 - output-salmon-tags (a case with `[salmon_tags]`): the output stage over the same merge with the files' ARTIST and
   TITLE as salmon itself writes them, a control for the shape of the case's tags.
+- merge-picard, output-picard (a case with `[[picard_track]]`; output-picard only with `output = true`): the merge,
+  and the output with guests_in_track_title off, over the Picard-tagged files instead of `[[track]]`. Recorded only
+  where they differ from merge and output; where not recorded, they must equal them.
 """
 
 import asyncio
@@ -58,6 +61,9 @@ STORES = {
 OUTPUTS = {"output": False, "output-guests-in-title": True}
 # The control stage: the output, guests_in_track_title off, from files in salmon's own ARTIST and TITLE shape.
 CONTROL = "output-salmon-tags"
+# The stages over the Picard-tagged files, each with the stage over the Deezer-shaped files it is recorded apart from
+# only where the two differ.
+PICARD = {"merge-picard": "merge", "output-picard": "output"}
 
 
 def _record(case: Path) -> dict[str, Any]:
@@ -76,7 +82,29 @@ def _stages(record: dict[str, Any]) -> list[str]:
     if record.get("constructed"):
         return list(OUTPUTS)
     control = [CONTROL] if "salmon_tags" in record else []
-    return [*_stores(record), "merge", *(OUTPUTS if record.get("output") else []), *control]
+    picard = [s for s in PICARD if "picard_track" in record and (s == "merge-picard" or record.get("output"))]
+    return [*_stores(record), "merge", *(OUTPUTS if record.get("output") else []), *control, *picard]
+
+
+def picard_today(today: dict[str, Any], stage: str) -> dict[str, Any]:
+    """A Picard stage's recorded value, or its Deezer stage's when the two are the same."""
+    return today.get(stage, today[PICARD[stage]])
+
+
+def _update_message(case_name: str, stage: str, got: dict[str, Any]) -> str:
+    shown = "\n".join(f"{key} = {json.dumps(value, ensure_ascii=False)}" for key, value in got.items())
+    return f"today changed: if the change is meant, set [today.{stage}] in {case_name} to:\n{shown}"
+
+
+def picard_verdict(
+    case_name: str, stage: str, got: dict[str, Any], deezer: dict[str, Any], today: dict[str, Any]
+) -> str | None:
+    """Why a Picard stage fails, or None: it is recorded only where it differs from its Deezer stage, as `deezer`
+    (that stage's value in the same run, not its record, so a fix that moves both alike asks for nothing here)."""
+    if got == deezer:
+        same = f"[today.{stage}] is the same as [today.{PICARD[stage]}]: remove [today.{stage}] from {case_name}"
+        return same if stage in today else None
+    return _update_message(case_name, stage, got) if got != today.get(stage) else None
 
 
 async def _returning(value: Any) -> Any:
@@ -244,6 +272,14 @@ def _params() -> list[Any]:
 @pytest.mark.parametrize(("case", "stage"), _params())
 def test_today(case: Path, stage: str, monkeypatch: pytest.MonkeyPatch) -> None:
     record = _record(case)
+    if stage in PICARD:
+        picard, deezer = (
+            summary(meta, per_track=True) if stage == "merge-picard" else written(meta, False, monkeypatch)
+            for meta in (merge(record, monkeypatch, record["picard_track"]), merge(record, monkeypatch))
+        )
+        verdict = picard_verdict(case.name, stage, picard, deezer, record["today"])
+        assert verdict is None, verdict
+        return
     if stage == CONTROL:
         got = written(merge(record, monkeypatch, salmon_tagged(record)), False, monkeypatch)
     elif stage in OUTPUTS:
@@ -253,17 +289,17 @@ def test_today(case: Path, stage: str, monkeypatch: pytest.MonkeyPatch) -> None:
         got = summary(merge(record, monkeypatch), per_track=True)
     else:
         got = summary(parse(record, stage, monkeypatch))
-    want = record["today"].get(stage)
-    shown = "\n".join(f"{key} = {json.dumps(value, ensure_ascii=False)}" for key, value in got.items())
-    update = f"today changed: if the change is meant, set [today.{stage}] in {case.name} to:\n{shown}"
-    assert got == want, update
+    assert got == record["today"].get(stage), _update_message(case.name, stage, got)
 
 
 def test_each_case_records_exactly_the_stages_it_runs() -> None:
-    """A [today] entry for a stage no longer run would be counted by the scoreboard but enforced by nothing."""
+    """A [today] entry for a stage no longer run would be counted by the scoreboard but enforced by nothing.
+
+    A Picard stage is recorded only where it differs from its Deezer stage, so it may be absent."""
     for case in _cases():
         record = _record(case)
-        assert set(record["today"]) == set(_stages(record)), case.name
+        stages = set(_stages(record))
+        assert stages - set(PICARD) <= set(record["today"]) <= stages, case.name
 
 
 def test_each_musicbrainz_case_names_a_recorded_release() -> None:
@@ -294,6 +330,49 @@ def test_each_picard_track_block_has_its_musicbrainz_releases_tracks() -> None:
         assert sum(len(disc) for disc in built["tracks"].values()) == len(tracks), case.name
 
 
+def test_picard_stages_run_only_where_there_are_picard_files() -> None:
+    plain = {"stores": {"deezer": "{}"}, "today": {}}
+    assert "merge-picard" not in _stages(plain)
+    picard = {**plain, "picard_track": [{}]}
+    assert _stages(picard)[-1:] == ["merge-picard"]
+    assert _stages({**picard, "output": True})[-2:] == ["merge-picard", "output-picard"]
+    assert _stages({"constructed": True, "picard_track": [{}]}) == list(OUTPUTS)
+
+
+def test_a_picard_stage_is_recorded_only_where_it_differs() -> None:
+    """Judged against the Deezer stage as it comes out in the same run, so a fix's first run gives the right advice."""
+    a, b, c = {"tracks": 1}, {"tracks": 2}, {"tracks": 3}
+
+    def verdict(got: dict[str, Any], deezer: dict[str, Any], today: dict[str, Any]) -> str:
+        return str(picard_verdict("case.toml", "merge-picard", got, deezer, today))
+
+    assert verdict(a, a, {"merge": a}) == "None"
+    assert "set [today.merge-picard]" in verdict(b, a, {"merge": a})
+    assert "remove [today.merge-picard]" in verdict(a, a, {"merge": a, "merge-picard": a})
+    assert verdict(b, a, {"merge": a, "merge-picard": b}) == "None"
+    assert "set [today.merge-picard]" in verdict(a, b, {"merge": b, "merge-picard": b})
+    # A fix moves both shapes alike before [today.merge] is updated: nothing to record for Picard.
+    assert verdict(c, c, {"merge": a}) == "None"
+    assert "remove [today.merge-picard]" in verdict(c, c, {"merge": a, "merge-picard": b})
+    # A fix moves only the Deezer shape: Picard's unchanged result is recorded in the same run.
+    assert "set [today.merge-picard]" in verdict(a, c, {"merge": a})
+
+
+def test_the_scoreboard_judges_every_picard_case() -> None:
+    stages = ("deezer", "merge", "output-salmon-tags", "merge-picard", "output-picard")
+    assert [_group(s) for s in stages] == [
+        "parse and merge",
+        "parse and merge",
+        "output",
+        "picard merge",
+        "picard output",
+    ]
+    today = {"merge": {"m": 1}, "output": {"o": 1}, "output-guests-in-title": {"g": 1}}
+    judged = _judged({"stores": {}, "picard_track": [{}], "output": True, "today": today})
+    assert judged["merge-picard"] == {"m": 1}
+    assert judged["output-picard"] == {"o": 1}
+
+
 def test_a_name_holding_a_separator_is_judged_whole() -> None:
     right = {"release_main": ["Tyler, The Creator"], "not_main": ["Earth, Wind & Fire"]}
     output = {"albumartist": "Tyler, The Creator", "tracks": ["Tyler, The Creator", "Tyler, The Creator & Kali Uchis"]}
@@ -302,18 +381,34 @@ def test_a_name_holding_a_separator_is_judged_whole() -> None:
     assert judge(right, guest_as_main) == ["a never-main name in a track's ARTIST"]
 
 
+def _group(stage: str) -> str:
+    """The scoreboard's tally a stage counts in."""
+    if stage in PICARD:
+        return f"picard {PICARD[stage]}"
+    return "output" if stage.startswith("output") else "parse and merge"
+
+
+def _judged(record: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Each stage the case runs and its value today, a Picard stage's recorded or the Deezer stage it equals."""
+    today = record["today"]
+    return {stage: picard_today(today, stage) if stage in PICARD else today[stage] for stage in _stages(record)}
+
+
 def test_scoreboard() -> None:
     """Today against right, per case and stage, grouped by what is wrong. Printed, never failing on wrongness.
 
-    The output stages are counted apart from the parse and merge stages: an output mostly repeats its merge."""
+    The output stages are counted apart from the parse and merge stages: an output mostly repeats its merge. The
+    Picard stages are counted apart again, over every case with Picard-tagged files, recorded or not."""
     lines, kinds = [], Counter()
-    tallies = {"parse and merge": [0, 0], "output": [0, 0]}  # right, judged
+    tallies = {
+        group: [0, 0] for group in ("parse and merge", "output", "picard merge", "picard output")
+    }  # right, judged
     for case in _cases():
         record = _record(case)
-        verdicts = {stage: judge(record["right"], today) for stage, today in record["today"].items()}
+        verdicts = {stage: judge(record["right"], today) for stage, today in _judged(record).items()}
         for stage, wrong in verdicts.items():
             if wrong is not None:
-                tally = tallies["output" if stage.startswith("output") else "parse and merge"]
+                tally = tallies[_group(stage)]
                 tally[0] += not wrong
                 tally[1] += 1
                 kinds.update(wrong)

@@ -29,7 +29,7 @@ def bandcamp_page(cover_url: str = "") -> str:
 class FakeStore:
     """A store on 127.0.0.1: album pages at /album/<name>, a cover at /cover.png, a redirect to `moved_to` at /moved.
 
-    Every request it gets is kept, by path.
+    It answers any method. Every request it gets is kept, by path.
     """
 
     def __init__(self, page: str | None = None) -> None:
@@ -40,7 +40,7 @@ class FakeStore:
     @contextlib.asynccontextmanager
     async def serving(self) -> AsyncIterator["FakeStore"]:
         app = web.Application()
-        app.router.add_get("/{tail:.*}", self._answer)
+        app.router.add_route("*", "/{tail:.*}", self._answer)
         runner = web.AppRunner(app)
         await runner.setup()
         await web.TCPSite(runner, "127.0.0.1", 0).start()

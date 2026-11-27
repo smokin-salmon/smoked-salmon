@@ -8,6 +8,7 @@ serves them from a local server.
 | --- | --- |
 | `release/<mbid>.json` | `/ws/2/release/<mbid>?fmt=json`, includes below |
 | `search/<slug>.json` | `/ws/2/release/?query=<query>&limit=10&fmt=json` |
+| `search/artist-*.json` | the same, for the fielded query salmon sends from the files' tags (#1178) |
 | `caa/<mbid>.json` | the Cover Art Archive's `/release/<mbid>` image list |
 
 The artist-credit casebook (`tests/fixtures/artist_credits/`) names its

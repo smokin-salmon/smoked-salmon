@@ -21,11 +21,11 @@ dependencies = [
     "jinja2>=3.1.2",
     "msgspec[toml]>=0.22.0",
     "mutagen>=1.48.1",
-    "numpy>=2.4.6",
-    "openai>=3.50.0",
+    "numpy>=2.5.5",
+    "openai>=3.57.0",
     "packaging>=26.3",
     "pillow>=13.0.0",
-    "platformdirs>=4.14.5",
+    "platformdirs>=4.14.7",
     "pycambia>=0.2.0",
     "pyimgbox>=1.0.7",
     "pyoxipng>=9.1.0 ; python_version < '3.14'",
@@ -45,7 +45,7 @@ dependencies = [
 salmon = "salmon.run:main"
 
 [build-system]
-requires = ["uv_build>=0.13.8,<0.14.0"]
+requires = ["uv_build>=0.13.9,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -54,7 +54,7 @@ dev = [
     "basedpyright>=1.40.2",
     "pytest>=9.2.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.17.5",
+    "ruff>=0.17.6",
 ]
 
 [tool.ruff]

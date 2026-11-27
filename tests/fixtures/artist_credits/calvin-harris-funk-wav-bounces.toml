@@ -50,6 +50,15 @@ tracks = ["Calvin Harris, Frank Ocean, Migos | Slide", "Calvin Harris, ScHoolboy
 albumartist = "Calvin Harris"
 tracks = ["Calvin Harris (feat. Frank Ocean & Migos) | Slide", "Calvin Harris (feat. ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M.) | Cash Out", "Calvin Harris (feat. Young Thug, Pharrell Williams, Ariana Grande) | Heatstroke", "Calvin Harris (feat. Future & Khalid) | Rollin", "Calvin Harris (feat. Travis Scott & A-Trak) | Prayers Up", "Calvin Harris (feat. Snoop Dogg, John Legend, Takeoff) | Holiday", "Calvin Harris (feat. Nicki Minaj) | Skrt On Me", "Calvin Harris (feat. Pharrell Williams, Katy Perry, Big Sean) | Feels", "Calvin Harris (feat. Kehlani & Lil Yachty) | Faking It", "Calvin Harris (feat. Jessie Reyez) | Hard to Love"]
 
+[today.merge-picard]
+release = ["Frank Ocean (guest)", "Migos (guest)", "Calvin Harris (main)", "ScHoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "D.R.A.M. (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A‐Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
+tracks = 10
+credits = ["1.1: Frank Ocean (guest), Migos (guest), Calvin Harris (main)", "1.2: ScHoolboy Q (guest), PARTYNEXTDOOR (guest), D.R.A.M. (guest), Calvin Harris (main)", "1.3: Young Thug (guest), Pharrell Williams (guest), Ariana Grande (guest), Calvin Harris (main)", "1.4: Future (guest), Khalid (guest), Calvin Harris (main)", "1.5: Travis Scott (guest), A‐Trak (guest), Calvin Harris (main)", "1.6: Snoop Dogg (guest), John Legend (guest), Takeoff (guest), Calvin Harris (main)", "1.7: Nicki Minaj (guest), Calvin Harris (main)", "1.8: Pharrell Williams (guest), Katy Perry (guest), Big Sean (guest), Calvin Harris (main)", "1.9: Kehlani (guest), Lil Yachty (guest), Calvin Harris (main)", "1.10: Jessie Reyez (guest), Calvin Harris (main)"]
+
+[today.output-picard]
+albumartist = "Calvin Harris"
+tracks = ["Calvin Harris (feat. Frank Ocean & Migos) | Slide", "Calvin Harris (feat. ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M.) | Cash Out", "Calvin Harris (feat. Young Thug, Pharrell Williams, Ariana Grande) | Heatstroke", "Calvin Harris (feat. Future & Khalid) | Rollin", "Calvin Harris (feat. Travis Scott & A‐Trak) | Prayers Up", "Calvin Harris (feat. Snoop Dogg, John Legend, Takeoff) | Holiday", "Calvin Harris (feat. Nicki Minaj) | Skrt on Me", "Calvin Harris (feat. Pharrell Williams, Katy Perry, Big Sean) | Feels", "Calvin Harris (feat. Kehlani & Lil Yachty) | Faking It", "Calvin Harris (feat. Jessie Reyez) | Hard to Love"]
+
 # A control for the tag shape: the same files with ARTIST and TITLE as salmon itself writes them
 # (retagger.create_artist_str, guests_in_track_title off), every other tag as in [[track]] below.
 # Stage output-salmon-tags: the merge over these files, written.

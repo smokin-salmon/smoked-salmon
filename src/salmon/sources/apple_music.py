@@ -52,7 +52,7 @@ class AppleMusicBase(BaseScraper):
             return cls._token
 
         # The homepage and its JS bundle may take 15 s each
-        async with cls._session(timeout=15) as session:
+        async with cls._class_session(timeout=15) as session:
             async with session.get(APPLE_MUSIC_URL, allow_redirects=True) as resp:
                 if resp.status != 200:
                     raise ScrapeError("Failed to load Apple Music homepage")
@@ -117,6 +117,8 @@ class AppleMusicBase(BaseScraper):
             qs = parse_qs(urlparse(url).query)
             lang = qs.get("l", ["en-US"])[0]
 
+        # The token bootstrap is no answer of this scrape's: a failure there must not show an earlier status.
+        self.last_answer = None
         token = await self._get_token()
         request_headers = {
             "Authorization": f"Bearer {token}",
@@ -152,4 +154,4 @@ class AppleMusicBase(BaseScraper):
             }
 
         except (KeyError, IndexError) as e:
-            raise ScrapeError(f"Failed to grab Apple Music metadata for {url}.") from e
+            raise ScrapeError("Apple Music: Failed to grab metadata.") from e

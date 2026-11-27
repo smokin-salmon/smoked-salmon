@@ -19,7 +19,7 @@ from salmon.errors import ScrapeError
 from salmon.search import apple_music as search_apple
 from salmon.search import metas
 from salmon.search import tidal as search_tidal
-from salmon.search.base import IdentData, each_failed_part_said_once, say_part_failed
+from salmon.search.base import IdentData, SearchMixin, each_failed_part_said_once, say_part_failed
 from salmon.sources import AppleMusicBase
 from salmon.sources.tidal import TidalBase
 
@@ -32,8 +32,8 @@ RELEASE = (IdentData("Stan Getz", ALBUM, 1964, 8, "WEB"), "Stan Getz - Getz/Gilb
 def _add_store(monkeypatch: pytest.MonkeyPatch, answer: Callable[[str], Any]) -> None:
     """Add a store called Store whose search of a string gives answer(string): its releases, or raises."""
 
-    class _Searcher:
-        async def search_releases(self, searchstr: str, _limit: int) -> tuple[str, Any]:
+    class _Searcher(SearchMixin):
+        async def search_releases(self, searchstr: str, limit: int) -> tuple[str, Any]:
             return "Store", answer(searchstr)
 
     monkeypatch.setitem(salmon_search.SEARCHSOURCES, "Store", SimpleNamespace(Searcher=_Searcher))
@@ -85,8 +85,8 @@ def test_a_release_found_twice_keeps_the_first_searchs_entry(monkeypatch: pytest
 
 
 def test_a_tidal_release_found_from_two_regions_is_one_release(monkeypatch: pytest.MonkeyPatch) -> None:
-    class _Searcher:
-        async def search_releases(self, searchstr: str, _limit: int) -> tuple[str, Any]:
+    class _Searcher(SearchMixin):
+        async def search_releases(self, searchstr: str, limit: int) -> tuple[str, Any]:
             return "Tidal", {("US", 111): "US"} if searchstr == "one" else {("DE", 111): "DE", ("DE", 222): "DE"}
 
     monkeypatch.setitem(salmon_search.SEARCHSOURCES, "Tidal", SimpleNamespace(Searcher=_Searcher))
@@ -245,7 +245,7 @@ def test_apple_a_refusal_from_the_server_prints_its_status_and_not_its_body(
     assert [key[0] for key in releases] == ["us"]
     out = capsys.readouterr().out
     assert "Apple Music: storefront jp failed:" in out
-    assert "Status code 403" in out
+    assert "HTTP 403" in out
     assert "the refusal's body" not in out
     assert "127.0.0.1" not in out
 
@@ -324,7 +324,7 @@ def test_tidal_a_refusal_from_the_server_prints_neither_the_token_nor_the_body(
     assert results == ("Tidal", {})
     out = capsys.readouterr().out
     assert "Tidal: region DE failed:" in out
-    assert "Status code 500" in out
+    assert "HTTP 500" in out
     assert "the-access-token" not in out
     assert "the refusal's body" not in out
     assert "127.0.0.1" not in out
@@ -476,8 +476,8 @@ def test_a_store_that_lost_every_storefront_says_so_once_after_them(
 def test_two_stores_failing_alike_each_print_their_line_once(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    class _Searcher:
-        async def search_releases(self, _searchstr: str, _limit: int) -> tuple[str, Any]:
+    class _Searcher(SearchMixin):
+        async def search_releases(self, searchstr: str, limit: int) -> tuple[str, Any]:
             raise ScrapeError("timed out")
 
     monkeypatch.setitem(salmon_search.SEARCHSOURCES, "One", SimpleNamespace(Searcher=_Searcher))

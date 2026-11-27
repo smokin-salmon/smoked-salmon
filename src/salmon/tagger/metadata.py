@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from copy import copy, deepcopy
+from copy import deepcopy
 from dataclasses import dataclass
 from itertools import islice
 from typing import Any
@@ -15,11 +15,13 @@ from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.common.strings import artist_keys, comparable, names_no_artist, numeric_id, split_type_marker
 from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
 from salmon.search.base import IdentData
+from salmon.search.hints import search_hints
 from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES, without_tracking
 from salmon.tagger.sources.base import generate_artists, standardize_genres
 from salmon.tagger.tag_urls import tag_urls
+from salmon.tagger.tags import is_classical_genre
 
 
 @dataclass
@@ -40,6 +42,7 @@ async def get_metadata(
     skip_search_url: str | None = None,
     skip_search: bool = False,
     search: MetadataSearch | None = None,
+    overwrite: bool = False,
 ) -> tuple[dict[str, Any], str | None]:
     """Get metadata pertaining to a release from various metadata sources.
 
@@ -52,6 +55,7 @@ async def get_metadata(
         skip_search_url: The --source-url the user gave.
         skip_search: --skip-search: take the metadata from skip_search_url without searching the stores.
         search: Filled with the store search, when one runs, so that pick_metadata can pick from it again.
+        overwrite: --overwrite: the search hints leave out the tags' artist and year, as rls_data does.
 
     Returns:
         Tuple of (metadata dict, source URL or None).
@@ -71,7 +75,12 @@ async def get_metadata(
     if search is None:
         search = MetadataSearch()
     search.results = await run_metasearch(
-        searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
+        searchstrs,
+        filter=False,
+        track_count=len(tags),
+        artists=artists_list,
+        album=album_title,
+        hints=search_hints(tags, overwrite=overwrite),
     )
     search.base = deepcopy(rls_data)
     return await pick_metadata(search, rls_data, path, len(tags))
@@ -559,18 +568,40 @@ def remove_various_artists(metadata):
 
 
 def clean_metadata(metadata):
-    for disc, tracks in metadata["tracks"].items():
-        for num, track in tracks.items():
-            for artist, importance in copy(track["artists"]):
-                guest_artists = {re_strip(a) for a, i in track["artists"] if i in {"guest", "remixer"}}
-                if re_strip(artist) in guest_artists and importance == "main":
-                    if sum("main" in item for item in metadata["tracks"][disc][num]["artists"]) == 1:
-                        pass
-                    else:
-                        metadata["tracks"][disc][num]["artists"].remove((artist, importance))
+    classical = any(is_classical_genre(genre) for genre in metadata.get("genres") or [])
+    for tracks in metadata["tracks"].values():
+        for track in tracks.values():
+            for credit, _why in _mains_to_drop(track["artists"], classical):
+                track["artists"].remove(credit)
 
     _dedupe_catno_against_upc(metadata)
     return metadata
+
+
+def _mains_to_drop(artists, classical):
+    """The track's mains that its other credits show aren't its main artists, each with why (ADR 0007, decision 3).
+
+    A main who is also the track's guest or remixer loses main, one after another while another main is left (an artist
+    remixing their own track keeps it). On a classical release, a main also credited composer or conductor loses main,
+    as the files' classical rule takes them out of ARTIST, unless every main left is one: a track keeps a main."""
+    drops = []
+    left = sum("main" in credit for credit in artists)
+    guests = {re_strip(name) for name, role in artists if role in {"guest", "remixer"}}
+    for credit in artists:
+        if credit[1] == "main" and re_strip(credit[0]) in guests and left > 1:
+            drops.append((credit, "also its guest or remixer"))
+            left -= 1
+    if classical:
+        dropped = {credit for credit, _why in drops}
+        mains = [credit for credit in artists if credit[1] == "main" and credit not in dropped]
+        roles = {}  # each name's first role of the two, which its reason names
+        for name, role in artists:
+            if role in {"composer", "conductor"}:
+                roles.setdefault(re_strip(name), role)
+        named = [credit for credit in mains if re_strip(credit[0]) in roles]
+        if len(named) < len(mains):
+            drops += [(credit, f"also its {roles[re_strip(credit[0])]}, on a classical release") for credit in named]
+    return drops
 
 
 def _dedupe_catno_against_upc(metadata: dict[str, Any]) -> None:

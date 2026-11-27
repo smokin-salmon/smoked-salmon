@@ -5,6 +5,7 @@ the release. A page of Bandcamp's own hosts is then asked for once more as a bro
 as yt-dlp does; if that still fails, or the page is on an artist's own domain, a ScrapeError says so.
 """
 
+from collections.abc import Callable
 from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
@@ -26,19 +27,29 @@ def is_challenge(soup: BeautifulSoup) -> bool:
     return soup.title is not None and soup.title.get_text().strip().lower() == "client challenge"
 
 
-async def retry_as_browser(url: str, params: dict | None, timeout: float) -> BeautifulSoup:
+def asks_again(url: str) -> bool:
+    """Whether `url` is a page of Bandcamp's own hosts, the only ones asked for again."""
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "bandcamp.com" or host.endswith(".bandcamp.com")
+
+
+async def retry_as_browser(
+    url: str, params: dict | None, timeout: float, record: Callable[[int, str | None], None]
+) -> BeautifulSoup:
     """Ask once more for `url`, the page (after any redirect) that answered with the check page, as a browser would.
 
     Only a page of Bandcamp's own hosts is asked for again: the request skips salmon web's public-address guard
     (salmon.ssrf), which a host Bandcamp does not own needs. A redirect is not followed.
 
+    `record` is called with the retry's status and body text once it answers, so an error names that answer.
+
     Raises:
         ScrapeError: If the page is not asked for again, the request fails, or it answers with anything but the page.
     """
-    host = (urlsplit(url).hostname or "").lower()
-    if host != "bandcamp.com" and not host.endswith(".bandcamp.com"):
+    if not asks_again(url):
         raise ScrapeError(CHALLENGED)
     status, data = await _impersonated_get(url, params, curl_url("bandcamp"), timeout)
+    record(status, data.decode("utf-8", errors="ignore"))
     if status != 200:
         raise ScrapeError(STILL_CHALLENGED)
     soup = BeautifulSoup(data, "lxml")
