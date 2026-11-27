@@ -1,6 +1,6 @@
 # 0008. salmon web edits tracker credentials in config.toml; each job reads them when it starts
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-23
 - **Links:** #1034, amends [0004](0004-web-interface.md) sections 1 and 3 and [0005](0005-config-compatibility.md)
   decision 6
