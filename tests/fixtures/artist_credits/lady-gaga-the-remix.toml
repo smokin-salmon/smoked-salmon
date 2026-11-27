@@ -1,7 +1,7 @@
 album = "Lady Gaga, The Remix"
 why = "A remix album: a remixer on every track, the original singer the only main; two tracks keep their singles' featured guests."
 edition = "The 10-track US edition, Streamline/Interscope 2010 (Deezer 2383521 = MusicBrainz ec3baf33 by barcode, digital; Discogs 2384351, the US CD with the same barcode). Chosen because all three stores carry it under one UPC; the 17-track international edition is another release. Qobuz ow9fz03z2krna has the same UPC and the same 10 tracks."
-known_wrong = ["merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest or remixer, so the singles' guests (Colby O'Donis, Marilyn Manson, Beyoncé) are made main and ALBUMARTIST is 'Various'"]
+known_wrong = ["MusicBrainz parse: no remixer on 'Poker Face' and 'The Fame', both Guéna LG's on the sleeve, as MusicBrainz's recordings state none and their titles name only the mixes ('LLG vs. GLG Radio Mix', 'Glam as You')", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest or remixer, so the featured singers (Colby O'Donis, Marilyn Manson, Beyoncé) are made main and ALBUMARTIST is 'Various'"]
 files_from = "deezer"
 output = true
 
@@ -14,9 +14,17 @@ tags = "constructed from the store data named in the comment above [[track]], ne
 
 [right]
 release_main = ["Lady Gaga"]
-not_main = ["Richard Vission", "Richard \"Humpty\" Vission", "Guena LG", "Chew Fu", "Chew-Fu Phat", "Frankmusik", "FrankMusik", "Stuart Price", "Starsmith", "Passion Pit", "The Sound of Arrows", "The Sound Of Arrows", "Monarchy", "Colby O'Donis", "Colby O’Donis", "Marilyn Manson", "Beyoncé"]
-how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Lady Gaga alone as the release's artist and the singles' guests as featured; D1 keeps remixers out of ARTIST"
-open = "the remixers' exact set and name forms: Discogs credits them as remixers, Deezer as remixers (in its track artists, as featured), MusicBrainz as remixer relations on the recordings and in the titles, each spelling some differently"
+not_main = ["Richard Vission", "Guéna LG", "Chew Fu", "FrankMusik", "Stuart Price", "Starsmith", "Passion Pit", "Sound of Arrows", "Monarchy", "Colby O'Donis", "Marilyn Manson", "Beyoncé"]
+remixers = ["Richard Vission", "Guéna LG", "Chew Fu", "FrankMusik", "Stuart Price", "Starsmith", "Passion Pit", "Sound of Arrows", "Monarchy"]
+how_we_know = "The front cover credits Lady Gaga alone, and the back cover (the US CD, scans on Discogs release 2384351) names each remix, with 'FEAT.' only on LoveGame (Marilyn Manson) and Telephone (Beyoncé), the sleeve's two guests. The booklet credits 'Remix and additional production by' Guéna LG (The Fame), Starsmith, Passion Pit, Sound of Arrows and Monarchy; the booklet page for tracks 1 to 5 isn't scanned, and the US LP's back (Discogs release 2404726), small print read from a low-resolution scan, gives Richard Vission, Guéna LG (Poker Face), Chew Fu, FrankMusik (credited 'Frankmuzik' in the remix's title and on Discogs) and Stuart Price. The stores' other spellings are name forms. Deezer, Qobuz (Vocalist, FeaturedArtist) and MusicBrainz's track credit name Colby O'Donis featured on Just Dance; the sleeve and Discogs don't, so whether he is a guest here is left undecided (guests are not judged yet). No store credits him as a main. Deezer, MusicBrainz, Discogs and Qobuz all give Lady Gaga alone as the release's artist; D1 keeps remixers out of ARTIST"
+
+[right.name_forms]
+"Richard Vission" = ["Richard \"Humpty\" Vission", "Richard “Humpty” Vission"]
+"Guéna LG" = ["Guena LG"]
+"Chew Fu" = ["Chew-Fu Phat"]
+"FrankMusik" = ["Frankmusik", "Frankmuzik"]
+"Sound of Arrows" = ["The Sound of Arrows", "The Sound Of Arrows"]
+"Colby O'Donis" = ["Colby O’Donis"]
 
 [today.deezer]
 release = ["Lady Gaga (main)", "Colby O'Donis (guest)", "Richard Vission (remixer)", "Guéna LG (remixer)", "Marilyn Manson (guest)", "Chew Fu (remixer)", "Frankmusik (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (guest)", "Passion Pit (remixer)", "The Sound of Arrows (remixer)", "Monarchy (remixer)"]

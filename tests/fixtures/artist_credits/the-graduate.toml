@@ -13,8 +13,9 @@ tags = "constructed from the store data named in the comment above [[track]], ne
 
 [right]
 performers = ["Simon & Garfunkel", "Dave Grusin"]
-how_we_know = "Deezer, MusicBrainz and Discogs agree track by track: Simon & Garfunkel on tracks 1, 3, 5, 7, 9, 11, 13 and 14, Dave Grusin (credited 'David Grusin' on MusicBrainz) on 2, 4, 6, 8, 10 and 12, each the only artist on its tracks"
-open = "The release's artist: Deezer's album artist is Simon & Garfunkel (with both as album contributors), MusicBrainz credits 'Paul Simon; Simon & Garfunkel; David Grusin', Discogs Various; ALBUMARTIST is left open, as for Pulp Fiction. Per track, not judged by the test yet: Simon & Garfunkel main on their eight tracks and Dave Grusin on his six, neither on the other's"
+not_main = ["Paul Simon"]
+how_we_know = "The front cover and labels credit 'Songs by Paul Simon / Performed by Simon & Garfunkel / Additional music by David Grusin' (Columbia Masterworks OS 3180, the 1968 LP, scans on Discogs release 541912; the 1990 CD, Discogs 449586, keeps the front), and Wikipedia credits the album to Simon & Garfunkel: they are the release's main. Paul Simon is credited as the songwriter, so never a main. The release-level credits read otherwise: Discogs 541912 lists Paul Simon, Simon & Garfunkel and Dave Grusin, MusicBrainz 'Paul Simon; Simon & Garfunkel; David Grusin', and Discogs 449586 'Various'; reading 'Additional music by' as a second main would make Grusin one, but the cover sets him apart. Deezer, MusicBrainz and Discogs agree track by track: Simon & Garfunkel on 1, 3, 5, 7, 9, 11, 13 and 14, Dave Grusin ('David Grusin' on the cover and MusicBrainz) on 2, 4, 6, 8, 10 and 12, each the only artist on its tracks"
+open = "The release's main is not judged yet: the cover credits Simon & Garfunkel, but salmon builds the release's artists from every track's credits, so Dave Grusin, right as main on his own tracks, is among them; judging track mains per track is a later casebook change"
 
 [right.name_forms]
 "Dave Grusin" = ["David Grusin"]
