@@ -43,6 +43,10 @@ CALLED_FROM = {
     "report_lossy_master": (upload,),
 }
 
+# Taken at import, before any test runs: a test may set spectrals.check_spectrals to a fake before stub_uploader.
+_REAL_CHECK_SPECTRALS = spectrals.check_spectrals
+_REAL_SPECTRALS_IN_BACKGROUND = spectrals.spectrals_in_background
+
 
 def stub_uploader(monkeypatch, fakes: dict[str, Any]) -> None:
     """Replace each name with its fake wherever the upload run calls it.
@@ -52,16 +56,17 @@ def stub_uploader(monkeypatch, fakes: dict[str, Any]) -> None:
 
     A fake check_spectrals also makes the run start no spectrals in the background, unless a fake
     spectrals_in_background is given: the real check_spectrals waits for them before it touches the spectrals folder.
-    A fake does not, and sox, where it is installed, went on writing into the folder the fake replaced (#1199).
+    A fake does not, and sox, where it is installed, went on writing into the folder the fake replaced (#1199). A
+    wrapper of the real check_spectrals is a fake here: a test of it with the background spectrals gives both.
     """
 
     async def no_notes() -> None:
         return None
 
     if "check_spectrals" in fakes:
-        real = fakes["check_spectrals"] is spectrals.check_spectrals
+        real = fakes["check_spectrals"] is _REAL_CHECK_SPECTRALS
         # The real one again with the real check_spectrals: a harness may stub both, then a test the real one.
-        generation = spectrals.spectrals_in_background if real else _no_spectrals_in_background
+        generation = _REAL_SPECTRALS_IN_BACKGROUND if real else _no_spectrals_in_background
         fakes = {"spectrals_in_background": generation, **fakes}
     for name, fake in {"ask_torrent_notes": no_notes, **fakes}.items():
         for module in CALLED_FROM.get(name, (salmon.uploader,)):

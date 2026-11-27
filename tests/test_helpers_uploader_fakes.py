@@ -21,7 +21,15 @@ from salmon.uploader import spectrals
 pytestmark = pytest.mark.usefixtures("image_uploads")
 
 
-def test_a_stand_in_check_spectrals_runs_no_spectral_generation_beside_it(monkeypatch, tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "also_in_spectrals",
+    [False, True],
+    # True as the tests whose later spectral check (post_upload_spectral_check) calls spectrals.check_spectrals do.
+    ids=["given", "also-set-in-spectrals"],
+)
+def test_a_stand_in_check_spectrals_runs_no_spectral_generation_beside_it(
+    monkeypatch, tmp_path: Path, also_in_spectrals: bool
+) -> None:
     monkeypatch.setattr(cfg.directory, "download_directory", str(tmp_path / "downloads"))
     monkeypatch.setattr(cfg.directory, "tmp_dir", None)
     monkeypatch.setattr(cfg.directory, "library_dirs", [])
@@ -43,6 +51,8 @@ def test_a_stand_in_check_spectrals_runs_no_spectral_generation_beside_it(monkey
         return await _lossy_with_spectrals(path, *args, **kwargs)
 
     monkeypatch.setattr(spectrals, "_generate_spectral_for_file", sox)
+    if also_in_spectrals:
+        monkeypatch.setattr(spectrals, "check_spectrals", check_spectrals)
 
     run = _run_up(
         monkeypatch,
