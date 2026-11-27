@@ -221,6 +221,25 @@ def test_save_on_an_unparsable_file_is_refused_not_crashed(tmp_path: Path) -> No
     _with_client(config, test)
 
 
+def test_a_missing_config_file_is_reported_not_a_crash(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    config.unlink()
+
+    async def test(client: TestClient, _app: Any) -> None:
+        got = await client.get("/api/settings/trackers", headers=AUTH)
+        assert got.status == 200
+        answer = await got.json()
+        assert answer["writable"] is False
+        assert str(config) in answer["error"]
+        response = await client.post("/api/settings/trackers/RED", json={"session": NEW_COOKIE}, headers=AUTH)
+        assert response.status == 422
+        assert str(config) in (await response.json())["detail"]
+
+    _with_client(config, test)
+
+    assert not config.exists()
+
+
 # --- From the PR review (#1180) -----------------------------------------------------------
 
 

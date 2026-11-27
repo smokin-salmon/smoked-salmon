@@ -95,10 +95,14 @@ def writable(path: Path) -> bool:
     """Whether salmon may write the config file itself (not only the folder it is in).
 
     A file with no write bit set is read-only even to root, who may write it anyway (the Docker image runs as root):
-    ``chmod a-w config.toml`` turns saving off.
+    ``chmod a-w config.toml`` turns saving off. A file that is missing or cannot be stat'ed is not writable.
     """
     real = path.resolve()
-    no_write_bit = not real.stat().st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+    try:
+        mode = real.stat().st_mode
+    except OSError:
+        return False
+    no_write_bit = not mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
     return not no_write_bit and os.access(real, os.W_OK)
 
 
