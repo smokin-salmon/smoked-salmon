@@ -1,7 +1,7 @@
 album = "Puccini, La Bohème: Karajan, Berliner Philharmoniker"
 why = "A famous opera: Deezer makes the composer a main artist, and the stores list 14 or 15 performers. Discogs' parse loses every track."
 edition = "Decca 2024 remaster (Deezer, MusicBrainz); Qobuz ayakfjxmkegvb is another issue of the same recording, UPC 0028948712984"
-known_wrong = ["Deezer parse: Giacomo Puccini a main artist (and in ARTIST on every track of the files tagged from it); Herbert von Karajan a main, not conductor; no composer role", "MusicBrainz parse: chorus master Walter Hagen-Groll a main artist; Karajan a main, not conductor", "Discogs parse: 0 tracks", "merge: chorus master Walter Hagen-Groll a main artist", "Qobuz parse: Pavarotti, the album's one main-artist, the only main; the other singers, the orchestra, the chorus and Karajan, each a MainArtist on its tracks, guessed guests (Karajan beside conductor)"]
+known_wrong = ["Deezer parse: Giacomo Puccini a main artist beside his composer credit, and Herbert von Karajan a main beside his conductor credit (and both in ARTIST on every track of the files tagged from it)", "MusicBrainz parse: chorus master Walter Hagen-Groll a main artist; Karajan a main, not conductor", "Discogs parse: 0 tracks", "merge: chorus master Walter Hagen-Groll a main artist", "Qobuz parse: Pavarotti, the album's one main-artist, the only main; the other singers, the orchestra, the chorus and Karajan, each a MainArtist on its tracks, guessed guests (Karajan beside conductor)"]
 files_from = "deezer"
 
 [sources]
@@ -16,7 +16,7 @@ not_main = ["Giacomo Puccini", "Herbert von Karajan"]
 how_we_know = "Qobuz credits Puccini as the composer; RED's guidance on classical keeps the composer out of the main artists and credits the conductor as conductor (Qobuz states Karajan conductor)"
 
 [today.deezer]
-release = ["Rolando Panerai (main)", "Luciano Pavarotti (main)", "Nicolai Ghiaurov (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)", "Giacomo Puccini (main)", "Gianni Maffeo (main)", "Michel Sénéchal (main)", "Mirella Freni (main)", "Schöneberger Sängerknaben (main)", "Chor der Deutschen Oper Berlin (main)", "Gernot Pietsch (main)", "Elizabeth Harwood (main)", "Hans-Dietrich Pohl (main)", "Hans-Dieter Appell (main)"]
+release = ["Rolando Panerai (main)", "Luciano Pavarotti (main)", "Nicolai Ghiaurov (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)", "Giacomo Puccini (main)", "Herbert von Karajan (conductor)", "Giacomo Puccini (composer)", "Gianni Maffeo (main)", "Michel Sénéchal (main)", "Mirella Freni (main)", "Schöneberger Sängerknaben (main)", "Chor der Deutschen Oper Berlin (main)", "Gernot Pietsch (main)", "Elizabeth Harwood (main)", "Hans-Dietrich Pohl (main)", "Hans-Dieter Appell (main)"]
 tracks = 31
 
 [today.musicbrainz]
@@ -34,7 +34,7 @@ tracks = 31
 [today.merge]
 release = ["Rolando Panerai (main)", "Luciano Pavarotti (main)", "Nicolai Ghiaurov (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (conductor)", "Giacomo Puccini (composer)", "Walter Hagen-Groll (main)", "Chor der Deutschen Oper Berlin (main)", "Schöneberger Sängerknaben (main)", "Gianni Maffeo (main)", "Michel Sénéchal (main)", "Mirella Freni (main)", "Gernot Pietsch (main)", "Elizabeth Harwood (main)", "Hans-Dietrich Pohl (main)", "Hans-Dieter Appell (main)", "Hans-Dieter Appelt (main)"]
 tracks = 31
-credits = ["1.1: Rolando Panerai (main), Luciano Pavarotti (main), Nicolai Ghiaurov (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.2: Nicolai Ghiaurov (main), Rolando Panerai (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.3: Luciano Pavarotti (main), Rolando Panerai (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.4: Michel Sénéchal (main), Rolando Panerai (main), Luciano Pavarotti (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.5: Luciano Pavarotti (main), Rolando Panerai (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.6: Mirella Freni (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Nicolai Ghiaurov (main), Rolando Panerai (main), Schöneberger Sängerknaben (main)", "1.7: Luciano Pavarotti (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.8: Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer)", "1.9: Mirella Freni (main), Berliner Philharmoniker (main), Luciano Pavarotti (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Gianni Maffeo (main), Nicolai Ghiaurov (main)", "1.10: Luciano Pavarotti (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer)", "1.11: Rolando Panerai (main), Gianni Maffeo (main), Luciano Pavarotti (main), Mirella Freni (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Nicolai Ghiaurov (main)", "1.12: Luciano Pavarotti (main), Nicolai Ghiaurov (main), Mirella Freni (main), Gianni Maffeo (main), Gernot Pietsch (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Rolando Panerai (main)", "1.13: Rolando Panerai (main), Mirella Freni (main), Gianni Maffeo (main), Nicolai Ghiaurov (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.14: Luciano Pavarotti (main), Gianni Maffeo (main), Nicolai Ghiaurov (main), Rolando Panerai (main), Michel Sénéchal (main), Elizabeth Harwood (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Mirella Freni (main)", "1.15: Elizabeth Harwood (main), Michel Sénéchal (main), Mirella Freni (main), Luciano Pavarotti (main), Nicolai Ghiaurov (main), Rolando Panerai (main), Gianni Maffeo (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main)", "1.16: Nicolai Ghiaurov (main), Gianni Maffeo (main), Luciano Pavarotti (main), Rolando Panerai (main), Elizabeth Harwood (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Mirella Freni (main)", "2.1: Hans-Dietrich Pohl (main), Elizabeth Harwood (main), Mirella Freni (main), Berliner Philharmoniker (main), Luciano Pavarotti (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.2: Mirella Freni (main), Hans-Dieter Appell (main), Hans-Dietrich Pohl (main), Berliner Philharmoniker (main), Luciano Pavarotti (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Hans-Dieter Appelt (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.3: Rolando Panerai (main), Mirella Freni (main), Berliner Philharmoniker (main), Luciano Pavarotti (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.4: Luciano Pavarotti (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Mirella Freni (main), Schöneberger Sängerknaben (main)", "2.5: Luciano Pavarotti (main), Rolando Panerai (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.6: Luciano Pavarotti (main), Mirella Freni (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.7: Mirella Freni (main), Berliner Philharmoniker (main), Luciano Pavarotti (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.8: Luciano Pavarotti (main), Mirella Freni (main), Elizabeth Harwood (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer)", "2.9: Rolando Panerai (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.10: Luciano Pavarotti (main), Rolando Panerai (main), Gianni Maffeo (main), Nicolai Ghiaurov (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.11: Nicolai Ghiaurov (main), Rolando Panerai (main), Gianni Maffeo (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.12: Elizabeth Harwood (main), Luciano Pavarotti (main), Rolando Panerai (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Mirella Freni (main), Schöneberger Sängerknaben (main)", "2.13: Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Luciano Pavarotti (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.14: Mirella Freni (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.15: Gianni Maffeo (main), Mirella Freni (main), Luciano Pavarotti (main), Elizabeth Harwood (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Nicolai Ghiaurov (main), Schöneberger Sängerknaben (main)"]
+credits = ["1.1: Rolando Panerai (main), Luciano Pavarotti (main), Nicolai Ghiaurov (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.2: Nicolai Ghiaurov (main), Rolando Panerai (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.3: Luciano Pavarotti (main), Rolando Panerai (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.4: Michel Sénéchal (main), Rolando Panerai (main), Luciano Pavarotti (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.5: Luciano Pavarotti (main), Rolando Panerai (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.6: Mirella Freni (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Nicolai Ghiaurov (main), Rolando Panerai (main), Schöneberger Sängerknaben (main)", "1.7: Luciano Pavarotti (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.8: Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer)", "1.9: Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Luciano Pavarotti (main), Gianni Maffeo (main), Nicolai Ghiaurov (main)", "1.10: Luciano Pavarotti (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer)", "1.11: Rolando Panerai (main), Gianni Maffeo (main), Luciano Pavarotti (main), Mirella Freni (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Nicolai Ghiaurov (main)", "1.12: Luciano Pavarotti (main), Nicolai Ghiaurov (main), Mirella Freni (main), Gianni Maffeo (main), Gernot Pietsch (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Rolando Panerai (main)", "1.13: Rolando Panerai (main), Mirella Freni (main), Gianni Maffeo (main), Nicolai Ghiaurov (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "1.14: Luciano Pavarotti (main), Gianni Maffeo (main), Nicolai Ghiaurov (main), Rolando Panerai (main), Michel Sénéchal (main), Elizabeth Harwood (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Mirella Freni (main)", "1.15: Elizabeth Harwood (main), Michel Sénéchal (main), Mirella Freni (main), Luciano Pavarotti (main), Nicolai Ghiaurov (main), Rolando Panerai (main), Gianni Maffeo (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main)", "1.16: Nicolai Ghiaurov (main), Gianni Maffeo (main), Luciano Pavarotti (main), Rolando Panerai (main), Elizabeth Harwood (main), Schöneberger Sängerknaben (main), Chor der Deutschen Oper Berlin (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Mirella Freni (main)", "2.1: Hans-Dietrich Pohl (main), Elizabeth Harwood (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Luciano Pavarotti (main), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.2: Mirella Freni (main), Hans-Dieter Appell (main), Hans-Dietrich Pohl (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Luciano Pavarotti (main), Walter Hagen-Groll (main), Hans-Dieter Appelt (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.3: Rolando Panerai (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Luciano Pavarotti (main), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.4: Luciano Pavarotti (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Mirella Freni (main), Schöneberger Sängerknaben (main)", "2.5: Luciano Pavarotti (main), Rolando Panerai (main), Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.6: Luciano Pavarotti (main), Mirella Freni (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.7: Mirella Freni (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Luciano Pavarotti (main), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.8: Luciano Pavarotti (main), Mirella Freni (main), Elizabeth Harwood (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer)", "2.9: Rolando Panerai (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.10: Luciano Pavarotti (main), Rolando Panerai (main), Gianni Maffeo (main), Nicolai Ghiaurov (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.11: Nicolai Ghiaurov (main), Rolando Panerai (main), Gianni Maffeo (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.12: Elizabeth Harwood (main), Luciano Pavarotti (main), Rolando Panerai (main), Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Mirella Freni (main), Schöneberger Sängerknaben (main)", "2.13: Nicolai Ghiaurov (main), Gianni Maffeo (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Luciano Pavarotti (main), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.14: Mirella Freni (main), Luciano Pavarotti (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Schöneberger Sängerknaben (main)", "2.15: Gianni Maffeo (main), Mirella Freni (main), Luciano Pavarotti (main), Elizabeth Harwood (main), Rolando Panerai (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Giacomo Puccini (composer), Walter Hagen-Groll (main), Chor der Deutschen Oper Berlin (main), Nicolai Ghiaurov (main), Schöneberger Sängerknaben (main)"]
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -731,6 +731,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Rolando Panerai",
      "Luciano Pavarotti",
@@ -759,6 +765,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Nicolai Ghiaurov",
      "Rolando Panerai",
@@ -788,6 +800,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Rolando Panerai",
@@ -819,6 +837,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Michel Sénéchal",
      "Rolando Panerai",
@@ -850,6 +874,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Rolando Panerai",
@@ -878,6 +908,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Mirella Freni",
      "Luciano Pavarotti",
@@ -904,6 +940,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Mirella Freni",
@@ -929,6 +971,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Berliner Philharmoniker",
@@ -953,6 +1001,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Mirella Freni",
      "Berliner Philharmoniker",
@@ -978,6 +1032,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Mirella Freni",
@@ -1008,6 +1068,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Rolando Panerai",
      "Gianni Maffeo",
@@ -1043,6 +1109,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Nicolai Ghiaurov",
@@ -1077,6 +1149,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Rolando Panerai",
      "Mirella Freni",
@@ -1112,6 +1190,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Gianni Maffeo",
@@ -1151,6 +1235,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Elizabeth Harwood",
      "Michel Sénéchal",
@@ -1189,6 +1279,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Nicolai Ghiaurov",
      "Gianni Maffeo",
@@ -1221,6 +1317,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Hans-Dietrich Pohl",
      "Elizabeth Harwood",
@@ -1249,6 +1351,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Mirella Freni",
      "Hans-Dieter Appell",
@@ -1276,6 +1384,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Rolando Panerai",
      "Mirella Freni",
@@ -1302,6 +1416,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Rolando Panerai",
@@ -1329,6 +1449,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Rolando Panerai",
@@ -1357,6 +1483,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Mirella Freni",
@@ -1383,6 +1515,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Mirella Freni",
      "Berliner Philharmoniker",
@@ -1410,6 +1548,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Mirella Freni",
@@ -1438,6 +1582,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Rolando Panerai",
      "Luciano Pavarotti",
@@ -1466,6 +1616,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Luciano Pavarotti",
      "Rolando Panerai",
@@ -1496,6 +1652,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Nicolai Ghiaurov",
      "Rolando Panerai",
@@ -1527,6 +1689,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Elizabeth Harwood",
      "Luciano Pavarotti",
@@ -1556,6 +1724,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Nicolai Ghiaurov",
      "Gianni Maffeo",
@@ -1582,6 +1756,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Mirella Freni",
      "Luciano Pavarotti",
@@ -1611,6 +1791,12 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Giacomo Puccini"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
     "main_artist": [
      "Gianni Maffeo",
      "Mirella Freni",

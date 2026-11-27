@@ -1,9 +1,11 @@
 """The Deezer parser's credits, as Deezer states them (#869 step 3): a name Deezer gives as one artist stays one
-artist, its remixers are read, and the credits salmon guessed are marked."""
+artist, its remixers are read, on a classical release its conductors and composers, and the credits salmon guessed are
+marked."""
 
 import pytest
 from helpers.deezer import deezer_song, deezer_tracks
 
+from salmon.tagger.sources.base import is_classical_release
 from salmon.tagger.sources.deezer import Scraper
 
 
@@ -124,7 +126,8 @@ def test_a_guest_only_the_title_names_is_marked_a_guess() -> None:
     ("contributors", "default_artists", "title", "expected"),
     [
         ({"main_artist": ["Bob"], "featuring": ["Carol"]}, [], "Song (feat. Carol)", []),
-        # The merge reads the two spellings as one artist; the title's stays a guess, so Deezer's word wins.
+        # Deezer on its own still gives both spellings as guests. Merged with the files they become one artist, and
+        # the title's stays a guess, so Deezer's "Ms. Lauryn Hill" wins.
         (
             {"main_artist": ["Bob"], "featuring": ["Ms. Lauryn Hill"]},
             [],
@@ -160,3 +163,67 @@ def test_a_title_guest_deezer_states_as_main_comes_after_the_mains() -> None:
 
 def test_a_guest_the_title_names_twice_is_credited_once() -> None:
     assert _artists({"main_artist": ["Alice"]}, title="Song (feat. Bob & Bob)") == [("Alice", "main"), ("Bob", "guest")]
+
+
+# Classical roles (#1132, second slice): composer and conductor, on a classical release only (EXTRA_ROLES)
+
+PUCCINI = {
+    "main_artist": ["Giacomo Puccini", "Berliner Philharmoniker", "Herbert von Karajan"],
+    "composer": ["Giacomo Puccini"],
+    "conductor": ["Herbert von Karajan"],
+    "orchestra": ["Berliner Philharmoniker"],
+}
+
+
+def _track(contributors: dict, genres: tuple[str, ...] = ("Classical",)) -> dict:
+    return deezer_tracks(deezer_song(1, title="Che gelida manina", contributors=contributors), genres=genres)["1"]["1"]
+
+
+def test_a_classical_track_s_composer_and_conductor_are_stated() -> None:
+    track = _track(PUCCINI)
+
+    assert track["artists"] == [
+        ("Giacomo Puccini", "main"),
+        ("Berliner Philharmoniker", "main"),
+        ("Herbert von Karajan", "main"),
+        ("Herbert von Karajan", "conductor"),
+        ("Giacomo Puccini", "composer"),
+    ]
+    assert track["assumed_artists"] == []
+
+
+def test_as_before_a_composer_and_conductor_off_classical_credit_no_one() -> None:
+    """RED: composer and conductor only in classical. Deezer sends a composer on most pop tracks too."""
+    contributors = {"main_artist": ["Queen"], "composer": ["Freddie Mercury"], "conductor": ["Brian May"]}
+    track = _track(contributors, genres=("Rock",))
+
+    assert track["artists"] == [("Queen", "main")]
+
+
+def test_a_classical_genre_in_another_language_counts() -> None:
+    track = _track({"main_artist": ["Orchestre"], "composer": ["Claude Debussy"]}, genres=("Classique",))
+
+    assert ("Claude Debussy", "composer") in track["artists"]
+
+
+def test_a_classical_role_given_twice_or_blank_is_credited_once_and_trimmed() -> None:
+    contributors = {"main_artist": ["Orchestra"], "composer": [" Bach ", "Bach", " "], "conductor": [""]}
+
+    track = _track(contributors)
+
+    assert track["artists"] == [("Orchestra", "main"), ("Bach", "composer")]
+
+
+def test_as_before_the_orchestra_key_credits_no_one() -> None:
+    """No role for an orchestra: Deezer lists it as main where it is one."""
+    track = _track({"main_artist": ["Alice"], "orchestra": ["Bob Orchestra"]})
+
+    assert track["artists"] == [("Alice", "main")]
+
+
+def test_is_classical_release_passes_over_a_genre_with_no_name() -> None:
+    """A store's genres can hold a None or an empty name (Qobuz's genres_list); the release is classical by the
+    others."""
+    classical = is_classical_release([None, "", "Classical"])
+
+    assert classical

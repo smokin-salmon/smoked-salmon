@@ -1,0 +1,1801 @@
+album = "Bernstein, West Side Story: Te Kanawa, Carreras, Troyanos, Bernstein conducting (DG 1985)"
+why = "The composer conducts his own work: Deezer states Leonard Bernstein main_artist, composer and conductor on all 33 tracks. The singers are main where they sing, the Leonard Bernstein Orchestra on the 27 West Side Story tracks and the Israel Philharmonic Orchestra on the 6 tracks of the On the Waterfront suite."
+edition = "DG 415 253-2, 2 CDs, 1985, 33 tracks: Deezer 6450736 (digital, UPC 028941525321). MusicBrainz 9b5eabf5 is the German CD with that barcode, the same 33 tracks; MusicBrainz also has the US CD e476c50a with the same barcode, track list and lengths, and 9b5eabf5 is the one dated (1985-03-19). Discogs 1968417 is the release MusicBrainz links. Qobuz 0002894152532 is the same UPC less its check digit, the same 33 tracks on 2 discs."
+known_wrong = ["Deezer parse: Leonard Bernstein a main artist beside his conductor and composer credits (and in ARTIST on every track of the files tagged from it)", "MusicBrainz parse: Bernstein main, not conductor, and no composer on any track; the Leonard Bernstein Orchestra on no track; the Israel Philharmonic Orchestra under its MusicBrainz name in Hebrew script, on the 6 On the Waterfront tracks and on 'America' (1.12), whose recording MusicBrainz credits to the Israel Philharmonic Orchestra & Chorus", "Discogs parse: 0 tracks: the tracklist is two index tracks (West Side Story, 27 sub-tracks; On the Waterfront, 6) and the parser drops sub-tracks", "Qobuz parse: COMPOSER Stephen Sondheim, the lyricist, on the 27 West Side Story tracks, from Qobuz's composer field, where its performers line names Bernstein Composer and Sondheim Lyricist; Bernstein main beside conductor; the singers and both orchestras, each a MainArtist on its tracks, guessed guests, as the album's artists[] lists only Bernstein", "merge: on the 27 West Side Story tracks Qobuz's Sondheim, the lyricist, is a composer beside Bernstein (from Qobuz's composer field)", "merge: the Israel Philharmonic Orchestra twice on the 6 On the Waterfront tracks, Deezer's and Qobuz's spelling beside MusicBrainz's Hebrew name, and MusicBrainz's alone on 'America' (1.12) beside the Leonard Bernstein Orchestra", "merge: one singer in two spellings on 'I Feel Pretty' (2.1), 'Luise Edeiken' (the files' ARTIST, from Deezer's ARTISTS) beside 'Louise Edeiken' (Deezer's contributors, MusicBrainz and Qobuz)"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, in tests/fixtures/stores/musicbrainz/release/, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+not_main = ["Leonard Bernstein"]
+how_we_know = "Deezer, Qobuz and Discogs state Bernstein composer and conductor (Qobuz's performers line: Composer, Conductor, MainArtist; Discogs: Composed By, Conductor); RED's guidance on classical credits the composer as composer and the conductor as conductor, not main. Deezer's contributors and Qobuz's performers lines agree on the singers and the orchestra as main artists on the tracks they perform: the Leonard Bernstein Orchestra on the 27 West Side Story tracks, the Israel Philharmonic Orchestra on the 6 On the Waterfront tracks."
+open = "Whether the singers are credited on every track or per track: Deezer and Qobuz name each singer only on the tracks they sing, MusicBrainz credits the release to Bernstein, Te Kanawa, Carreras, Troyanos, Ollmann and Horne and every track to Bernstein alone (its composer), and Discogs credits the release to the same six. Which singers lead the release (the principals, or every singer on a track)."
+
+[today.deezer]
+release = ["Leonard Bernstein Orchestra (main)", "Leonard Bernstein (main)", "Leonard Bernstein (conductor)", "Leonard Bernstein (composer)", "Kurt Ollmann (main)", "David Livingston (main)", "Stephen Bogardus (main)", "Peter Thom (main)", "Marty Nelson (main)", "José Carreras (main)", "Nina Bernstein (main)", "Alexander Bernstein (main)", "Kiri Te Kanawa (main)", "Angelina Reaux (main)", "Louise Edeiken (main)", "Stella Zambalis (main)", "Tatiana Troyanos (main)", "Richard Harrell (main)", "Marilyn Horne (main)", "Todd Lester (main)", "Israel Philharmonic Orchestra (main)"]
+tracks = 33
+
+[today.musicbrainz]
+release = ["Leonard Bernstein (main)", "Kurt Ollmann (main)", "David Livingston (main)", "Peter Thom (main)", "Stephen Bogardus (main)", "José Carreras (main)", "Kiri Te Kanawa (main)", "Tatiana Troyanos (main)", "Louise Edeiken (main)", "התזמורת הפילהרמונית הישראלית (main)", "Richard Harrell (main)", "Stella Zambalis (main)", "Angelina Réaux (main)", "Marilyn Horne (main)", "Marty Nelson (main)", "Todd Lester (main)"]
+tracks = 33
+
+[today.discogs]
+release = []
+tracks = 0
+
+[today.qobuz]
+release = ["Leonard Bernstein (main)", "Leonard Bernstein (conductor)", "Leonard Bernstein Orchestra (guest)", "Stephen Sondheim (composer)", "Kurt Ollmann (guest)", "Stephen Bogardus (guest)", "Peter Thom (guest)", "David Livingston (guest)", "Marty Nelson (guest)", "Jose Carreras (guest)", "Nina Bernstein (guest)", "Alexander Bernstein (guest)", "Kiri Te Kanawa (guest)", "Angelina Réaux (guest)", "Tatiana Troyanos (guest)", "Stella Zambalis (guest)", "Louise Edeiken (guest)", "Richard Harrell (guest)", "Marilyn Horne (guest)", "Todd Lester (guest)", "Israel Philharmonic Orchestra (guest)", "Leonard Bernstein (composer)"]
+tracks = 33
+
+[today.merge]
+release = ["Leonard Bernstein Orchestra (main)", "Leonard Bernstein (conductor)", "Leonard Bernstein (composer)", "Stephen Sondheim (composer)", "Kurt Ollmann (main)", "David Livingston (main)", "Stephen Bogardus (main)", "Peter Thom (main)", "Marty Nelson (main)", "José Carreras (main)", "Nina Bernstein (main)", "Alexander Bernstein (main)", "Kiri Te Kanawa (main)", "Angelina Reaux (main)", "Louise Edeiken (main)", "Stella Zambalis (main)", "Tatiana Troyanos (main)", "התזמורת הפילהרמונית הישראלית (main)", "Richard Harrell (main)", "Luise Edeiken (main)", "Marilyn Horne (main)", "Todd Lester (main)", "Israel Philharmonic Orchestra (main)"]
+tracks = 33
+credits = ["1.1: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.2: Kurt Ollmann (main), David Livingston (main), Stephen Bogardus (main), Peter Thom (main), Marty Nelson (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.3: José Carreras (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.4: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.5: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.6: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.7: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.8: Nina Bernstein (main), Alexander Bernstein (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.9: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.10: José Carreras (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.11: Kiri Te Kanawa (main), José Carreras (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.12: Angelina Reaux (main), Louise Edeiken (main), Stella Zambalis (main), Tatiana Troyanos (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer), התזמורת הפילהרמונית הישראלית (main)", "1.13: Kurt Ollmann (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.14: Kiri Te Kanawa (main), José Carreras (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.15: Kiri Te Kanawa (main), Tatiana Troyanos (main), José Carreras (main), Kurt Ollmann (main), Richard Harrell (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "1.16: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.1: Kiri Te Kanawa (main), Luise Edeiken (main), Angelina Reaux (main), Stella Zambalis (main), Leonard Bernstein Orchestra (main), Louise Edeiken (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.2: Kiri Te Kanawa (main), José Carreras (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.3: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.4: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.5: Marilyn Horne (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.6: Kiri Te Kanawa (main), José Carreras (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.7: David Livingston (main), Marty Nelson (main), Stephen Bogardus (main), Peter Thom (main), Todd Lester (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.8: Kiri Te Kanawa (main), Tatiana Troyanos (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.9: Kiri Te Kanawa (main), Tatiana Troyanos (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.10: Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.11: Kiri Te Kanawa (main), José Carreras (main), Leonard Bernstein Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), Stephen Sondheim (composer)", "2.12: Israel Philharmonic Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), התזמורת הפילהרמונית הישראלית (main)", "2.13: Israel Philharmonic Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), התזמורת הפילהרמונית הישראלית (main)", "2.14: Israel Philharmonic Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), התזמורת הפילהרמונית הישראלית (main)", "2.15: Israel Philharmonic Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), התזמורת הפילהרמונית הישראלית (main)", "2.16: Israel Philharmonic Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), התזמורת הפילהרמונית הישראלית (main)", "2.17: Israel Philharmonic Orchestra (main), Leonard Bernstein (conductor), Leonard Bernstein (composer), התזמורת הפילהרמונית הישראלית (main)"]
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: I. Prologue"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: II. Jet Song"]
+artist = ["Kurt Ollmann", "David Livingston", "Stephen Bogardus", "Peter Thom", "Marty Nelson", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: III. Something's Coming"]
+artist = ["José Carreras", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: a. Blues"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: b. Promenade"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: c. Mambo"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: d. Cha-Cha"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: e. Meeting Scene"]
+artist = ["Nina Bernstein", "Alexander Bernstein", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: f. Jump"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: V. Maria"]
+artist = ["José Carreras", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: VI. Tonight - Balcony Scene"]
+artist = ["Kiri Te Kanawa", "José Carreras", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: VII. America"]
+artist = ["Angelina Reaux", "Louise Edeiken", "Stella Zambalis", "Tatiana Troyanos", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: VIII. Cool"]
+artist = ["Kurt Ollmann", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: IX. One Hand, One Heart"]
+artist = ["Kiri Te Kanawa", "José Carreras", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: X. Tonight (Ensemble)"]
+artist = ["Kiri Te Kanawa", "Tatiana Troyanos", "José Carreras", "Kurt Ollmann", "Richard Harrell", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["West Side Story : Bernstein: West Side Story: XI. The Rumble"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "17.flac"
+tracknumber = ["1"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XII. I Feel Pretty"]
+artist = ["Kiri Te Kanawa", "Luise Edeiken", "Angelina Reaux", "Stella Zambalis", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "18.flac"
+tracknumber = ["2"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XIIIa. Ballet Sequence. Beginning"]
+artist = ["Kiri Te Kanawa", "José Carreras", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "19.flac"
+tracknumber = ["3"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XIIIb. Transition to Scherzo"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "20.flac"
+tracknumber = ["4"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XIIIc. Scherzo"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "21.flac"
+tracknumber = ["5"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XIIId. Somewhere"]
+artist = ["Marilyn Horne", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "22.flac"
+tracknumber = ["6"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XIIIe. Procession And Nightmare"]
+artist = ["Kiri Te Kanawa", "José Carreras", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "23.flac"
+tracknumber = ["7"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XIV. Gee, Officer Krupke"]
+artist = ["David Livingston", "Marty Nelson", "Stephen Bogardus", "Peter Thom", "Todd Lester", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "24.flac"
+tracknumber = ["8"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XVa. A Boy Like That"]
+artist = ["Kiri Te Kanawa", "Tatiana Troyanos", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "25.flac"
+tracknumber = ["9"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XVb. I Have a Love"]
+artist = ["Kiri Te Kanawa", "Tatiana Troyanos", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "26.flac"
+tracknumber = ["10"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XVI. Taunting Scene"]
+artist = ["Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "27.flac"
+tracknumber = ["11"]
+discnumber = ["2"]
+title = ["West Side Story : Bernstein: West Side Story: XVII. Finale"]
+artist = ["Kiri Te Kanawa", "José Carreras", "Leonard Bernstein Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "28.flac"
+tracknumber = ["12"]
+discnumber = ["2"]
+title = ["On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: I. Andante. With Dignity - Presto barbaro"]
+artist = ["Israel Philharmonic Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "29.flac"
+tracknumber = ["13"]
+discnumber = ["2"]
+title = ["On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: II. Adagio - Allegro molto agitato - Alla breve (Poco più mosso) - Presto come prima"]
+artist = ["Israel Philharmonic Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "30.flac"
+tracknumber = ["14"]
+discnumber = ["2"]
+title = ["On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: III. Andante largamente - More Flowing - Lento"]
+artist = ["Israel Philharmonic Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "31.flac"
+tracknumber = ["15"]
+discnumber = ["2"]
+title = ["On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: IV. Moving Forward - Largamente - Andante come prima"]
+artist = ["Israel Philharmonic Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "32.flac"
+tracknumber = ["16"]
+discnumber = ["2"]
+title = ["On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: V. Allegro non troppo, molto marcato - Poco più sostenuto"]
+artist = ["Israel Philharmonic Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+[[track]]
+file = "33.flac"
+tracknumber = ["17"]
+discnumber = ["2"]
+title = ["On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: VI. A Tempo (Poco più sostenuto)"]
+artist = ["Israel Philharmonic Orchestra", "Leonard Bernstein"]
+album = ["Bernstein: West Side Story"]
+albumartist = ["Leonard Bernstein"]
+date = ["1985-01-01"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 6450736,
+ "title": "Bernstein: West Side Story",
+ "upc": "028941525321",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 98,
+    "name": "Classical"
+   }
+  ]
+ },
+ "label": "Deutsche Grammophon (DG)",
+ "release_date": "1985-01-01",
+ "tracklist": [
+  {
+   "SNG_ID": "65800681",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: I. Prologue",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "DEF058430617",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800682",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: II. Jet Song",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kurt Ollmann",
+     "David Livingston",
+     "Stephen Bogardus",
+     "Peter Thom",
+     "Marty Nelson",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "DEF058430601",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800683",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: III. Something's Coming",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "José Carreras",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "DEF058430602",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800684",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: a. Blues",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "DEF058430616",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800685",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: b. Promenade",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "DEF058430621",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800686",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: c. Mambo",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "DEF058430622",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800687",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: d. Cha-Cha",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "DEF058430623",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800688",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: e. Meeting Scene",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Nina Bernstein",
+     "Alexander Bernstein",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "DEF058430624",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800689",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: IV. The Dance at the Gym: f. Jump",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "DEF058430625",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800690",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: V. Maria",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "José Carreras",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "DEF058430603",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800691",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: VI. Tonight - Balcony Scene",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "José Carreras",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "DEF058430630",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800692",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: VII. America",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Angelina Reaux",
+     "Louise Edeiken",
+     "Stella Zambalis",
+     "Tatiana Troyanos",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "DEF058430605",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800693",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: VIII. Cool",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kurt Ollmann",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "DEF058430606",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800694",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: IX. One Hand, One Heart",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "José Carreras",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "DEF058430607",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800695",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: X. Tonight (Ensemble)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "Tatiana Troyanos",
+     "José Carreras",
+     "Kurt Ollmann",
+     "Richard Harrell",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "15",
+   "ISRC": "DEF058430608",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800696",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XI. The Rumble",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "16",
+   "ISRC": "DEF058430626",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800697",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XII. I Feel Pretty",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "Louise Edeiken",
+     "Angelina Reaux",
+     "Stella Zambalis",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "1",
+   "ISRC": "DEF058430609",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800698",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XIIIa. Ballet Sequence. Beginning",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "José Carreras",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "2",
+   "ISRC": "DEF058430618",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800699",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XIIIb. Transition to Scherzo",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "3",
+   "ISRC": "DEF058430627",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "65800700",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XIIIc. Scherzo",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "4",
+   "ISRC": "DEF058430628",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "65800701",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XIIId. Somewhere",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Marilyn Horne",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "5",
+   "ISRC": "DEF058430610",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800702",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XIIIe. Procession And Nightmare",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "José Carreras",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "6",
+   "ISRC": "DEF058430629",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800703",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XIV. Gee, Officer Krupke",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "David Livingston",
+     "Marty Nelson",
+     "Stephen Bogardus",
+     "Peter Thom",
+     "Todd Lester",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "7",
+   "ISRC": "DEF058430611",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800704",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XVa. A Boy Like That",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "Tatiana Troyanos",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "8",
+   "ISRC": "DEF058430612",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800705",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XVb. I Have a Love",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "Tatiana Troyanos",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "9",
+   "ISRC": "DEF058430613",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800706",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XVI. Taunting Scene",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "10",
+   "ISRC": "DEF058430614",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "65800707",
+   "SNG_TITLE": "West Side Story : Bernstein: West Side Story: XVII. Finale",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Kiri Te Kanawa",
+     "José Carreras",
+     "Leonard Bernstein Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "11",
+   "ISRC": "DEF058430615",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800708",
+   "SNG_TITLE": "On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: I. Andante. With Dignity - Presto barbaro",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Israel Philharmonic Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "12",
+   "ISRC": "DEF058101272",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800709",
+   "SNG_TITLE": "On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: II. Adagio - Allegro molto agitato - Alla breve (Poco più mosso) - Presto come prima",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Israel Philharmonic Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "13",
+   "ISRC": "DEF058101273",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800710",
+   "SNG_TITLE": "On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: III. Andante largamente - More Flowing - Lento",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Israel Philharmonic Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "14",
+   "ISRC": "DEF058101274",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800711",
+   "SNG_TITLE": "On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: IV. Moving Forward - Largamente - Andante come prima",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Israel Philharmonic Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "15",
+   "ISRC": "DEF058101275",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800712",
+   "SNG_TITLE": "On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: V. Allegro non troppo, molto marcato - Poco più sostenuto",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Israel Philharmonic Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "16",
+   "ISRC": "DEF058101276",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "65800713",
+   "SNG_TITLE": "On the Waterfront Symphonic Suite : Bernstein: On the Waterfront Symphonic Suite: VI. A Tempo (Poco più sostenuto)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Leonard Bernstein"
+    ],
+    "conductor": [
+     "Leonard Bernstein"
+    ],
+    "main_artist": [
+     "Israel Philharmonic Orchestra",
+     "Leonard Bernstein"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "17",
+   "ISRC": "DEF058101277",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  }
+ ]
+}
+'''
+musicbrainz = "9b5eabf5-4b82-380d-806e-034810816165"
+discogs = '''
+{
+ "id": 1968417,
+ "year": 1985,
+ "labels": [
+  {
+   "name": "Deutsche Grammophon",
+   "catno": "415 253-2",
+   "id": 7703
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "West Side Story",
+ "genres": [
+  "Classical",
+  "Stage & Screen"
+ ],
+ "tracklist": [
+  {
+   "type_": "index",
+   "title": "West Side Story"
+  },
+  {
+   "type_": "index",
+   "title": "Suite From The Film \"On The Waterfront\""
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0002894152532",
+ "upc": "0002894152532",
+ "title": "Bernstein: West Side Story",
+ "version": null,
+ "tracks_count": 33,
+ "artist": {
+  "name": "Leonard Bernstein"
+ },
+ "artists": [
+  {
+   "name": "Leonard Bernstein",
+   "roles": [
+    "main-artist",
+    "conductor"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Classical"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "I. Prologue",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 1,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "II. Jet Song",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 2,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Kurt Ollmann, MainArtist, BaritoneVocalist - Stephen Bogardus, Vocalist, MainArtist - Leonard Bernstein, Composer, Conductor, MainArtist - Peter Thom, Vocalist, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - David Livingston, Vocalist, MainArtist - Marty Nelson, Vocalist, MainArtist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "III. Something's Coming",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 3,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "IV. The Dance at the Gym: a. Blues",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 4,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "IV. The Dance at the Gym: b. Promenade",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 5,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "IV. The Dance at the Gym: c. Mambo",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 6,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "IV. The Dance at the Gym: d. Cha-Cha",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 7,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "IV. The Dance at the Gym: e. Meeting Scene",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 8,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Nina Bernstein, Speaker, MainArtist - Alexander Bernstein, Speaker, MainArtist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "IV. The Dance at the Gym: f. Jump",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 9,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "V. Maria",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 10,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "VI. Tonight - Balcony Scene",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 11,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "VII. America",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 12,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Angelina Réaux, MainArtist, SopranoVocalist - Tatiana Troyanos, MainArtist, AltoVocalist - Stella Zambalis, MainArtist, Mezzo-SopranoVocalist - Louise Edeiken, MainArtist, Mezzo-SopranoVocalist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "VIII. Cool",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 13,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Kurt Ollmann, MainArtist, BaritoneVocalist - Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "IX. One Hand, One Heart",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 14,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "X. Tonight (Ensemble)",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 15,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Kurt Ollmann, MainArtist, BaritoneVocalist - Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Tatiana Troyanos, MainArtist, Mezzo-SopranoVocalist - Richard Harrell, Vocalist, MainArtist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XI. The Rumble",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 1,
+    "track_number": 16,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XII. I Feel Pretty",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 1,
+    "performer": {
+     "name": "Louise Edeiken"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Angelina Réaux, MainArtist, SopranoVocalist - Stella Zambalis, MainArtist, Mezzo-SopranoVocalist - Louise Edeiken, MainArtist, SopranoVocalist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XIIIa. Ballet Sequence. Beginning",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 2,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XIIIb. Transition to Scherzo",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 3,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XIIIc. Scherzo",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 4,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XIIId. Somewhere",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 5,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Marilyn Horne, MainArtist, Mezzo-SopranoVocalist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XIIIe. Procession And Nightmare",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 6,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XIV. Gee, Officer Krupke",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 7,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Stephen Bogardus, Vocalist, MainArtist - Leonard Bernstein, Composer, Conductor, MainArtist - Peter Thom, Vocalist, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - David Livingston, Vocalist, MainArtist - Marty Nelson, Vocalist, MainArtist - Todd Lester, Vocalist, MainArtist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XVa. A Boy Like That",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 8,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Tatiana Troyanos, MainArtist, Mezzo-SopranoVocalist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XVb. I Have a Love",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 9,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Tatiana Troyanos, MainArtist, Mezzo-SopranoVocalist - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XVI. Taunting Scene",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 10,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "XVII. Finale",
+    "version": "Live From RCA, Studio A, New York / 1984",
+    "media_number": 2,
+    "track_number": 11,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Stephen Sondheim, Lyricist - Jose Carreras, MainArtist, TenorVocalist - Kiri Te Kanawa, MainArtist, SopranoVocalist - JOHN MCCLURE, Producer - Leonard Bernstein Orchestra, Orchestra, MainArtist - Wolf-Dieter Karwatky, RecordingEngineer - Jobst Eberhardt, RecordingEngineer, DigitalEditingEngineer - Hanno Rinke, Producer - Karl-August Naegler, BalanceEngineer",
+    "composer": {
+     "name": "Stephen Sondheim"
+    }
+   },
+   {
+    "title": "I. Andante. With Dignity - Presto barbaro",
+    "version": "Live At Frederic R. Mann Auditorium, Tel Aviv / 1981",
+    "media_number": 2,
+    "track_number": 12,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Hans Weber, Producer - Israel Philharmonic Orchestra, Orchestra, MainArtist - Jobst Eberhardt, RecordingEngineer - Wolfgang Mitlehner, BalanceEngineer - Hanno Rinke, Producer - Joachim Niss, RecordingEngineer",
+    "composer": {
+     "name": "Leonard Bernstein"
+    }
+   },
+   {
+    "title": "II. Adagio - Allegro molto agitato - Alla breve (Poco più mosso) - Presto come prima",
+    "version": "Live At Frederic R. Mann Auditorium, Tel Aviv / 1981",
+    "media_number": 2,
+    "track_number": 13,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Hans Weber, Producer - Israel Philharmonic Orchestra, Orchestra, MainArtist - Jobst Eberhardt, RecordingEngineer - Wolfgang Mitlehner, BalanceEngineer - Hanno Rinke, Producer - Joachim Niss, RecordingEngineer",
+    "composer": {
+     "name": "Leonard Bernstein"
+    }
+   },
+   {
+    "title": "III. Andante largamente - More Flowing - Lento",
+    "version": "Live At Frederic R. Mann Auditorium, Tel Aviv / 1981",
+    "media_number": 2,
+    "track_number": 14,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Hans Weber, Producer - Israel Philharmonic Orchestra, Orchestra, MainArtist - Jobst Eberhardt, RecordingEngineer - Wolfgang Mitlehner, BalanceEngineer - Hanno Rinke, Producer - Joachim Niss, RecordingEngineer",
+    "composer": {
+     "name": "Leonard Bernstein"
+    }
+   },
+   {
+    "title": "IV. Moving Forward - Largamente - Andante come prima",
+    "version": "Live At Frederic R. Mann Auditorium, Tel Aviv / 1981",
+    "media_number": 2,
+    "track_number": 15,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Hans Weber, Producer - Israel Philharmonic Orchestra, Orchestra, MainArtist - Jobst Eberhardt, RecordingEngineer - Wolfgang Mitlehner, BalanceEngineer - Hanno Rinke, Producer - Joachim Niss, RecordingEngineer",
+    "composer": {
+     "name": "Leonard Bernstein"
+    }
+   },
+   {
+    "title": "V. Allegro non troppo, molto marcato - Poco più sostenuto",
+    "version": "Live At Frederic R. Mann Auditorium, Tel Aviv / 1981",
+    "media_number": 2,
+    "track_number": 16,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Hans Weber, Producer - Israel Philharmonic Orchestra, Orchestra, MainArtist - Jobst Eberhardt, RecordingEngineer - Wolfgang Mitlehner, BalanceEngineer - Hanno Rinke, Producer - Joachim Niss, RecordingEngineer",
+    "composer": {
+     "name": "Leonard Bernstein"
+    }
+   },
+   {
+    "title": "VI. A Tempo (Poco più sostenuto)",
+    "version": "Live At Frederic R. Mann Auditorium, Tel Aviv / 1981",
+    "media_number": 2,
+    "track_number": 17,
+    "performer": {
+     "name": "Leonard Bernstein"
+    },
+    "performers": "Leonard Bernstein, Composer, Conductor, MainArtist - Hans Weber, Producer - Israel Philharmonic Orchestra, Orchestra, MainArtist - Jobst Eberhardt, RecordingEngineer - Wolfgang Mitlehner, BalanceEngineer - Hanno Rinke, Producer - Joachim Niss, RecordingEngineer",
+    "composer": {
+     "name": "Leonard Bernstein"
+    }
+   }
+  ]
+ }
+}
+'''

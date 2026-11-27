@@ -17,7 +17,7 @@ not_main = ["Béla Bartók"]
 how_we_know = "Deezer, MusicBrainz and Qobuz agree on the Emerson String Quartet"
 
 [today.deezer]
-release = ["Emerson String Quartet (main)"]
+release = ["Emerson String Quartet (main)", "Béla Bartók (composer)"]
 tracks = 23
 
 [today.musicbrainz]
@@ -563,6 +563,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -580,6 +583,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -597,6 +603,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -614,6 +623,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -631,6 +643,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -648,6 +663,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -665,6 +683,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -682,6 +703,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -699,6 +723,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -716,6 +743,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -733,6 +763,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -750,6 +783,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -767,6 +803,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -784,6 +823,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -801,6 +843,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -818,6 +863,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -835,6 +883,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -852,6 +903,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -869,6 +923,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -886,6 +943,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -903,6 +963,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -920,6 +983,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]
@@ -937,6 +1003,9 @@ deezer = '''
     {}
    ],
    "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Béla Bartók"
+    ],
     "main_artist": [
      "Emerson String Quartet"
     ]

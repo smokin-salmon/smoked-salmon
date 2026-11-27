@@ -12,8 +12,7 @@ from salmon.common.credits import EXTRA_ROLES, Credit, Role
 from salmon.common.strings import comparable, guests_from_title, split_type_marker
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.tagger.sources.base import MetadataMixin, add_track, ends_with_ep, standardize_genres, strip_ep_suffix
-from salmon.tagger.tags import is_classical_genre
+from salmon.tagger.sources.base import MetadataMixin, add_track, ends_with_ep, is_classical_release, strip_ep_suffix
 
 # ------------------------------------------------------------------------------
 # Constants and Regular Expressions
@@ -556,8 +555,7 @@ def _album_artists(album: dict[str, Any]) -> list[tuple[str, list[str]]]:
 def _is_classical(album: dict[str, Any]) -> bool:
     """Whether Qobuz files the release under a classical genre: its own genres_list, read whatever
     no_genres_from_qobuz says, through salmon's genre table ("Classique→Opéra" is Classical and Opera)."""
-    genres = [genre for genre in album.get("genres_list") or [] if genre]
-    return any(is_classical_genre(genre) for genre in standardize_genres(genres))
+    return is_classical_release(album.get("genres_list") or [])
 
 
 def _performers(line: str, known: set[str]) -> list[tuple[str, Role | None]]:

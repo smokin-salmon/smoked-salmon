@@ -1,0 +1,750 @@
+album = "Mstislav Rostropovich, Berliner Philharmoniker, Herbert von Karajan: Dvořák Cello Concerto, Tchaikovsky Rococo Variations"
+why = "A soloist, an orchestra and a conductor over two composers' works (COMPOSER per work): Deezer states each work's composer as a main artist on all 12 tracks, beside his composer credit, and Karajan main beside conductor."
+edition = "DG 447 413-2, 1995, 12 tracks: Deezer 6684429 (UPC 028944741322). MusicBrainz 9652cc22 is the digital release with that barcode and links Deezer 6684429 (MusicBrainz also has the 447 413-2 CDs with it, f1b89874 and caa4c6b0). Discogs 3173784 is the 447 413-2 CD that MusicBrainz's f1b89874 links: 9652cc22 links no Discogs release and its release group no master, and master 198728's main release is the 1969 LP. Qobuz 0002894794879 is another issue of the same recording: the same 12 tracks, titles and order, and the same producers and engineers in its performers lines; the Qobuz answer holds no durations to compare."
+known_wrong = ["Deezer parse: Herbert von Karajan main beside conductor, and each work's composer main beside his composer credit, Antonín Dvořák on tracks 1-3 and Pyotr Ilyich Tchaikovsky on 4-12 (and all of them in ARTIST on every track of the files tagged from it)", "MusicBrainz parse: the soloist in Cyrillic, 'Мстислав Ростропович', his MusicBrainz artist name, where the release credits him as Mstislav Rostropovich; Karajan main, not conductor; no composer on any track, though MusicBrainz credits each track to its composer", "Discogs parse: 0 tracks: the tracklist is two index tracks (the concerto, 3 sub-tracks; the variations, 9) and the parser drops sub-tracks", "Qobuz parse: Karajan main beside conductor; Tchaikovsky as 'Pyotr Illitch Tchaïkovski', the French form in Qobuz's composer field, where its performers lines have Pyotr Ilyich Tchaikovsky", "merge: the soloist main twice on every track, 'Mstislav Rostropovich' beside MusicBrainz's Cyrillic 'Мстислав Ростропович'; Tchaikovsky composer twice on tracks 4-12, Deezer's 'Pyotr Ilyich Tchaikovsky' beside Qobuz's 'Pyotr Illitch Tchaïkovski'"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, in tests/fixtures/stores/musicbrainz/release/, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album in the API's shape: what the parser reads, plus the credits Qobuz sends (the album's artists[], each track's performer and performers line, composer on a classical release) and genres_list as sent"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+performers = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan"]
+not_main = ["Herbert von Karajan", "Antonín Dvořák", "Pyotr Ilyich Tchaikovsky"]
+how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all credit Rostropovich, the Berliner Philharmoniker and Karajan; Deezer, Discogs and Qobuz state Karajan conductor, and Deezer and Qobuz state Dvořák and Tchaikovsky the composers of their works, which RED's guidance on classical credits as conductor and composer, not main."
+
+[today.deezer]
+release = ["Mstislav Rostropovich (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)", "Antonín Dvořák (main)", "Herbert von Karajan (conductor)", "Antonín Dvořák (composer)", "Pyotr Ilyich Tchaikovsky (main)", "Pyotr Ilyich Tchaikovsky (composer)"]
+tracks = 12
+
+[today.musicbrainz]
+release = ["Мстислав Ростропович (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)"]
+tracks = 12
+
+[today.discogs]
+release = []
+tracks = 0
+
+[today.qobuz]
+release = ["Mstislav Rostropovich (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)", "Herbert von Karajan (conductor)", "Antonín Dvořák (composer)", "Pyotr Illitch Tchaïkovski (composer)"]
+tracks = 12
+
+[today.merge]
+release = ["Mstislav Rostropovich (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (conductor)", "Antonín Dvořák (composer)", "Мстислав Ростропович (main)", "Pyotr Ilyich Tchaikovsky (composer)", "Pyotr Illitch Tchaïkovski (composer)"]
+tracks = 12
+credits = ["1.1: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Antonín Dvořák (composer), Мстислав Ростропович (main)", "1.2: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Antonín Dvořák (composer), Мстислав Ростропович (main)", "1.3: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Antonín Dvořák (composer), Мстислав Ростропович (main)", "1.4: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.5: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.6: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.7: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.8: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.9: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.10: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.11: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)", "1.12: Mstislav Rostropovich (main), Berliner Philharmoniker (main), Herbert von Karajan (conductor), Pyotr Ilyich Tchaikovsky (composer), Pyotr Illitch Tchaïkovski (composer), Мстислав Ростропович (main)"]
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Cello Concerto in B Minor, Op. 104, B. 191 : Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: I. Allegro"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Antonín Dvořák"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Cello Concerto in B Minor, Op. 104, B. 191 : Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: II. Adagio ma non troppo"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Antonín Dvořák"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Cello Concerto in B Minor, Op. 104, B. 191 : Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: III. Finale. Allegro moderato"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Antonín Dvořák"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Introduction. Moderato quasi andante"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Theme. Moderato semplice"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 1. Tempo della thema –"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 2. Tempo della thema"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 3. Andante sostenuto"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 4. Andante grazioso –"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 5. Allegro moderato"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 6. Andante"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 7. Coda. Allegro vivo"]
+artist = ["Mstislav Rostropovich", "Berliner Philharmoniker", "Herbert von Karajan", "Pyotr Ilyich Tchaikovsky"]
+album = ["Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme"]
+albumartist = ["Mstislav Rostropovich"]
+date = ["1995-01-01"]
+
+# What each store sent, trimmed as [sources] says.
+[stores]
+deezer = '''
+{
+ "id": 6684429,
+ "title": "Dvorák: Cello Concerto / Tchaikovsky: Variations on a Rococo Theme",
+ "upc": "028944741322",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 98,
+    "name": "Classical"
+   }
+  ]
+ },
+ "label": "Deutsche Grammophon (DG)",
+ "release_date": "1995-01-01",
+ "tracklist": [
+  {
+   "SNG_ID": "68251649",
+   "SNG_TITLE": "Cello Concerto in B Minor, Op. 104, B. 191 : Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: I. Allegro",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Antonín Dvořák"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Antonín Dvořák"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "DEF056800352",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251650",
+   "SNG_TITLE": "Cello Concerto in B Minor, Op. 104, B. 191 : Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: II. Adagio ma non troppo",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Antonín Dvořák"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Antonín Dvořák"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "DEF056800353",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68251651",
+   "SNG_TITLE": "Cello Concerto in B Minor, Op. 104, B. 191 : Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: III. Finale. Allegro moderato",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Antonín Dvořák"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Antonín Dvořák"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "DEF056800354",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "68251652",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Introduction. Moderato quasi andante",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "DEF056800361",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251653",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Theme. Moderato semplice",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "DEF056800362",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251654",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 1. Tempo della thema –",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "DEF056800363",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251655",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 2. Tempo della thema",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "DEF056800364",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251656",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 3. Andante sostenuto",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "DEF056800365",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251657",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 4. Andante grazioso –",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "DEF056800366",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251658",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 5. Allegro moderato",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "DEF056800367",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251659",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 6. Andante",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "DEF056800368",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "68251660",
+   "SNG_TITLE": "Variations on a Rococo Theme, Op. 33 : Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 7. Coda. Allegro vivo",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "composer": [
+     "Pyotr Ilyich Tchaikovsky"
+    ],
+    "conductor": [
+     "Herbert von Karajan"
+    ],
+    "main_artist": [
+     "Mstislav Rostropovich",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Pyotr Ilyich Tchaikovsky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "DEF056800369",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  }
+ ]
+}
+'''
+musicbrainz = "9652cc22-d89f-4fb9-8c97-13e5b1f9c2c3"
+discogs = '''
+{
+ "id": 3173784,
+ "year": 1995,
+ "labels": [
+  {
+   "name": "Deutsche Grammophon",
+   "catno": "447 413-2",
+   "id": 7703
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Album",
+    "Reissue",
+    "Remastered",
+    "Stereo"
+   ]
+  }
+ ],
+ "title": "Cellokonzert / Rokoko-Variationen",
+ "released": "1995-02-20",
+ "genres": [
+  "Classical"
+ ],
+ "tracklist": [
+  {
+   "type_": "index",
+   "title": "Konzert Für Violoncello Und Orchester H-moll Op. 104 = Concerto For Cello And Orchestra In B Minor = Concerto Pour Violoncello Et Orchestre En Si Mineur = Concerto Per Violoncello E Orchestra In Si Minore"
+  },
+  {
+   "type_": "index",
+   "title": "Variationen Über Ein Rokoko-Thema Für Violoncello Und Orchester Op. 33 = Variations On A Rococo Theme For Cello And Orchestra = Variations Sur Un Thème  Rococo Pour Violoncelle Et Orchestre = Variazioni Su Un Tema Rococò Per Violoncelle E Orchestra"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0002894794879",
+ "upc": "0002894794879",
+ "title": "Dvorák: Cello Concerto / Tchaikovsky: Variations On A Rococo Theme",
+ "tracks_count": 12,
+ "artist": {
+  "name": "Mstislav Rostropovich"
+ },
+ "artists": [
+  {
+   "name": "Mstislav Rostropovich",
+   "roles": [
+    "main-artist",
+    "orchestra"
+   ]
+  },
+  {
+   "name": "Berliner Philharmoniker",
+   "roles": [
+    "orchestra",
+    "main-artist"
+   ]
+  },
+  {
+   "name": "Herbert von Karajan",
+   "roles": [
+    "conductor",
+    "main-artist"
+   ]
+  }
+ ],
+ "genres_list": [
+  "Classical"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: I. Allegro",
+    "track_number": 1,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Antonín Dvorák, Composer",
+    "composer": {
+     "name": "Antonín Dvořák"
+    }
+   },
+   {
+    "title": "Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: II. Adagio ma non troppo",
+    "track_number": 2,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Antonín Dvorák, Composer",
+    "composer": {
+     "name": "Antonín Dvořák"
+    }
+   },
+   {
+    "title": "Dvořák: Cello Concerto in B Minor, Op. 104, B. 191: III. Finale. Allegro moderato",
+    "track_number": 3,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Antonín Dvorák, Composer",
+    "composer": {
+     "name": "Antonín Dvořák"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Introduction. Moderato quasi andante",
+    "track_number": 4,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Theme. Moderato semplice",
+    "track_number": 5,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 1. Tempo della thema –",
+    "track_number": 6,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 2. Tempo della thema",
+    "track_number": 7,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 3. Andante sostenuto",
+    "track_number": 8,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 4. Andante grazioso –",
+    "track_number": 9,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 5. Allegro moderato",
+    "track_number": 10,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 6. Andante",
+    "track_number": 11,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   },
+   {
+    "title": "Tchaikovsky: Variations on a Rococo Theme, Op. 33: Var. 7. Coda. Allegro vivo",
+    "track_number": 12,
+    "performer": {
+     "name": "Mstislav Rostropovich"
+    },
+    "performers": "Mstislav Rostropovich, MainArtist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Otto Gerdes, Producer - Hans Weber, Producer - Günter Hermanns, BalanceEngineer - Volker Martin, DigitalEditingEngineer - Pyotr Ilyich Tchaikovsky, Composer",
+    "composer": {
+     "name": "Pyotr Illitch Tchaïkovski"
+    }
+   }
+  ]
+ }
+}
+'''
