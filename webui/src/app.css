@@ -65,7 +65,7 @@ code, .mono {
 }
 .btn.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
 
-input[type='text'], select {
+input[type='text'], input[type='password'], select {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
@@ -74,7 +74,7 @@ input[type='text'], select {
   font-size: 0.9rem;
   width: 100%;
 }
-input[type='text']:focus, select:focus {
+input[type='text']:focus, input[type='password']:focus, select:focus {
   outline: none;
   border-color: var(--accent-dim);
 }
@@ -130,7 +130,7 @@ label[title] > :first-child { text-decoration: underline dotted var(--border); t
 
 @media (max-width: 700px) {
   /* Inputs under 16px make iOS Safari zoom the whole page on focus. */
-  input[type='text'], select { font-size: 16px; }
+  input[type='text'], input[type='password'], select { font-size: 16px; }
   /* Scroll wide tables rather than squashing them; every table sits in a .card. */
   .card table { display: block; overflow-x: auto; white-space: nowrap; }
   .btn { padding: 0.6rem 1rem; }

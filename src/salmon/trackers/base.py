@@ -641,6 +641,16 @@ class BaseGazelleApi:
             async with account.non_idempotent_lock, self._new_session(connections=1) as session:
                 yield session
 
+    def login_page_message(self) -> str:
+        """What salmon says when the tracker sends a request to its login page: under salmon web, where to fix it."""
+        message = (
+            f"{self.site_string} sent this request to its login page: your session cookie is missing or expired. "
+            f"Check tracker.{self.site_code.lower()}.session in your config"
+        )
+        if accounts.web_running():
+            return f"{message}, or paste a new one on salmon web's Settings page."
+        return f"{message}."
+
     @property
     def has_session_cookie(self) -> bool:
         """Whether a session cookie is configured. Site pages outside the API need one."""
@@ -1083,12 +1093,7 @@ class BaseGazelleApi:
                             if not idempotent and (target.scheme, target.netloc) != (current.scheme, current.netloc):
                                 # Another site's login page is no sign the tracker turned the request away.
                                 raise UnknownOutcomeError(f"{self.site_string} redirected the request to another site")
-                            _secho(
-                                f"{self.site_string} sent this request to its login page: your session cookie is "
-                                f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
-                                fg="red",
-                                bold=True,
-                            )
+                            _secho(self.login_page_message(), fg="red", bold=True)
                             raise LoginError(f"{self.site_string} redirected to its login page")
                         if (target.scheme, target.netloc) != (current.scheme, current.netloc):
                             _secho(

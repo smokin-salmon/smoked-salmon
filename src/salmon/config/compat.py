@@ -5,7 +5,9 @@ name until ``refused_from``, a removed one is dropped, and a value left over fro
 The rest of salmon reads only the new names. The user's file is never rewritten.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -89,12 +91,25 @@ config_warnings: list[str] = []
 # (config file, message) pairs already printed, so each is printed once per config path.
 _warned: set[tuple[str, str]] = set()
 
+# Set while salmon web reads the config again (a job's start, a save): the warnings are the load's to give, once.
+_quiet: ContextVar[bool] = ContextVar("config_warnings_quiet", default=False)
+
 _MISSING = object()
+
+
+@contextmanager
+def quiet() -> Iterator[None]:
+    """Give no config warning in the block: none printed, none kept."""
+    token = _quiet.set(True)
+    try:
+        yield
+    finally:
+        _quiet.reset(token)
 
 
 def warn(config_path: Path, message: str) -> None:
     """Print a config warning, once per config path, and keep it in ``config_warnings``."""
-    if (str(config_path), message) in _warned:
+    if _quiet.get() or (str(config_path), message) in _warned:
         return
     _warned.add((str(config_path), message))
     config_warnings.append(message)

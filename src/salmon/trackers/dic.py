@@ -6,6 +6,7 @@ from salmon import cfg, interaction
 from salmon.common import UploadFiles
 from salmon.errors import UploadRefusedError
 from salmon.trackers.base import BaseGazelleApi, TagRules
+from salmon.trackers.credentials import credentials
 
 # The options of the sample rate field on DIC's upload form, which the form has and requires
 # for 24bit Lossless only. An explicit table, so a rate the form does not list has no value.
@@ -28,7 +29,8 @@ _api_key_warned = False
 def warn_api_key_ignored() -> None:
     """Say once per run that the configured DIC API key is not used."""
     global _api_key_warned
-    if cfg.tracker.dic and cfg.tracker.dic.api_key and not _api_key_warned:
+    creds = credentials("DIC")
+    if creds and creds.api_key and not _api_key_warned:
         _api_key_warned = True
         click.secho(API_KEY_IGNORED, fg="yellow")
 
@@ -59,8 +61,8 @@ class DICApi(BaseGazelleApi):
                 self.dot_torrents_dir = dic_cfg.dottorrents_dir
             else:
                 self.dot_torrents_dir = cfg.directory.dottorrents_dir
-
-            self.cookie = dic_cfg.session
+        if creds := credentials("DIC"):
+            self.cookie = creds.session
             # DIC takes no API key: without one, every request goes by the session cookie.
             warn_api_key_ignored()
 

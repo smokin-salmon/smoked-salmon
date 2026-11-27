@@ -11,6 +11,7 @@ import msgspec
 from aiohttp.test_utils import TestClient, TestServer
 
 from salmon.trackers import account
+from salmon.trackers.credentials import from_cfg
 from salmon.webui import server
 from salmon.webui.jobs import FINISHED, Job, JobManager
 
@@ -30,7 +31,8 @@ class Params(msgspec.Struct):
 
 def _with_app(test: Callable[[TestClient, JobManager], Awaitable[None]], max_jobs: int = 2) -> None:
     async def main() -> None:
-        app = server.create_app(TOKEN, "127.0.0.1", [], max_jobs=max_jobs)
+        # Jobs build their tracker clients from cfg, as the tests set it, not from the config file on disk.
+        app = server.create_app(TOKEN, "127.0.0.1", [], max_jobs=max_jobs, credentials_source=from_cfg)
         async with TestClient(TestServer(app, host="127.0.0.1")) as client:
             await test(client, app[server.JOBS])
         # Every job ended with the server, and the request loop is free again.

@@ -426,6 +426,10 @@ The pages:
 * **Tag** – `salmon tag`.
 * **Search** – look up an album in the stores and read its metadata.
 * **Tools** – the description generator (`salmon descgen`), image uploads (`salmon images up`), and approval reports for eligible self-uploaded RED/OPS FLAC torrents (`salmon report`). An optional album folder supplies full and zoomed spectral images for the report. The images go to the configured spectral host before final confirmation. Without a folder, only the comment and optional source URL are included. Print-only skips spectral generation and stays offline.
+* **Settings** – each tracker's session cookie and API key: paste a new one, and salmon saves it in your config
+  file, keeping its comments, then runs the connection check. Jobs started after a save use it, with no restart. The
+  page shows whether each is set, never the value. Opened over plain HTTP from another machine, it warns that a
+  save sends the cookie unencrypted and asks again before saving. Any other change to the config still needs a restart.
 * **Cross-upload** – `salmon cross-upload`, from torrent IDs or URLs.
 * **Jobs** – every job with its live log, the questions it waits on, and a cancel button.
 

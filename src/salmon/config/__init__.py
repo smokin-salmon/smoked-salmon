@@ -159,7 +159,12 @@ def _warn_unknown_keys(raw: dict[str, Any], config_path: Path) -> None:
 
 
 def _parse_config(config_path: Path) -> Cfg:
-    raw = msgspec.toml.decode(config_path.read_bytes())
+    return _parse_text(config_path.read_bytes(), config_path)
+
+
+def _parse_text(text: bytes | str, config_path: Path) -> Cfg:
+    """The config in ``text``, the content of ``config_path``, read as a start reads it."""
+    raw = msgspec.toml.decode(text)
     # Old keys first: an old name is read under its new one, never reported as unknown.
     compat.apply(raw, config_path)
     _warn_unknown_keys(raw, config_path)

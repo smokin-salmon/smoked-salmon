@@ -19,6 +19,7 @@ than a good PR description.
 | [0005](0005-config-compatibility.md) | Config keys change with one release of warnings, never silently; a changed default is a listed breaking change; salmon never rewrites the config | Accepted |
 | [0006](0006-typed-questions.md) | Typed questions: the call site keeps its text and parser, the web draws a description of the options and sends back the line the CLI would read | Accepted |
 | [0007](0007-artist-credit-claims.md) | Artist credits are claims from each source, decided once per release by one function that gives its reason | Accepted |
+| [0008](0008-web-tracker-credentials.md) | salmon web edits tracker credentials in config.toml, through one route; each job reads them when it starts | Accepted |
 
 ## Template
 
