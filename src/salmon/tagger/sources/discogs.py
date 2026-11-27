@@ -34,6 +34,10 @@ ROLES = {
     "Arranged By": "arranger",
 }
 
+# Discogs' "No Artist", credited where no one performs (a film's dialogue, a hidden track's silence). By id, so an
+# act that is named so stays credited.
+NO_ARTIST_ID = 118760
+
 RELEASE_TYPES = {
     "Album": "Album",
     "Mini-Album": "Album",
@@ -334,14 +338,15 @@ def parse_credits(artist_soup, track):
 
 
 def _credited_artists(credits):
-    """Name the artists of a credit list, making those after a feat. join guests."""
+    """Name the artists of a credit list, skipping "No Artist" and making those after a feat. join guests."""
     artists = []
     variations = []
     role = "main"
     for art in credits:
-        credit = (sanitize_artist_name(art["name"]), role)
-        artists.append(credit)
-        _note_variation(variations, credit, art)
+        if art.get("id") != NO_ARTIST_ID:
+            credit = (sanitize_artist_name(art["name"]), role)
+            artists.append(credit)
+            _note_variation(variations, credit, art)
         if RE_FEAT_JOIN.fullmatch((art.get("join") or "").strip()):
             role = "guest"
     return artists, variations

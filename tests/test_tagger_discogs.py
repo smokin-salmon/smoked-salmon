@@ -951,6 +951,34 @@ def test_discogs_guest_after_feat_join_is_not_added_again_from_extraartists() ->
     assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest")]
 
 
+def test_discogs_no_artist_credits_no_one() -> None:
+    # Discogs credits "No Artist" (artist 118760) where no one performs: Pulp Fiction's dialogue, a hidden track's
+    # silence. On a track or as the release's artists, it names no artist.
+    no_artist = {"name": "No Artist", "id": 118760, "join": ""}
+
+    assert parse_artists([], {"artists": [no_artist]}) == []
+    assert parse_artists([no_artist], {}) == []
+
+
+def test_discogs_no_artist_beside_an_artist_leaves_the_artist() -> None:
+    track = {"artists": [{"name": "No Artist", "id": 118760, "join": "&"}, {"name": "Lead", "id": 1, "join": ""}]}
+
+    assert parse_artists([], track) == [("Lead", "main")]
+
+
+def test_discogs_feat_join_after_no_artist_still_makes_a_guest() -> None:
+    track = {"artists": [{"name": "No Artist", "id": 118760, "join": "Feat."}, {"name": "Guest", "id": 1}]}
+
+    assert parse_artists([], track) == [("Guest", "guest")]
+
+
+def test_discogs_an_artist_named_no_artist_under_another_id_is_credited() -> None:
+    # As before: the id is skipped, not the name.
+    track = {"artists": [{"name": "No Artist", "id": 2, "join": ""}]}
+
+    assert parse_artists([], track) == [("No Artist", "main")]
+
+
 def test_discogs_extraartist_with_another_role_is_kept_for_the_same_name() -> None:
     track = {
         "artists": [artist("Lead", "Feat."), artist("Guest")],
