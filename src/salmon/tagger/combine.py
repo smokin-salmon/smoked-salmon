@@ -834,9 +834,10 @@ def _joins_each_source_completes(kept, to_replace):
     Max", beside Deezer's "Ava Max" and Ray) is followed there. A source's join stands only when all its parts go to its
     whole, so no part is in two names: where sources complete different names from one part, the join ranked first
     takes it, and the others are dropped (the files' "Ava Max" taking Max, Deezer's "Max Ray" is dropped and Ray stays
-    Ray). The joins are ranked by the length of their whole, followed once through every join, the first source's on a
-    tie, and taken in that order, so a join loses a part only to one that stands, and never to one ending in the same
-    name (the files' "Ava Max" and Deezer's "Ava Max Ray", both "Ava Max Ray")."""
+    Ray). The joins are ranked by the length of their whole, followed through every join, the first source's on a tie.
+    In that order, each is kept when every join kept so far, and itself, still takes all its parts into the name its
+    whole ends in, followed through those joins alone: so a join loses a part only to one that stands, and never to one
+    ending in the same name (the files' "Ava Max" and Deezer's "Ava Max Ray", both "Ava Max Ray")."""
     joins = []  # (role, whole, parts): one per whole each source completes
     for source in dict.fromkeys(claim.source for claim in kept):
         own = list(dict.fromkeys((claim.name, claim.role) for claim in kept if claim.source == source))
@@ -847,13 +848,16 @@ def _joins_each_source_completes(kept, to_replace):
             wholes.setdefault((whole, role), []).append(part)
         joins += [(role, whole, parts) for (whole, role), parts in wholes.items()]
     followed = _followed_joins(joins)
-    taken, standing = {}, []  # taken: (part, role) to the name a standing join takes it into
-    for role, whole, parts in sorted(joins, key=lambda join: -len(followed.get((join[1], join[0]), join[1]))):
-        into = followed.get((whole, role), whole)
-        if all(taken.get((part, role), into) == into for part in parts):
-            standing.append((role, whole, parts))
-            taken.update(dict.fromkeys(((part, role) for part in parts), into))
-    return _followed_joins(standing)
+    standing, joined = [], {}
+    for join in sorted(joins, key=lambda join: -len(followed.get((join[1], join[0]), join[1]))):
+        tried = _followed_joins([*standing, join])
+        if all(
+            tried[part, role] == tried.get((whole, role), whole)
+            for role, whole, parts in [*standing, join]
+            for part in parts
+        ):
+            standing, joined = [*standing, join], tried
+    return joined
 
 
 def _followed_joins(joins):
