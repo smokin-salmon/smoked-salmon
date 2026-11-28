@@ -100,6 +100,24 @@ def test_a_source_s_join_is_dropped_when_one_of_its_parts_goes_to_another_source
     assert decided(claims, [("Ava Max", "composer"), ("Max Ray", "composer")]) == [("Ava Max", "main"), ("Ray", "main")]
 
 
+def test_a_join_that_loses_its_part_only_to_a_dropped_join_stands() -> None:
+    """Qobuz's longer "Ava Zzzzzzzz" takes Ava, so the files' "Ava Max" is dropped; Max then goes to no other whole,
+    so Deezer's "Max Ray" holds both its parts and stands."""
+    claims = [
+        files_claim("Ava"),
+        files_claim("Max"),
+        store_claim("Deezer", "Max", "main", assumed=False),
+        store_claim("Deezer", "Ray", "main", assumed=False),
+        store_claim("Qobuz", "Ava", "main", assumed=False),
+        store_claim("Qobuz", "Zzzzzzzz", "main", assumed=False),
+    ]
+
+    assert decided(claims, [(name, "composer") for name in ("Ava Max", "Max Ray", "Ava Zzzzzzzz")]) == [
+        ("Ava Zzzzzzzz", "main"),
+        ("Max Ray", "main"),
+    ]
+
+
 @pytest.mark.parametrize(
     ("deezer_remixers", "expected"),
     [(["Garfunkel"], ["Simon", "Garfunkel"]), (["Simon", "Garfunkel"], ["Simon and Garfunkel"])],

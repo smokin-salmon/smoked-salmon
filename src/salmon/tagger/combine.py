@@ -804,12 +804,11 @@ def _joined(joins, key):
 def _join_split_names(claims, to_replace):
     """A track's claims with its badly split names joined back, as a store's parse joins its credits (fix_artists_list,
     with `to_replace` from the release's names): in a role where one source claims every part of a name, each claim of
-    a part, by any source, becomes a claim of the whole name, keeping its source and whether it is assumed. Where two
-    sources complete different names from one part, the longer takes it, and the other source's join, no longer whole,
-    is dropped; a whole that is itself a part of a longer name a source completes follows it there
-    (`_joins_each_source_completes`). Run before the decision, so that a part one source also claims in another role
-    does not lose a role the whole name keeps (#1109). Nothing joins split names after the decision: this is where the
-    join is decided.
+    a part, by any source, becomes a claim of the whole name, keeping its source and whether it is assumed, unless
+    another source's longer whole takes one of its parts: then that join is dropped, and its parts stay apart. A whole
+    that is itself a part of a longer name a source completes follows it there (`_joins_each_source_completes`). Run
+    before the decision, so that a part one source also claims in another role does not lose a role the whole name
+    keeps (#1109). Nothing joins split names after the decision: this is where the join is decided.
 
     Parts that two sources claim between them are not joined (#1188): Alice from the files and Bob from Deezer are two
     stated credits, and a third source's guess of "Alice & Bob" is not what makes them one name.
@@ -831,11 +830,11 @@ def _join_split_names(claims, to_replace):
 def _joins_each_source_completes(kept, to_replace):
     """Each (part, role) some source's kept claims join, with the whole name it ends up in: fix_artists_list over each
     source's own claims. A whole one source completes that another source joins into a longer name (the files' "Ava
-    Max", beside Deezer's "Ava Max" and Ray) is followed there. Where sources complete different names from one part,
-    the longest, once each is followed, takes the part (the first source's on a tie). A source's join stands only when
-    all its parts go to its whole: the files' "Ava Max" taking Max, Deezer's "Max Ray" is dropped and Ray stays Ray, so
-    no part is in two names. Dropping a join can change what another part goes to, so this runs until every join left
-    stands."""
+    Max", beside Deezer's "Ava Max" and Ray) is followed there. A source's join stands only when all its parts go to its
+    whole, so no part is in two names: where sources complete different names from one part, the join whose whole,
+    once followed, is the longest takes it (the first source's on a tie), and the others are dropped (the files' "Ava
+    Max" taking Max, Deezer's "Max Ray" is dropped and Ray stays Ray). The joins are taken in that order, so a join
+    loses only to one that stands, never to one dropped in its turn."""
     joins = []  # (role, whole, parts): one per whole each source completes
     for source in dict.fromkeys(claim.source for claim in kept):
         own = list(dict.fromkeys((claim.name, claim.role) for claim in kept if claim.source == source))
@@ -845,16 +844,13 @@ def _joins_each_source_completes(kept, to_replace):
         for (part, role), whole in theirs.items():
             wholes.setdefault((whole, role), []).append(part)
         joins += [(role, whole, parts) for (whole, role), parts in wholes.items()]
-    while True:
-        joined = _followed_joins(joins)
-        standing = [
-            (role, whole, parts)
-            for role, whole, parts in joins
-            if all(joined[part, role] == joined.get((whole, role), whole) for part in parts)
-        ]
-        if len(standing) == len(joins):
-            return joined
-        joins = standing
+    followed = _followed_joins(joins)
+    taken, standing = set(), []
+    for role, whole, parts in sorted(joins, key=lambda join: -len(followed.get((join[1], join[0]), join[1]))):
+        if not taken.intersection((part, role) for part in parts):
+            standing.append((role, whole, parts))
+            taken.update((part, role) for part in parts)
+    return _followed_joins(standing)
 
 
 def _followed_joins(joins):

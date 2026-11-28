@@ -349,6 +349,21 @@ def _generated_claims(count: int):
         yield claims
 
 
+def _generated_remixer_parts(count: int):
+    """Each source, in a random order, claiming a random few of the wholes' parts as remixers: overlapping joins from
+    two or three sources are common."""
+    rng = random.Random(11882)
+    parts = ("Alice", "Bob", "Carol", "Dee")
+    for _ in range(count):
+        sources = rng.sample(_JOIN_SOURCES, len(_JOIN_SOURCES))
+        yield [
+            Claim(source, part, part, "remixer", source != "files" and rng.random() < 0.5)
+            for source in sources
+            for part in parts
+            if rng.random() < 0.5
+        ]
+
+
 def test_a_whole_name_no_claim_gives_comes_only_from_one_source_s_parts() -> None:
     """#1188: a whole name the decision credits in a role where no source gives it is there because one source claims
     every part of it in that role, never because two sources claim a part each."""
@@ -372,6 +387,27 @@ def test_no_part_goes_into_two_wholes_the_decision_joins() -> None:
         for role in {role for _, role in joined}:
             parts = [part for name, in_role in joined if in_role == role for part in _WHOLES[name]]
             assert len(parts) == len(set(parts)), claims
+
+
+def _completed_alone(claimed: set[tuple[str, str]], source: str) -> set[str]:
+    """The wholes `source` claims every part of and that share no part with another whole it claims every part of:
+    the joins its own repair makes, whatever order it tries them in."""
+    complete = {name for name, parts in _WHOLES.items() if all((source, part) in claimed for part in parts)}
+    return {
+        name for name in complete if not any(set(_WHOLES[name]) & set(_WHOLES[other]) for other in complete - {name})
+    }
+
+
+def test_a_join_one_source_completes_is_dropped_only_for_a_part_another_whole_takes() -> None:
+    """#1188: a whole one source completes is credited unless one of its parts went into another whole credited
+    there, even where that whole lost a part of its own (the files' "Alice & Bob" taking Bob from Deezer's "Bob Carol"
+    leaves Carol to Qobuz's "Carol Dee"). Remixers only: the decision overrules no remixer claim."""
+    for claims in _generated_remixer_parts(2000):
+        wholes = {name for name, _ in decided(claims, _WHOLES_CREDITED) if name in _WHOLES}
+        claimed = {(claim.source, claim.name) for claim in claims}
+        for name in set().union(*(_completed_alone(claimed, source) for source in _JOIN_SOURCES)):
+            taken = {part for other in wholes - {name} for part in _WHOLES[other]}
+            assert name in wholes or taken & set(_WHOLES[name]), ", ".join(f"{c.source} {c.name}" for c in claims)
 
 
 def test_claims_the_decision_overrules_are_not_credited_beside_the_name_that_beat_them() -> None:
