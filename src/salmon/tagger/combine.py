@@ -829,24 +829,24 @@ def _join_split_names(claims, to_replace):
 
 def _joins_each_source_completes(kept, to_replace):
     """Each (part, role) some source's kept claims join, with the whole name it ends up in: fix_artists_list over each
-    source's own claims, the longer whole kept where two sources complete different names from one part. A whole one
-    source completes that another source joins into a longer name (the files' "Ava Max", beside Deezer's "Ava Max" and
-    Ray) is followed there, so the part is credited once."""
-    joined = {}
+    source's own claims. A whole one source completes that another source joins into a longer name (the files' "Ava
+    Max", beside Deezer's "Ava Max" and Ray) is followed there, so the part is credited once. Where sources complete
+    different names from one part, the longest, once each is followed, is kept (the first source's on a tie)."""
+    candidates = {}
     for source in dict.fromkeys(claim.source for claim in kept):
         own = list(dict.fromkeys((claim.name, claim.role) for claim in kept if claim.source == source))
         theirs = {}
         fix_artists_list(own, to_replace, theirs)  # the repair changes the list it is given: this one is its own
         for key, whole in theirs.items():
-            if len(whole) > len(joined.get(key, "")):
-                joined[key] = whole
-    for (part, role), whole in joined.items():
-        seen = {part}
-        while (whole, role) in joined and whole not in seen:
-            seen.add(whole)
-            whole = joined[whole, role]
-        joined[part, role] = whole
-    return joined
+            candidates.setdefault(key, []).append(whole)
+
+    def followed(name, role, seen):
+        wholes = (
+            followed(whole, role, seen | {name}) for whole in candidates.get((name, role), ()) if whole not in seen
+        )
+        return max(wholes, key=len, default=name)
+
+    return {(part, role): followed(part, role, frozenset()) for part, role in candidates}
 
 
 def _overruled(claims):

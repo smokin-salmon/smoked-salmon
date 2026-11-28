@@ -7,9 +7,10 @@ from helpers.tagger_combine import stores_stating
 from test_common_credits import files_claim, store_claim
 from test_tagger_combine_credits import decided, release, two_tracks
 
-from salmon.tagger.combine import combine_metadatas
+from salmon.tagger.combine import _join_split_names, combine_metadatas
 from salmon.tagger.metadata import _combine_scraped
 from salmon.tagger.retagger import create_remixer_list
+from salmon.tagger.sources.base import construct_replacement_list
 
 DECIDED = [("Alice", "main"), ("Bob", "main"), ("Alice & Bob", "guest")]
 
@@ -64,6 +65,26 @@ def test_a_name_one_source_joins_follows_into_the_longer_name_another_source_com
     ]
 
     assert decided(claims, [("Ava Max", "composer")], [("Ava Max Ray", "composer")]) == [("Ava Max Ray", "main")]
+
+
+def test_the_longer_whole_is_chosen_once_each_whole_is_followed_into_longer_names() -> None:
+    """The files complete "Ava Max", which Qobuz's "Ava Max" and Ray take on into "Ava Max Ray"; Deezer completes "Ava
+    Carol" from Ava. Ava's longest whole is "Ava Max Ray", as Max's is: the files' two parts stay one name."""
+    claims = [
+        files_claim("Ava"),
+        files_claim("Max"),
+        store_claim("Deezer", "Ava", "main", assumed=False),
+        store_claim("Deezer", "Carol", "main", assumed=False),
+        store_claim("Qobuz", "Ava Max", "main", assumed=False),
+        store_claim("Qobuz", "Ray", "main", assumed=False),
+    ]
+    to_replace = construct_replacement_list(
+        [(name, "composer") for name in ("Ava", "Max", "Carol", "Ray", "Ava Max", "Ava Carol", "Ava Max Ray")]
+    )
+
+    joined = _join_split_names(claims, to_replace)
+
+    assert [claim.name for claim in joined if claim.source == "files"] == ["Ava Max Ray", "Ava Max Ray"]
 
 
 @pytest.mark.parametrize(
