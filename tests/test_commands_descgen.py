@@ -473,3 +473,27 @@ def test_as_before_descgen_weighs_a_stating_store_s_guess_as_a_guess(monkeypatch
     first = description.splitlines()[1]
     assert "Song 1" in first
     assert "(feat. Bob)" in first
+
+
+MUSICBRAINZ_URL = "https://musicbrainz.org/release/00000000-0000-0000-0000-000000000000"
+
+
+def test_descgen_keeps_two_stores_parts_of_a_name_apart(monkeypatch) -> None:
+    """#1188: Deezer states Bob and MusicBrainz guesses Alice and a guest "Alice & Bob": no one store claims both
+    parts, so Alice and Bob stay two mains beside the guest, and descgen's own pass over the cleaned credits does not
+    join them again. Deezer is the base, so Bob leads."""
+    scraped = {
+        DEEZER_URL: (_scraped([("Bob", "main")], [("Carol", "main")]), "Deezer"),
+        MUSICBRAINZ_URL: (_scraped([("Alice", "main"), ("Alice & Bob", "guest")], [("Carol", "main")]), "MusicBrainz"),
+    }
+
+    async def fake_run_metadata(url, return_source_name=False, for_merge=False):
+        return deepcopy(scraped[url])
+
+    monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
+    monkeypatch.setattr(cfg.upload.formatting, "guests_in_track_title", False)
+    stores_stating(monkeypatch, stating=("Deezer",), assuming=("MusicBrainz",))
+
+    description = anyio.run(build_description, list(scraped))
+
+    assert "[b]01.[/b] Bob & Alice (feat. Alice & Bob) - Song 1\n" in description

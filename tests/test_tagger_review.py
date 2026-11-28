@@ -214,6 +214,28 @@ def test_edit_tracks_applies_a_valid_edit(monkeypatch) -> None:
     assert metadata["tracks"]["1"]["2"]["title"] == "Two"
 
 
+def test_edit_tracks_leaves_the_decided_credits_of_a_track_it_did_not_change(monkeypatch) -> None:
+    # #1188: the merge kept Alice and Bob apart, two sources giving a part each; a save editing another track's title
+    # does not join them back into the guest's name.
+    metadata = _tracks_metadata()
+    metadata["tracks"]["1"]["1"]["artists"] = [("Alice", "main"), ("Bob", "main"), ("Alice & Bob", "guest")]
+
+    _edit_tracks_with(monkeypatch, metadata, [lambda text: text.replace("Title: Two", "Title: Deux")])
+
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "main"), ("Alice & Bob", "guest")]
+    assert metadata["tracks"]["1"]["2"]["title"] == "Deux"
+
+
+def test_edit_tracks_keeps_a_name_typed_split(monkeypatch) -> None:
+    # #1188: what the user types is final, even where another track credits the parts' whole name.
+    metadata = _tracks_metadata()
+    metadata["tracks"]["1"]["2"]["artists"] = [("Alice & Bob", "main")]
+
+    _edit_tracks_with(monkeypatch, metadata, [lambda text: text.replace("> A (main)", "> Alice (main)\n> Bob (main)")])
+
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("Alice", "main"), ("Bob", "main")]
+
+
 def test_edit_tracks_refuses_a_changed_track_number_and_reopens_the_edited_text(monkeypatch) -> None:
     metadata = _tracks_metadata()
 

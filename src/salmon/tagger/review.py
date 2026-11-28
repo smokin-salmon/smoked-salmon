@@ -11,7 +11,7 @@ from salmon.common import normalize_accents
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError, PickOtherResults
 from salmon.tagger.metadata import _print_metadata
-from salmon.tagger.sources.base import generate_artists, standardize_genres
+from salmon.tagger.sources.base import artists_from_tracks, standardize_genres
 from salmon.tagger.tags import is_classical_genre
 
 _DEFERRED_PRE_AI_METADATA_ERRORS = {
@@ -373,7 +373,7 @@ def _track_list(on: list[tuple[str, str]]) -> str:
 
 
 def _artist_key(name: str) -> str:
-    """An artist's name as generate_artists matches it (artist_spellings), in any case and with any
+    """An artist's name as artists_from_tracks matches it (artist_spellings), in any case and with any
     accents: trac[k]s respells a name by this key, so a match by any other key would miss or merge names."""
     return cast("str", normalize_accents(name.lower()))  # One string in, one out.
 
@@ -627,15 +627,15 @@ async def _edit_tracks(metadata):
         for discnum, tracknum, title, artists in edits:
             metadata["tracks"][discnum][tracknum]["title"] = title
             metadata["tracks"][discnum][tracknum]["artists"] = artists
-        artists, metadata["tracks"] = generate_artists(metadata["tracks"])
+        artists, metadata["tracks"] = artists_from_tracks(metadata["tracks"])
         metadata["artists"] = _in_release_order(artists, metadata["artists"])
         return
 
 
 def _in_release_order(artists, release):
-    """`artists`, which generate_artists lists in the tracks' order, in the order of the release's credits `release`.
+    """`artists`, which artists_from_tracks lists in the tracks' order, in the order of the release's credits `release`.
 
-    generate_artists alone would undo an order set in [a]rtists (#868) at every trac[k]s save. A credit the release
+    artists_from_tracks alone would undo an order set in [a]rtists (#868) at every trac[k]s save. A credit the release
     holds keeps its place; a credit whose role changed takes the place of the credit of that name the tracks no
     longer hold; any other goes last, in the tracks' order.
     """

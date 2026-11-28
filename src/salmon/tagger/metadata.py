@@ -19,7 +19,7 @@ from salmon.search.hints import search_hints
 from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES, without_tracking
-from salmon.tagger.sources.base import generate_artists, is_classical_release, standardize_genres
+from salmon.tagger.sources.base import artists_from_tracks, is_classical_release, standardize_genres
 from salmon.tagger.tag_urls import tag_urls
 
 
@@ -158,7 +158,7 @@ def _combine_scraped(
         *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data, source_url=source_url
     )
     meta = clean_metadata(meta)
-    meta["artists"], meta["tracks"] = generate_artists(meta["tracks"])
+    meta["artists"], meta["tracks"] = artists_from_tracks(meta["tracks"])
     return meta
 
 

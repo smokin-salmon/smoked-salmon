@@ -18,12 +18,12 @@ from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
 from salmon.tagger.sources.base import (
     artist_spellings,
+    artists_from_tracks,
     construct_replacement_list,
     determine_label_type,
     featuring_clause,
     fix_artists_list,
     folded_title,
-    generate_artists,
     standardize_genres,
     title_with_version,
 )
@@ -175,7 +175,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     without_merge_only_keys(base)
     _print_joined(joined)
     _print_disputes(decisions)
-    base["artists"], base["tracks"] = generate_artists(base["tracks"])
+    base["artists"], base["tracks"] = artists_from_tracks(base["tracks"])
     base["genres"] = standardize_genres(_correct_genres(base["genres"]))
     base["label"] = determine_label_type(base["label"], base["artists"])
     return base
@@ -743,7 +743,7 @@ def _artist_classes(tracks, own):
     Names are one artist across the release when they share a `same_artist_key`, and on a track when Discogs credits
     one as the other there, whatever the role (its ANV: per track, as "Taylor" on one track is not every Taylor's). An
     artist takes the spelling of its first credit the merge kept on that track, as the release first spells that
-    credit's key and generate_artists spells that (`artist_spellings`).
+    credit's key and artists_from_tracks spells that (`artist_spellings`).
     """
     spellings = artist_spellings(tracks)
     first = {}  # same_artist_key: the first credit the merge kept under it, in track order
@@ -862,7 +862,7 @@ def decide_alone(metadata, source):
     _, joined = _decide_credits(metadata["tracks"], {}, source)
     _print_joined(joined)
     clean_metadata(metadata)
-    metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
+    metadata["artists"], metadata["tracks"] = artists_from_tracks(metadata["tracks"])
 
 
 def _print_joined(joined):
