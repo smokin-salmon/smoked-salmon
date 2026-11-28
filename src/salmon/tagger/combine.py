@@ -683,8 +683,8 @@ def _decide_credits(tracks, claims, base_source, corrected=False):
     keeps every spelling it had, and a corrected part joins under its new name, as it did when the repair ran after the
     corrections. A claim whose artist the merge dropped in that role (a fragment of another name) is left out. Every
     kept credit has a claim: the merge claims each credit it adds to a track. The track's badly split names are joined
-    back over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). A credited
-    remixer takes its artist's spelling too, so the REMIXER tag still finds it.
+    back where one source claims every part (`_join_split_names`, #1188), so the decision weighs the whole name
+    (#1109). A credited remixer takes its artist's spelling too, so the REMIXER tag still finds it.
     """
     own = {
         (disc, num): claims.get(id(track)) or _claims_of(track, base_source)
@@ -802,22 +802,33 @@ def _joined(joins, key):
 
 
 def _join_split_names(claims, to_replace):
-    """A track's claims with its badly split names joined back, as generate_artists' repair joins a track's credits
-    (fix_artists_list, with `to_replace` from the release's names), over the claims of every source: in a role where
-    every part of a name is claimed, each claim of a part becomes a claim of the whole name, keeping its source and
-    whether it is assumed. Run before the decision, so that a part one source also claims in another role does not
-    lose a role the whole name keeps (#1109).
+    """A track's claims with its badly split names joined back, as a store's parse joins its credits (fix_artists_list,
+    with `to_replace` from the release's names): in a role where one source claims every part of a name, each claim of
+    a part, by any source, becomes a claim of the whole name, keeping its source and whether it is assumed. Where two
+    sources complete different names from one part, the longer is kept. Run before the decision, so that a part one
+    source also claims in another role does not lose a role the whole name keeps (#1109). Nothing joins split names
+    after the decision: this is where the join is decided.
+
+    Parts that two sources claim between them are not joined (#1188): Alice from the files and Bob from Deezer are two
+    stated credits, and a third source's guess of "Alice & Bob" is not what makes them one name.
 
     A claim the decision overrules (`_overruled`) joins nothing: it follows the claim that beat it, into the whole name
     when that one is joined, and loses to it again. One that agrees with a claim the decision keeps (the files' own
     guest beside their main) follows that one."""
     overruled = _overruled(claims)
-    kept = dict.fromkeys((claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled)
+    kept = [claim for at, claim in enumerate(claims) if at not in overruled]
     joined = {}
-    fix_artists_list(list(kept), to_replace, joined)  # a list of its own: the repair changes the one it is given
+    for source in dict.fromkeys(claim.source for claim in kept):
+        own = list(dict.fromkeys((claim.name, claim.role) for claim in kept if claim.source == source))
+        theirs = {}
+        fix_artists_list(own, to_replace, theirs)  # the repair changes the list it is given: this one is its own
+        for key, whole in theirs.items():
+            if len(whole) > len(joined.get(key, "")):
+                joined[key] = whole
+    kept_keys = {(claim.name, claim.role) for claim in kept}
     renamed = []
     for at, claim in enumerate(claims):
-        key = (claim.name, claim.role if (claim.name, claim.role) in kept else overruled[at])
+        key = (claim.name, claim.role if (claim.name, claim.role) in kept_keys else overruled[at])
         renamed.append(msgspec.structs.replace(claim, name=joined[key]) if key in joined else claim)
     return renamed
 

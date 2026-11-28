@@ -3,6 +3,7 @@ the disputes salmon prints."""
 
 import contextlib
 import io
+import random
 from copy import deepcopy
 
 import anyio
@@ -297,6 +298,64 @@ def test_each_claim_of_a_joined_part_keeps_its_source_and_flag() -> None:
         ("Deezer", "Ava Max", "guest", True),
         ("Deezer", "Ava Max", "guest", True),
     ]
+
+
+def test_two_sources_stating_one_part_each_are_not_joined_by_a_guess_of_the_whole() -> None:
+    """#1188: the files' Alice and Deezer's Bob are two stated mains, and MusicBrainz's guessed guest "Alice & Bob" is
+    not one source claiming both. Alice and Bob stay mains, and the guess stays a guest, not a main."""
+    claims = [
+        files_claim("Alice"),
+        store_claim("Deezer", "Bob", "main", assumed=False),
+        store_claim("MusicBrainz", "Alice & Bob", "guest"),
+    ]
+
+    assert decided(claims, [("Alice & Bob", "composer")]) == [
+        ("Alice", "main"),
+        ("Bob", "main"),
+        ("Alice & Bob", "guest"),
+    ]
+
+
+def test_parts_stated_by_two_sources_one_each_are_not_joined() -> None:
+    claims = [files_claim("Ava"), store_claim("Qobuz", "Max", "main", assumed=False)]
+    to_replace = construct_replacement_list([("Ava", "main"), ("Max", "main"), ("Ava Max", "composer")])
+
+    assert _join_split_names(claims, to_replace) == claims
+
+
+def test_a_part_another_source_also_claims_is_joined_with_the_parts_one_source_gives() -> None:
+    """The files claim Ava and Max: that one source completes the name, so Qobuz's Max is a claim of it too."""
+    claims = [files_claim("Ava"), files_claim("Max"), store_claim("Qobuz", "Max", "main", assumed=False)]
+
+    assert decided(claims, [("Ava Max", "composer")]) == [("Ava Max", "main")]
+
+
+_JOIN_SOURCES = ("files", "Deezer", "Qobuz", "MusicBrainz")
+_JOIN_NAMES = ("Alice", "Bob", "Alice & Bob", "Carol", "Dee", "Carol Dee")
+_JOIN_ROLES = ("main", "guest", "remixer", "composer")
+_WHOLES = {"Alice & Bob": ("Alice", "Bob"), "Carol Dee": ("Carol", "Dee")}
+
+
+def _generated_claims(count: int):
+    rng = random.Random(1188)
+    for _ in range(count):
+        claims = []
+        for _ in range(rng.randint(1, 7)):
+            source = rng.choice(_JOIN_SOURCES)
+            assumed = source != "files" and rng.random() < 0.5
+            claims.append(Claim(source, name := rng.choice(_JOIN_NAMES), name, rng.choice(_JOIN_ROLES), assumed))
+        yield claims
+
+
+def test_a_whole_name_no_claim_gives_comes_only_from_one_source_s_parts() -> None:
+    """#1188: a whole name the decision credits in a role where no source gives it is there because one source claims
+    every part of it in that role, never because two sources claim a part each."""
+    for claims in _generated_claims(2000):
+        given = {(claim.name, claim.role) for claim in claims}
+        for name, role in decided(claims, [("Alice & Bob", "composer"), ("Carol Dee", "composer")]):
+            if name in _WHOLES and (name, role) not in given:
+                claimed = {(claim.source, claim.name) for claim in claims if claim.role == role}
+                assert any(all((source, part) in claimed for part in _WHOLES[name]) for source in _JOIN_SOURCES), claims
 
 
 def test_claims_the_decision_overrules_are_not_credited_beside_the_name_that_beat_them() -> None:
