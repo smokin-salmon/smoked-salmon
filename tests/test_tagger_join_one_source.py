@@ -53,6 +53,19 @@ def test_a_name_split_in_three_joins_only_the_parts_one_source_gives() -> None:
     ]
 
 
+def test_a_name_one_source_joins_follows_into_the_longer_name_another_source_completes_from_it() -> None:
+    """The files join Ava and Max into "Ava Max"; Deezer gives "Ava Max" and Ray, every part of "Ava Max Ray". The
+    files' claims, now of "Ava Max", follow it into the longer name, so the artist is credited once."""
+    claims = [
+        files_claim("Ava"),
+        files_claim("Max"),
+        store_claim("Deezer", "Ava Max", "main", assumed=False),
+        store_claim("Deezer", "Ray", "main", assumed=False),
+    ]
+
+    assert decided(claims, [("Ava Max", "composer")], [("Ava Max Ray", "composer")]) == [("Ava Max Ray", "main")]
+
+
 @pytest.mark.parametrize(
     ("deezer_remixers", "expected"),
     [(["Garfunkel"], ["Simon", "Garfunkel"]), (["Simon", "Garfunkel"], ["Simon and Garfunkel"])],

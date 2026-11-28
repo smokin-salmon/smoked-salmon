@@ -805,9 +805,10 @@ def _join_split_names(claims, to_replace):
     """A track's claims with its badly split names joined back, as a store's parse joins its credits (fix_artists_list,
     with `to_replace` from the release's names): in a role where one source claims every part of a name, each claim of
     a part, by any source, becomes a claim of the whole name, keeping its source and whether it is assumed. Where two
-    sources complete different names from one part, the longer is kept. Run before the decision, so that a part one
-    source also claims in another role does not lose a role the whole name keeps (#1109). Nothing joins split names
-    after the decision: this is where the join is decided.
+    sources complete different names from one part, the longer is kept, and a whole that is itself a part of a longer
+    name a source completes follows it there (`_joins_each_source_completes`). Run before the decision, so that a part
+    one source also claims in another role does not lose a role the whole name keeps (#1109). Nothing joins split
+    names after the decision: this is where the join is decided.
 
     Parts that two sources claim between them are not joined (#1188): Alice from the files and Bob from Deezer are two
     stated credits, and a third source's guess of "Alice & Bob" is not what makes them one name.
@@ -817,6 +818,20 @@ def _join_split_names(claims, to_replace):
     guest beside their main) follows that one."""
     overruled = _overruled(claims)
     kept = [claim for at, claim in enumerate(claims) if at not in overruled]
+    joined = _joins_each_source_completes(kept, to_replace)
+    kept_keys = {(claim.name, claim.role) for claim in kept}
+    renamed = []
+    for at, claim in enumerate(claims):
+        key = (claim.name, claim.role if (claim.name, claim.role) in kept_keys else overruled[at])
+        renamed.append(msgspec.structs.replace(claim, name=joined[key]) if key in joined else claim)
+    return renamed
+
+
+def _joins_each_source_completes(kept, to_replace):
+    """Each (part, role) some source's kept claims join, with the whole name it ends up in: fix_artists_list over each
+    source's own claims, the longer whole kept where two sources complete different names from one part. A whole one
+    source completes that another source joins into a longer name (the files' "Ava Max", beside Deezer's "Ava Max" and
+    Ray) is followed there, so the part is credited once."""
     joined = {}
     for source in dict.fromkeys(claim.source for claim in kept):
         own = list(dict.fromkeys((claim.name, claim.role) for claim in kept if claim.source == source))
@@ -825,12 +840,13 @@ def _join_split_names(claims, to_replace):
         for key, whole in theirs.items():
             if len(whole) > len(joined.get(key, "")):
                 joined[key] = whole
-    kept_keys = {(claim.name, claim.role) for claim in kept}
-    renamed = []
-    for at, claim in enumerate(claims):
-        key = (claim.name, claim.role if (claim.name, claim.role) in kept_keys else overruled[at])
-        renamed.append(msgspec.structs.replace(claim, name=joined[key]) if key in joined else claim)
-    return renamed
+    for (part, role), whole in joined.items():
+        seen = {part}
+        while (whole, role) in joined and whole not in seen:
+            seen.add(whole)
+            whole = joined[whole, role]
+        joined[part, role] = whole
+    return joined
 
 
 def _overruled(claims):
