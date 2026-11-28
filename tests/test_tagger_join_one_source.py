@@ -118,6 +118,20 @@ def test_a_join_that_loses_its_part_only_to_a_dropped_join_stands() -> None:
     ]
 
 
+def test_two_sources_joins_that_end_in_one_name_both_stand() -> None:
+    """The files complete "Ava Max" and Deezer, from Ava, Max and Ray, "Ava Max Ray": both joins end in "Ava Max Ray",
+    so they share Ava and Max without a clash, and the track credits that one name."""
+    claims = [
+        files_claim("Ava"),
+        files_claim("Max"),
+        store_claim("Deezer", "Ava", "main", assumed=False),
+        store_claim("Deezer", "Max", "main", assumed=False),
+        store_claim("Deezer", "Ray", "main", assumed=False),
+    ]
+
+    assert decided(claims, [("Ava Max", "composer")], [("Ava Max Ray", "composer")]) == [("Ava Max Ray", "main")]
+
+
 @pytest.mark.parametrize(
     ("deezer_remixers", "expected"),
     [(["Garfunkel"], ["Simon", "Garfunkel"]), (["Simon", "Garfunkel"], ["Simon and Garfunkel"])],
