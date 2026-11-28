@@ -1,0 +1,309 @@
+import anyio
+import pytest
+from helpers.tagger_combine import make_tracks
+
+from salmon.sources.apple_music import AppleMusicBase
+from salmon.tagger.combine import combine_metadatas
+from salmon.tagger.sources.apple_music import Scraper, _decide_main_artists
+from salmon.tagger.sources.base import generate_artists
+
+
+def soup(artist_names: list[str], title: str = "A Track", include_artists: bool = True) -> dict:
+    """Build an amp-api shaped soup, with the artists one by one as Apple includes them."""
+    artists = [{"type": "artists", "id": f"a{i}", "attributes": {"name": name}} for i, name in enumerate(artist_names)]
+    track: dict = {
+        "type": "songs",
+        "attributes": {
+            "name": title,
+            "artistName": " & ".join(artist_names),
+            "trackNumber": 1,
+            "discNumber": 1,
+        },
+    }
+    if include_artists:
+        track["relationships"] = {"artists": {"data": artists}}
+    return {"album": {"name": "An Album"}, "tracks": [track]}
+
+
+def test_included_artists_become_distinct_credits_in_apples_order() -> None:
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Archie Hamilton", "US Two"]))
+
+    assert tracks["1"][1]["artists"] == [("Archie Hamilton", "main"), ("US Two", "main")]
+
+
+def test_three_artists_from_a_real_amp_api_response() -> None:
+    # 6804372253 ("Mrignaini"): the display string puts the names in one order, Apple's artists in another.
+    s = soup(["Sahil Singh", "RYDM", "KAUSHIK"], title="Mrignaini")
+    s["tracks"][0]["attributes"]["artistName"] = "Sahil Singh, RYDM & KAUSHIK"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("Sahil Singh", "main"), ("RYDM", "main"), ("KAUSHIK", "main")]
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["Simon & Garfunkel", "Earth, Wind & Fire", "Tyler, The Creator", "Kool & The Gang", "AC/DC"],
+)
+def test_an_artist_whose_name_holds_a_separator_stays_whole(name: str) -> None:
+    tracks = anyio.run(Scraper().parse_tracks, soup([name]))
+
+    assert tracks["1"][1]["artists"] == [(name, "main")]
+
+
+def test_a_display_string_without_included_artists_is_kept_whole() -> None:
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Archie Hamilton", "US Two"], include_artists=False))
+
+    assert tracks["1"][1]["artists"] == [("Archie Hamilton & US Two", "main")]
+
+
+def test_distinct_credits_reach_the_release_artist_list() -> None:
+    # scrape_release derives the release's artists from its tracks; distinct credits must survive that step.
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Archie Hamilton", "US Two"]))
+    artists, _tracks = generate_artists(tracks)
+
+    assert artists == [("Archie Hamilton", "main"), ("US Two", "main")]
+
+
+def test_a_whole_name_on_another_track_does_not_join_two_explicit_artists() -> None:
+    # The bad-split repair would join "A" + "B" into "AB" on the first track. Apple states each artist
+    # separately, so the two real artists must survive generate_artists.
+    first = soup(["A", "B"], title="First")
+    second = soup(["AB"], title="Second")
+    second["tracks"][0]["attributes"]["trackNumber"] = 2
+    tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
+
+    artists, tracks = generate_artists(tracks)
+
+    assert artists == [("A", "main"), ("B", "main"), ("AB", "main")]
+    assert tracks["1"][1]["artists"] == [("A", "main"), ("B", "main")]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
+def test_exemption_survives_repeated_generate_artists_passes() -> None:
+    # combine.py, metadata.py and review.py run generate_artists again on the same tracks.
+    first = soup(["A", "B"], title="First")
+    second = soup(["AB"], title="Second")
+    second["tracks"][0]["attributes"]["trackNumber"] = 2
+    tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
+
+    artists, tracks = generate_artists(tracks)
+    for _ in range(2):
+        artists, tracks = generate_artists(tracks)
+
+    assert artists == [("A", "main"), ("B", "main"), ("AB", "main")]
+    assert tracks["1"][1]["artists"] == [("A", "main"), ("B", "main")]
+
+
+def test_title_guests_are_repaired_even_when_mains_are_explicit() -> None:
+    # Only relationship-derived mains are exempt. A title's "feat. Simon & Garfunkel" is free text and
+    # must rejoin when another track credits that whole name.
+    first = soup(["X"], title="Song (feat. Simon & Garfunkel)")
+    second = soup(["Simon & Garfunkel"], title="Other")
+    second["tracks"][0]["attributes"]["trackNumber"] = 2
+
+    tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
+    _artists, tracks = generate_artists(tracks)
+
+    assert tracks["1"][1]["artists"] == [("X", "main"), ("Simon & Garfunkel", "guest")]
+    assert tracks["1"][2]["artists"] == [("Simon & Garfunkel", "main")]
+
+
+def test_a_featured_artist_in_the_relationship_is_a_guest_not_a_main() -> None:
+    # Apple can list a song's featured artist alongside its main artists. The title says who is a guest.
+    s = soup(["A", "X"], title="Song (feat. X)")
+    s["tracks"][0]["attributes"]["artistName"] = "A feat. X"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("A", "main"), ("X", "guest")]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
+def test_a_featured_artist_with_a_separator_in_the_relationship_stays_a_single_guest() -> None:
+    # "Simon & Garfunkel" in the relationship and title's feat. clause must stay one guest, not be split
+    # or promoted to a main credit.
+    s = soup(["Main", "Simon & Garfunkel"], title="Song (feat. Simon & Garfunkel)")
+    s["tracks"][0]["attributes"]["artistName"] = "Main feat. Simon & Garfunkel"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("Main", "main"), ("Simon & Garfunkel", "guest")]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
+def test_a_featured_artist_with_a_separator_beside_another_guest_keeps_both() -> None:
+    s = soup(["Main", "Simon & Garfunkel"], title="Song (feat. Guest A & Simon & Garfunkel)")
+    s["tracks"][0]["attributes"]["artistName"] = "Main"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [
+        ("Main", "main"),
+        ("Guest A", "guest"),
+        ("Simon & Garfunkel", "guest"),
+    ]
+
+
+def test_a_main_artist_name_inside_a_longer_guest_name_stays_main() -> None:
+    # "John" in relationships must not match inside "John Smith" in the title's feat. clause.
+    s = soup(["Main", "John"], title="Song (feat. John Smith)")
+    s["tracks"][0]["attributes"]["artistName"] = "Main & John"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("Main", "main"), ("John", "main"), ("John Smith", "guest")]
+    assert tracks["1"][1]["explicit_main_artists"] is True
+
+
+def test_an_incomplete_relationship_falls_back_to_the_whole_display_string() -> None:
+    # C has no Apple artist page, so Apple leaves it out of the relationship. Keep it in the whole string.
+    s = soup(["A", "B"], title="Song")
+    s["tracks"][0]["attributes"]["artistName"] = "A, B & C"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("A, B & C", "main")]
+    assert "explicit_main_artists" not in tracks["1"][1]
+
+
+def test_relationship_coverage_does_not_match_inside_another_word() -> None:
+    # "B" must not match the start of "Band" and leave "and" to be stripped as a joiner.
+    s = soup(["B"], title="Song")
+    s["tracks"][0]["attributes"]["artistName"] = "Band"
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [("Band", "main")]
+    assert "explicit_main_artists" not in tracks["1"][1]
+
+
+@pytest.mark.parametrize(
+    ("rel_names", "display"),
+    [
+        (["Main"], "Main & And"),
+        (["Main"], "And & Main"),
+        (["Main", "Other"], "Main & And & Other"),
+    ],
+)
+def test_unmatched_artist_named_like_a_joiner_falls_back_to_display_string(rel_names: list[str], display: str) -> None:
+    # Joining words are only valid between matched names, so an unmatched artist named "And" is not dropped.
+    s = soup(rel_names, title="Song")
+    s["tracks"][0]["attributes"]["artistName"] = display
+
+    tracks = anyio.run(Scraper().parse_tracks, s)
+
+    assert tracks["1"][1]["artists"] == [(display, "main")]
+    assert "explicit_main_artists" not in tracks["1"][1]
+
+
+@pytest.mark.parametrize(
+    ("rel_names", "artist_name", "guest_keys", "expected_mains", "expected_explicit", "expected_reason"),
+    [
+        (["A", "B"], "A & B", set(), [("A", "main"), ("B", "main")], True, "relationship covers display artist"),
+        (["A", "X"], "A feat. X", {"x"}, [("A", "main")], True, "relationship covers display artist"),
+        ([], "A & B", set(), [("A & B", "main")], False, "no relationship artists"),
+        (["A"], "A & B", set(), [("A & B", "main")], False, "relationship incomplete for display artist"),
+        (["X"], "X", {"x"}, [("X", "main")], False, "all relationship artists are title guests"),
+        (["A"], "", set(), [], False, "no display artist"),
+    ],
+)
+def test_decide_main_artists(
+    rel_names: list[str],
+    artist_name: str,
+    guest_keys: set[str],
+    expected_mains: list[tuple[str, str]],
+    expected_explicit: bool,
+    expected_reason: str,
+) -> None:
+    mains, explicit, reason = _decide_main_artists(rel_names, artist_name, guest_keys)
+
+    assert mains == expected_mains
+    assert explicit is expected_explicit
+    assert reason == expected_reason
+
+
+def test_explicit_main_artists_survive_merge_onto_file_base() -> None:
+    # Merging Apple Music onto local file metadata must keep explicit A and B separate even when another
+    # track credits AB.
+    first = soup(["A", "B"], title="First")
+    second = soup(["AB"], title="Second")
+    second["tracks"][0]["attributes"]["trackNumber"] = 2
+    apple_tracks = anyio.run(Scraper().parse_tracks, {"tracks": first["tracks"] + second["tracks"]})
+
+    base_tracks = make_tracks({"1": ["1", "2"]}, isrc_prefix=None)
+    base_tracks["1"]["1"]["artists"] = []
+    base_tracks["1"]["1"]["title"] = "First"
+    base_tracks["1"]["2"]["artists"] = []
+    base_tracks["1"]["2"]["title"] = "Second"
+
+    def release(tracks: dict) -> dict:
+        return {
+            "artists": [],
+            "title": "An Album",
+            "group_year": "2026",
+            "year": "2026",
+            "date": None,
+            "edition_title": None,
+            "label": None,
+            "catno": None,
+            "rls_type": "Album",
+            "genres": [],
+            "source": "WEB",
+            "cover": None,
+            "upc": None,
+            "comment": None,
+            "urls": [],
+            "tracks": tracks,
+        }
+
+    merged = combine_metadatas(("Apple Music", release(apple_tracks)), base=release(base_tracks))
+
+    assert merged["artists"] == [("A", "main"), ("B", "main"), ("AB", "main")]
+    assert merged["tracks"]["1"]["1"]["artists"] == [("A", "main"), ("B", "main")]
+    assert merged["tracks"]["1"]["1"]["explicit_main_artists"] is True
+
+
+def test_featured_guests_from_the_title_are_still_split() -> None:
+    tracks = anyio.run(Scraper().parse_tracks, soup(["Main Artist"], title="Song (feat. One & Two)"))
+
+    assert tracks["1"][1]["artists"] == [("Main Artist", "main"), ("One", "guest"), ("Two", "guest")]
+
+
+def test_fetch_data_asks_for_each_tracks_artists(monkeypatch) -> None:
+    seen: dict[str, dict] = {}
+
+    async def fake_token(cls):
+        return "token"
+
+    async def fake_get_json(_self, url, params=None, headers=None):
+        key = "tracks" if url.endswith("/tracks") else "album"
+        seen[key] = dict(params or {})
+        track = {
+            "type": "songs",
+            "attributes": {"name": "Track 1", "trackNumber": 1},
+            "relationships": {
+                "artists": {"data": [{"type": "artists", "id": "a1", "attributes": {"name": "An Artist"}}]}
+            },
+        }
+        if key == "album":
+            return {
+                "data": [
+                    {
+                        "attributes": {"name": "An Album"},
+                        "relationships": {"tracks": {"data": [track], "next": "/v1/catalog/us/albums/1/tracks"}},
+                    }
+                ]
+            }
+        return {"data": [track]}
+
+    monkeypatch.setattr(AppleMusicBase, "_get_token", fake_token)
+    monkeypatch.setattr(AppleMusicBase, "get_json", fake_get_json)
+
+    result = anyio.run(AppleMusicBase().fetch_data, "https://music.apple.com/us/album/-/6804372253")
+
+    assert seen["album"]["include"] == "tracks,artists"
+    assert seen["album"]["include[songs]"] == "artists"
+    assert seen["tracks"]["include"] == "artists"
+    # The artists stay on the track resource, where parse_tracks reads them.
+    assert result["tracks"][0]["relationships"]["artists"]["data"][0]["attributes"]["name"] == "An Artist"

@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from itertools import pairwise
 
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.common.strings import split_type_marker
@@ -140,7 +141,11 @@ class Scraper(AppleMusicBase, MetadataMixin):
 
         Each entry in ``soup["tracks"]`` is a catalog song object with an
         ``attributes`` dict containing name, artistName, trackNumber,
-        discNumber, isrc, etc.
+        discNumber, isrc, etc. When the relationship holds the songs' artists
+        one by one, in Apple's order, they become separate main credits, except
+        for any the title credits as a guest. The ``artistName`` display string
+        is used only if the relationship is missing or incomplete: splitting it
+        would break names like "Simon & Garfunkel" that hold a separator.
         """
         tracks: dict[str, dict] = defaultdict(dict)
 
@@ -164,17 +169,25 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 raw_title = attrs.get("name", "").strip()
                 title = RE_FEAT.sub("", raw_title)
 
-                artists: list[tuple[str, str]] = []
-                artist_name = attrs.get("artistName", "")
-                if artist_name:
-                    artists.append((artist_name, "main"))
+                artist_rels = (item.get("relationships") or {}).get("artists") or {}
+                rel_names: list[str] = []
+                for rel in artist_rels.get("data") or []:
+                    name = (rel.get("attributes") or {}).get("name", "").strip()
+                    if rel.get("type") == "artists" and name and name not in rel_names:
+                        rel_names.append(name)
 
-                # Extract featured artists embedded in track title
+                # A title's feat. clause lists guests in free text, even when Apple also lists them in the
+                # relationship. Match whole relationship names first so a guest like "Simon & Garfunkel"
+                # stays a single guest and is excluded from mains.
                 feat_match = RE_FEAT.search(raw_title)
-                if feat_match:
-                    for guest in _parse_guest_artists(feat_match.group(1)):
-                        if (guest, "guest") not in artists:
-                            artists.append((guest, "guest"))
+                guests = _extract_title_guests(feat_match.group(1), rel_names) if feat_match else []
+                guest_keys = {guest.casefold() for guest in guests}
+
+                artist_name = (attrs.get("artistName") or "").strip()
+                artists, explicit_main_artists, _reason = _decide_main_artists(rel_names, artist_name, guest_keys)
+                for guest in guests:
+                    if (guest, "guest") not in artists:
+                        artists.append((guest, "guest"))
 
                 new_track = self.generate_track(
                     trackno=track_num,
@@ -184,6 +197,12 @@ class Scraper(AppleMusicBase, MetadataMixin):
                     isrc=attrs.get("isrc"),
                     explicit=attrs.get("contentRating") == "explicit",
                 )
+                if explicit_main_artists:
+                    # These main credits are stated per artist by the store, not inferred from a joined string:
+                    # the split-repair must not join them back by name. Title guests remain repairable. The flag
+                    # is per track, so other stores' main credits merged into it skip the repair too; see
+                    # TrackMetadata.explicit_main_artists until Apple's credits become stated claims (ADR 0007).
+                    new_track["explicit_main_artists"] = True
                 add_track(tracks, str(disc_num), track_num, new_track)
 
             if not tracks:
@@ -193,6 +212,118 @@ class Scraper(AppleMusicBase, MetadataMixin):
 
         except (TypeError, KeyError, ValueError) as e:
             raise ScrapeError("Could not parse tracks from Apple Music API") from e
+
+
+def _decide_main_artists(
+    rel_names: list[str], artist_name: str, guest_keys: set[str]
+) -> tuple[list[tuple[str, str]], bool, str]:
+    """Decide a track's main artist credits, whether they are explicit, and why.
+
+    Apple leaves artists without an artist page out of ``relationships.artists``. Use the relationship
+    only when its names account for the whole ``artistName`` display string; otherwise keep the display
+    string whole so an unlinked name is neither dropped nor mis-split.
+    """
+    if not artist_name:
+        return [], False, "no display artist"
+    if not rel_names:
+        return [(artist_name, "main")], False, "no relationship artists"
+    if not _covers_artist_name(rel_names, artist_name):
+        return [(artist_name, "main")], False, "relationship incomplete for display artist"
+
+    mains: list[tuple[str, str]] = []
+    for name in rel_names:
+        if name.casefold() not in guest_keys and (name, "main") not in mains:
+            mains.append((name, "main"))
+    if not mains:
+        return [(artist_name, "main")], False, "all relationship artists are title guests"
+    return mains, True, "relationship covers display artist"
+
+
+_RE_ARTIST_GAP = re.compile(
+    r"^(?:\s*(?:,\s*)?[&,;/\\]\s*|(?:,\s*|\s+)(?:and|feat|ft|featuring|with)\.?\s+)$",
+    re.IGNORECASE,
+)
+
+
+def _is_word_char(char: str) -> bool:
+    return char.isalnum() or char == "_"
+
+
+def _is_whole_token(text: str, start: int, end: int) -> bool:
+    """Whether ``text[start:end]`` is not embedded inside a larger word."""
+    left_ok = start == 0 or not _is_word_char(text[start]) or not _is_word_char(text[start - 1])
+    right_ok = end == len(text) or not _is_word_char(text[end - 1]) or not _is_word_char(text[end])
+    return left_ok and right_ok
+
+
+def _covers_artist_name(names: list[str], artist_name: str) -> bool:
+    """Whether named artists account for the whole display string, with only separators between them.
+
+    Apple's relationship leaves out artists without an artist page. If it only accounts for part of
+    ``artistName``, the missing name must come from the display string, kept whole.
+    """
+    if not names:
+        return False
+    matched: list[tuple[int, int]] = []
+    for name in sorted(names, key=len, reverse=True):
+        for match in re.finditer(re.escape(name), artist_name, flags=re.IGNORECASE):
+            start, end = match.start(), match.end()
+            if _is_whole_token(artist_name, start, end) and not any(s < end and start < e for s, e in matched):
+                matched.append((start, end))
+                break
+    if not matched:
+        return False
+    matched.sort()
+    if artist_name[: matched[0][0]].strip() or artist_name[matched[-1][1] :].strip():
+        return False
+    return all(_RE_ARTIST_GAP.match(artist_name[end:next_start]) for (_, end), (next_start, _) in pairwise(matched))
+
+
+_RE_GUEST_SEP_END = re.compile(r"(?:[&,;/\\]|\s(?:and|feat|ft|featuring|with)\.?)\s*$", re.IGNORECASE)
+_RE_GUEST_SEP_START = re.compile(r"^\s*(?:[&,;/\\]|(?:and|feat|ft|featuring|with)\.?(?:\s|$))", re.IGNORECASE)
+
+
+def _is_guest_unit(feat_text: str, start: int, end: int) -> bool:
+    """Whether ``feat_text[start:end]`` stands as a complete guest entry rather than words inside another name."""
+    before = feat_text[:start]
+    after = feat_text[end:]
+    left_ok = not before.strip() or bool(_RE_GUEST_SEP_END.search(before))
+    right_ok = not after.strip() or bool(_RE_GUEST_SEP_START.match(after))
+    return left_ok and right_ok
+
+
+def _extract_title_guests(feat_text: str, rel_names: list[str]) -> list[str]:
+    """Parse guest artists from a title's feat. clause, keeping whole relationship names intact."""
+    matched: list[tuple[int, int, str]] = []
+    for name in sorted(rel_names, key=len, reverse=True):
+        for match in re.finditer(re.escape(name), feat_text, flags=re.IGNORECASE):
+            start, end = match.start(), match.end()
+            if _is_guest_unit(feat_text, start, end) and not any(s < end and start < e for s, e, _ in matched):
+                matched.append((start, end, name))
+                break
+    if not matched:
+        return _parse_guest_artists(feat_text)
+
+    matched.sort()
+    guests: list[str] = []
+    seen: set[str] = set()
+    pos = 0
+    for start, end, name in matched:
+        for guest in _parse_guest_artists(feat_text[pos:start]):
+            guest = guest.strip(" &,;/\\")
+            if guest and guest.casefold() not in seen:
+                seen.add(guest.casefold())
+                guests.append(guest)
+        if name.casefold() not in seen:
+            seen.add(name.casefold())
+            guests.append(name)
+        pos = end
+    for guest in _parse_guest_artists(feat_text[pos:]):
+        guest = guest.strip(" &,;/\\")
+        if guest and guest.casefold() not in seen:
+            seen.add(guest.casefold())
+            guests.append(guest)
+    return guests
 
 
 def _parse_guest_artists(artist_string: str) -> list[str]:

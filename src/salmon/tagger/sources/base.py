@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from collections.abc import Callable
 from itertools import chain
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 from salmon import cfg
@@ -458,7 +458,7 @@ def generate_artists(tracks):
             if (name, import_) not in artists:
                 artists.append((name, import_))
     artists, tracks = filter_artists(artists, tracks)
-    return artists, tracks
+    return artists, cast("dict", tracks)
 
 
 def filter_artists(artists, tracks=None):
@@ -475,14 +475,18 @@ def filter_artists(artists, tracks=None):
         artist_pool = artist_spellings(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
-                repaired = fix_artists_list(
-                    list(
-                        dict.fromkeys(
-                            (artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"]
-                        )
-                    ),
-                    to_replace,
+                credits = list(
+                    dict.fromkeys((artist_pool[normalize_accents(art.lower())], imp) for art, imp in track["artists"])
                 )
+                if track.get("explicit_main_artists", False):
+                    # The store states these main credits artist by artist, so joined-name matching must not
+                    # merge them. Guests read from a title are still one string that may be badly split. The
+                    # flag is per track: another store's main credits merged into it skip the repair too.
+                    mains = [credit for credit in credits if credit[1] == "main"]
+                    guests = [credit for credit in credits if credit[1] != "main"]
+                    repaired = mains + fix_artists_list(guests, to_replace)
+                else:
+                    repaired = fix_artists_list(credits, to_replace)
                 # Then deduplicate, so a name joined back counts too. Main and guest, the ARTIST credit, are one credit
                 # per name; another role (remixer, arranger, ...) is kept beside it.
                 deduplicated_artists = []

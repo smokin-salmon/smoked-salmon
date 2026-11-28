@@ -109,8 +109,8 @@ def test_the_types_name_the_keys_salmon_builds(monkeypatch: pytest.MonkeyPatch) 
     tracks = [track for release in releases for disc in release["tracks"].values() for track in disc.values()]
 
     track_keys = TrackMetadata.__required_keys__ | TrackMetadata.__optional_keys__
-    # What only the merge reads: Discogs' credited names, and a stating store's guesses.
-    assert track_keys == {key for track in tracks for key in track} | set(MERGE_ONLY_KEYS)
+    # What only the merge reads, plus explicit_main_artists, which only Apple Music's parser sets.
+    assert track_keys == {key for track in tracks for key in track} | set(MERGE_ONLY_KEYS) | {"explicit_main_artists"}
     assert TrackMetadata.__required_keys__ == set.intersection(*(set(track) for track in tracks))
 
     release_keys = ReleaseMetadata.__required_keys__ | ReleaseMetadata.__optional_keys__
