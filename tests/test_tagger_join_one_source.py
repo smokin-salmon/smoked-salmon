@@ -87,6 +87,19 @@ def test_the_longer_whole_is_chosen_once_each_whole_is_followed_into_longer_name
     assert [claim.name for claim in joined if claim.source == "files"] == ["Ava Max Ray", "Ava Max Ray"]
 
 
+def test_a_source_s_join_is_dropped_when_one_of_its_parts_goes_to_another_source_s_whole() -> None:
+    """The files complete "Ava Max" and Deezer "Max Ray": Max goes to "Ava Max", the files' join coming first, so
+    Deezer's join no longer has all its parts and is dropped. Ray stays Ray, and Max is in one name."""
+    claims = [
+        files_claim("Ava"),
+        files_claim("Max"),
+        store_claim("Deezer", "Max", "main", assumed=False),
+        store_claim("Deezer", "Ray", "main", assumed=False),
+    ]
+
+    assert decided(claims, [("Ava Max", "composer"), ("Max Ray", "composer")]) == [("Ava Max", "main"), ("Ray", "main")]
+
+
 @pytest.mark.parametrize(
     ("deezer_remixers", "expected"),
     [(["Garfunkel"], ["Simon", "Garfunkel"]), (["Simon", "Garfunkel"], ["Simon and Garfunkel"])],

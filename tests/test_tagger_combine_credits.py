@@ -331,9 +331,11 @@ def test_a_part_another_source_also_claims_is_joined_with_the_parts_one_source_g
 
 
 _JOIN_SOURCES = ("files", "Deezer", "Qobuz", "MusicBrainz")
-_JOIN_NAMES = ("Alice", "Bob", "Alice & Bob", "Carol", "Dee", "Carol Dee")
+_JOIN_NAMES = ("Alice", "Bob", "Alice & Bob", "Carol", "Dee", "Carol Dee", "Bob Carol")
 _JOIN_ROLES = ("main", "guest", "remixer", "composer")
-_WHOLES = {"Alice & Bob": ("Alice", "Bob"), "Carol Dee": ("Carol", "Dee")}
+# "Bob Carol" shares a part with each of the others, so two sources can complete wholes that overlap.
+_WHOLES = {"Alice & Bob": ("Alice", "Bob"), "Carol Dee": ("Carol", "Dee"), "Bob Carol": ("Bob", "Carol")}
+_WHOLES_CREDITED = [(name, "composer") for name in _WHOLES]
 
 
 def _generated_claims(count: int):
@@ -352,10 +354,24 @@ def test_a_whole_name_no_claim_gives_comes_only_from_one_source_s_parts() -> Non
     every part of it in that role, never because two sources claim a part each."""
     for claims in _generated_claims(2000):
         given = {(claim.name, claim.role) for claim in claims}
-        for name, role in decided(claims, [("Alice & Bob", "composer"), ("Carol Dee", "composer")]):
+        for name, role in decided(claims, _WHOLES_CREDITED):
             if name in _WHOLES and (name, role) not in given:
                 claimed = {(claim.source, claim.name) for claim in claims if claim.role == role}
                 assert any(all((source, part) in claimed for part in _WHOLES[name]) for source in _JOIN_SOURCES), claims
+
+
+def test_no_part_goes_into_two_wholes_the_decision_joins() -> None:
+    """#1188: a source's join stands only when all its parts go to its whole, so two wholes joined in one role never
+    share a part: where the files complete "Alice & Bob" and Deezer "Bob Carol", Bob goes to one, and the other join
+    is dropped."""
+    for claims in _generated_claims(2000):
+        given = {(claim.name, claim.role) for claim in claims}
+        joined = [
+            credit for credit in decided(claims, _WHOLES_CREDITED) if credit[0] in _WHOLES and credit not in given
+        ]
+        for role in {role for _, role in joined}:
+            parts = [part for name, in_role in joined if in_role == role for part in _WHOLES[name]]
+            assert len(parts) == len(set(parts)), claims
 
 
 def test_claims_the_decision_overrules_are_not_credited_beside_the_name_that_beat_them() -> None:

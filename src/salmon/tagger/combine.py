@@ -805,10 +805,11 @@ def _join_split_names(claims, to_replace):
     """A track's claims with its badly split names joined back, as a store's parse joins its credits (fix_artists_list,
     with `to_replace` from the release's names): in a role where one source claims every part of a name, each claim of
     a part, by any source, becomes a claim of the whole name, keeping its source and whether it is assumed. Where two
-    sources complete different names from one part, the longer is kept, and a whole that is itself a part of a longer
-    name a source completes follows it there (`_joins_each_source_completes`). Run before the decision, so that a part
-    one source also claims in another role does not lose a role the whole name keeps (#1109). Nothing joins split
-    names after the decision: this is where the join is decided.
+    sources complete different names from one part, the longer takes it, and the other source's join, no longer whole,
+    is dropped; a whole that is itself a part of a longer name a source completes follows it there
+    (`_joins_each_source_completes`). Run before the decision, so that a part one source also claims in another role
+    does not lose a role the whole name keeps (#1109). Nothing joins split names after the decision: this is where the
+    join is decided.
 
     Parts that two sources claim between them are not joined (#1188): Alice from the files and Bob from Deezer are two
     stated credits, and a third source's guess of "Alice & Bob" is not what makes them one name.
@@ -830,15 +831,39 @@ def _join_split_names(claims, to_replace):
 def _joins_each_source_completes(kept, to_replace):
     """Each (part, role) some source's kept claims join, with the whole name it ends up in: fix_artists_list over each
     source's own claims. A whole one source completes that another source joins into a longer name (the files' "Ava
-    Max", beside Deezer's "Ava Max" and Ray) is followed there, so the part is credited once. Where sources complete
-    different names from one part, the longest, once each is followed, is kept (the first source's on a tie)."""
-    candidates = {}
+    Max", beside Deezer's "Ava Max" and Ray) is followed there. Where sources complete different names from one part,
+    the longest, once each is followed, takes the part (the first source's on a tie). A source's join stands only when
+    all its parts go to its whole: the files' "Ava Max" taking Max, Deezer's "Max Ray" is dropped and Ray stays Ray, so
+    no part is in two names. Dropping a join can change what another part goes to, so this runs until every join left
+    stands."""
+    joins = []  # (role, whole, parts): one per whole each source completes
     for source in dict.fromkeys(claim.source for claim in kept):
         own = list(dict.fromkeys((claim.name, claim.role) for claim in kept if claim.source == source))
         theirs = {}
         fix_artists_list(own, to_replace, theirs)  # the repair changes the list it is given: this one is its own
-        for key, whole in theirs.items():
-            candidates.setdefault(key, []).append(whole)
+        wholes = {}
+        for (part, role), whole in theirs.items():
+            wholes.setdefault((whole, role), []).append(part)
+        joins += [(role, whole, parts) for (whole, role), parts in wholes.items()]
+    while True:
+        joined = _followed_joins(joins)
+        standing = [
+            (role, whole, parts)
+            for role, whole, parts in joins
+            if all(joined[part, role] == joined.get((whole, role), whole) for part in parts)
+        ]
+        if len(standing) == len(joins):
+            return joined
+        joins = standing
+
+
+def _followed_joins(joins):
+    """Each (part, role) the joins name, with the longest whole it is followed into through them, the first join's on
+    a tie."""
+    candidates = {}
+    for role, whole, parts in joins:
+        for part in parts:
+            candidates.setdefault((part, role), []).append(whole)
 
     def followed(name, role, seen):
         wholes = (
