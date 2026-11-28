@@ -18,12 +18,12 @@ from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
 from salmon.tagger.sources.base import (
     artist_spellings,
+    artists_from_tracks,
     construct_replacement_list,
     determine_label_type,
     featuring_clause,
     fix_artists_list,
     folded_title,
-    generate_artists,
     standardize_genres,
     title_with_version,
 )
@@ -175,7 +175,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     without_merge_only_keys(base)
     _print_joined(joined)
     _print_disputes(decisions)
-    base["artists"], base["tracks"] = generate_artists(base["tracks"])
+    base["artists"], base["tracks"] = artists_from_tracks(base["tracks"])
     base["genres"] = standardize_genres(_correct_genres(base["genres"]))
     base["label"] = determine_label_type(base["label"], base["artists"])
     return base
@@ -683,8 +683,8 @@ def _decide_credits(tracks, claims, base_source, corrected=False):
     keeps every spelling it had, and a corrected part joins under its new name, as it did when the repair ran after the
     corrections. A claim whose artist the merge dropped in that role (a fragment of another name) is left out. Every
     kept credit has a claim: the merge claims each credit it adds to a track. The track's badly split names are joined
-    back over every source's claims (`_join_split_names`), so the decision weighs the whole name (#1109). A credited
-    remixer takes its artist's spelling too, so the REMIXER tag still finds it.
+    back where one source claims every part (`_join_split_names`, #1188), so the decision weighs the whole name
+    (#1109). A credited remixer takes its artist's spelling too, so the REMIXER tag still finds it.
     """
     own = {
         (disc, num): claims.get(id(track)) or _claims_of(track, base_source)
@@ -743,7 +743,7 @@ def _artist_classes(tracks, own):
     Names are one artist across the release when they share a `same_artist_key`, and on a track when Discogs credits
     one as the other there, whatever the role (its ANV: per track, as "Taylor" on one track is not every Taylor's). An
     artist takes the spelling of its first credit the merge kept on that track, as the release first spells that
-    credit's key and generate_artists spells that (`artist_spellings`).
+    credit's key and artists_from_tracks spells that (`artist_spellings`).
     """
     spellings = artist_spellings(tracks)
     first = {}  # same_artist_key: the first credit the merge kept under it, in track order
@@ -802,24 +802,79 @@ def _joined(joins, key):
 
 
 def _join_split_names(claims, to_replace):
-    """A track's claims with its badly split names joined back, as generate_artists' repair joins a track's credits
-    (fix_artists_list, with `to_replace` from the release's names), over the claims of every source: in a role where
-    every part of a name is claimed, each claim of a part becomes a claim of the whole name, keeping its source and
-    whether it is assumed. Run before the decision, so that a part one source also claims in another role does not
-    lose a role the whole name keeps (#1109).
+    """A track's claims with its badly split names joined back, as a store's parse joins its credits (fix_artists_list,
+    with `to_replace` from the release's names): in a role where one source claims every part of a name, each claim of
+    a part, by any source, becomes a claim of the whole name, keeping its source and whether it is assumed, unless a
+    whole ranked before it (longer once followed, or the earlier source's on a tie) takes one of its parts into another
+    name: then that join is dropped, and its parts stay apart. A whole that is itself a part of a longer name a source
+    completes follows it there (`_joins_each_source_completes`). Run before the decision, so that a part one source
+    also claims in another role does not lose a role the whole name keeps (#1109). Nothing joins split names after the
+    decision: this is where the join is decided.
+
+    Parts that two sources claim between them are not joined (#1188): Alice from the files and Bob from Deezer are two
+    stated credits, and a third source's guess of "Alice & Bob" is not what makes them one name.
 
     A claim the decision overrules (`_overruled`) joins nothing: it follows the claim that beat it, into the whole name
     when that one is joined, and loses to it again. One that agrees with a claim the decision keeps (the files' own
     guest beside their main) follows that one."""
     overruled = _overruled(claims)
-    kept = dict.fromkeys((claim.name, claim.role) for at, claim in enumerate(claims) if at not in overruled)
-    joined = {}
-    fix_artists_list(list(kept), to_replace, joined)  # a list of its own: the repair changes the one it is given
+    kept = [claim for at, claim in enumerate(claims) if at not in overruled]
+    joined = _joins_each_source_completes(kept, to_replace)
+    kept_keys = {(claim.name, claim.role) for claim in kept}
     renamed = []
     for at, claim in enumerate(claims):
-        key = (claim.name, claim.role if (claim.name, claim.role) in kept else overruled[at])
+        key = (claim.name, claim.role if (claim.name, claim.role) in kept_keys else overruled[at])
         renamed.append(msgspec.structs.replace(claim, name=joined[key]) if key in joined else claim)
     return renamed
+
+
+def _joins_each_source_completes(kept, to_replace):
+    """Each (part, role) some source's kept claims join, with the whole name it ends up in: fix_artists_list over each
+    source's own claims. A whole one source completes that another source joins into a longer name (the files' "Ava
+    Max", beside Deezer's "Ava Max" and Ray) is followed there. A source's join stands only when all its parts go to its
+    whole, so no part is in two names: where sources complete different names from one part, the join ranked first
+    takes it, and the others are dropped (the files' "Ava Max" taking Max, Deezer's "Max Ray" is dropped and Ray stays
+    Ray). The joins are ranked by the length of their whole, followed through every join, the first source's on a tie.
+    In that order, each is kept when every join kept so far, and itself, still takes all its parts into the name its
+    whole ends in, followed through those joins alone: so a join loses a part only to one that stands, and never to one
+    ending in the same name (the files' "Ava Max" and Deezer's "Ava Max Ray", both "Ava Max Ray")."""
+    joins = []  # (role, whole, parts): one per whole each source completes
+    for source in dict.fromkeys(claim.source for claim in kept):
+        own = list(dict.fromkeys((claim.name, claim.role) for claim in kept if claim.source == source))
+        theirs = {}
+        fix_artists_list(own, to_replace, theirs)  # the repair changes the list it is given: this one is its own
+        wholes = {}
+        for (part, role), whole in theirs.items():
+            wholes.setdefault((whole, role), []).append(part)
+        joins += [(role, whole, parts) for (whole, role), parts in wholes.items()]
+    followed = _followed_joins(joins)
+    standing, joined = [], {}
+    for join in sorted(joins, key=lambda join: -len(followed.get((join[1], join[0]), join[1]))):
+        tried = _followed_joins([*standing, join])
+        if all(
+            tried[part, role] == tried.get((whole, role), whole)
+            for role, whole, parts in [*standing, join]
+            for part in parts
+        ):
+            standing, joined = [*standing, join], tried
+    return joined
+
+
+def _followed_joins(joins):
+    """Each (part, role) the joins name, with the longest whole it is followed into through them, the first join's on
+    a tie."""
+    candidates = {}
+    for role, whole, parts in joins:
+        for part in parts:
+            candidates.setdefault((part, role), []).append(whole)
+
+    def followed(name, role, seen):
+        wholes = (
+            followed(whole, role, seen | {name}) for whole in candidates.get((name, role), ()) if whole not in seen
+        )
+        return max(wholes, key=len, default=name)
+
+    return {(part, role): followed(part, role, frozenset()) for part, role in candidates}
 
 
 def _overruled(claims):
@@ -851,7 +906,7 @@ def decide_alone(metadata, source):
     _, joined = _decide_credits(metadata["tracks"], {}, source)
     _print_joined(joined)
     clean_metadata(metadata)
-    metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
+    metadata["artists"], metadata["tracks"] = artists_from_tracks(metadata["tracks"])
 
 
 def _print_joined(joined):

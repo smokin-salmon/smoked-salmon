@@ -3,6 +3,7 @@ the disputes salmon prints."""
 
 import contextlib
 import io
+import random
 from copy import deepcopy
 
 import anyio
@@ -297,6 +298,116 @@ def test_each_claim_of_a_joined_part_keeps_its_source_and_flag() -> None:
         ("Deezer", "Ava Max", "guest", True),
         ("Deezer", "Ava Max", "guest", True),
     ]
+
+
+def test_two_sources_stating_one_part_each_are_not_joined_by_a_guess_of_the_whole() -> None:
+    """#1188: the files' Alice and Deezer's Bob are two stated mains, and MusicBrainz's guessed guest "Alice & Bob" is
+    not one source claiming both. Alice and Bob stay mains, and the guess stays a guest, not a main."""
+    claims = [
+        files_claim("Alice"),
+        store_claim("Deezer", "Bob", "main", assumed=False),
+        store_claim("MusicBrainz", "Alice & Bob", "guest"),
+    ]
+
+    assert decided(claims, [("Alice & Bob", "composer")]) == [
+        ("Alice", "main"),
+        ("Bob", "main"),
+        ("Alice & Bob", "guest"),
+    ]
+
+
+def test_parts_stated_by_two_sources_one_each_are_not_joined() -> None:
+    claims = [files_claim("Ava"), store_claim("Qobuz", "Max", "main", assumed=False)]
+    to_replace = construct_replacement_list([("Ava", "main"), ("Max", "main"), ("Ava Max", "composer")])
+
+    assert _join_split_names(claims, to_replace) == claims
+
+
+def test_a_part_another_source_also_claims_is_joined_with_the_parts_one_source_gives() -> None:
+    """The files claim Ava and Max: that one source completes the name, so Qobuz's Max is a claim of it too."""
+    claims = [files_claim("Ava"), files_claim("Max"), store_claim("Qobuz", "Max", "main", assumed=False)]
+
+    assert decided(claims, [("Ava Max", "composer")]) == [("Ava Max", "main")]
+
+
+_JOIN_SOURCES = ("files", "Deezer", "Qobuz", "MusicBrainz")
+_JOIN_NAMES = ("Alice", "Bob", "Alice & Bob", "Carol", "Dee", "Carol Dee", "Bob Carol")
+_JOIN_ROLES = ("main", "guest", "remixer", "composer")
+# "Bob Carol" shares a part with each of the others, so two sources can complete wholes that overlap.
+_WHOLES = {"Alice & Bob": ("Alice", "Bob"), "Carol Dee": ("Carol", "Dee"), "Bob Carol": ("Bob", "Carol")}
+_WHOLES_CREDITED = [(name, "composer") for name in _WHOLES]
+
+
+def _generated_claims(count: int):
+    rng = random.Random(1188)
+    for _ in range(count):
+        claims = []
+        for _ in range(rng.randint(1, 7)):
+            source = rng.choice(_JOIN_SOURCES)
+            assumed = source != "files" and rng.random() < 0.5
+            claims.append(Claim(source, name := rng.choice(_JOIN_NAMES), name, rng.choice(_JOIN_ROLES), assumed))
+        yield claims
+
+
+def _generated_remixer_parts(count: int):
+    """Each source, in a random order, claiming a random few of the wholes' parts as remixers: overlapping joins from
+    two or three sources are common."""
+    rng = random.Random(11882)
+    parts = ("Alice", "Bob", "Carol", "Dee")
+    for _ in range(count):
+        sources = rng.sample(_JOIN_SOURCES, len(_JOIN_SOURCES))
+        yield [
+            Claim(source, part, part, "remixer", source != "files" and rng.random() < 0.5)
+            for source in sources
+            for part in parts
+            if rng.random() < 0.5
+        ]
+
+
+def test_a_whole_name_no_claim_gives_comes_only_from_one_source_s_parts() -> None:
+    """#1188: a whole name the decision credits in a role where no source gives it is there because one source claims
+    every part of it in that role, never because two sources claim a part each."""
+    for claims in _generated_claims(2000):
+        given = {(claim.name, claim.role) for claim in claims}
+        for name, role in decided(claims, _WHOLES_CREDITED):
+            if name in _WHOLES and (name, role) not in given:
+                claimed = {(claim.source, claim.name) for claim in claims if claim.role == role}
+                assert any(all((source, part) in claimed for part in _WHOLES[name]) for source in _JOIN_SOURCES), claims
+
+
+def test_no_part_goes_into_two_wholes_the_decision_joins() -> None:
+    """#1188: a source's join stands only when all its parts go to its whole, so two wholes joined in one role never
+    share a part: where the files complete "Alice & Bob" and Deezer "Bob Carol", Bob goes to one, and the other join
+    is dropped."""
+    for claims in _generated_claims(2000):
+        given = {(claim.name, claim.role) for claim in claims}
+        joined = [
+            credit for credit in decided(claims, _WHOLES_CREDITED) if credit[0] in _WHOLES and credit not in given
+        ]
+        for role in {role for _, role in joined}:
+            parts = [part for name, in_role in joined if in_role == role for part in _WHOLES[name]]
+            assert len(parts) == len(set(parts)), claims
+
+
+def _completed_alone(claimed: set[tuple[str, str]], source: str) -> set[str]:
+    """The wholes `source` claims every part of and that share no part with another whole it claims every part of:
+    the joins its own repair makes, whatever order it tries them in."""
+    complete = {name for name, parts in _WHOLES.items() if all((source, part) in claimed for part in parts)}
+    return {
+        name for name in complete if not any(set(_WHOLES[name]) & set(_WHOLES[other]) for other in complete - {name})
+    }
+
+
+def test_a_join_one_source_completes_is_dropped_only_for_a_part_another_whole_takes() -> None:
+    """#1188: a whole one source completes is credited unless one of its parts went into another whole credited
+    there, even where that whole lost a part of its own (the files' "Alice & Bob" taking Bob from Deezer's "Bob Carol"
+    leaves Carol to Qobuz's "Carol Dee"). Remixers only: the decision overrules no remixer claim."""
+    for claims in _generated_remixer_parts(2000):
+        wholes = {name for name, _ in decided(claims, _WHOLES_CREDITED) if name in _WHOLES}
+        claimed = {(claim.source, claim.name) for claim in claims}
+        for name in set().union(*(_completed_alone(claimed, source) for source in _JOIN_SOURCES)):
+            taken = {part for other in wholes - {name} for part in _WHOLES[other]}
+            assert name in wholes or taken & set(_WHOLES[name]), ", ".join(f"{c.source} {c.name}" for c in claims)
 
 
 def test_claims_the_decision_overrules_are_not_credited_beside_the_name_that_beat_them() -> None:

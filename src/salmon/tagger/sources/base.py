@@ -448,8 +448,22 @@ def generate_artists(tracks):
     """
     Generate a list of artist tuples from the artists of each individual
     track, then run all the artists through the filter/fixer that
-    attempts to remedy bad splitting.
+    attempts to remedy bad splitting. A store's parse, before any decision:
+    after one, `artists_from_tracks` builds them without joining (#1188).
     """
+    return filter_artists(_release_artists(tracks), tracks)
+
+
+def artists_from_tracks(tracks):
+    """The release's artists and its tracks, as `generate_artists` gives them, without joining a split name: each name
+    in its release-wide spelling, main and guest one credit per name on a track, the release's artists the tracks' in
+    order. For the credits after a decision, which decides the join once (`_join_split_names`, #1188), and after the
+    review's trac[k]s edit, where what the user types is final."""
+    return filter_artists(_release_artists(tracks), tracks, repair=False)
+
+
+def _release_artists(tracks):
+    """Every track's credits, each name in its release-wide spelling, once each, in the tracks' order."""
     artist_pool = artist_spellings(tracks)
     artists = []
     for track in chain.from_iterable([d.values() for d in tracks.values()]):
@@ -457,11 +471,10 @@ def generate_artists(tracks):
             name = artist_pool[normalize_accents(name.lower())]
             if (name, import_) not in artists:
                 artists.append((name, import_))
-    artists, tracks = filter_artists(artists, tracks)
-    return artists, tracks
+    return artists
 
 
-def filter_artists(artists, tracks=None):
+def filter_artists(artists, tracks=None, *, repair=True):
     """
     Takes a list of artist tuples, as [(artist, importance), ], and repairs
     badly split artists, such as Leslie Odom, Jr. (one artist) --> Leslie Odom
@@ -469,8 +482,10 @@ def filter_artists(artists, tracks=None):
     give a third name on the release are its parts. On each track, a role
     holding every part of a name gets the whole name in their place. With
     tracks, the release's artists are then the tracks' artists, as repaired.
+    Without `repair`, nothing is joined: the tracks' names are only spelled
+    and deduplicated.
     """
-    to_replace = construct_replacement_list(artists)
+    to_replace = construct_replacement_list(artists) if repair else []
     if tracks:
         artist_pool = artist_spellings(tracks)
         for _dnum, disc in tracks.items():

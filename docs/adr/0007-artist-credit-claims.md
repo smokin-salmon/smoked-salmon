@@ -198,6 +198,11 @@ stays on the store's title with its version folded back in: a remix can sit in a
   Tidal's inference. The name repairs stay where they are.
   *Amended 2026-11-22 (#1109): the bad-split repair also runs on each track's claims, over every
   source, before the decision; `generate_artists` still runs it after.*
+  *Amended 2026-11-28 (#1188): the repair on the claims joins a name's parts in a role only when one source claims
+  every part in that role, and the join is decided there, once. After a decision (the merge, a scrape used alone,
+  `salmon up`'s and `descgen`'s pass over the cleaned credits) and after a trac[k]s edit in the review, the
+  release's artists are built from the tracks by `artists_from_tracks`, which spells and deduplicates them as
+  `generate_artists` does but joins nothing. Only a store's parse keeps the repair in `generate_artists`.*
 
 ### 5. What each step proves
 
